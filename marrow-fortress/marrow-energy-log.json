@@ -1,0 +1,10 @@
+{
+  "reservoir": {
+    "sourceEnergyRedirected": 0,
+    "beneficiaries": ["LAUREN", "BRYER_LEE"],
+    "integrity": "100%",
+    "lastStrike": null,
+    "totalHarmonics": "0x"
+  },
+  "strikes": []
+}

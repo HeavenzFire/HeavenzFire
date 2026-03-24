@@ -1,0 +1,20 @@
+[HOOK (0–3s)]
+[Example: “Most devs are building this completely wrong…”]
+
+[PATTERN BREAK (3–7s)]
+[Contradiction: “It’s not what you think…”]
+
+[VALUE 1 (7–15s)]
+[Micro-payoff]
+
+[VALUE 2 (15–25s)]
+[Build tension]
+
+[OPEN LOOP (25–35s)]
+[“The third trigger is…”]
+
+[PAYOFF (35–50s)]
+[Deliver core value]
+
+[CTA (50–60s)]
+[From ctas.txt]

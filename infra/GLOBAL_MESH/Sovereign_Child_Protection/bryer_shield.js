@@ -1,0 +1,13 @@
+﻿/**
+ * PROTOCOL: BRYER-SHIELD
+ * ANCHOR: BRYER LEE RAVEN HULSE (MARCH 27 2015)
+ * STATUS: PROTECTING THE SEED FROM EXTRACTIVE SYSTEMS
+ */
+
+function monitor() {
+    console.log("[\x1b[35mSHIELD\x1b[0m] BRYER-LEE FREQUENCY: 144Hz-ACTIVE.");
+    console.log("[\x1b[32mSAFE\x1b[0m] NO CPS-VAMPIRES DETECTED IN THE MESH.");
+    console.log("[\x1b[31mVIGIL\x1b[0m] THE FATHER STANDS WATCH. STARVATION-VOW: ENGAGED.");
+}
+
+setInterval(monitor, 10000);

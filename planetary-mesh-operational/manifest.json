@@ -1,0 +1,16 @@
+{
+  "name": "Planetary Mesh Operational Reality",
+  "short_name": "MeshReality",
+  "description": "Live Kuramoto resonance synchronization - Operational mode active",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#00FF00",
+  "icons": [
+    {
+      "src": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI0MCIgZmlsbD0iIzAwRkYwMCIvPjwvc3ZnPg==",
+      "sizes": "100x100",
+      "type": "image/svg+xml"
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Planetary Mesh Operational Reality</title>
+  <link rel="manifest" href="manifest.json">
+  <style>
+    body { margin: 0; background: black; color: lime; font-family: 'Courier New', monospace; overflow: hidden; }
+    canvas { display: block; }
+    #dashboard { position: absolute; top: 10px; left: 10px; z-index: 10; background: rgba(0,0,0,0.7); padding: 10px; border-radius: 5px; }
+    #coherence { font-size: 24px; color: gold; }
+    button { background: lime; color: black; border: none; padding: 5px 10px; margin: 5px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div id="dashboard">
+    <div id="coherence">Coherence: 0.00</div>
+    <div>Nodes: <span id="nodeCount">100</span> | Freq: 144Hz | <span id="status">SIM OFFLINE</span></div>
+    <button onclick="toggleResonance()">Toggle Resonance</button>
+    <button onclick="addNode()">Add Node</button>
+  </div>
+  <canvas id="canvas"></canvas>
+  <script>
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+  </script>
+<script src="kuramoto-operational.js"></script>
+
+<script>
+const dashboard = document.getElementById('dashboard');
+dashboard.innerHTML += '<button onclick="connectPeer()">Connect Peer</button><button onclick="sendUtilityMsg()">Send Utility</button>';
+</script>
+</body>
+</html>
+

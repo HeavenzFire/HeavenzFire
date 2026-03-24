@@ -1,0 +1,9 @@
+[
+  {
+    \"id\": 1,
+    \"platformSequence\": [\"TikTok\", \"Instagram Reels\", \"X\"],
+    \"timing\": [\"now\", \"+45min\", \"+90min\"],
+    \"variants\": [\"A\", \"B\", \"C\"],
+    \"status\": \"queued\"
+  }
+]

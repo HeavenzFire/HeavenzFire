@@ -1,0 +1,2 @@
+{"name":"monolith-ignis","version":"1.0.0","description":"Elysium Backbone: Obsidian Ledger + Cyan Mesh-Net (Zero-Dep Native)","main":"cyan_mesh/server.js","scripts":{"start":"node cyan_mesh/server.js","init-ledger":"node obsidian_ledger/init-ledger.js","init-db":"node obsidian_ledger/init-db.js","hash":"node resonance_hash.js","deific-align":"node deific_alignment.js","quad-pulse":"node deific_alignment.js"},"dependencies":{},"engines":{"node":">=20.0.0"},"author":"Sovereign Architect","license":"Sovereign"}
+
