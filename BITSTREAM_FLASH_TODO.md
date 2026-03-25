@@ -1,0 +1,1 @@
+- [x] 3. Count & Verify 105 LoRaWAN Seeds\n  ✅ 105 files found (001-105)

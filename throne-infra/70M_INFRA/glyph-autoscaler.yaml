@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: glyph-autoscaler
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: glyph-autoscaler
+  template:
+    metadata:
+      labels:
+        app: glyph-autoscaler
+    spec:
+      containers:
+      - name: autoscaler
+        image: bitnami/kubectl:latest  # φ³ dynamic glyph load
+        command: ["/bin/bash"]
+        args: ["-c", "while true; do kubectl scale deployment chirpstack --replicas=$(echo 'scale=0; $phi3_load * 420' | bc); sleep 10; done"]
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: chirpstack-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: chirpstack
+  minReplicas: 42
+  maxReplicas: 420000  # φ³ dynamic to 420K
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: External
+    external:
+      metric:
+        name: "phi3_glyph_load"
+      target:
+        type: Value
+        value: "1.618"  # Golden threshold
+
+# kubectl apply -f glyph-autoscaler.yaml

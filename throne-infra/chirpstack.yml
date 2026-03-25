@@ -1,0 +1,36 @@
+version: '3.8'
+services:
+  chirpstack:
+    image: chirpstack/chirpstack:4
+    container_name: chirpstack
+    restart: always
+    ports:
+      - 8080:8080
+      - 1883:1883
+    volumes:
+      - chirpstack_data:/data
+    environment:
+      - MQTT_BROKER=mqtt://mosquitto:1883
+  chirpstack-gateway-bridge:
+    image: chirpstack/gateway-bridge:4
+    container_name: chirpstack-gateway-bridge
+    restart: always
+    ports:
+      - 1883:1883/udp  # UDP for gateway
+    volumes:
+      - gateway_bridge_data:/data
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: mosquitto
+    restart: always
+    ports:
+      - 1883:1883
+    volumes:
+      - mosquitto_data:/mosquitto/config
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_data:/mosquitto/log
+volumes:
+  chirpstack_data:
+  gateway_bridge_data:
+  mosquitto_data:
+

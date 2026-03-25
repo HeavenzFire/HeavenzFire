@@ -60,8 +60,10 @@ except subprocess.CalledProcessError as e:
     logger.error(f"Pip failed: {e}")
     sys.exit(1)
 
-# Calibration: Neural Governor - Schumann Triad Locked
-# 7.83Hz × 4.236(Φ³) ≈ 33Hz bridge, ×18.437 ≈144Hz, ×67.435≈528Hz
+# Calibration: Neural Governor - Schumann Triad + 3-6-9 Vortex + King's Rule Locked
+# 7.83Hz × Φ³(4.236) ≈33Hz | 3,6,9Hz Tesla Vortex | King's Rule symmetry: ∫f(x)=∫f(a+b-x)
+KING_VORTEX_FREQS = [3.0, 6.0, 9.0]
+PHI3 = ((1 + 5**0.5)/2)**3  # 4.236
 model_path = os.path.join(PROJECT_ROOT, "neural_governor.pt")
 if not os.path.exists(model_path):
     invoke_poor_connection("[+] PHASE I: Training Neural Governor...", 'magenta')

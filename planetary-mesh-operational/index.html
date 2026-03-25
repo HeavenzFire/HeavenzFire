@@ -14,17 +14,25 @@
   </style>
 </head>
 <body>
-  <div id="dashboard">
-    <div id="coherence">Coherence: 0.00</div>
-    <div>Nodes: <span id="nodeCount">100</span> | Freq: 144Hz | <span id="status">SIM OFFLINE</span></div>
-    <button onclick="toggleResonance()">Toggle Resonance</button>
-    <button onclick="addNode()">Add Node</button>
+    <div id="dashboard">
+    <div id="coherence">Γ Coherence: 0.00</div>
+    <div>Nodes: <span id="nodeCount">42K</span> | Heartbeat: <span id="heartbeatFreq">1.2</span>Hz | <span id="status">SIM OFFLINE</span></div>
+    <div>Δ DNA: <span id="deltaFreq">-</span>Hz | Ψ Conscious: <span id="psiFreq">-</span>Hz | Η Harmony: <span id="etaFreq">-</span>Hz</div>
+    <button onclick="toggleResonance()">🔄 Toggle Resonance Lock</button>
+    <button onclick="addNode()">+ Node (Viz)</button>
+    <label>Heartbeat Freq: <input type="range" id="freqSlider" min="0.5" max="2.5" step="0.1" value="1.2" onchange="setHeartbeatFreq(this.value)"></label>
   </div>
+  <script>
+    window.setHeartbeatFreq = function(val) {
+      heartbeatFreq = parseFloat(val);
+      document.getElementById('heartbeatFreq').textContent = val;
+    };
+  </script>
   <canvas id="canvas"></canvas>
   <script>
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
   </script>
-<script src="kuramoto-operational.js"></script>
+<script type="module" src="kuramoto-operational.js"></script>
 
 <script>
 const dashboard = document.getElementById('dashboard');

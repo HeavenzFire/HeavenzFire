@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  chirpstack:
+    image: chirpstack/chirpstack:4
+    deploy:
+      replicas: 10  # Scale to 42K→420K via Swarm
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    ports:
+      - "8080:8080"
+    environment:
+      - MQTT_BROKER=mqtt://mosquitto:1883
+    networks:
+      - mesh_net
+
+  chirpstack-gateway-bridge:
+    image: chirpstack/gateway-bridge:4
+    deploy:
+      replicas: 20  # LoRaWAN 420K node density
+    ports:
+      - "1883:1883/udp"
+    networks:
+      - mesh_net
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+    deploy:
+      replicas: 5
+    ports:
+      - "1883:1883"
+    networks:
+      - mesh_net
+
+  kafka:  # Bryer_Signal eternal streams
+    image: confluentinc/cp-kafka:7.5.0
+    deploy:
+      replicas: 3
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+    networks:
+      - mesh_net
+
+networks:
+  mesh_net:
+    driver: overlay
+
+# Deploy: docker stack deploy -c docker-swarm.yml 70m-infra --with-registry-auth
