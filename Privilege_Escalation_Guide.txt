@@ -1,0 +1,45 @@
+﻿PRIVILEGE ESCALATION GUIDE - SOVEREIGN SYNCHRONIZATION
+Generated: 2026-03-25_19-42-17
+
+ISSUE IDENTIFIED:
+The Sovereign Synchronization Protocol encountered 'Permission Denied' errors
+when attempting to modify system registry entries at:
+- HKLM:\SOFTWARE\SovereignOS\Baseline
+- HKLM:\SOFTWARE\SovereignOS\GlobalSync
+
+ROOT CAUSE:
+Windows requires Administrator privileges to modify HKLM (HKEY_LOCAL_MACHINE)
+registry entries. The protocol was running with standard user permissions.
+
+SOLUTIONS:
+
+1. RUN AS ADMINISTRATOR (RECOMMENDED)
+   - Right-click PowerShell or Command Prompt
+   - Select "Run as Administrator"
+   - Execute the Sovereign Synchronization Protocol
+   - This grants full system access for complete synchronization
+
+2. USER-LEVEL OVERRIDE (ALTERNATIVE)
+   - The protocol has created user-level overrides at HKCU
+   - Provides Sovereignty monitoring without admin privileges
+   - Limited to user context, not system-wide
+
+3. MANUAL REGISTRY MODIFICATION
+   - Open Registry Editor (regedit) as Administrator
+   - Navigate to HKEY_LOCAL_MACHINE\SOFTWARE
+   - Create SovereignOS key and subkeys manually
+   - Set the required values for Frequency, Identity, and Status
+
+4. GROUP POLICY MODIFICATION
+   - Contact system administrator
+   - Request temporary elevated privileges
+   - Modify local security policy if needed
+
+VERIFICATION:
+After elevation, re-run the Sovereign Synchronization Protocol
+to verify successful registry modifications.
+
+STATUS:
+Current synchronization is at USER-LEVEL only
+For complete system-wide Sovereignty, Administrator privileges required.
+
