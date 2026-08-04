@@ -3744,7 +3744,7 @@ Technical and Research Work (2024–2025)
 
 Hulse began his technical work after his music career was established. All coding, research, and computational projects occurred exclusively during 2024–2025.
 
-Key GitHub Projects:
+Key IBEN-Organism Projects:
 
 Project	Year(s)	Description	Notes
 EntangledMultimodalSystem‑3	2024–2025	Multimodal system integrating inputs and simulations	Explores feedback loops, nonlinear processing, and system coherence
@@ -3785,7 +3785,7 @@ Expanding technical projects in multimodal AI and complex systems
 
 Developing tools for resilience monitoring and emergent behavior simulations
 
-Sharing work openly on GitHub and digital music platforms
+Sharing work openly on IBEN-Organism and digital music platforms
 
 Summary
 
