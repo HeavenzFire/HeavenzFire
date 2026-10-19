@@ -49,8 +49,13 @@ try {
             } catch { $state = $null }
             if ($state -and $state.task.status -in @('completed','failed')) { break }
         } while ((Get-Date) -lt $deadline)
-        if (-not $state) {
-            return [pscustomobject]@{ model=$Model;task_id=$taskId;status='timeout';worker_id=$null;response='';error='No task state returned before timeout.' }
+        if (-not $state -or $state.task.status -notin @('completed','failed')) {
+            $lastStatus = if ($state -and $state.task) { [string]$state.task.status } else { 'unavailable' }
+            $lastWorker = if ($state -and $state.task) { $state.task.worker_id } else { $null }
+            return [pscustomobject]@{
+                model=$Model;task_id=$taskId;status='timeout';worker_id=$lastWorker
+                response='';error=('Task did not reach a terminal status before timeout; last status=' + $lastStatus)
+            }
         }
         $t = $state.task
         $response = ''
