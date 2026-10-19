@@ -27,6 +27,16 @@ The script writes a Guardian report under `%LOCALAPPDATA%\\HeavenzFire\\UnifiedF
 
 The current Guardian wrapper accepts a short text snippet only; it does not perform OCR on image files or automatically browse sites. Do not describe those features as implemented until a tested adapter is added.
 
+## Rule regression tests
+
+Run the deterministic pattern tests from Windows PowerShell:
+
+```powershell
+& "$env:USERPROFILE\\HeavenzFire\\Test-HeavenzFireGuardianRules.ps1"
+```
+
+The current synthetic suite passes 8/8 cases, including positive examples for the seven declared cue types and a negative case ensuring an unrelated appointment time is not treated as urgency. This small suite is not a substitute for a broad human-labeled evaluation set.
+
 ## Defensive boundaries
 
 - Do not place bets, automate wagers, bypass access controls, or disrupt third-party services.
