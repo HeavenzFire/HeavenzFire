@@ -25,6 +25,43 @@
     "Human review before publishing accusations or escalating reports",
     "Prefer user protection, accessibility, informed choice, and reversibility"
   ],
+  "deterministic_patterns": [
+    {
+      "signal_id": "loss_chasing_prompt",
+      "pattern": "(?i)(you lost.{0,50}(deposit|wager|bet)|deposit now to win it back|win it back|recover your losses|chase your losses)",
+      "rationale": "The text explicitly links further play or deposit to recovering losses."
+    },
+    {
+      "signal_id": "time_pressure_scarcity",
+      "pattern": "(?i)(offer expires|limited[- ]time|expires in [0-9]{1,2}:[0-9]{2}|act now|hurry)",
+      "rationale": "The text contains explicit urgency or countdown language."
+    },
+    {
+      "signal_id": "near_miss_framing",
+      "pattern": "(?i)(near miss|almost won|so close to winning|just missed the jackpot)",
+      "rationale": "The text explicitly frames an outcome as nearly winning."
+    },
+    {
+      "signal_id": "autoplay_and_reduced_friction",
+      "pattern": "(?i)(autoplay|auto[- ]play|play automatically)",
+      "rationale": "The text references automatic repeated play; default state and stop friction require more context."
+    },
+    {
+      "signal_id": "social_proof_pressure",
+      "pattern": "(?i)(players like you|others are winning|everyone is playing|recent winners|your friends won)",
+      "rationale": "The text invokes other users or winners as a possible participation nudge."
+    },
+    {
+      "signal_id": "self_exclusion_obstruction",
+      "pattern": "(?i)(self[- ]exclusion|cooling[- ]off).{0,50}(hidden|hard to find|contact support|cannot|difficult)",
+      "rationale": "The text explicitly links a protective control with an obstruction or difficulty."
+    },
+    {
+      "signal_id": "targeted_personalization",
+      "pattern": "(?i)(because you lost|we noticed you lost|based on your recent losses|your recent play|your last losses)",
+      "rationale": "The text explicitly references a person's recent play or losses in promotional context."
+    }
+  ],
   "signals": [
     {
       "id": "near_miss_framing",
