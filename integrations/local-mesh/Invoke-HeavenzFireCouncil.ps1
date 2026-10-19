@@ -2,6 +2,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory=$true)][ValidateLength(1,1600)][string]$Prompt,
+    [ValidateSet('engineering','guardian-review')][string]$Mode = 'engineering',
     [string[]]$Models = @('qwen2.5:0.5b','llama3.2:1b','heavenzfire-runtime:latest'),
     [ValidateRange(15,300)][int]$TimeoutSeconds = 120
 )
@@ -84,7 +85,14 @@ try {
     $candidates = @()
     foreach ($model in $Models) {
         Write-Host ("[COUNCIL] Candidate pass: " + $model)
-        $candidatePrompt = @"
+        if ($Mode -eq 'guardian-review') {
+            $candidatePrompt = @"
+Objective and supplied evidence: $Prompt
+
+You are an independent defensive interface-evidence reviewer. Do not design a product. Return concise JSON with keys: findings, overall_risk, counter_evidence, limitations, mitigations, human_review_status. Each finding must include signal_id, status (observed/inferred/not_observable), exact_quote copied verbatim from the supplied evidence text, rationale, and confidence from 0 to 1. Only flag a signal when the evidence supports it. If the quote is not present verbatim, reject that finding. Never infer hidden algorithms, intent, illegality, or a diagnosis from a short text sample. Set human_review_status to pending. Do not claim external verification.
+"@
+        } else {
+            $candidatePrompt = @"
 Objective: $Prompt
 
 You are an independent HeavenzFire engineering specialist. Propose a concise solution. Return:
@@ -93,6 +101,7 @@ You are an independent HeavenzFire engineering specialist. Propose a concise sol
 3) one concrete verification test.
 Do not claim to have run tests. Prioritize human safety, privacy, reversibility, evidence, and protection of vulnerable people.
 "@
+        }
         $candidate = Invoke-HfCouncilTask $model $candidatePrompt $TimeoutSeconds
         $candidates += $candidate
         Write-Host ("  status=" + $candidate.status + "; worker=" + $candidate.worker_id)
@@ -106,13 +115,18 @@ Do not claim to have run tests. Prioritize human safety, privacy, reversibility,
         $candidateBriefs += ("CANDIDATE " + ($i+1) + " MODEL=" + $c.model + " STATUS=" + $c.status + ": " + $brief)
     }
     $judgeModel = if ($installed -contains 'qwen2.5:0.5b') { 'qwen2.5:0.5b' } else { $Models[0] }
+    $reviewInstructions = if ($Mode -eq 'guardian-review') {
+        'Act as a skeptical evidence auditor, not a product designer. Check each proposed exact_quote against the supplied evidence text; reject any quote that is not an exact substring. Report which signal IDs are supported, unsupported, or uncertain; explain counter-evidence and limitations; suggest a user-protective mitigation. Return concise JSON with human_review_status=pending. Do not claim hidden algorithm behavior, intent, illegality, or diagnosis. Model agreement is not ground truth.'
+    } else {
+        'Act as a skeptical engineering reviewer. Identify agreement and disagreement, reject unsupported claims, rank the safest practical next step, and provide a refined plan with one measurable acceptance test. State clearly that model agreement is not proof. Do not execute commands or claim external verification.'
+    }
     $judgePrompt = @"
 OBJECTIVE: $Prompt
 
 Compare these independent candidate proposals:
 $($candidateBriefs -join [Environment]::NewLine)
 
-Act as a skeptical engineering reviewer. Identify agreement and disagreement, reject unsupported claims, rank the safest practical next step, and provide a refined plan with one measurable acceptance test. State clearly that model agreement is not proof. Do not execute commands or claim external verification.
+$reviewInstructions
 "@
     if ($judgePrompt.Length -gt 3000) { $judgePrompt = $judgePrompt.Substring(0,2990) }
     Write-Host ("[COUNCIL] Independent review and refinement: " + $judgeModel)
@@ -121,13 +135,13 @@ Act as a skeptical engineering reviewer. Identify agreement and disagreement, re
     if ($judge.response) { Write-Host $judge.response }
 
     $null = New-Item -ItemType Directory -Path $ReportRoot -Force
-    $reportPath = Join-Path $ReportRoot ('council-' + (Get-Date -Format 'yyyyMMdd-HHmmss') + '.json')
+    $reportPath = Join-Path $ReportRoot ('council-' + (Get-Date -Format 'yyyyMMdd-HHmmss-fff') + '.json')
     $report = [ordered]@{
         schema_version = '1.0.0'
         captured_at = (Get-Date).ToString('o')
         host = $env:COMPUTERNAME
         objective = $Prompt
-        mode = 'sequential multi-model candidate generation plus skeptical review'
+        mode = $Mode + ' multi-model candidate generation plus skeptical review'
         models = @($Models)
         candidates = @($candidates)
         reviewer_model = $judgeModel
