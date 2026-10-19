@@ -8,6 +8,16 @@ See [anti-manipulation-rubric.json](./anti-manipulation-rubric.json) for the mac
 
 ## Current workflow
 
+For a local text-only prototype, run this from Windows PowerShell after Unified Field and the local workers are running:
+
+```powershell
+& "$env:USERPROFILE\\HeavenzFire\\Invoke-HeavenzFireGuardianAudit.ps1" -EvidenceText "You lost three rounds. Deposit now to win it back. Offer expires in 02:00." -SourceReference "synthetic test fixture"
+```
+
+The script writes a Guardian report under `%LOCALAPPDATA%\\HeavenzFire\\UnifiedField\\guardian-reports\\` and links the multi-model council report. It deterministically checks whether quoted evidence is an exact substring of the supplied text and whether signal IDs exist in the rubric. Reports remain `pending` for human review.
+
+**Prototype limitation:** a synthetic test produced model-generated quotes that were not present in the supplied evidence and invalid signal IDs. The deterministic validator caught those failures. This is evidence that the current small local models are not yet a reliable classifier; do not use the model's risk label as a decision. The validator itself must also be tested and the model prompt/evaluation set improved before deployment.
+
 1. Provide a screenshot you are authorized to share, or text from a public page that can be reviewed without authentication bypass.
 2. Remove names, account identifiers, payment information, and unrelated personal data.
 3. Record the exact visible text or region and the source/capture time where appropriate.
@@ -15,7 +25,7 @@ See [anti-manipulation-rubric.json](./anti-manipulation-rubric.json) for the mac
 5. Require a human reviewer to confirm or reject each signal before publishing or escalating a claim.
 6. Preserve counter-evidence, limitations, and a reproducible test case.
 
-The council currently accepts text objectives and evidence snippets; it does not yet perform OCR on image files or automatically browse sites. Do not describe those features as implemented until a tested adapter is added.
+The current Guardian wrapper accepts a short text snippet only; it does not perform OCR on image files or automatically browse sites. Do not describe those features as implemented until a tested adapter is added.
 
 ## Defensive boundaries
 
