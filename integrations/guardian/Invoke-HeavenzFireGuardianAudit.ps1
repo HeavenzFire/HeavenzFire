@@ -7,8 +7,17 @@ param(
     [ValidateRange(15,300)][int]$TimeoutSeconds = 120
 )
 $ErrorActionPreference = 'Stop'
-$CouncilScript = Join-Path $env:USERPROFILE 'HeavenzFire\Invoke-HeavenzFireCouncil.ps1'
-$RubricPath = 'C:\Users\rucke\heavenzfire-capsule-v02\ecosystem-integration\guardian\anti-manipulation-rubric.json'
+$CouncilScript = Join-Path $PSScriptRoot 'Invoke-HeavenzFireCouncil.ps1'
+if (-not (Test-Path -LiteralPath $CouncilScript)) {
+    $CouncilScript = Join-Path $PSScriptRoot '..\local-mesh\Invoke-HeavenzFireCouncil.ps1'
+}
+if (-not (Test-Path -LiteralPath $CouncilScript)) {
+    $CouncilScript = Join-Path $env:USERPROFILE 'HeavenzFire\Invoke-HeavenzFireCouncil.ps1'
+}
+$RubricPath = Join-Path $PSScriptRoot 'anti-manipulation-rubric.json'
+if (-not (Test-Path -LiteralPath $RubricPath)) {
+    $RubricPath = 'C:\Users\rucke\heavenzfire-capsule-v02\ecosystem-integration\guardian\anti-manipulation-rubric.json'
+}
 $StateRoot = Join-Path $env:LOCALAPPDATA 'HeavenzFire\UnifiedField'
 $CouncilReportRoot = Join-Path $StateRoot 'council-reports'
 $GuardianReportRoot = Join-Path $StateRoot 'guardian-reports'
