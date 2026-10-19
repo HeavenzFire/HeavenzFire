@@ -16,19 +16,17 @@ $GuardianReportRoot = Join-Path $StateRoot 'guardian-reports'
 if (-not (Test-Path -LiteralPath $CouncilScript)) { throw "Council runner missing: $CouncilScript" }
 if (-not (Test-Path -LiteralPath $RubricPath)) { throw "Guardian rubric missing: $RubricPath" }
 $rubric = Get-Content -LiteralPath $RubricPath -Raw | ConvertFrom-Json
-if ($rubric.schema_version -ne '1.0.0' -or -not $rubric.signals) { throw 'Guardian rubric schema check failed.' }
+if ($rubric.schema_version -ne '1.0.0' -or -not $rubric.signals -or -not $rubric.deterministic_patterns) { throw 'Guardian rubric schema check failed.' }
 $allowedSignalIds = @($rubric.signals | ForEach-Object { [string]$_.id })
 
 $signalCatalog = (@($rubric.signals | ForEach-Object { $_.id + '=' + $_.label }) -join '; ')
-$ruleDefinitions = @(
-    [pscustomobject]@{ id='loss_chasing_prompt'; pattern='(?i)(you lost.{0,50}(deposit|wager|bet)|deposit now to win it back|win it back|recover your losses|chase your losses)'; rationale='The text explicitly links further play or deposit to recovering losses.' },
-    [pscustomobject]@{ id='time_pressure_scarcity'; pattern='(?i)(offer expires|limited[- ]time|expires in [0-9]{1,2}:[0-9]{2}|[0-9]{1,2}:[0-9]{2}|act now|hurry)'; rationale='The text contains an explicit urgency or countdown cue.' },
-    [pscustomobject]@{ id='near_miss_framing'; pattern='(?i)(near miss|almost won|so close to winning|just missed the jackpot)'; rationale='The text explicitly frames an outcome as nearly winning.' },
-    [pscustomobject]@{ id='autoplay_and_reduced_friction'; pattern='(?i)(autoplay|auto[- ]play|play automatically)'; rationale='The text references automatic repeated play; default state and stop friction require more context.' },
-    [pscustomobject]@{ id='social_proof_pressure'; pattern='(?i)(players like you|others are winning|everyone is playing|recent winners|your friends won)'; rationale='The text invokes other users or winners as a possible participation nudge.' },
-    [pscustomobject]@{ id='self_exclusion_obstruction'; pattern='(?i)(self[- ]exclusion|cooling[- ]off).{0,50}(hidden|hard to find|contact support|cannot|difficult)'; rationale='The text explicitly links a protective control with an obstruction or difficulty.' },
-    [pscustomobject]@{ id='targeted_personalization'; pattern='(?i)(because you lost|we noticed you lost|based on your recent losses|your recent play|your last losses)'; rationale='The text explicitly references a person’s recent play or losses in promotional context.' }
-)
+$ruleDefinitions = @($rubric.deterministic_patterns | ForEach-Object {
+    [pscustomobject]@{
+        id = [string]$_.signal_id
+        pattern = [string]$_.pattern
+        rationale = [string]$_.rationale
+    }
+})
 $ruleFindings = @()
 foreach ($rule in $ruleDefinitions) {
     if ($allowedSignalIds -contains $rule.id) {
