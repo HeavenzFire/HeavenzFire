@@ -1,6 +1,6 @@
 # HeavenzFire Multi-Model Council and Local Mesh Pipeline
 
-**Status:** Implemented and smoke-tested on the Windows 11 host on 2026-10-19. The code and report paths below are local to the operator's machine; this document does not claim a public deployment.
+**Status:** Implemented and smoke-tested on the Windows 11 host on 2026-10-19. Portable source copies are versioned under `integrations/local-mesh/`; runtime configuration and reports remain local. This document does not claim a public deployment.
 
 ## Purpose
 
