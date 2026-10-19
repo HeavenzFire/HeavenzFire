@@ -11,6 +11,10 @@ See [anti-manipulation-rubric.json](./anti-manipulation-rubric.json) for the mac
 For a local text-only prototype, run this from Windows PowerShell after Unified Field and the local workers are running:
 
 ```powershell
+# From the repository root:
+& ".\\integrations\\guardian\\Invoke-HeavenzFireGuardianAudit.ps1" -EvidenceText "You lost three rounds. Deposit now to win it back. Offer expires in 02:00." -SourceReference "synthetic test fixture"
+
+# Or from the installed local workspace:
 & "$env:USERPROFILE\\HeavenzFire\\Invoke-HeavenzFireGuardianAudit.ps1" -EvidenceText "You lost three rounds. Deposit now to win it back. Offer expires in 02:00." -SourceReference "synthetic test fixture"
 ```
 
@@ -32,6 +36,10 @@ The current Guardian wrapper accepts a short text snippet only; it does not perf
 Run the deterministic pattern tests from Windows PowerShell:
 
 ```powershell
+# From the repository root:
+& ".\\integrations\\guardian\\Test-HeavenzFireGuardianRules.ps1"
+
+# Or from the installed local workspace:
 & "$env:USERPROFILE\\HeavenzFire\\Test-HeavenzFireGuardianRules.ps1"
 ```
 
