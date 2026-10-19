@@ -1,9 +1,15 @@
 #requires -Version 5.1
 [CmdletBinding()]
 param(
-    [string]$RubricPath = 'C:\Users\rucke\heavenzfire-capsule-v02\ecosystem-integration\guardian\anti-manipulation-rubric.json'
+    [string]$RubricPath
 )
 $ErrorActionPreference = 'Stop'
+if ([string]::IsNullOrWhiteSpace($RubricPath)) {
+    $RubricPath = Join-Path $PSScriptRoot 'anti-manipulation-rubric.json'
+    if (-not (Test-Path -LiteralPath $RubricPath)) {
+        $RubricPath = 'C:\Users\rucke\heavenzfire-capsule-v02\ecosystem-integration\guardian\anti-manipulation-rubric.json'
+    }
+}
 if (-not (Test-Path -LiteralPath $RubricPath)) { throw "Guardian rubric missing: $RubricPath" }
 $rubric = Get-Content -LiteralPath $RubricPath -Raw | ConvertFrom-Json
 if ($rubric.schema_version -ne '1.0.0' -or -not $rubric.signals -or -not $rubric.deterministic_patterns) { throw 'Guardian rubric schema check failed.' }
