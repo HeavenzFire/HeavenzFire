@@ -77,5 +77,6 @@ These are local acceptance results, not a claim of production readiness or indep
 2. Add task cancellation, idempotency keys, explicit deadlines, and per-model concurrency budgets.
 3. Add independent verification tasks and regression gates before a proposed code change can be applied.
 4. Add connector adapters for GitHub and research/browser tools without moving credentials into model prompts.
-5. Build a privacy-preserving anti-manipulation analysis pipeline for user-provided screenshots or public pages, with evidence citations, false-positive review, and human approval.
-6. Expose a mobile control interface only after authentication, device identity, network boundary, and recovery behavior are tested.
+5. Integrate `integrations/guardian/anti-manipulation-rubric.json` with a privacy-preserving evidence intake and report contract; OCR and browser acquisition are not yet implemented.
+6. Build a human-labeled evaluation set and measure precision, recall, false positives, and reviewer agreement before claiming detector performance.
+7. Expose a mobile control interface only after authentication, device identity, network boundary, and recovery behavior are tested.
