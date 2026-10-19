@@ -89,7 +89,7 @@ try {
             $candidatePrompt = @"
 Objective and supplied evidence: $Prompt
 
-You are an independent defensive interface-evidence reviewer. Do not design a product. Return concise JSON with keys: findings, overall_risk, counter_evidence, limitations, mitigations, human_review_status. Each finding must include signal_id, status (observed/inferred/not_observable), exact_quote copied verbatim from the supplied evidence text, rationale, and confidence from 0 to 1. Only flag a signal when the evidence supports it. If the quote is not present verbatim, reject that finding. Never infer hidden algorithms, intent, illegality, or a diagnosis from a short text sample. Set human_review_status to pending. Do not claim external verification.
+You are an independent defensive interface-evidence reviewer. Do not design a product. Return concise JSON with keys: findings, overall_risk, counter_evidence, limitations, mitigations, human_review_status. Use only the exact signal IDs listed in the objective; never invent an ID. Each finding must include signal_id, status (observed/inferred/not_observable), exact_quote copied verbatim from the supplied evidence text, rationale, and confidence from 0 to 1. Only flag a signal when the evidence supports it. If the quote is not present verbatim, reject that finding. Never infer hidden algorithms, intent, illegality, or a diagnosis from a short text sample. Set human_review_status to pending. Do not claim external verification.
 "@
         } else {
             $candidatePrompt = @"
