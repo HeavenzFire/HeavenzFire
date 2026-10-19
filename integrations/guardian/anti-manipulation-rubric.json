@@ -1,0 +1,302 @@
+{
+  "schema_version": "1.0.0",
+  "title": "HeavenzFire Guardian Anti-Manipulation Rubric",
+  "status": "proposed evaluation rubric; not a validated detector",
+  "purpose": "Identify potentially manipulative gambling-interface patterns from user-provided screenshots, OCR text, or publicly accessible page text so people can understand risks and choose protective actions.",
+  "scope": {
+    "allowed_inputs": [
+      "user-provided screenshots",
+      "user-provided OCR or page text",
+      "publicly accessible pages reviewed without authentication bypass"
+    ],
+    "excluded_actions": [
+      "placing bets or automating wagers",
+      "logging into or scraping private accounts",
+      "bypassing access controls",
+      "disrupting or attacking external systems",
+      "profiling named individuals or inferring sensitive personal traits"
+    ]
+  },
+  "principles": [
+    "Evidence before conclusions",
+    "Minimize retained personal data",
+    "Separate observed facts from inferences",
+    "Record uncertainty and plausible benign explanations",
+    "Human review before publishing accusations or escalating reports",
+    "Prefer user protection, accessibility, informed choice, and reversibility"
+  ],
+  "signals": [
+    {
+      "id": "near_miss_framing",
+      "label": "Near-miss or almost-won framing",
+      "indicators": [
+        "UI text emphasizes how close a loss was to a win",
+        "Repeated celebratory effects appear after a losing outcome"
+      ],
+      "counter_indicators": [
+        "Neutral outcome reporting",
+        "A clear educational explanation that a near miss is still a loss"
+      ],
+      "evidence_required": [
+        "Exact visible text or screenshot region",
+        "Context establishing whether the round was a loss"
+      ],
+      "protective_mitigations": [
+        "Use neutral outcome labels",
+        "Offer optional reduced-stimulation display",
+        "Avoid presenting losses as progress toward a win"
+      ]
+    },
+    {
+      "id": "loss_chasing_prompt",
+      "label": "Loss-chasing nudge",
+      "indicators": [
+        "A prompt urges another deposit or wager after a loss",
+        "Copy frames continued play as a way to recover losses"
+      ],
+      "counter_indicators": [
+        "A cooling-off prompt",
+        "A neutral exit or session-summary option"
+      ],
+      "evidence_required": [
+        "Exact prompt text",
+        "Visible sequence or context linking the prompt to a loss"
+      ],
+      "protective_mitigations": [
+        "Provide a clear stop or exit path",
+        "Offer time-outs and deposit limits",
+        "Avoid recovery claims or urgency after losses"
+      ]
+    },
+    {
+      "id": "time_pressure_scarcity",
+      "label": "Artificial urgency or scarcity",
+      "indicators": [
+        "Countdowns or expiring offers pressure immediate action",
+        "Urgency is repeated without a verifiable reason"
+      ],
+      "counter_indicators": [
+        "A real, clearly explained deadline",
+        "An option to dismiss without penalty"
+      ],
+      "evidence_required": [
+        "Visible countdown or urgency copy",
+        "Any available context about the stated deadline"
+      ],
+      "protective_mitigations": [
+        "Remove unnecessary countdowns",
+        "State material terms before commitment",
+        "Allow review without time pressure"
+      ]
+    },
+    {
+      "id": "deposit_withdrawal_asymmetry",
+      "label": "Deposit and withdrawal friction asymmetry",
+      "indicators": [
+        "Deposits are prominent while withdrawal controls are difficult to find",
+        "Withdrawal requires materially more steps than deposit in the observed flow"
+      ],
+      "counter_indicators": [
+        "Clearly explained, proportionate identity or fraud-prevention checks",
+        "A visible withdrawal route with transparent requirements"
+      ],
+      "evidence_required": [
+        "Screenshots or notes for each observed step",
+        "A comparable deposit and withdrawal path",
+        "No inference from a single screen when the rest of the flow is unknown"
+      ],
+      "protective_mitigations": [
+        "Make withdrawal controls discoverable",
+        "Explain delays and requirements before submission",
+        "Avoid dark-pattern confirmation loops"
+      ]
+    },
+    {
+      "id": "unclear_bonus_terms",
+      "label": "Material offer terms are obscured",
+      "indicators": [
+        "Important restrictions are visually de-emphasized",
+        "Wagering requirements or expiry terms appear only after a commitment step"
+      ],
+      "counter_indicators": [
+        "Prominent, plain-language terms before acceptance",
+        "A clear cost and restriction summary"
+      ],
+      "evidence_required": [
+        "Offer headline and nearby terms",
+        "Visible hierarchy or sequence showing when terms appear"
+      ],
+      "protective_mitigations": [
+        "Present material restrictions before acceptance",
+        "Use plain language and accessible contrast",
+        "Provide a side-by-side cost and obligation summary"
+      ]
+    },
+    {
+      "id": "autoplay_and_reduced_friction",
+      "label": "Autoplay or frictionless repeated play",
+      "indicators": [
+        "Repeated play is enabled by default",
+        "Stopping or changing limits requires more friction than continuing"
+      ],
+      "counter_indicators": [
+        "Autoplay disabled by default",
+        "Persistent stop controls and clear session boundaries"
+      ],
+      "evidence_required": [
+        "Visible default state",
+        "Observed controls for continuing and stopping"
+      ],
+      "protective_mitigations": [
+        "Disable autoplay by default",
+        "Provide a persistent stop control",
+        "Add optional session reminders and time-outs"
+      ]
+    },
+    {
+      "id": "social_proof_pressure",
+      "label": "Social proof or notification pressure",
+      "indicators": [
+        "Repeated prompts emphasize other users' wins or activity to spur participation",
+        "Notifications interrupt or pressure return to play"
+      ],
+      "counter_indicators": [
+        "Optional, quiet, user-controlled notifications",
+        "Balanced information that does not imply likely personal success"
+      ],
+      "evidence_required": [
+        "Exact notification or social-proof text",
+        "Whether the display is optional or repeated"
+      ],
+      "protective_mitigations": [
+        "Make promotional notifications opt-in",
+        "Offer quiet hours and one-step disabling",
+        "Avoid implying that others' outcomes predict the user's outcome"
+      ]
+    },
+    {
+      "id": "self_exclusion_obstruction",
+      "label": "Cooling-off or self-exclusion obstruction",
+      "indicators": [
+        "Self-exclusion is difficult to locate compared with play controls",
+        "A cooling-off request triggers repeated persuasion to continue"
+      ],
+      "counter_indicators": [
+        "A clear, accessible self-exclusion route",
+        "A neutral confirmation with transparent consequences"
+      ],
+      "evidence_required": [
+        "Observed path to self-exclusion or time-out",
+        "Exact copy shown during the request"
+      ],
+      "protective_mitigations": [
+        "Provide a direct, accessible route",
+        "Honor the request without persuasion loops",
+        "Explain duration and reactivation rules plainly"
+      ]
+    },
+    {
+      "id": "minor_exposure",
+      "label": "Potential exposure of minors",
+      "indicators": [
+        "Gambling promotion appears in content clearly intended for minors",
+        "Age safeguards are absent from an observed access path"
+      ],
+      "counter_indicators": [
+        "A robust age gate with an appropriate fallback",
+        "No evidence that the content or audience is directed at minors"
+      ],
+      "evidence_required": [
+        "Publicly observable placement and context",
+        "Do not identify or collect data about individual children"
+      ],
+      "protective_mitigations": [
+        "Age-appropriate access controls",
+        "Responsible reporting to the relevant platform or regulator",
+        "Minimize collection of any child-related information"
+      ]
+    },
+    {
+      "id": "targeted_personalization",
+      "label": "Potentially targeted promotional pressure",
+      "indicators": [
+        "Visible copy explicitly references recent losses or play frequency to encourage more play",
+        "A public offer explicitly conditions pressure messaging on recent behavior"
+      ],
+      "counter_indicators": [
+        "Generic promotion without evidence of personal targeting",
+        "User-controlled personalization and clear opt-outs"
+      ],
+      "evidence_required": [
+        "Exact visible text or publicly documented behavior",
+        "Do not infer a hidden algorithm from appearance alone"
+      ],
+      "protective_mitigations": [
+        "Offer a clear opt-out from promotional personalization",
+        "Avoid targeting people at moments of apparent vulnerability",
+        "Use independent audits and documented governance"
+      ]
+    }
+  ],
+  "risk_levels": [
+    {
+      "id": "informational",
+      "meaning": "A pattern may be present but evidence is incomplete or harm is unclear."
+    },
+    {
+      "id": "low",
+      "meaning": "A minor concern with a plausible benign explanation; monitor or improve clarity."
+    },
+    {
+      "id": "moderate",
+      "meaning": "A concrete interface pattern may pressure decisions or obscure material information."
+    },
+    {
+      "id": "high",
+      "meaning": "Evidence suggests meaningful friction against stopping, withdrawing, or understanding obligations."
+    },
+    {
+      "id": "critical",
+      "meaning": "Strong, reviewed evidence indicates severe obstruction of protective controls or a serious risk to vulnerable users."
+    }
+  ],
+  "report_contract": {
+    "required_fields": [
+      "source_type",
+      "source_reference",
+      "capture_timestamp",
+      "evidence_quote_or_region",
+      "signal_id",
+      "observation",
+      "inference",
+      "confidence",
+      "counter_evidence",
+      "limitations",
+      "suggested_mitigation",
+      "human_review_status"
+    ],
+    "confidence_range": [0, 1],
+    "evidence_status_values": ["observed", "inferred", "not_observable"],
+    "review_status_values": ["pending", "confirmed", "rejected", "needs_more_evidence"]
+  },
+  "decision_rules": [
+    "A screenshot or model response alone does not prove intent, illegality, or the behavior of a hidden ranking or recommendation algorithm.",
+    "Quote or locate the exact evidence for every flagged signal.",
+    "Report observed facts separately from inferred mechanisms.",
+    "Record at least one plausible counter-explanation and what evidence would resolve it.",
+    "Do not publish allegations or trigger automated external actions without human review.",
+    "Prefer local processing and redact personal identifiers before storing or sharing evidence."
+  ],
+  "validation_plan": [
+    "Create a human-labeled evaluation set with consent and privacy review.",
+    "Measure precision, recall, false-positive rate, and reviewer agreement per signal.",
+    "Test across screen sizes, accessibility settings, languages, and benign comparison interfaces.",
+    "Require regression tests before changing the rubric or model prompts."
+  ],
+  "limitations": [
+    "This rubric is a proposed engineering instrument, not a validated clinical or legal assessment.",
+    "It cannot infer a hidden algorithm from a screenshot alone.",
+    "It does not diagnose gambling disorder or replace professional support.",
+    "Model agreement is not independent ground truth."
+  ]
+}
