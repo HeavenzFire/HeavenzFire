@@ -1,7 +1,7 @@
 #requires -Version 5.1
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory=$true)][ValidateLength(1,800)][string]$Prompt,
+    [Parameter(Mandatory=$true)][ValidateLength(1,1600)][string]$Prompt,
     [string[]]$Models = @('qwen2.5:0.5b','llama3.2:1b','heavenzfire-runtime:latest'),
     [ValidateRange(15,300)][int]$TimeoutSeconds = 120
 )
@@ -102,7 +102,7 @@ Do not claim to have run tests. Prioritize human safety, privacy, reversibility,
     $candidateBriefs = @()
     for ($i=0; $i -lt $candidates.Count; $i++) {
         $c = $candidates[$i]
-        $brief = if ($c.response) { $c.response.Substring(0,[Math]::Min(500,$c.response.Length)) } else { '[NO RESPONSE: ' + $c.status + ' ' + $c.error + ']' }
+        $brief = if ($c.response) { $c.response.Substring(0,[Math]::Min(300,$c.response.Length)) } else { '[NO RESPONSE: ' + $c.status + ' ' + $c.error + ']' }
         $candidateBriefs += ("CANDIDATE " + ($i+1) + " MODEL=" + $c.model + " STATUS=" + $c.status + ": " + $brief)
     }
     $judgeModel = if ($installed -contains 'qwen2.5:0.5b') { 'qwen2.5:0.5b' } else { $Models[0] }
