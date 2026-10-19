@@ -14,7 +14,7 @@ For a local text-only prototype, run this from Windows PowerShell after Unified 
 & "$env:USERPROFILE\\HeavenzFire\\Invoke-HeavenzFireGuardianAudit.ps1" -EvidenceText "You lost three rounds. Deposit now to win it back. Offer expires in 02:00." -SourceReference "synthetic test fixture"
 ```
 
-The script writes a Guardian report under `%LOCALAPPDATA%\\HeavenzFire\\UnifiedField\\guardian-reports\\` and links the multi-model council report. It deterministically checks whether quoted evidence is an exact substring of the supplied text and whether signal IDs exist in the rubric. Reports remain `pending` for human review.
+The script writes a Guardian report under `%LOCALAPPDATA%\\HeavenzFire\\UnifiedField\\guardian-reports\\` and links the multi-model council report. A small deterministic rule layer flags explicit text cues for loss-chasing prompts, urgency/countdowns, near-miss framing, autoplay, social proof, self-exclusion obstruction, and explicit references to recent losses. It validates its own quotes as exact substrings and signal IDs against the rubric. The AI council's proposed quotes and IDs are checked separately; reports remain `pending` for human review.
 
 **Prototype limitation:** a synthetic test produced model-generated quotes that were not present in the supplied evidence and invalid signal IDs. The deterministic validator caught those failures. This is evidence that the current small local models are not yet a reliable classifier; do not use the model's risk label as a decision. The validator itself must also be tested and the model prompt/evaluation set improved before deployment.
 
