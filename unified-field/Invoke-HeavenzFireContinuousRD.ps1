@@ -44,17 +44,53 @@ function Get-LocalRuntime {
         return [ordered]@{ reachable = $false; models = @(); endpoint = 'http://127.0.0.1:11434'; error = $_.Exception.Message }
     }
 }
+function Get-ServiceSnapshot {
+    $definitions = @(
+        @{ name = 'Gateway'; url = 'http://127.0.0.1:8787/health' },
+        @{ name = 'Orchestrator'; url = 'http://127.0.0.1:8788/health' },
+        @{ name = 'ToolService'; url = 'http://127.0.0.1:8789/health' },
+        @{ name = 'Agent'; url = 'http://127.0.0.1:8790/health' },
+        @{ name = 'MemoryService'; url = 'http://127.0.0.1:8791/health' },
+        @{ name = 'EcosystemHub'; url = 'http://127.0.0.1:8792/health' },
+        @{ name = 'UniversalAPI'; url = 'http://127.0.0.1:8793/health' },
+        @{ name = 'MeshCoordinator'; url = 'http://127.0.0.1:8080/health' },
+        @{ name = 'BrowserBridge'; url = 'http://127.0.0.1:18795/health' }
+    )
+    $results = @()
+    foreach ($definition in $definitions) {
+        try {
+            $payload = Invoke-RestMethod -Uri $definition.url -TimeoutSec 2
+            $healthy = if ($null -ne $payload.ok) { [bool]$payload.ok } else { $true }
+            $results += [ordered]@{
+                name = $definition.name
+                endpoint = $definition.url
+                status = if ($healthy) { 'HEALTHY' } else { 'UNHEALTHY' }
+                response = $payload
+            }
+        } catch {
+            $results += [ordered]@{
+                name = $definition.name
+                endpoint = $definition.url
+                status = 'UNAVAILABLE'
+                error = $_.Exception.Message
+            }
+        }
+    }
+    return @($results)
+}
+
 $completed = 0
 $limit = if ($Continuous) { [int]::MaxValue } else { $Cycles }
 while ($completed -lt $limit) {
     $cycle = $completed + 1
+    $runStamp = Get-Date -Format 'yyyyMMdd-HHmmss-fff'
     $started = (Get-Date).ToUniversalTime().ToString('o')
     Write-Host "=== HeavenzFire UnifiedField R&D cycle $cycle ===" -ForegroundColor Cyan
     $testOk = $null
     $testSummary = 'SKIPPED_BY_OPERATOR'
     $testLog = $null
     if (-not $SkipTests) {
-        $testLog = Join-Path $ReportRoot ("cycle-{0:D5}-tests.txt" -f $cycle)
+        $testLog = Join-Path $ReportRoot ("cycle-{0:D5}-{1}-tests.txt" -f $cycle, $runStamp)
         $testOutput = @(& $Node '--test' $Tests 2>&1)
         $testExit = $LASTEXITCODE
         $testOutput | Set-Content -LiteralPath $testLog -Encoding UTF8
@@ -71,7 +107,7 @@ while ($completed -lt $limit) {
         } elseif ($testOk -eq $false) {
             $researchStatus = 'BLOCKED_ACCEPTANCE_TEST_FAILURE'
         } else {
-            $researchLog = Join-Path $ReportRoot ("cycle-{0:D5}-research.txt" -f $cycle)
+            $researchLog = Join-Path $ReportRoot ("cycle-{0:D5}-{1}-research.txt" -f $cycle, $runStamp)
             $researchOutput = @(& $FieldRunner -Goal $ResearchGoal 2>&1)
             $researchExit = $LASTEXITCODE
             $researchOutput | Set-Content -LiteralPath $researchLog -Encoding UTF8
@@ -91,6 +127,7 @@ while ($completed -lt $limit) {
         source_repository = 'https://github.com/HeavenzFire/HeavenzFire'
         acceptance_tests = [ordered]@{ status = $testSummary; ok = $testOk; log = $testLog }
         local_ollama = $runtime
+        service_health = Get-ServiceSnapshot
         research = [ordered]@{ status = $researchStatus; details = $research }
         queue = Get-QueueSnapshot
         resources = [ordered]@{
@@ -99,7 +136,7 @@ while ($completed -lt $limit) {
         }
         automation = [ordered]@{ continuous = [bool]$Continuous; interval_seconds = $IntervalSeconds; mutations_auto_adopted = $false; files_auto_deleted = $false }
     }
-    $reportPath = Join-Path $ReportRoot ("cycle-{0:D5}.json" -f $cycle)
+    $reportPath = Join-Path $ReportRoot ("cycle-{0:D5}-{1}.json" -f $cycle, $runStamp)
     $tempPath = "$reportPath.tmp"
     $report | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $tempPath -Encoding UTF8
     Move-Item -LiteralPath $tempPath -Destination $reportPath -Force

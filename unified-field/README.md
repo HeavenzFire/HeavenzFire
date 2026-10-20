@@ -12,6 +12,8 @@ This is the integration entrypoint for HeavenzFire's existing local-first Unifie
 - PowerShell parser: passed.
 - One bounded R&D cycle completed successfully.
 - Local Ollama endpoint responded and returned the installed model list.
+- All nine configured local service health endpoints returned healthy during the follow-up sweep.
+- Each cycle now records local service health and uses unique timestamped artifacts.
 - The cycle wrote a JSON report and test log under FieldCore/reports/continuous-rd/.
 
 Model inference is opt-in. The runner does not automatically adopt generated changes, delete files, create startup persistence, or expose local services to the network.
