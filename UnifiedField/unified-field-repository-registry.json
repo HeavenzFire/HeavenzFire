@@ -1,0 +1,139 @@
+{
+  "schema": "heavenzfire.unified-field.repository-registry.v1",
+  "purpose": "Federated registry for the combined HeavenzFire repository ecosystem",
+  "model": "A repository is a component node; integration occurs through versioned adapters and shared task/evidence contracts, not by blindly copying all source into one repository.",
+  "completeness": "initial-partial",
+  "lastReviewed": "2026-10-20",
+  "taskContract": "heavenzfire.shared-task.v1",
+  "invariants": [
+    "pending approval never implies approved",
+    "component test success does not imply end-to-end verification",
+    "do not bulk-copy upstream or forked repositories without license/provenance review",
+    "only mark verified when a reproducible cross-component test exists"
+  ],
+  "components": [
+    {
+      "id": "core-project-hub",
+      "repository": "HeavenzFire/HeavenzFire",
+      "role": "shared-contract-and-integration-documentation",
+      "status": "in-progress",
+      "evidence": "draft PR feat/shared-task-contract-v1"
+    },
+    {
+      "id": "open-source-ai-hub",
+      "repository": "HeavenzFire/OpenSourceAIHub",
+      "role": "local-first-model-inventory-and-agent-handoff",
+      "status": "candidate-adapter",
+      "evidence": "README.md on main describes Ollama inventory and Solver-Orchestrator-Reviewer-Synthesizer handoff"
+    },
+    {
+      "id": "unified-codebase",
+      "repository": "HeavenzFire/UnifiedCodebase",
+      "role": "unknown-pending-inspection",
+      "status": "discovered",
+      "evidence": "repository metadata; default-branch README not found during initial pass"
+    },
+    {
+      "id": "ollama-runtime",
+      "repository": "HeavenzFire/ollama",
+      "role": "inference-runtime-dependency",
+      "status": "dependency-review-required",
+      "evidence": "repository metadata; provenance of changes must be audited before attribution"
+    },
+    {
+      "id": "llama-cpp-backend",
+      "repository": "HeavenzFire/llama.cpp",
+      "role": "inference-backend-dependency",
+      "status": "dependency-review-required",
+      "evidence": "repository metadata"
+    },
+    {
+      "id": "qwen-agent",
+      "repository": "HeavenzFire/Qwen-AgentJC",
+      "role": "agent-capability-candidate",
+      "status": "candidate-review-required",
+      "evidence": "repository metadata"
+    },
+    {
+      "id": "edge-extensions",
+      "repository": "HeavenzFire/MicrosoftEdge-Extensions",
+      "role": "browser-integration-candidate",
+      "status": "candidate-review-required",
+      "evidence": "repository metadata"
+    },
+    {
+      "id": "multimodal-root",
+      "repository": "HeavenzFire/EntangledMultimodalSystem",
+      "role": "multimodal-research-candidate",
+      "status": "candidate-review-required",
+      "evidence": "repository metadata"
+    },
+    {
+      "id": "multimodal-variant-1",
+      "repository": "HeavenzFire/EntangledMultimodalSystem-1",
+      "role": "multimodal-research-candidate",
+      "status": "candidate-review-required",
+      "evidence": "repository metadata"
+    },
+    {
+      "id": "multimodal-variant-2",
+      "repository": "HeavenzFire/EntangledMultimodalSystem-2",
+      "role": "multimodal-research-candidate",
+      "status": "candidate-review-required",
+      "evidence": "repository metadata"
+    },
+    {
+      "id": "multimodal-variant-3",
+      "repository": "HeavenzFire/EntangledMultimodalSystem-3",
+      "role": "multimodal-research-candidate",
+      "status": "candidate-review-required",
+      "evidence": "repository metadata"
+    },
+    {
+      "id": "spirit-engine",
+      "repository": "HeavenzFire/Spirit_Engine",
+      "role": "framework-candidate",
+      "status": "candidate-review-required",
+      "evidence": "repository metadata"
+    },
+    {
+      "id": "spirit-angelus",
+      "repository": "HeavenzFire/spirit-angelus",
+      "role": "framework-candidate",
+      "status": "candidate-review-required",
+      "evidence": "repository metadata"
+    },
+    {
+      "id": "spirit-angelus-framework",
+      "repository": "HeavenzFire/SpiritAngelusFramework",
+      "role": "framework-candidate",
+      "status": "candidate-review-required",
+      "evidence": "repository metadata"
+    },
+    {
+      "id": "5d-framework",
+      "repository": "HeavenzFire/5D-FRAMEWORK",
+      "role": "framework-candidate",
+      "status": "candidate-review-required",
+      "evidence": "repository metadata"
+    }
+  ],
+  "requiredComponentStatuses": [
+    "discovered",
+    "reviewed",
+    "adapter_proposed",
+    "adapter_implemented",
+    "verified",
+    "dependency_only",
+    "archived",
+    "duplicate",
+    "incompatible",
+    "not_yet_reviewed"
+  ],
+  "nextMilestones": [
+    "complete paginated repository inventory",
+    "inspect source and licensing for selected candidates",
+    "propagate shared task IDs and approval states through the orchestrator and OpenSourceAIHub",
+    "add cross-component integration tests and evidence report"
+  ]
+}
