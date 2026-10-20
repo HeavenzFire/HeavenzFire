@@ -28,7 +28,7 @@ The Unified Field is the coordinated system formed by HeavenzFire's repositories
 | `HeavenzFire/EntangledMultimodalSystem` and numbered variants | Multiple multimodal-system repositories exist | Separate components until deduplication and interface review establishes their relationship |
 | `HeavenzFire/Spirit_Engine`, `HeavenzFire/spirit-angelus`, `HeavenzFire/SpiritAngelusFramework`, `HeavenzFire/5D-FRAMEWORK` | Related named framework repositories exist | Candidate research/framework components; no compatibility claim yet |
 
-This list records only repositories surfaced during initial discovery. An inventory snapshot was added at `UnifiedField/unified-field-repository-inventory.snapshot.json`: the connector returned 100 repository names at offset 0 and zero at offset 100, but the known `HeavenzFire/OpenSourceAIHub` repository was missing from that response. The listing is therefore demonstrably incomplete; do not infer that the ecosystem contains only 100 repositories. A reliable full inventory still requires another discovery route and code-level inspection.
+The inventory snapshot at `UnifiedField/unified-field-repository-inventory.snapshot.json` now records 276 unique repositories returned by the paginated GitHub search query `user:HeavenzFire` (100, 100, 76, then 0 results; no duplicates), including `HeavenzFire/OpenSourceAIHub`. A separate listing endpoint returned only 100 names and omitted that known repository, so its pagination behavior was unreliable. The 276-result snapshot is complete for that search query, not proof that every account repository is indexed or accessible. All 276 entries remain discovered/unreviewed until source, licensing, provenance, and interfaces are inspected.
 
 ## Shared task contract
 
