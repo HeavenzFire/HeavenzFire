@@ -19,10 +19,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Check browser bridge syntax
+      - name: Check bridge and provenance adapter syntax
         run: |
           node --check UnifiedField/BrowserBridge/task-record.js
           node --check UnifiedField/BrowserBridge/popup.js
           node --check UnifiedField/FieldCore/evidence-ledger.cjs
-      - name: Test core contract, inbox, browser bridge, and evidence ledger
-        run: node --test UnifiedField/FieldCore/shared-task-contract.test.cjs UnifiedField/FieldCore/task-inbox-server.test.cjs UnifiedField/BrowserBridge/browser-bridge.test.cjs UnifiedField/FieldCore/evidence-ledger.test.cjs
+          node --check UnifiedField/FieldCore/public-record-adapter.cjs
+      - name: Test task contract, inbox, browser bridge, evidence ledger, and public-record adapter
+        run: node --test UnifiedField/FieldCore/shared-task-contract.test.cjs UnifiedField/FieldCore/task-inbox-server.test.cjs UnifiedField/BrowserBridge/browser-bridge.test.cjs UnifiedField/FieldCore/evidence-ledger.test.cjs UnifiedField/FieldCore/public-record-adapter.test.cjs
