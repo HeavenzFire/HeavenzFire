@@ -2,6 +2,7 @@
 
 const fs = require('node:fs');
 const http = require('node:http');
+const os = require('node:os');
 const path = require('node:path');
 const { URL } = require('node:url');
 const { validateTaskRecord } = require('./shared-task-contract.cjs');
@@ -9,6 +10,7 @@ const { validateTaskRecord } = require('./shared-task-contract.cjs');
 const HOST = '127.0.0.1';
 const DEFAULT_PORT = 18796;
 const MAX_BODY_BYTES = 65536;
+const DEFAULT_INBOX_PATH = path.join(os.homedir(), '.heavenzfire', 'unified-field-inbox.jsonl');
 
 function readExistingInbox(inboxPath) {
   const records = new Map();
@@ -54,7 +56,7 @@ function sendJson(res, status, body) {
   res.end(JSON.stringify(body));
 }
 
-function createTaskInboxServer({ inboxPath = path.join(__dirname, 'unified-field-inbox.jsonl'), port = DEFAULT_PORT } = {}) {
+function createTaskInboxServer({ inboxPath = DEFAULT_INBOX_PATH, port = DEFAULT_PORT } = {}) {
   if (typeof inboxPath !== 'string' || !inboxPath.trim()) throw new TypeError('inboxPath must be a non-empty path');
   if (!Number.isInteger(port) || port < 0 || port > 65535) throw new RangeError('port must be an integer from 0 to 65535');
   fs.mkdirSync(path.dirname(inboxPath), { recursive: true });
@@ -121,9 +123,9 @@ if (require.main === module) {
   if (!Number.isInteger(port) || port < 1024 || port > 65535) {
     throw new Error('HF_UNIFIED_FIELD_TASK_PORT must be an integer from 1024 to 65535');
   }
-  const inboxPath = process.env.HF_UNIFIED_FIELD_INBOX_FILE || path.join(__dirname, 'unified-field-inbox.jsonl');
+  const inboxPath = process.env.HF_UNIFIED_FIELD_INBOX_FILE || DEFAULT_INBOX_PATH;
   const server = createTaskInboxServer({ inboxPath, port });
   server.listen(port, HOST, () => process.stdout.write('Unified Field task inbox listening on http://' + HOST + ':' + port + '\n'));
 }
 
-module.exports = { createTaskInboxServer, readExistingInbox, HOST, DEFAULT_PORT };
+module.exports = { createTaskInboxServer, readExistingInbox, HOST, DEFAULT_PORT, DEFAULT_INBOX_PATH };
