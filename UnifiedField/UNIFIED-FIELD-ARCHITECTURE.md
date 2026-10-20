@@ -19,7 +19,7 @@ The Unified Field is the coordinated system formed by HeavenzFire's repositories
 | Component | Known role / evidence | Current integration status |
 |---|---|---|
 | `HeavenzFire/HeavenzFire` | Public project hub and this shared contract PR | Registry/contract home; cross-repository end-to-end verification pending |
-| `HeavenzFire/OpenSourceAIHub` | README describes local Ollama inventory, health checks, and Solver → Orchestrator → Reviewer → Synthesizer handoff | Adapter proposed in [draft PR #1](https://github.com/HeavenzFire/OpenSourceAIHub/pull/1); pipeline syntax check and 7 contract/boundary tests passed on the connected Windows PC; live end-to-end cycle remains unverified |
+| `HeavenzFire/OpenSourceAIHub` | README describes local Ollama inventory, health checks, and Solver → Orchestrator → Reviewer → Synthesizer handoff | Adapter proposed in [draft PR #1](https://github.com/HeavenzFire/OpenSourceAIHub/pull/1); server and pipeline syntax checks passed and 11 contract/API/pipeline-boundary tests passed on the connected Windows PC; live end-to-end cycle and cross-process transport remain unverified |
 | `HeavenzFire/UnifiedCodebase` | Repository exists; README was not found on default branch during this pass | Discovery only; role and contents require inspection |
 | `HeavenzFire/ollama` | Ollama source fork/repository | Upstream/runtime dependency; do not treat as HeavenzFire-authored runtime without file-level provenance |
 | `HeavenzFire/llama.cpp` | llama.cpp source fork/repository | Inference backend dependency; integrate through documented interfaces |
@@ -32,7 +32,7 @@ This list records only repositories surfaced during initial discovery. An invent
 
 ## Shared task contract
 
-The `heavenzfire.shared-task.v1` record is the initial cross-component handshake. It provides a stable task ID, source, goal, status, approval state, timestamps, metadata, and evidence collection. The current module is a contract prototype. OpenSourceAIHub's R&D proposal boundary now attaches and validates the task ID, task record, matching cycle metadata, and pending approval; adapter transport between independently running services and broader propagation to BrowserBridge and other components remain unimplemented.
+The `heavenzfire.shared-task.v1` record is the initial cross-component handshake. It provides a stable task ID, source, goal, status, approval state, timestamps, metadata, and evidence collection. The current module is a contract prototype. OpenSourceAIHub's R&D proposal boundary now attaches and validates task IDs, matching cycle metadata, and pending approval. The draft adapter also adds a shared task lifecycle to the loopback API-run boundary, with explicit request approval evidence, prompt-hash-only task metadata, and completed/review-required/failed outcomes. Adapter transport between independently running services and broader propagation to BrowserBridge and other components remain unimplemented.
 
 ### Required adapter interface
 
