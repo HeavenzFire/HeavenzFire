@@ -26,7 +26,7 @@
       "repository": "HeavenzFire/OpenSourceAIHub",
       "role": "local-first-model-inventory-and-agent-handoff",
       "status": "adapter-proposed",
-      "evidence": "README.md plus draft adapter PR #1: https://github.com/HeavenzFire/OpenSourceAIHub/pull/1; connected-PC node --check passed and 7 contract/boundary tests passed; live end-to-end cycle not verified"
+      "evidence": "README.md plus draft adapter PR #1: https://github.com/HeavenzFire/OpenSourceAIHub/pull/1; connected-PC server/pipeline syntax checks passed and 11 contract/API/pipeline-boundary tests passed; live end-to-end cycle and cross-process transport not verified"
     },
     {
       "id": "unified-codebase",
