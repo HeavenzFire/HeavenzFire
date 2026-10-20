@@ -126,7 +126,7 @@
       "status": "reviewed",
       "integrationStatus": "security-hardening-required",
       "riskLevel": "high-if-publicly-deployed",
-      "evidence": "README.md, package.json, vite.config.ts, services/geminiService.ts inspected. Vite config binds dev server to 0.0.0.0 and defines API_KEY/GEMINI_API_KEY into client build variables; frontend service constructs GoogleGenAI with process.env.API_KEY. Do not ship a real key in the browser bundle; move provider calls server-side and default dev binding to loopback before public deployment.",
+      "evidence": "README.md, package.json, vite.config.ts, and services/geminiService.ts inspected. Vite previously bound to 0.0.0.0 and defined API_KEY/GEMINI_API_KEY into client variables; frontend constructed GoogleGenAI with process.env.API_KEY. Security hardening is proposed in draft PR #1 https://github.com/HeavenzFire/Elysium-Gateway/pull/1: server-side Gemini proxy, loopback binding, origin/body validation, and tests. Connected-PC tests passed 6/6; CI run #9 passed before the latest package-script-only adjustment, whose CI result is pending.",
       "sourceRefs": [
         "https://github.com/HeavenzFire/Elysium-Gateway/blob/main/vite.config.ts",
         "https://github.com/HeavenzFire/Elysium-Gateway/blob/main/services/geminiService.ts"
