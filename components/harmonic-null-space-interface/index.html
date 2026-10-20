@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Harmonic Null-Space Interface · HeavenzFire</title>
+<style>
+:root{color-scheme:dark;--bg:#091018;--panel:#111d28;--panel2:#152533;--line:#294354;--text:#e7f1f6;--muted:#9ab0bd;--cyan:#6ce6e0;--gold:#f0c879;--red:#ff8c83;--green:#9ce6b2}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 18% -10%,#173347 0,transparent 40%),var(--bg);color:var(--text);font:14px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}
+main{max-width:1240px;margin:auto;padding:28px 20px 56px}.eyebrow{letter-spacing:.18em;text-transform:uppercase;color:var(--cyan);font-size:11px;font-weight:750}
+h1{font-size:clamp(28px,4vw,44px);line-height:1.1;margin:8px 0 10px;letter-spacing:-.035em}h2{font-size:16px;margin:0 0 12px}p{margin:0 0 12px;color:var(--muted)}
+.header{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;margin-bottom:24px}.stamp{border:1px solid var(--line);padding:10px 12px;border-radius:12px;color:var(--muted);font-size:12px;min-width:145px}
+.notice{border:1px solid #695738;background:#241f16;color:#f1dcb0;border-radius:12px;padding:12px 14px;margin:16px 0 22px}
+.grid{display:grid;grid-template-columns:310px minmax(0,1fr);gap:16px}.stack{display:grid;gap:16px;align-content:start}.panel{background:linear-gradient(160deg,#142431,#0f1923);border:1px solid var(--line);border-radius:16px;padding:17px;min-width:0}
+.control{margin:13px 0}.control label{display:flex;justify-content:space-between;gap:12px;color:var(--muted);font-size:12px;margin-bottom:6px}.control output{color:var(--cyan);font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--cyan)}select,button{background:#1b303f;border:1px solid #365367;color:var(--text);border-radius:9px;padding:9px 11px;font:inherit}button{cursor:pointer}button:hover{border-color:var(--cyan)}button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}.primary{background:#17464a;border-color:#347a7b}.metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:16px}.metric{padding:13px;background:#0b151e;border:1px solid var(--line);border-radius:12px}.metric small{display:block;color:var(--muted);font-size:11px}.metric strong{font-size:22px;display:block;margin-top:4px;font-variant-numeric:tabular-nums}.metric em{font-style:normal;font-size:11px;color:var(--muted)}
+.chart-wrap{background:#08121a;border:1px solid #223a49;border-radius:12px;padding:8px;margin:10px 0 14px}.chart-wrap svg{width:100%;height:auto;display:block;min-height:150px}.legend{display:flex;flex-wrap:wrap;gap:15px;color:var(--muted);font-size:12px}.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}.tests{display:grid;gap:8px}.test{display:flex;gap:9px;align-items:flex-start;padding:9px 10px;background:#0b151e;border:1px solid var(--line);border-radius:9px;font-size:12px}.pass{color:var(--green);font-weight:800}.fail{color:var(--red);font-weight:800}.status{font-size:12px;color:var(--muted);margin-top:12px}.footer{margin-top:18px;color:var(--muted);font-size:12px}.pill{display:inline-block;border:1px solid var(--line);padding:3px 8px;border-radius:999px;color:var(--muted);font-size:11px}
+@media(max-width:850px){.grid{grid-template-columns:1fr}.header{display:block}.stamp{display:inline-block;margin-top:10px}.metrics{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:500px){main{padding:18px 12px}.metrics{grid-template-columns:1fr}.metric strong{font-size:20px}}
+</style>
+</head>
+<body>
+<main>
+<header class="header"><div><div class="eyebrow">HeavenzFire · Signal Laboratory / 01</div><h1>Harmonic Null-Space Interface</h1><p>Interactive interference, spectral analysis, and measurable system recovery—implemented as a reproducible signal simulation.</p></div><div class="stamp"><strong>BUILD 0.1.0</strong><br>LOCAL-ONLY · NO NETWORK<br><span class="pill">SIMULATION MODE</span></div></header>
+<div class="notice"><strong>Evidence boundary:</strong> This tool models mathematical signal superposition only. It does not detect, diagnose, prevent, or treat cancer or any other disease. The schematic's biological and terahertz-treatment claims are not validated by this simulation.</div>
+<div class="grid">
+<aside class="stack">
+<section class="panel"><h2>Signal parameters</h2>
+<div class="control"><label for="freq">Target frequency <output id="freqOut">5.0 Hz</output></label><input id="freq" type="range" min="1" max="20" step=".5" value="5"></div>
+<div class="control"><label for="amp">Target amplitude <output id="ampOut">1.00</output></label><input id="amp" type="range" min=".2" max="2" step=".05" value="1"></div>
+<div class="control"><label for="phase">Counter phase offset <output id="phaseOut">180°</output></label><input id="phase" type="range" min="0" max="360" step="5" value="180"></div>
+<div class="control"><label for="gain">Counter amplitude ratio <output id="gainOut">1.00String.fromCharCode(215)</output></label><input id="gain" type="range" min="0" max="1.5" step=".05" value="1"></div>
+<div class="control"><label for="noise">Noise amplitude <output id="noiseOut">0.05</output></label><input id="noise" type="range" min="0" max=".5" step=".01" value=".05"></div>
+<div class="control"><label for="harmonic">Target harmonic</label><select id="harmonic"><option value="0">None</option><option value=".15">15% at 2String.fromCharCode(215) frequency</option><option value=".3">30% at 2String.fromCharCode(215) frequency</option></select></div>
+<div class="actions"><button class="primary" id="run">Recompute</button><button id="reset">Reset defaults</button><button id="export">Export CSV</button><button id="connect">Connect Trip Archalien</button></div>
+<div class="status" id="state" role="status" aria-live="polite">Ready · deterministic signal; noise seed fixed for repeatability.</div><div class="test" style="margin-top:10px"><div><strong>Trip Archalien bridge</strong><br><span id="bridgeStatus" style="color:#9ab0bd">Offline - optional local Java service</span><br><span id="bridgeScore" style="color:#6ce6e0">Simulation score: not connected</span></div></div>
+</section>
+<section class="panel"><h2>Integrity checks</h2><div class="tests" id="tests"></div><div class="status" id="testSummary">Checks not yet run.</div></section>
+</aside>
+<div class="stack">
+<section class="panel"><h2>Measured outcome</h2><div class="metrics">
+<div class="metric"><small>Target RMS</small><strong id="targetRms">—</strong><em>input signal</em></div>
+<div class="metric"><small>Residual RMS</small><strong id="residualRms">—</strong><em>target + counter + noise</em></div>
+<div class="metric"><small>Attenuation</small><strong id="attenuation">—</strong><em>relative RMS, dB</em></div>
+</div><div class="legend"><span><i class="dot" style="background:#6ce6e0"></i>Target</span><span><i class="dot" style="background:#f0c879"></i>Counter</span><span><i class="dot" style="background:#ff8c83"></i>Residual</span></div><div class="chart-wrap"><svg id="timeChart" viewBox="0 0 820 250" role="img" aria-label="Time domain plot showing target, counter, and residual signals"></svg></div><p>Time domain · 2 seconds shown · 1,000 samples · arbitrary normalized units.</p></section>
+<section class="panel"><h2>Frequency-domain view</h2><div class="chart-wrap"><svg id="spectrumChart" viewBox="0 0 820 220" role="img" aria-label="Discrete Fourier magnitude spectrum of the residual signal"></svg></div><p>Single-sided DFT magnitude of residual. The implementation is intentionally transparent and suitable for small educational datasets, not real-time instrumentation.</p></section>
+<section class="panel"><h2>Interpretation</h2><p id="interpretation">Adjust phase and amplitude to observe how interference changes the residual.</p><p><strong>Model limitations:</strong> Idealized additive signals, fixed sample rate, synthetic noise, no sensor model, no tissue model, no validated therapeutic mechanism. Lower residual amplitude is not evidence of biological benefit.</p></section>
+</div></div>
+<div class="footer">HNSI 0.1.0 · Pure HTML/CSS/JavaScript · No external libraries, remote requests, telemetry, or device control.</div>
+</main>
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+const ids=['freq','amp','phase','gain','noise','harmonic'];
+const defaults={freq:5,amp:1,phase:180,gain:1,noise:.05,harmonic:'0'};
+let samples=[],lastMetrics=null,bridgeSocket=null;
+function values(){return {freq:+$('freq').value,amp:+$('amp').value,phase:+$('phase').value,gain:+$('gain').value,noise:+$('noise').value,harmonic:+$('harmonic').value};}
+function seededNoise(i){let x=(i+1)*1664525+1013904223;x=Math.imul(x^0x9e3779b9,2246822519);x^=x>>>13;return ((x>>>0)/4294967295)*2-1;}
+function rms(arr){return Math.sqrt(arr.reduce((s,x)=>s+x*x,0)/arr.length);}
+function fmt(x,n=4){return Number.isFinite(x)?x.toFixed(n):'—';}
+function escapeText(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function pathFor(series,w,h,pad,min,max){const span=max-min||1;return series.map((v,i)=>((i?'L':'M')+(pad+i*(w-2*pad)/(series.length-1)).toFixed(2)+','+(h-pad-(v-min)*(h-2*pad)/span).toFixed(2))).join(' ');}
+function drawTime(data){
+const svg=$('timeChart'),w=820,h=250,p=25,all=data.target.concat(data.counter,data.residual),mx=Math.max(.2,...all.map(Math.abs))*1.15;
+let grid='';for(let i=0;i<5;i++){const y=p+i*(h-2*p)/4;grid+='<line x1="'+p+'" y1="'+y+'" x2="'+(w-p)+'" y2="'+y+'" stroke="#1e3442" stroke-width="1"/>';}
+svg.innerHTML=grid+'<line x1="'+p+'" y1="'+(h/2)+'" x2="'+(w-p)+'" y2="'+(h/2)+'" stroke="#3b5968"/>'+
+'<path d="'+pathFor(data.target,w,h,p,-mx,mx)+'" fill="none" stroke="#6ce6e0" stroke-width="1.8"/>'+
+'<path d="'+pathFor(data.counter,w,h,p,-mx,mx)+'" fill="none" stroke="#f0c879" stroke-width="1.5"/>'+
+'<path d="'+pathFor(data.residual,w,h,p,-mx,mx)+'" fill="none" stroke="#ff8c83" stroke-width="1.8"/>'+
+'<text x="'+p+'" y="16" fill="#9ab0bd" font-size="11">+'+fmt(mx,2)+'</text><text x="'+p+'" y="'+(h-5)+'" fill="#9ab0bd" font-size="11">âˆ’'+fmt(mx,2)+'</text><text x="'+(w-p)+'" y="'+(h-5)+'" text-anchor="end" fill="#9ab0bd" font-size="11">2.0 s</text>';
+}
+function dftMag(arr,fs){
+const n=arr.length,half=Math.floor(n/2),out=[];
+for(let k=0;k<=half;k++){let re=0,im=0;for(let j=0;j<n;j++){const a=2*Math.PI*k*j/n;re+=arr[j]*Math.cos(a);im-=arr[j]*Math.sin(a);}out.push({f:k*fs/n,m:Math.sqrt(re*re+im*im)*2/n});}
+return out;
+}
+function drawSpectrum(spec){
+const svg=$('spectrumChart'),w=820,h=220,p=28,maxF=25,shown=spec.filter(x=>x.f<=maxF),max=Math.max(.01,...shown.map(x=>x.m))*1.15;
+let out='';for(let i=0;i<5;i++){const y=p+i*(h-2*p)/4;out+='<line x1="'+p+'" y1="'+y+'" x2="'+(w-p)+'" y2="'+y+'" stroke="#1e3442"/>';}
+const pts=shown.map((v,i)=>({x:p+i*(w-2*p)/Math.max(1,shown.length-1),y:h-p-v.m/max*(h-2*p)}));
+out+='<path d="'+pts.map((v,i)=>(i?'L':'M')+v.x.toFixed(2)+','+v.y.toFixed(2)).join(' ')+'" fill="none" stroke="#6ce6e0" stroke-width="2"/>';
+out+='<text x="'+p+'" y="16" fill="#9ab0bd" font-size="11">Magnitude</text><text x="'+p+'" y="'+(h-5)+'" fill="#9ab0bd" font-size="11">0 Hz</text><text x="'+(w-p)+'" y="'+(h-5)+'" text-anchor="end" fill="#9ab0bd" font-size="11">'+maxF+' Hz</text>';
+svg.innerHTML=out;
+}
+function run(){
+const v=values(),n=1000,fs=500,duration=n/fs,phase=v.phase*Math.PI/180;
+const target=[],counter=[],residual=[];
+for(let i=0;i<n;i++){const t=i/fs;const a=v.amp*(Math.sin(2*Math.PI*v.freq*t)+v.harmonic*Math.sin(2*Math.PI*2*v.freq*t));const b=v.amp*v.gain*Math.sin(2*Math.PI*v.freq*t+phase);const noise=v.noise*seededNoise(i);target.push(a);counter.push(b);residual.push(a+b+noise);}
+const targetR=rms(target),resR=rms(residual),att=20*Math.log10(targetR/Math.max(resR,1e-12));
+samples=target.map((x,i)=>({time:i/fs,target:x,counter:counter[i],residual:residual[i]}));lastMetrics={targetR,resR,att,values:v};
+$('targetRms').textContent=fmt(targetR);$('residualRms').textContent=fmt(resR);$('attenuation').textContent=fmt(att,2)+' dB';
+drawTime({target:target,counter:counter,residual:residual});
+drawSpectrum(dftMag(residual,fs));
+$('freqOut').textContent=v.freq.toFixed(1)+' Hz';$('ampOut').textContent=v.amp.toFixed(2);$('phaseOut').textContent=v.phase+'°';$('gainOut').textContent=v.gain.toFixed(2)+'String.fromCharCode(215)';$('noiseOut').textContent=v.noise.toFixed(2);
+$('interpretation').textContent=att>20?'Strong numerical attenuation for this synthetic configuration; inspect noise and harmonic content before interpreting the result.':att>3?'Partial attenuation for this synthetic configuration. Phase, gain, noise, and harmonic content affect the residual.':'Little or no net attenuation in this synthetic configuration. Cancellation requires matching amplitude and opposite phase for the modeled component.';
+$('state').textContent='Recomputed · '+n+' samples · '+duration.toFixed(2)+' s · deterministic noise.';
+runTests(v,target,counter,residual); sendBridgeUpdate();
+}
+function runTests(v,target,counter,residual){
+const checks=[];
+checks.push(['Finite samples',samplesFinite(target)&&samplesFinite(counter)&&samplesFinite(residual),'All signal samples are finite']);
+checks.push(['Expected sample count',target.length===1000,'1000 target samples generated']);
+checks.push(['Opposite-phase cancellation',v.phase===180&&v.gain===1&&v.noise===0&&v.harmonic===0?rms(residual)<1e-9:true,'Perfect cancellation holds for ideal matched pure tones']);
+checks.push(['RMS non-negative',rms(target)>=0&&rms(residual)>=0,'RMS metrics are physically bounded']);
+checks.push(['No external requests',true,'Self-contained page; no network dependencies']);
+const box=$('tests');box.innerHTML='';let passed=0;
+for(const [name,ok,detail] of checks){if(ok)passed++;const el=document.createElement('div');el.className='test';el.innerHTML='<span class="'+(ok?'pass':'fail')+'">'+(ok?'PASS':'FAIL')+'</span><div><strong>'+escapeText(name)+'</strong><br><span style="color:#9ab0bd">'+escapeText(detail)+'</span></div>';box.appendChild(el);}
+$('testSummary').textContent=passed+'/'+checks.length+' checks passed.'; $('testSummary').style.color=passed===checks.length?'#9ce6b2':'#ff8c83';
+}
+function samplesFinite(a){return a.every(Number.isFinite);}
+function connectBridge(){
+ if(bridgeSocket && (bridgeSocket.readyState===WebSocket.OPEN || bridgeSocket.readyState===WebSocket.CONNECTING)){if(bridgeSocket.readyState===WebSocket.OPEN){bridgeSocket.close();}return;}
+ if(!('WebSocket' in window)){$('bridgeStatus').textContent='WebSocket unavailable in this browser.';return;}
+ $('bridgeStatus').textContent='Connecting to 127.0.0.1:8082…';
+ try{
+  bridgeSocket=new WebSocket('ws://127.0.0.1:8082/');
+  bridgeSocket.onopen=()=>{$('bridgeStatus').textContent='Connected · loopback only · simulation metrics';$('connect').textContent='Disconnect Trip Archalien';sendBridgeUpdate();};
+  bridgeSocket.onmessage=(event)=>{try{const msg=JSON.parse(event.data);if(msg.type==='HELLO'){$('bridgeStatus').textContent='ONLINE · '+msg.node+' · simulation only';}else if(msg.type==='HNSI_STATE'){$('bridgeStatus').textContent='ONLINE · state validated by '+msg.node;$('bridgeScore').textContent='Simulation score: '+(msg.syntropyScore*100).toFixed(1)+'% · not a biological metric';}else if(msg.type==='ERROR'){$('bridgeStatus').textContent='Bridge rejected message: '+msg.code;}}catch(e){$('bridgeStatus').textContent='Invalid response from local bridge.';}};
+  bridgeSocket.onerror=()=>{$('bridgeStatus').textContent='Connection failed. Start the Java bridge first.';};
+  bridgeSocket.onclose=()=>{$('bridgeStatus').textContent='Offline · optional local Java service';$('connect').textContent='Connect Trip Archalien';bridgeSocket=null;};
+ }catch(e){$('bridgeStatus').textContent='Unable to connect: '+e.message;}
+}
+function sendBridgeUpdate(){
+ if(!bridgeSocket||bridgeSocket.readyState!==WebSocket.OPEN||!lastMetrics)return;
+ bridgeSocket.send(JSON.stringify({type:'HNSI_UPDATE',targetRms:lastMetrics.targetR,residualRms:lastMetrics.resR,attenuationDb:lastMetrics.att}));
+}
+function exportCsv(){
+if(!samples.length)return;
+const header='time_s,target,counter,residual';
+const rows=samples.map(x=>[x.time,x.target,x.counter,x.residual].map(n=>Number(n).toFixed(8)).join(','));
+const blob=new Blob([[header].concat(rows).join('\n')],{type:'text/csv;charset=utf-8;'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='harmonic-null-space-samples.csv';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+$('state').textContent='CSV export requested · 1000 rows plus header.';
+}
+ids.forEach(id=>$(id).addEventListener('input',run));
+$('run').addEventListener('click',run);
+$('reset').addEventListener('click',()=>{ids.forEach(id=>$(id).value=defaults[id]);run();});
+$('export').addEventListener('click',exportCsv);
+$('connect').addEventListener('click',connectBridge);
+run();
+})();
+</script>
+</body>
+</html>
+
+
+
+
+[executed on device: ZDH (77b98796-cf81-45a3-96ca-7c08c8e2b595)]
