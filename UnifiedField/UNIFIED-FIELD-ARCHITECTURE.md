@@ -30,6 +30,12 @@ The Unified Field is the coordinated system formed by HeavenzFire's repositories
 
 The inventory snapshot at `UnifiedField/unified-field-repository-inventory.snapshot.json` now records 276 unique repositories returned by the paginated GitHub search query `user:HeavenzFire` (100, 100, 76, then 0 results; no duplicates), including `HeavenzFire/OpenSourceAIHub`. A separate listing endpoint returned only 100 names and omitted that known repository, so its pagination behavior was unreliable. The 276-result snapshot is complete for that search query, not proof that every account repository is indexed or accessible. All 276 entries remain discovered/unreviewed until source, licensing, provenance, and interfaces are inspected.
 
+## Security and provenance review
+
+The initial code-level review is recorded in [`UnifiedField/SECURITY-AND-PROVENANCE-REVIEW.md`](./SECURITY-AND-PROVENANCE-REVIEW.md). It flags two high-priority hardening items before network-facing integration: Elysium-Gateway injects Gemini key variables into frontend code and binds its Vite dev server to `0.0.0.0`; Sovereign-Node- binds Express/WebSocket to `0.0.0.0:3000` with mutation/control routes and no visible authentication in the inspected server code. These are code-level risks, not evidence that a key was abused or a live system compromised.
+
+The same review identifies Spirit_Engine as a promising plan-only recovery capability, but its README says real cloud upload and complete end-to-end restore remain unverified. The review covers selected repositories only; the 276-result inventory is not yet fully code-audited.
+
 ## Shared task contract
 
 The `heavenzfire.shared-task.v1` record is the initial cross-component handshake. It provides a stable task ID, source, goal, status, approval state, timestamps, metadata, and evidence collection. The current module is a contract prototype. OpenSourceAIHub's R&D proposal boundary attaches and validates task IDs, matching cycle metadata, and pending approval. Its draft adapter optionally POSTs only proposed/pending records to the core's loopback-only `task-inbox-server.cjs`; the inbox validates records, persists JSONL, and handles duplicate delivery idempotently without executing proposals. The draft also adds a shared task lifecycle to the loopback API-run boundary, with explicit request approval evidence, prompt-hash-only task metadata, and completed/review-required/failed outcomes. BrowserBridge and other component adapters remain pending.
