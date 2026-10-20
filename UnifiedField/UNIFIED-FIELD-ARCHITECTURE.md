@@ -32,7 +32,7 @@ This list records only repositories surfaced during initial discovery. An invent
 
 ## Shared task contract
 
-The `heavenzfire.shared-task.v1` record is the initial cross-component handshake. It provides a stable task ID, source, goal, status, approval state, timestamps, metadata, and evidence collection. The current module is a contract prototype. OpenSourceAIHub's R&D proposal boundary now attaches and validates task IDs, matching cycle metadata, and pending approval. The draft adapter also adds a shared task lifecycle to the loopback API-run boundary, with explicit request approval evidence, prompt-hash-only task metadata, and completed/review-required/failed outcomes. Adapter transport between independently running services and broader propagation to BrowserBridge and other components remain unimplemented.
+The `heavenzfire.shared-task.v1` record is the initial cross-component handshake. It provides a stable task ID, source, goal, status, approval state, timestamps, metadata, and evidence collection. The current module is a contract prototype. OpenSourceAIHub's R&D proposal boundary attaches and validates task IDs, matching cycle metadata, and pending approval. Its draft adapter optionally POSTs only proposed/pending records to the core's loopback-only `task-inbox-server.cjs`; the inbox validates records, persists JSONL, and handles duplicate delivery idempotently without executing proposals. The draft also adds a shared task lifecycle to the loopback API-run boundary, with explicit request approval evidence, prompt-hash-only task metadata, and completed/review-required/failed outcomes. BrowserBridge and other component adapters remain pending.
 
 ### Required adapter interface
 
