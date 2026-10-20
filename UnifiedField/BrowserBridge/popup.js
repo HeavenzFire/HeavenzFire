@@ -19,7 +19,7 @@ captureButton.addEventListener('click', async () => {
     if (!tab || typeof tab.id !== 'number') throw new Error('No active tab is available.');
     const results = await chrome.scripting.executeScript({
       target: { tabId: tab.id },
-      func: () => String(window.getSelection ? window.getSelection() : '').slice(0, 12000)
+      func: () => { const selection = window.getSelection ? window.getSelection() : null; return selection ? selection.toString().slice(0, 12000) : ''; }
     });
     const selection = String(results && results[0] && results[0].result || '').trim();
     if (!selection) {
