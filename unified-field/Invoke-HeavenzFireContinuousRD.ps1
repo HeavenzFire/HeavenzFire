@@ -81,9 +81,74 @@ function Get-ServiceSnapshot {
 }
 
 $completed = 0
-$limit = if ($Continuous) { [int]::MaxValue } else { $Cycles }
-while ($completed -lt $limit) {
-    $cycle = $completed + 1
+$existingCycles = @(Get-ChildItem -LiteralPath $ReportRoot -Filter 'cycle-*.json' -File -ErrorAction SilentlyContinue | ForEach-Object { if ($_.BaseName -match '^cycle-(\d+)
+    $started = (Get-Date).ToUniversalTime().ToString('o')
+    Write-Host "=== HeavenzFire UnifiedField R&D cycle $cycle ===" -ForegroundColor Cyan
+    $testOk = $null
+    $testSummary = 'SKIPPED_BY_OPERATOR'
+    $testLog = $null
+    if (-not $SkipTests) {
+        $testLog = Join-Path $ReportRoot ("cycle-{0:D5}-tests.txt" -f $cycle)
+        $testOutput = @(& $Node '--test' $Tests 2>&1)
+        $testExit = $LASTEXITCODE
+        $testOutput | Set-Content -LiteralPath $testLog -Encoding UTF8
+        $testOk = ($testExit -eq 0)
+        $testSummary = if ($testOk) { 'PASS' } else { "FAIL_EXIT_$testExit" }
+        Write-Host "Acceptance tests: $testSummary (log: $testLog)"
+    }
+    $runtime = Get-LocalRuntime
+    $research = $null
+    $researchStatus = 'NOT_REQUESTED'
+    if (-not [string]::IsNullOrWhiteSpace($ResearchGoal)) {
+        if (-not $runtime.reachable) {
+            $researchStatus = 'BLOCKED_LOCAL_OLLAMA_UNAVAILABLE'
+        } elseif ($testOk -eq $false) {
+            $researchStatus = 'BLOCKED_ACCEPTANCE_TEST_FAILURE'
+        } else {
+            $researchLog = Join-Path $ReportRoot ("cycle-{0:D5}-research.txt" -f $cycle)
+            $researchOutput = @(& $FieldRunner -Goal $ResearchGoal 2>&1)
+            $researchExit = $LASTEXITCODE
+            $researchOutput | Set-Content -LiteralPath $researchLog -Encoding UTF8
+            $research = [ordered]@{ goal = $ResearchGoal; exit_code = $researchExit; log = $researchLog }
+            $researchStatus = if ($researchExit -eq 0) { 'FIELD_RUN_COMPLETED_REVIEW_REPORT_REQUIRED' } else { "FIELD_RUN_FAILED_EXIT_$researchExit" }
+        }
+    }
+    $disk = Get-CimInstance Win32_LogicalDisk -Filter "DeviceID='C:'"
+    $os = Get-CimInstance Win32_OperatingSystem
+    $report = [ordered]@{
+        schema = 'heavenzfire.continuous-rd-cycle.v1'
+        cycle = $cycle
+        started_utc = $started
+        completed_utc = (Get-Date).ToUniversalTime().ToString('o')
+        machine = $env:COMPUTERNAME
+        root = $Root
+        source_repository = 'https://github.com/HeavenzFire/HeavenzFire'
+        acceptance_tests = [ordered]@{ status = $testSummary; ok = $testOk; log = $testLog }
+        local_ollama = $runtime
+        service_health = Get-ServiceSnapshot
+        research = [ordered]@{ status = $researchStatus; details = $research }
+        queue = Get-QueueSnapshot
+        resources = [ordered]@{
+            free_disk_gb = if ($disk) { [math]::Round($disk.FreeSpace / 1GB, 2) } else { $null }
+            free_memory_mb = if ($os) { [math]::Round($os.FreePhysicalMemory / 1024, 0) } else { $null }
+        }
+        automation = [ordered]@{ continuous = [bool]$Continuous; interval_seconds = $IntervalSeconds; mutations_auto_adopted = $false; files_auto_deleted = $false }
+    }
+    $reportPath = Join-Path $ReportRoot ("cycle-{0:D5}.json" -f $cycle)
+    $tempPath = "$reportPath.tmp"
+    $report | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $tempPath -Encoding UTF8
+    Move-Item -LiteralPath $tempPath -Destination $reportPath -Force
+    Write-Host "Report: $reportPath"
+    Write-Host ("Local Ollama: " + $(if ($runtime.reachable) { 'REACHABLE' } else { 'UNAVAILABLE' }))
+    $completed++
+    if (-not $Continuous -and $completed -ge $Cycles) { break }
+    Start-Sleep -Seconds $IntervalSeconds
+}
+Write-Host "Continuous R&D cycle runner finished. No code was automatically adopted or deleted." -ForegroundColor Green
+) { [int]$Matches[1] } })
+$nextCycle = if ($existingCycles.Count -gt 0) { (($existingCycles | Measure-Object -Maximum).Maximum + 1) } else { 1 }
+while ($Continuous -or $completed -lt $Cycles) {
+    $cycle = $nextCycle + $completed
     $started = (Get-Date).ToUniversalTime().ToString('o')
     Write-Host "=== HeavenzFire UnifiedField R&D cycle $cycle ===" -ForegroundColor Cyan
     $testOk = $null
