@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="HeavenzFire Regenerative Syntropic Fabric v3.0 — reconstructed roadmap graph component.">
+<title>Regenerative Syntropic Fabric v3.0 · HeavenzFire</title>
+<style>
+:root{color-scheme:dark;--bg:#080d16;--panel:#101a29;--line:#26364a;--ink:#e7f0ff;--muted:#8da2bc;--accent:#70e1c1;--warn:#ffcc80}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -20%,#1b3450 0,transparent 55%),var(--bg);color:var(--ink);font:14px/1.45 system-ui,Segoe UI,sans-serif}
+header{padding:22px clamp(16px,3vw,36px) 14px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap}
+.kicker{font-size:11px;letter-spacing:.19em;color:var(--accent);font-weight:800}h1{font-size:clamp(21px,3vw,32px);line-height:1.1;margin:6px 0}header p{margin:5px 0;color:var(--muted);max-width:760px}
+.pill{border:1px solid #36536b;color:#b9d8f0;border-radius:99px;padding:6px 10px;font-size:11px;white-space:nowrap}
+main{padding:16px clamp(12px,2vw,26px) 26px;display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:14px}.panel{background:linear-gradient(145deg,#101a29f2,#0c1421f2);border:1px solid var(--line);border-radius:14px;overflow:hidden;min-width:0}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;padding:12px;border-bottom:1px solid var(--line);align-items:center}
+button,input,select{font:inherit;color:var(--ink);background:#142236;border:1px solid #30445d;border-radius:8px;padding:8px 10px}button{cursor:pointer}button:hover{border-color:var(--accent)}button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input{min-width:150px;flex:1}button[aria-pressed=true]{background:#1c4c49;border-color:var(--accent)}.canvasWrap{height:min(70vh,760px);min-height:460px;position:relative;background-image:radial-gradient(#31445b 0.7px,transparent .7px);background-size:22px 22px}
+svg{width:100%;height:100%;display:block;touch-action:pan-y;user-select:none}.layerBand{fill:#ffffff04;stroke:#ffffff0c;stroke-dasharray:4 7}.edge{stroke:#57718c;stroke-opacity:.35;stroke-width:1.1;fill:none}.critical{stroke:#f3c77b;stroke-opacity:.8;stroke-width:2;fill:none}.node{cursor:pointer;outline:none}.node circle{stroke:#09111b;stroke-width:2}.node text{font-size:10px;fill:#d9e7f6;paint-order:stroke;stroke:#0a111c;stroke-width:3px;stroke-linejoin:round;pointer-events:none}.node.selected circle{stroke:#fff;stroke-width:3}.node.dim{opacity:.12}.node:focus circle{stroke:#fff;stroke-width:3}
+.legend{display:flex;gap:12px;flex-wrap:wrap;padding:10px 14px;color:var(--muted);font-size:11px;border-top:1px solid var(--line)}.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}
+aside{display:flex;flex-direction:column;gap:14px}.sidebody{padding:15px}.sidebody h2{font-size:14px;margin:0 0 10px}.muted{color:var(--muted)}.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}.stat{background:#0b1421;border:1px solid var(--line);border-radius:9px;padding:10px}.stat strong{font-size:23px;display:block}.stat span{font-size:11px;color:var(--muted)}.layerList{display:grid;gap:7px}.layerButton{display:flex;justify-content:space-between;align-items:center;text-align:left;width:100%}.layerButton small{color:var(--muted)}.detailTitle{font-weight:700;font-size:17px;margin:0 0 4px}.tag{display:inline-block;border:1px solid #31445d;border-radius:99px;padding:3px 8px;font-size:10px;color:var(--accent);margin:3px 0 8px}.detail{min-height:115px}.status{font-size:12px;padding:10px 12px;border-top:1px solid var(--line);color:var(--muted)}.status b{color:var(--accent)}.warn{color:var(--warn)}footer{padding:0 18px 20px;color:var(--muted);font-size:11px}
+@media(max-width:900px){main{grid-template-columns:1fr}.canvasWrap{height:58vh;min-height:400px}aside{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header><div><div class="kicker">HEAVENZFIRE · UNIFIED SYSTEM COMPONENT</div><h1>Regenerative Syntropic Fabric <span style="color:var(--accent)">v3.0</span></h1><p>Hybrid roadmap topology · deterministic layers with optional local force refinement · transparent diagnostics</p></div><div class="pill">RECONSTRUCTED DATA · NOT ORIGINAL SOURCE</div></header>
+<main>
+<section class="panel" aria-label="Interactive initiative graph">
+<div class="toolbar">
+<input id="search" type="search" placeholder="Search initiatives…" aria-label="Search initiatives">
+<button id="layoutBtn" aria-pressed="false" title="Toggle local force refinement">Force refine: off</button>
+<button id="resetBtn">Reset view</button><button id="exportBtn">Export SVG</button><button id="snapshotBtn">Export diagnostics</button>
+</div>
+<div class="canvasWrap" id="canvasWrap"><svg id="graph" viewBox="0 0 1100 760" role="img" aria-label="Interactive graph of reconstructed roadmap initiatives"><g id="viewport"></g></svg></div>
+<div class="legend" id="legend"></div><div class="status" id="status" role="status" aria-live="polite">Initializing graph…</div>
+</section>
+<aside>
+<section class="panel"><div class="sidebody"><h2>Fabric telemetry</h2><div class="stats"><div class="stat"><strong id="nodeCount">—</strong><span>Initiative nodes</span></div><div class="stat"><strong id="edgeCount">—</strong><span>Edges</span></div><div class="stat"><strong id="layerCount">5</strong><span>Architectural layers</span></div><div class="stat"><strong id="criticalCount">12</strong><span>Critical-path candidates</span></div></div></div></section>
+<section class="panel"><div class="sidebody"><h2>Layer filters</h2><div class="layerList" id="layerList"></div></div></section>
+<section class="panel"><div class="sidebody detail"><h2>Initiative inspector</h2><div id="detail"><p class="muted">Select a node to inspect its reconstructed metadata.</p></div></div></section>
+<section class="panel"><div class="sidebody"><h2>Verification</h2><div id="checks" class="muted">Running integrity checks…</div></div></section>
+</aside>
+</main>
+<footer>Offline-capable rendering; no external scripts, telemetry upload, service-worker changes, or global event patches. Force refinement is a bounded local layout operation.</footer>
+<script>
+"use strict";
+(() => {
+const LAYERS = [
+ {id:"foundation",name:"Foundation",color:"#63b3ed",items:["Security baseline","Continuous integration","Disaster recovery","Privacy controls","Identity and access","Secrets management","Supply-chain integrity","Threat modeling","Backup verification","Policy enforcement"]},
+ {id:"telemetry",name:"Telemetry",color:"#7ee0b5",items:["Observability","Metrics and dashboards","Structured logging","Tracing pipeline","Analytics events","Content catalog","Education resources","Incident reporting","Health checks","Audit trail"]},
+ {id:"interoperation",name:"Interoperation",color:"#c4a7ff",items:["Artifact pipeline","Client tool adapters","Distribution packaging","Developer experience","API contracts","Plugin integration","Repository indexing","Import and export","Version compatibility","Event bus"]},
+ {id:"cognition",name:"Cognition",color:"#ffca80",items:["Engine performance","Deterministic execution","User experience","Accessibility","Quality assurance","Task planning","Agent coordination","Knowledge retrieval","Evaluation harness","Recovery strategies"]},
+ {id:"sovereignty",name:"Sovereignty",color:"#ff91a4",items:["Monetization model","Licensing and legal","Community governance","Contribution workflow","Documentation ownership","Release stewardship","Sustainability metrics","Brand and merch","Long-term portability"]}
+];
+// Reconstructed placeholders derived from the supplied summary. These are not recovered original roadmap records.
+const initiatives = LAYERS.flatMap((layer,li)=>layer.items.map((name,j)=>({id:layer.id+"-"+String(j+1).padStart(2,"0"),name,layer:layer.id,layerName:layer.name,layerIndex:li,localIndex:j,source:"reconstructed-placeholder"})));
+const EXPECTED_RECONSTRUCTED = 49, CRITICAL_CANDIDATES = 12;
+const svgNS="http://www.w3.org/2000/svg", svg=document.querySelector("#graph"), viewport=document.querySelector("#viewport");
+const byId=new Map(initiatives.map(n=>[n.id,n])), activeLayers=new Set(LAYERS.map(l=>l.id));
+const state={selected:null,query:"",force:false,scale:1,tx:0,ty:0,drag:null,positions:new Map(),frame:null};
+const edges=[];
+for(const n of initiatives) edges.push({source:"layer-"+n.layer,target:n.id,kind:"membership"});
+for(let i=0;i<Math.min(CRITICAL_CANDIDATES,initiatives.length)-1;i++) edges.push({source:initiatives[i].id,target:initiatives[i+1].id,kind:"critical"});
+const layerNodes=LAYERS.map((l,i)=>({id:"layer-"+l.id,name:l.name,layer:l.id,layerIndex:i,isLayer:true}));
+const allNodes=[...layerNodes,...initiatives];
+const pos=new Map();
+function seedPositions(){
+ const width=1100,height=760,left=170,bandW=180;
+ LAYERS.forEach((l,li)=>{
+   const members=initiatives.filter(n=>n.layer===l.id);
+   pos.set("layer-"+l.id,{x:left+li*bandW+72,y:60});
+   members.forEach((n,j)=>pos.set(n.id,{x:left+li*bandW+72+(j%2?31:-31),y:145+Math.floor(j/2)*112+(j%2)*13}));
+ });
+ state.positions=pos;
+}
+function el(tag,attrs={},parent=viewport){const e=document.createElementNS(svgNS,tag);Object.entries(attrs).forEach(([k,v])=>e.setAttribute(k,String(v)));parent.appendChild(e);return e;}
+function textEl(tag,attrs,text,parent=viewport){const e=el(tag,attrs,parent);e.textContent=text;return e;}
+function visible(n){return n.isLayer||activeLayers.has(n.layer);}
+function matches(n){return !state.query||(n.name+" "+n.layerName+" "+n.id).toLowerCase().includes(state.query);}
+function render(){
+ viewport.replaceChildren();
+ const world=el("g",{transform:"translate("+state.tx+" "+state.ty+") scale("+state.scale+")"});
+ const priorParent=viewport; // render into transformed world group
+ const positions=state.positions;
+ LAYERS.forEach((l,li)=>{const x=130+li*190;el("rect",{x,y:22,width:178,height:710,rx:12,class:"layerBand",stroke:l.color});textEl("text",{x:x+12,y:45,fill:l.color,"font-size":12,"font-weight":700},l.name);},world);
+ edges.forEach(e=>{
+  const a=positions.get(e.source),b=positions.get(e.target);if(!a||!b)return;
+  const source=byId.get(e.source),target=byId.get(e.target);
+  if((source&&!visible(source))||(target&&!visible(target)))return;
+  el("path",{d:"M "+a.x+" "+a.y+" L "+b.x+" "+b.y,class:e.kind==="critical"?"critical":"edge"},world);
+ });
+ allNodes.forEach(n=>{
+  const p=positions.get(n.id);if(!p)return;
+  const active=visible(n),match=matches(n),g=el("g",{class:"node"+(state.selected===n.id?" selected":"")+(active&&match?"":" dim"),tabindex:0,role:"button","aria-label":n.name+"; "+(n.layerName||"layer heading"),"data-id":n.id},world);
+  g.appendChild(document.createElementNS(svgNS,"title")).textContent=n.name+" · "+(n.layerName||"Layer heading");
+  const c=el("circle",{cx:p.x,cy:p.y,r:n.isLayer?13:7,fill:(LAYERS.find(l=>l.id===n.layer)||{}).color||"#d5e5f5"},g);
+  if(n.isLayer)textEl("text",{x:p.x+17,y:p.y+4,"font-size":12,"font-weight":700},n.name,g);
+  else textEl("text",{x:p.x+10,y:p.y+3},n.name,g);
+  g.addEventListener("click",()=>select(n.id));
+  g.addEventListener("keydown",ev=>{if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();select(n.id);}});
+ });
+}
+function select(id){state.selected=id;const n=allNodes.find(x=>x.id===id);const d=document.querySelector("#detail");
+ if(!n){d.innerHTML='<p class="muted">Select a node to inspect its reconstructed metadata.</p>';render();return;}
+ d.replaceChildren();const h=document.createElement("p");h.className="detailTitle";h.textContent=n.name;d.appendChild(h);
+ const tag=document.createElement("span");tag.className="tag";tag.textContent=n.isLayer?"ARCHITECTURAL LAYER":n.layerName.toUpperCase();d.appendChild(tag);
+ const p=document.createElement("p");p.className="muted";p.textContent=n.isLayer?"Layer grouping node.": "ID: "+n.id+" · Provenance: reconstructed placeholder. This name is inferred from the provided overview and is not claimed to be original source data.";d.appendChild(p);
+ render();
+}
+function setupLayers(){
+ const list=document.querySelector("#layerList"),legend=document.querySelector("#legend");
+ LAYERS.forEach(l=>{
+  const b=document.createElement("button");b.className="layerButton";b.setAttribute("aria-pressed","true");
+  const left=document.createElement("span");left.innerHTML='<span class="dot" style="background:'+l.color+'"></span>';left.append(document.createTextNode(l.name));
+  const right=document.createElement("small");right.textContent=l.items.length+" nodes";b.append(left,right);
+  b.addEventListener("click",()=>{if(activeLayers.has(l.id))activeLayers.delete(l.id);else activeLayers.add(l.id);b.setAttribute("aria-pressed",String(activeLayers.has(l.id)));render();});
+  list.appendChild(b);
+  const item=document.createElement("span");item.innerHTML='<span class="dot" style="background:'+l.color+'"></span>'+l.name;legend.appendChild(item);
+ });
+}
+function checkIntegrity(){
+ const ids=initiatives.map(n=>n.id),unique=new Set(ids),layerCounts=LAYERS.map(l=>initiatives.filter(n=>n.layer===l.id).length);
+ const tests=[
+  ["Initiative count",initiatives.length===EXPECTED_RECONSTRUCTED,initiatives.length+" / "+EXPECTED_RECONSTRUCTED+" reconstructed"],
+  ["Unique identifiers",unique.size===ids.length,unique.size+" unique IDs"],
+  ["Five layer coverage",LAYERS.length===5&&layerCounts.every(n=>n>0),layerCounts.join(" / ")+" nodes per layer"],
+  ["Edge endpoints",edges.every(e=>positionsHas(e.source)&&positionsHas(e.target)),"All edge endpoints resolve"],
+  ["Critical path",edges.filter(e=>e.kind==="critical").length===Math.min(CRITICAL_CANDIDATES,initiatives.length)-1,"11 links between first 12 candidates"]
+ ];
+ const checks=document.querySelector("#checks");checks.replaceChildren();
+ tests.forEach(([label,ok,detail])=>{const p=document.createElement("p");p.style.margin="8px 0";p.innerHTML='<b style="color:'+(ok?'var(--accent)':'var(--warn)')+'">'+(ok?'PASS':'FAIL')+'</b> · '+label+'<br><span class="muted"></span>';p.lastChild.textContent=detail;checks.appendChild(p);});
+ return tests;
+}
+function positionsHas(id){return state.positions.has(id);}
+function telemetry(){document.querySelector("#nodeCount").textContent=initiatives.length;document.querySelector("#edgeCount").textContent=edges.length;document.querySelector("#layerCount").textContent=LAYERS.length;document.querySelector("#criticalCount").textContent=CRITICAL_CANDIDATES;const tests=checkIntegrity();const failed=tests.filter(t=>!t[1]);document.querySelector("#status").innerHTML=failed.length?'<span class="warn">Integrity checks failed: '+failed.length+'</span>':'<b>Operational</b> · '+initiatives.length+' reconstructed initiatives · '+edges.length+' edges · '+LAYERS.length+' layers · no external dependencies';}
+function relax(iterations=35){
+ // Bounded deterministic spring refinement: layer anchors remain stable; initiative nodes repel and remain near their own layer.
+ for(let k=0;k<iterations;k++){
+  const forces=new Map();
+  initiatives.forEach(n=>forces.set(n.id,{x:0,y:0}));
+  for(let i=0;i<initiatives.length;i++)for(let j=i+1;j<initiatives.length;j++){
+   const a=initiatives[i],b=initiatives[j];if(a.layer!==b.layer)continue;
+   const pa=pos.get(a.id),pb=pos.get(b.id),dx=pa.x-pb.x,dy=pa.y-pb.y,d2=dx*dx+dy*dy+1,dist=Math.sqrt(d2),push=Math.max(0,58-dist)*.035;
+   forces.get(a.id).x+=dx/dist*push;forces.get(a.id).y+=dy/dist*push;forces.get(b.id).x-=dx/dist*push;forces.get(b.id).y-=dy/dist*push;
+  }
+  initiatives.forEach(n=>{const p=pos.get(n.id),f=forces.get(n.id),anchorX=130+n.layerIndex*190+72+(n.localIndex%2?31:-31),anchorY=145+Math.floor(n.localIndex/2)*112+(n.localIndex%2)*13;p.x+=f.x+(anchorX-p.x)*.035;p.y+=f.y+(anchorY-p.y)*.035;});
+ }
+ render();
+}
+document.querySelector("#search").addEventListener("input",e=>{state.query=e.target.value.toLowerCase().trim();render();});
+document.querySelector("#layoutBtn").addEventListener("click",e=>{state.force=!state.force;e.currentTarget.setAttribute("aria-pressed",String(state.force));e.currentTarget.textContent="Force refine: "+(state.force?"on":"off");if(state.force)relax();else{seedPositions();render();}});
+document.querySelector("#resetBtn").addEventListener("click",()=>{state.scale=1;state.tx=0;state.ty=0;seedPositions();render();});
+document.querySelector("#exportBtn").addEventListener("click",()=>{const clone=svg.cloneNode(true);clone.setAttribute("xmlns",svgNS);const blob=new Blob([new XMLSerializer().serializeToString(clone)],{type:"image/svg+xml;charset=utf-8"});download(blob,"regenerative-syntropic-fabric.svg");});
+document.querySelector("#snapshotBtn").addEventListener("click",()=>{const payload={component:"Regenerative Syntropic Fabric",version:"3.0",dataStatus:"reconstructed placeholders; not original roadmap data",generatedAt:new Date().toISOString(),counts:{initiatives:initiatives.length,layers:LAYERS.length,edges:edges.length,criticalPathCandidates:CRITICAL_CANDIDATES},layerCounts:Object.fromEntries(LAYERS.map(l=>[l.name,l.items.length])),integrityChecks:checkIntegrity().map(([name,passed,detail])=>({name,passed,detail})),notes:["No network requests are made by this component.","Force refinement is bounded and synchronous.","No global event prototypes are patched."]};download(new Blob([JSON.stringify(payload,null,2)],{type:"application/json"}),"syntropic-fabric-diagnostics.json");});
+function download(blob,name){const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+const wrap=document.querySelector("#canvasWrap");
+wrap.addEventListener("wheel",e=>{if(!e.ctrlKey&&!e.metaKey)return;e.preventDefault();const delta=e.deltaY<0?1.08:.92;state.scale=Math.max(.55,Math.min(2.5,state.scale*delta));render();},{passive:false});
+svg.addEventListener("pointerdown",e=>{if(e.target.closest(".node"))return;state.drag={x:e.clientX,y:e.clientY,tx:state.tx,ty:state.ty};svg.setPointerCapture(e.pointerId);});
+svg.addEventListener("pointermove",e=>{if(!state.drag)return;const r=svg.getBoundingClientRect();state.tx=state.drag.tx+(e.clientX-state.drag.x)*1100/r.width;state.ty=state.drag.ty+(e.clientY-state.drag.y)*760/r.height;render();});
+svg.addEventListener("pointerup",()=>state.drag=null);svg.addEventListener("pointercancel",()=>state.drag=null);
+seedPositions();setupLayers();render();telemetry();
+})();
+</script>
+</body></html>
