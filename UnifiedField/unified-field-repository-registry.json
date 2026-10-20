@@ -2,9 +2,9 @@
   "schema": "heavenzfire.unified-field.repository-registry.v1",
   "purpose": "Federated registry for the combined HeavenzFire repository ecosystem",
   "model": "A repository is a component node; integration occurs through versioned adapters and shared task/evidence contracts, not by blindly copying all source into one repository.",
-  "completeness": "initial-partial",
+  "completeness": "inventory-paginated-but-code-review-partial",
   "inventorySnapshot": "UnifiedField/unified-field-repository-inventory.snapshot.json",
-  "inventoryLimitations": "The repository listing returned 100 names at offset 0 and zero at offset 100, while a known direct repository lookup for HeavenzFire/OpenSourceAIHub was absent from that listing. Do not treat this as a complete account inventory.",
+  "inventoryLimitations": "The separate list_repositories endpoint returned 100 names at offset 0 and zero at offset 100, omitting the known OpenSourceAIHub repository. The paginated installed-repository search for user:HeavenzFire returned 276 unique repositories (pages 100, 100, 76, then 0), including OpenSourceAIHub. This is complete for that query result set, not proof that every account repository is indexed or accessible; all entries still need code-level review.",
   "lastReviewed": "2026-10-20",
   "taskContract": "heavenzfire.shared-task.v1",
   "invariants": [
