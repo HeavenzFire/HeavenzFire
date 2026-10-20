@@ -1,0 +1,34 @@
+name: Unified Field Cloud Core
+
+on:
+  push:
+    paths:
+      - "unified-field/**"
+      - ".github/workflows/unified-field-cloud-core.yml"
+  pull_request:
+    paths:
+      - "unified-field/**"
+      - ".github/workflows/unified-field-cloud-core.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate registry and integration contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Validate registry
+        run: node unified-field/uf.mjs validate
+      - name: List registered modules
+        run: node unified-field/uf.mjs list
+      - name: Run registry contract tests
+        run: node --test unified-field/core/registry.test.mjs
