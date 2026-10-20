@@ -19,7 +19,7 @@ The Unified Field is the coordinated system formed by HeavenzFire's repositories
 | Component | Known role / evidence | Current integration status |
 |---|---|---|
 | `HeavenzFire/HeavenzFire` | Public project hub and this shared contract PR | Registry/contract home; cross-repository end-to-end verification pending |
-| `HeavenzFire/OpenSourceAIHub` | README describes local Ollama inventory, health checks, and Solver → Orchestrator → Reviewer → Synthesizer handoff | Adapter proposed in [draft PR #1](https://github.com/HeavenzFire/OpenSourceAIHub/pull/1); syntax and contract tests passed, live end-to-end cycle remains unverified |
+| `HeavenzFire/OpenSourceAIHub` | README describes local Ollama inventory, health checks, and Solver → Orchestrator → Reviewer → Synthesizer handoff | Adapter proposed in [draft PR #1](https://github.com/HeavenzFire/OpenSourceAIHub/pull/1); pipeline syntax check and 7 contract/boundary tests passed on the connected Windows PC; live end-to-end cycle remains unverified |
 | `HeavenzFire/UnifiedCodebase` | Repository exists; README was not found on default branch during this pass | Discovery only; role and contents require inspection |
 | `HeavenzFire/ollama` | Ollama source fork/repository | Upstream/runtime dependency; do not treat as HeavenzFire-authored runtime without file-level provenance |
 | `HeavenzFire/llama.cpp` | llama.cpp source fork/repository | Inference backend dependency; integrate through documented interfaces |
@@ -28,11 +28,11 @@ The Unified Field is the coordinated system formed by HeavenzFire's repositories
 | `HeavenzFire/EntangledMultimodalSystem` and numbered variants | Multiple multimodal-system repositories exist | Separate components until deduplication and interface review establishes their relationship |
 | `HeavenzFire/Spirit_Engine`, `HeavenzFire/spirit-angelus`, `HeavenzFire/SpiritAngelusFramework`, `HeavenzFire/5D-FRAMEWORK` | Related named framework repositories exist | Candidate research/framework components; no compatibility claim yet |
 
-This list records only repositories surfaced during initial discovery. It is not the complete GitHub inventory. The registry must be expanded through paginated repository discovery and code-level inspection before the ecosystem can be called fully mapped.
+This list records only repositories surfaced during initial discovery. An inventory snapshot was added at `UnifiedField/unified-field-repository-inventory.snapshot.json`: the connector returned 100 repository names at offset 0 and zero at offset 100, but the known `HeavenzFire/OpenSourceAIHub` repository was missing from that response. The listing is therefore demonstrably incomplete; do not infer that the ecosystem contains only 100 repositories. A reliable full inventory still requires another discovery route and code-level inspection.
 
 ## Shared task contract
 
-The `heavenzfire.shared-task.v1` record is the initial cross-component handshake. It provides a stable task ID, source, goal, status, approval state, timestamps, metadata, and evidence collection. The current module is a contract prototype; adapters still need to propagate it across the R&D pipeline, OpenSourceAIHub, BrowserBridge, and other selected components.
+The `heavenzfire.shared-task.v1` record is the initial cross-component handshake. It provides a stable task ID, source, goal, status, approval state, timestamps, metadata, and evidence collection. The current module is a contract prototype. OpenSourceAIHub's R&D proposal boundary now attaches and validates the task ID, task record, matching cycle metadata, and pending approval; adapter transport between independently running services and broader propagation to BrowserBridge and other components remain unimplemented.
 
 ### Required adapter interface
 
