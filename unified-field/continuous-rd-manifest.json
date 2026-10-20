@@ -1,0 +1,57 @@
+{
+  "schema": "heavenzfire.unified-field.integration.v1",
+  "name": "HeavenzFire UnifiedField Continuous R&D",
+  "status": "integration-bootstrap",
+  "canonicalRepository": "https://github.com/HeavenzFire/HeavenzFire",
+  "localPaths": {
+    "unifiedField": "%USERPROFILE%\\HeavenzFire\\UnifiedField",
+    "rdPipeline": "%USERPROFILE%\\heavenzfire-capsule-v02\\rd-pipeline"
+  },
+  "components": [
+    {
+      "id": "fieldcore",
+      "path": "FieldCore",
+      "role": "four-lane engineering workflow and synthesis",
+      "verification": "node --test FieldCore/unified-field.test.cjs FieldCore/verify-report.test.cjs"
+    },
+    {
+      "id": "browser-bridge",
+      "path": "BrowserBridge",
+      "role": "user-confirmed local task ingress",
+      "verification": "node --test BrowserBridge/bridge-server.test.cjs"
+    },
+    {
+      "id": "propagation-fabric",
+      "path": "PropagationFabric",
+      "role": "versioned envelopes and modality registry",
+      "verification": "node --test PropagationFabric/fabric-envelope.test.cjs PropagationFabric/multimodal-quadruple.test.cjs"
+    },
+    {
+      "id": "braided-pipeline",
+      "path": "BraidedPipeline",
+      "role": "bounded dependency DAG and hash-chained trace",
+      "verification": "node BraidedPipeline/test-braided-pipeline.cjs"
+    },
+    {
+      "id": "rd-pipeline",
+      "path": "../heavenzfire-capsule-v02/rd-pipeline",
+      "role": "research queue, workers, source retrieval, telemetry",
+      "verification": "inspect queue state and worker result artifacts"
+    },
+    {
+      "id": "ollama",
+      "endpoint": "http://127.0.0.1:11434",
+      "role": "local model runtime",
+      "verification": "GET /api/tags"
+    }
+  ],
+  "invariants": [
+    "No component is marked connected without a live health check or end-to-end test.",
+    "Research inference is opt-in and resource-bounded.",
+    "Generated changes require review and tests before adoption.",
+    "No automatic file deletion, secret export, public listener, or hidden persistence.",
+    "Evidence reports distinguish observed results from hypotheses."
+  ],
+  "runner": "Invoke-HeavenzFireContinuousRD.ps1",
+  "reportDirectory": "FieldCore/reports/continuous-rd"
+}
