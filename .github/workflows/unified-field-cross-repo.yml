@@ -19,5 +19,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Test core contract and persistent inbox
-        run: node --test UnifiedField/FieldCore/shared-task-contract.test.cjs UnifiedField/FieldCore/task-inbox-server.test.cjs
+      - name: Check browser bridge syntax
+        run: |
+          node --check UnifiedField/BrowserBridge/task-record.js
+          node --check UnifiedField/BrowserBridge/popup.js
+      - name: Test core contract, inbox, and browser bridge
+        run: node --test UnifiedField/FieldCore/shared-task-contract.test.cjs UnifiedField/FieldCore/task-inbox-server.test.cjs UnifiedField/BrowserBridge/browser-bridge.test.cjs
