@@ -16,7 +16,7 @@ This extends the existing UnifiedField; it is not a second orchestrator.
 
 OBSERVE -> TEST -> RESEARCH (opt-in) -> VERIFY -> REPORT -> REVIEW -> NEXT CYCLE
 
-The runner records acceptance tests, Ollama health, research status, queue counts and resource telemetry. Model inference is opt-in with -ResearchGoal. It never automatically adopts generated code or deletes files.
+The runner records acceptance tests, Ollama health, live health snapshots for Gateway, Orchestrator, ToolService, Agent, MemoryService, EcosystemHub, UniversalAPI, MeshCoordinator and BrowserBridge, research status, queue counts and resource telemetry. Every cycle writes uniquely timestamped report and test-log artifacts so later runs do not overwrite earlier evidence. Model inference is opt-in with -ResearchGoal. It never automatically adopts generated code or deletes files.
 
 ## Run in PowerShell 5.1
 
