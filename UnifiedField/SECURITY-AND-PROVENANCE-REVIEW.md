@@ -46,6 +46,10 @@ Recommended role: a future `recovery.plan` / `recovery.verify` capability that i
 - `HEAVENZFIRE-ECOSYSTEM-AUDIT` README claims 256+ repositories and links root inventory/map files that returned 404 during this inspection. Its completeness/production claims remain unverified until the artifacts are reconciled.
 - `EntangledMultimodalSystem` README presents speculative consciousness/quantum claims without reproducible validation in the inspected root document. Keep these claims marked as hypotheses, not scientific findings.
 
+## Browser bridge prototype
+
+A draft Manifest V3 extension now exists under `UnifiedField/BrowserBridge`. It requests only `activeTab` and `scripting`, has host permission only for `http://127.0.0.1:18796/*`, captures selected text only after a user click, displays it for review, and requires a separate submit click. It creates only `proposed` / `pending` task records. Four static/contract tests passed on the connected PC; loading the unpacked extension in a real browser remains unverified.
+
 ## Current inventory status
 
 The paginated GitHub search query `user:HeavenzFire` returned 276 unique repository results (100, 100, 76, then 0; no duplicates). This is complete for that query result set, not proof that every account repository is indexed or accessible. All 276 repositories still require source, license, provenance, and interface review.
