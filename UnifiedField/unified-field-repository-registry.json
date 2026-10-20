@@ -3,6 +3,8 @@
   "purpose": "Federated registry for the combined HeavenzFire repository ecosystem",
   "model": "A repository is a component node; integration occurs through versioned adapters and shared task/evidence contracts, not by blindly copying all source into one repository.",
   "completeness": "initial-partial",
+  "inventorySnapshot": "UnifiedField/unified-field-repository-inventory.snapshot.json",
+  "inventoryLimitations": "The repository listing returned 100 names at offset 0 and zero at offset 100, while a known direct repository lookup for HeavenzFire/OpenSourceAIHub was absent from that listing. Do not treat this as a complete account inventory.",
   "lastReviewed": "2026-10-20",
   "taskContract": "heavenzfire.shared-task.v1",
   "invariants": [
@@ -24,7 +26,7 @@
       "repository": "HeavenzFire/OpenSourceAIHub",
       "role": "local-first-model-inventory-and-agent-handoff",
       "status": "adapter-proposed",
-      "evidence": "README.md plus draft adapter PR #1: https://github.com/HeavenzFire/OpenSourceAIHub/pull/1; local node --check passed and 4 contract tests passed; live end-to-end cycle not verified"
+      "evidence": "README.md plus draft adapter PR #1: https://github.com/HeavenzFire/OpenSourceAIHub/pull/1; connected-PC node --check passed and 7 contract/boundary tests passed; live end-to-end cycle not verified"
     },
     {
       "id": "unified-codebase",
@@ -131,7 +133,7 @@
     "not_yet_reviewed"
   ],
   "nextMilestones": [
-    "complete paginated repository inventory",
+    "resolve repository inventory pagination limitation and reconcile missing known repositories",
     "inspect source and licensing for selected candidates",
     "propagate shared task IDs and approval states through the orchestrator and OpenSourceAIHub",
     "add cross-component integration tests and evidence report"
