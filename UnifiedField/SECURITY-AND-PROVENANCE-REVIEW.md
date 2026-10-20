@@ -11,6 +11,8 @@ Evidence: `vite.config.ts` sets the Vite dev host to `0.0.0.0` and defines both 
 
 Impact: a real provider key supplied at build time may be embedded in browser-served JavaScript, where users can inspect it. The dev server also listens on all interfaces by default. This is a configuration/code risk; this review does **not** establish that a live key was exposed or abused.
 
+**Remediation status:** A draft hardening PR is open at https://github.com/HeavenzFire/Elysium-Gateway/pull/1. Its local proxy tests passed 6/6 and security CI run #9 passed before a later package-script adjustment; the latest CI run is still in progress. The change is not merged or deployed.
+
 Required remediation before public deployment:
 1. Move Gemini calls behind a server-side API route; never define provider secrets into frontend bundles.
 2. Default the development server to `127.0.0.1`.
