@@ -19,7 +19,7 @@ The Unified Field is the coordinated system formed by HeavenzFire's repositories
 | Component | Known role / evidence | Current integration status |
 |---|---|---|
 | `HeavenzFire/HeavenzFire` | Public project hub and this shared contract PR | Registry/contract home; cross-repository end-to-end verification pending |
-| `HeavenzFire/OpenSourceAIHub` | README describes local Ollama inventory, health checks, and Solver → Orchestrator → Reviewer → Synthesizer handoff | Candidate local service adapter; inspect code and test the live handoff before marking verified |
+| `HeavenzFire/OpenSourceAIHub` | README describes local Ollama inventory, health checks, and Solver → Orchestrator → Reviewer → Synthesizer handoff | Adapter proposed in [draft PR #1](https://github.com/HeavenzFire/OpenSourceAIHub/pull/1); syntax and contract tests passed, live end-to-end cycle remains unverified |
 | `HeavenzFire/UnifiedCodebase` | Repository exists; README was not found on default branch during this pass | Discovery only; role and contents require inspection |
 | `HeavenzFire/ollama` | Ollama source fork/repository | Upstream/runtime dependency; do not treat as HeavenzFire-authored runtime without file-level provenance |
 | `HeavenzFire/llama.cpp` | llama.cpp source fork/repository | Inference backend dependency; integrate through documented interfaces |
