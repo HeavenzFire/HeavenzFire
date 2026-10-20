@@ -1,4 +1,4 @@
-name: Unified Field cross-repository task integration
+name: Unified Field task inbox
 
 on:
   push:
@@ -10,24 +10,14 @@ on:
       - main
 
 jobs:
-  cross-repository-task:
+  task-inbox:
     runs-on: ubuntu-latest
     steps:
       - name: Check out Unified Field core
         uses: actions/checkout@v4
-      - name: Check out OpenSourceAIHub adapter
-        uses: actions/checkout@v4
-        with:
-          repository: HeavenzFire/OpenSourceAIHub
-          ref: feat/unified-field-task-contract-adapter
-          path: OpenSourceAIHub
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Test core contract and inbox
+      - name: Test core contract and persistent inbox
         run: node --test UnifiedField/FieldCore/shared-task-contract.test.cjs UnifiedField/FieldCore/task-inbox-server.test.cjs
-      - name: Test cross-repository proposal transport
-        env:
-          HF_HUB_ADAPTER_PATH: ${{ github.workspace }}/OpenSourceAIHub/unified-field-task-transport.cjs
-        run: node --test UnifiedField/FieldCore/cross-repo-task-transport.test.cjs
