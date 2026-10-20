@@ -1,0 +1,239 @@
+{
+  "schema": "heavenzfire.unified-field.modules.v1",
+  "name": "HeavenzFire Unified Field",
+  "policy": {
+    "sourcePreservation": true,
+    "importOnlyAfterReview": true,
+    "requireLicenseReview": true,
+    "requireTestsBeforeActivation": true,
+    "secretsAllowed": false,
+    "externalModulesDefault": "adapter-only"
+  },
+  "modules": [
+    {
+      "id": "fieldcore",
+      "name": "UnifiedField Continuous R&D",
+      "repository": "HeavenzFire/HeavenzFire",
+      "sourcePath": "unified-field",
+      "kind": "core",
+      "integration": "in-repository",
+      "status": "implemented-runner; core runtime source must be present on operator machine",
+      "dependencies": [],
+      "capabilities": [
+        "bounded-rd-cycle",
+        "test-gating",
+        "health-snapshots",
+        "timestamped-reports"
+      ],
+      "activation": "operator-local"
+    },
+    {
+      "id": "local-mesh",
+      "name": "Local Mesh Worker and Council",
+      "repository": "HeavenzFire/HeavenzFire",
+      "sourcePath": "integrations/local-mesh",
+      "kind": "core-adapter",
+      "integration": "in-repository",
+      "status": "candidate; local runtime contract documented",
+      "dependencies": [
+        "fieldcore"
+      ],
+      "capabilities": [
+        "authenticated-task-envelope",
+        "model-allowlist",
+        "multi-model-review"
+      ],
+      "activation": "manual"
+    },
+    {
+      "id": "guardian-audit",
+      "name": "Guardian Text Audit",
+      "repository": "HeavenzFire/HeavenzFire",
+      "sourcePath": "integrations/guardian",
+      "kind": "safety-module",
+      "integration": "in-repository",
+      "status": "prototype; text-only and human-review required",
+      "dependencies": [
+        "fieldcore"
+      ],
+      "capabilities": [
+        "deterministic-text-cues",
+        "evidence-quote-validation",
+        "review-gating"
+      ],
+      "activation": "manual"
+    },
+    {
+      "id": "elysium-gateway",
+      "name": "Elysium Gateway",
+      "repository": "HeavenzFire/Elysium-Gateway",
+      "kind": "research-ui",
+      "integration": "repository-adapter",
+      "status": "candidate; source and AI Studio origin must be verified before import",
+      "dependencies": [
+        "fieldcore"
+      ],
+      "capabilities": [
+        "historical-thinker-dialogue",
+        "research-session-ui"
+      ],
+      "activation": "disabled-until-reviewed"
+    },
+    {
+      "id": "elysium-legacy",
+      "name": "The Elysium Gateway Legacy",
+      "repository": "HeavenzFire/The-Elysium-Gateway-",
+      "kind": "research-ui",
+      "integration": "repository-adapter",
+      "status": "candidate; compare against Elysium Gateway before consolidation",
+      "dependencies": [
+        "fieldcore"
+      ],
+      "capabilities": [
+        "research-session-ui"
+      ],
+      "activation": "disabled-until-reviewed"
+    },
+    {
+      "id": "neural-mesh",
+      "name": "Neural Mesh Orchestrator",
+      "repository": "HeavenzFire/Neural-Mesh-Orchestrator",
+      "kind": "orchestrator-adapter",
+      "integration": "repository-adapter",
+      "status": "candidate; review open changes and test before adoption",
+      "dependencies": [
+        "fieldcore"
+      ],
+      "capabilities": [
+        "agent-routing",
+        "task-orchestration"
+      ],
+      "activation": "disabled-until-reviewed"
+    },
+    {
+      "id": "sovereign-node",
+      "name": "Sovereign Node",
+      "repository": "HeavenzFire/Sovereign-Node-",
+      "kind": "gateway-adapter",
+      "integration": "repository-adapter",
+      "status": "candidate; API and security review required",
+      "dependencies": [
+        "fieldcore"
+      ],
+      "capabilities": [
+        "http-api",
+        "websocket-mesh"
+      ],
+      "activation": "disabled-until-reviewed"
+    },
+    {
+      "id": "pantheon",
+      "name": "Pantheon of Neural Intelligence",
+      "repository": "HeavenzFire/The-Pantheon-of-Neural-Intelligence-",
+      "kind": "agent-adapter",
+      "integration": "repository-adapter",
+      "status": "candidate; verify provider configuration and runtime boundaries",
+      "dependencies": [
+        "fieldcore"
+      ],
+      "capabilities": [
+        "local-model-adapter"
+      ],
+      "activation": "disabled-until-reviewed"
+    },
+    {
+      "id": "autonomous-rd",
+      "name": "Autonomous R&D",
+      "repository": "HeavenzFire/Autonomous-R-D",
+      "kind": "research-adapter",
+      "integration": "repository-adapter",
+      "status": "candidate; compare queue and experiment capabilities with Continuous R&D",
+      "dependencies": [
+        "fieldcore"
+      ],
+      "capabilities": [
+        "experiment-planning",
+        "research-workflows"
+      ],
+      "activation": "disabled-until-reviewed"
+    },
+    {
+      "id": "syntropic-kernel",
+      "name": "Syntropic Kernel Code Explore",
+      "repository": "HeavenzFire/Syntropic-Kernel-Code-Explore",
+      "kind": "research-adapter",
+      "integration": "repository-adapter",
+      "status": "candidate; inspect implementation and tests before adoption",
+      "dependencies": [
+        "fieldcore"
+      ],
+      "capabilities": [
+        "memory-experiments",
+        "research-analysis"
+      ],
+      "activation": "disabled-until-reviewed"
+    },
+    {
+      "id": "quantum-interplay",
+      "name": "Quantum Interplay",
+      "repository": "HeavenzFire/Quantum-Interplay",
+      "kind": "simulation-adapter",
+      "integration": "repository-adapter",
+      "status": "candidate; label classical simulation separately from hardware execution",
+      "dependencies": [
+        "fieldcore"
+      ],
+      "capabilities": [
+        "quantum-circuit-simulation"
+      ],
+      "activation": "disabled-until-reviewed"
+    },
+    {
+      "id": "quantum-alchemy",
+      "name": "Quantum Alchemy Forge",
+      "repository": "HeavenzFire/quantum-alchemy-forge",
+      "kind": "simulation-adapter",
+      "integration": "repository-adapter",
+      "status": "candidate; dependency and license review required",
+      "dependencies": [
+        "fieldcore"
+      ],
+      "capabilities": [
+        "equation-tools",
+        "simulation-ui"
+      ],
+      "activation": "disabled-until-reviewed"
+    },
+    {
+      "id": "integrity-audit",
+      "name": "Ecosystem Integrity Audit",
+      "repository": "HeavenzFire/HEAVENZFIRE-ECOSYSTEM-AUDIT",
+      "kind": "governance-adapter",
+      "integration": "repository-adapter",
+      "status": "candidate; evidence schema and duplicate checks required",
+      "dependencies": [
+        "fieldcore"
+      ],
+      "capabilities": [
+        "provenance",
+        "integrity-checks"
+      ],
+      "activation": "disabled-until-reviewed"
+    },
+    {
+      "id": "dashboard",
+      "name": "HeavenzFire Dashboard",
+      "repository": "HeavenzFire/HeavenzFire-Dashboard",
+      "kind": "ui-adapter",
+      "integration": "repository-adapter",
+      "status": "candidate; merge UI only after contract compatibility tests",
+      "dependencies": [
+        "fieldcore"
+      ],
+      "capabilities": [
+        "operator-dashboard"
+      ],
+      "activation": "disabled-until-reviewed"
+    }
+  ]
+}
