@@ -1,0 +1,717 @@
+{
+  "schema": "heavenzfire.unified-field.inventory-snapshot.v1",
+  "observedAt": "2026-10-20",
+  "source": "GitHub connector repository-list response filtered by owner HeavenzFire",
+  "pageSizeRequested": 100,
+  "pageOffset": 0,
+  "returnedCount": 100,
+  "followupPageOffset": 100,
+  "followupPageReturnedCount": 0,
+  "completeness": "incomplete",
+  "caveat": "This is an observed connector response, not a claim that the account has only this many repositories. A direct repository lookup confirms HeavenzFire/OpenSourceAIHub exists, but it was absent from this list response; therefore this endpoint response is demonstrably incomplete.",
+  "knownRepositoriesMissingFromListing": [
+    "HeavenzFire/OpenSourceAIHub"
+  ],
+  "repositories": [
+    {
+      "name": "Spirit_Engine",
+      "fullName": "HeavenzFire/Spirit_Engine",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "spirit-angelus",
+      "fullName": "HeavenzFire/spirit-angelus",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "HeavenzFire",
+      "fullName": "HeavenzFire/HeavenzFire",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "SpiritAngelusFramework",
+      "fullName": "HeavenzFire/SpiritAngelusFramework",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "5D-FRAMEWORK",
+      "fullName": "HeavenzFire/5D-FRAMEWORK",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "Omnificient-Programming",
+      "fullName": "HeavenzFire/Omnificient-Programming",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": ".github-workflows-main.yml",
+      "fullName": "HeavenzFire/.github-workflows-main.yml",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "gxmods",
+      "fullName": "HeavenzFire/gxmods",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "NexusHub",
+      "fullName": "HeavenzFire/NexusHub",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "new",
+      "fullName": "HeavenzFire/new",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "NewRepo",
+      "fullName": "HeavenzFire/NewRepo",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "termux-packages",
+      "fullName": "HeavenzFire/termux-packages",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "Quantum-Interplay",
+      "fullName": "HeavenzFire/Quantum-Interplay",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "awesome-generative-ai",
+      "fullName": "HeavenzFire/awesome-generative-ai",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "369121321-Harmonic-Convergence-",
+      "fullName": "HeavenzFire/369121321-Harmonic-Convergence-",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "AdvancedAI",
+      "fullName": "HeavenzFire/AdvancedAI",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "MicrosoftEdge-Extensions",
+      "fullName": "HeavenzFire/MicrosoftEdge-Extensions",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "char-rnn",
+      "fullName": "HeavenzFire/char-rnn",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "openai-python",
+      "fullName": "HeavenzFire/openai-python",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "everything",
+      "fullName": "HeavenzFire/everything",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "mini-omni2",
+      "fullName": "HeavenzFire/mini-omni2",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "llama.cpp",
+      "fullName": "HeavenzFire/llama.cpp",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "InvokeAI",
+      "fullName": "HeavenzFire/InvokeAI",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "LLM2CLIP",
+      "fullName": "HeavenzFire/LLM2CLIP",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "anewworld",
+      "fullName": "HeavenzFire/anewworld",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "auranet",
+      "fullName": "HeavenzFire/auranet",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "11dimensionneuralnet",
+      "fullName": "HeavenzFire/11dimensionneuralnet",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "LumerianDreams-",
+      "fullName": "HeavenzFire/LumerianDreams-",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "newcolordisplay",
+      "fullName": "HeavenzFire/newcolordisplay",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "cosmicdebug",
+      "fullName": "HeavenzFire/cosmicdebug",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "systemmonitor",
+      "fullName": "HeavenzFire/systemmonitor",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "omnisphereunity",
+      "fullName": "HeavenzFire/omnisphereunity",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "thenewErebus",
+      "fullName": "HeavenzFire/thenewErebus",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "christosangelus",
+      "fullName": "HeavenzFire/christosangelus",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "tesseract",
+      "fullName": "HeavenzFire/tesseract",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "spirit",
+      "fullName": "HeavenzFire/spirit",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "jesuscodex",
+      "fullName": "HeavenzFire/jesuscodex",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "illusions",
+      "fullName": "HeavenzFire/illusions",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "goodbyecancer",
+      "fullName": "HeavenzFire/goodbyecancer",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "quatumcomputing",
+      "fullName": "HeavenzFire/quatumcomputing",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "thenewage",
+      "fullName": "HeavenzFire/thenewage",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "EntangledMultimodalSystem",
+      "fullName": "HeavenzFire/EntangledMultimodalSystem",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "own-ai",
+      "fullName": "HeavenzFire/own-ai",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "OpenManus",
+      "fullName": "HeavenzFire/OpenManus",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "fragments",
+      "fullName": "HeavenzFire/fragments",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "awesome-mcp-servers",
+      "fullName": "HeavenzFire/awesome-mcp-servers",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "AFFiNE",
+      "fullName": "HeavenzFire/AFFiNE",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "NeuroNetUnlimited",
+      "fullName": "HeavenzFire/NeuroNetUnlimited",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "ChristosIntelligence-",
+      "fullName": "HeavenzFire/ChristosIntelligence-",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "TranscendAll",
+      "fullName": "HeavenzFire/TranscendAll",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "Web-Dev-For-Beginners",
+      "fullName": "HeavenzFire/Web-Dev-For-Beginners",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "GenAI-Showcase",
+      "fullName": "HeavenzFire/GenAI-Showcase",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "awesome-selfhost-docker",
+      "fullName": "HeavenzFire/awesome-selfhost-docker",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "awesome-selfhosted",
+      "fullName": "HeavenzFire/awesome-selfhosted",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "Qwen-AgentJC",
+      "fullName": "HeavenzFire/Qwen-AgentJC",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "puter",
+      "fullName": "HeavenzFire/puter",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "responsively-app",
+      "fullName": "HeavenzFire/responsively-app",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "good-first-issue",
+      "fullName": "HeavenzFire/good-first-issue",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "Python-Scripts",
+      "fullName": "HeavenzFire/Python-Scripts",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "skills-github-pages",
+      "fullName": "HeavenzFire/skills-github-pages",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "OmniaNetwork",
+      "fullName": "HeavenzFire/OmniaNetwork",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "open_clip",
+      "fullName": "HeavenzFire/open_clip",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "llama",
+      "fullName": "HeavenzFire/llama",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "crewAI",
+      "fullName": "HeavenzFire/crewAI",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "AgentGPT",
+      "fullName": "HeavenzFire/AgentGPT",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "anything-llm",
+      "fullName": "HeavenzFire/anything-llm",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "web-ui",
+      "fullName": "HeavenzFire/web-ui",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "core",
+      "fullName": "HeavenzFire/core",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "cookbook",
+      "fullName": "HeavenzFire/cookbook",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "n8n",
+      "fullName": "HeavenzFire/n8n",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "deprecated-generative-ai-python",
+      "fullName": "HeavenzFire/deprecated-generative-ai-python",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "OpenedUpDeepSearch",
+      "fullName": "HeavenzFire/OpenedUpDeepSearch",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "UnifiedCodebase",
+      "fullName": "HeavenzFire/UnifiedCodebase",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "TinyNeuralNetwork",
+      "fullName": "HeavenzFire/TinyNeuralNetwork",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "anunnaki-pyramid-rush",
+      "fullName": "HeavenzFire/anunnaki-pyramid-rush",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "eternal-love-echoes-code",
+      "fullName": "HeavenzFire/eternal-love-echoes-code",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "DigitalPowerStationFramework",
+      "fullName": "HeavenzFire/DigitalPowerStationFramework",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "energy-nexus-genesis-drive",
+      "fullName": "HeavenzFire/energy-nexus-genesis-drive",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "quantum-alchemy-forge",
+      "fullName": "HeavenzFire/quantum-alchemy-forge",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "WaveFunctionCollapse",
+      "fullName": "HeavenzFire/WaveFunctionCollapse",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "QuantumChirstosAngelusComputing",
+      "fullName": "HeavenzFire/QuantumChirstosAngelusComputing",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "hypermind-genesis-framework",
+      "fullName": "HeavenzFire/hypermind-genesis-framework",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "ollama",
+      "fullName": "HeavenzFire/ollama",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "EntangledMultimodalSystem-1",
+      "fullName": "HeavenzFire/EntangledMultimodalSystem-1",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "EntangledMultimodalSystem-2",
+      "fullName": "HeavenzFire/EntangledMultimodalSystem-2",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "EntangledMultimodalSystem-3",
+      "fullName": "HeavenzFire/EntangledMultimodalSystem-3",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "realtime-chat-supabase-react",
+      "fullName": "HeavenzFire/realtime-chat-supabase-react",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "entangled-view-unfold",
+      "fullName": "HeavenzFire/entangled-view-unfold",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "QCH",
+      "fullName": "HeavenzFire/QCH",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "Raven-Lee-Phoenix",
+      "fullName": "HeavenzFire/Raven-Lee-Phoenix",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "Resolved",
+      "fullName": "HeavenzFire/Resolved",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "nextjs-geist-font-app",
+      "fullName": "HeavenzFire/nextjs-geist-font-app",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "nextjs-geist-font-optimization",
+      "fullName": "HeavenzFire/nextjs-geist-font-optimization",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "nextjs-project-bootstrap",
+      "fullName": "HeavenzFire/nextjs-project-bootstrap",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "quantum-ai-research-studio",
+      "fullName": "HeavenzFire/quantum-ai-research-studio",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "-JUDGEMENT-DAY-",
+      "fullName": "HeavenzFire/-JUDGEMENT-DAY-",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "Quantum-Hope-Engine",
+      "fullName": "HeavenzFire/Quantum-Hope-Engine",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "HeavenzFire-The-Awakening-",
+      "fullName": "HeavenzFire/HeavenzFire-The-Awakening-",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "Ternary-Cellular-Automaton-Simulator",
+      "fullName": "HeavenzFire/Ternary-Cellular-Automaton-Simulator",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    },
+    {
+      "name": "ZAZO-COHERENCE-LATTICE-",
+      "fullName": "HeavenzFire/ZAZO-COHERENCE-LATTICE-",
+      "status": "discovered_unreviewed",
+      "role": "unknown",
+      "sourceInspected": false
+    }
+  ]
+}
