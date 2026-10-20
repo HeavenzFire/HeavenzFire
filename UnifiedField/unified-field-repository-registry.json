@@ -23,8 +23,8 @@
       "id": "open-source-ai-hub",
       "repository": "HeavenzFire/OpenSourceAIHub",
       "role": "local-first-model-inventory-and-agent-handoff",
-      "status": "candidate-adapter",
-      "evidence": "README.md on main describes Ollama inventory and Solver-Orchestrator-Reviewer-Synthesizer handoff"
+      "status": "adapter-proposed",
+      "evidence": "README.md plus draft adapter PR #1: https://github.com/HeavenzFire/OpenSourceAIHub/pull/1; local node --check passed and 4 contract tests passed; live end-to-end cycle not verified"
     },
     {
       "id": "unified-codebase",
