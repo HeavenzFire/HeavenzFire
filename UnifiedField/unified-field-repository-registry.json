@@ -216,6 +216,19 @@
       "sourceRefs": [
         "https://github.com/HeavenzFire/EntangledMultimodalSystem/blob/main/README.md"
       ]
+    },
+    {
+      "id": "unified-field-browser-bridge",
+      "repository": "HeavenzFire/HeavenzFire",
+      "role": "manifest-v3-user-reviewed-selection-to-local-task-inbox",
+      "status": "adapter_implemented",
+      "integrationStatus": "browser-load-smoke-test-pending",
+      "evidence": "UnifiedField/BrowserBridge contains a Manifest V3 popup, shared-task record builder, and tests. It uses only activeTab/scripting and host permission http://127.0.0.1:18796/*; capture and submit are separate user clicks; records remain proposed/pending. Connected-PC tests passed 4/4; extension has not yet been loaded into a real browser for an install smoke test.",
+      "sourceRefs": [
+        "UnifiedField/BrowserBridge/README.md",
+        "UnifiedField/BrowserBridge/manifest.json",
+        "UnifiedField/BrowserBridge/browser-bridge.test.cjs"
+      ]
     }
   ],
   "requiredComponentStatuses": [
