@@ -19,7 +19,7 @@ The Unified Field is the coordinated system formed by HeavenzFire's repositories
 | Component | Known role / evidence | Current integration status |
 |---|---|---|
 | `HeavenzFire/HeavenzFire` | Public project hub and this shared contract PR | Registry/contract home; cross-repository end-to-end verification pending |
-| `HeavenzFire/OpenSourceAIHub` | README describes local Ollama inventory, health checks, and Solver → Orchestrator → Reviewer → Synthesizer handoff | Adapter proposed in [draft PR #1](https://github.com/HeavenzFire/OpenSourceAIHub/pull/1); server and pipeline syntax checks passed and 11 contract/API/pipeline-boundary tests passed on the connected Windows PC; live end-to-end cycle and cross-process transport remain unverified |
+| `HeavenzFire/OpenSourceAIHub` | README describes local Ollama inventory, health checks, and Solver → Orchestrator → Reviewer → Synthesizer handoff | Adapter proposed in [draft PR #1](https://github.com/HeavenzFire/OpenSourceAIHub/pull/1); server, pipeline, and inbox syntax checks passed; 20 combined contract/API/pipeline/inbox/transport tests passed on the connected Windows PC, including a cross-repository proposal-delivery smoke test; GitHub CI and a full live R&D cycle remain unverified |
 | `HeavenzFire/UnifiedCodebase` | Repository exists; README was not found on default branch during this pass | Discovery only; role and contents require inspection |
 | `HeavenzFire/ollama` | Ollama source fork/repository | Upstream/runtime dependency; do not treat as HeavenzFire-authored runtime without file-level provenance |
 | `HeavenzFire/llama.cpp` | llama.cpp source fork/repository | Inference backend dependency; integrate through documented interfaces |
@@ -57,4 +57,4 @@ Adapters must validate the schema on both ingress and egress. Never translate `p
 
 ## Current truth
 
-The shared contract module and its unit tests exist on the associated draft PR branch. Local tests previously reported 25 passing tests for a selected component batch. The new contract is not yet proven to propagate across repositories, and the ecosystem is not yet end-to-end unified.
+The shared contract, loopback-only core task inbox, OpenSourceAIHub proposal transport adapter, API-run lifecycle, and deterministic tests exist on draft PR branches. On the connected Windows PC, server/pipeline/inbox syntax checks passed and a combined batch passed 20 tests, including a cross-repository delivery test using the actual adapter and inbox modules. A separate isolated loopback smoke test confirmed the Hub health route and rejection of an invalid run request (HTTP 400). The GitHub Actions workflows are committed but no CI result has yet been confirmed. The persistent core inbox has not been launched as a long-running service, the valid four-stage inference path has not been executed in this verification pass, and the entire repository ecosystem is not yet end-to-end unified.
