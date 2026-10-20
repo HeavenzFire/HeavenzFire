@@ -12,7 +12,7 @@ test('browser bridge emits the shared proposed/pending contract', () => {
   assert.equal(task.source, 'heavenzfire-browser-bridge');
   assert.equal(task.status, 'proposed');
   assert.equal(task.approvalState, 'pending');
-  assert.equal(task.metadata.capturedSelectionChars, 20);
+  assert.equal(task.metadata.proposalChars, 20);
   assert.equal(task.goal, 'Reviewed page excerpt');
   assert.ok(task.taskId);
   assert.ok(task.createdAt);
@@ -21,7 +21,7 @@ test('browser bridge emits the shared proposed/pending contract', () => {
 test('proposal goal is bounded and cannot be empty', () => {
   assert.throws(() => createTaskRecord('  '), /non-empty/);
   assert.throws(() => createTaskRecord('x'.repeat(12001)), /12000/);
-  assert.throws(() => createTaskRecord('ok', 12001), /selectionChars/);
+  assert.throws(() => createTaskRecord('ok', 12001), /proposalChars/);
 });
 
 test('extension uses only activeTab/scripting and the loopback task inbox', () => {
