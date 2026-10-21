@@ -15,6 +15,7 @@ const endpoints=[
  {id:'discovery',name:'Open-source model discovery',url:'http://127.0.0.1:8795/api/discover'},
  {id:'voice',name:'Research / voice service',url:'http://127.0.0.1:8796/health'},
  {id:'brain',name:'Digital Brain runtime',url:'http://127.0.0.1:8797/api/health'},
+ {id:'worker',name:'Unified Field local worker',url:'http://127.0.0.1:8798/health'},
  {id:'mesh',name:'Mesh coordinator',url:'http://127.0.0.1:8080/health'}
 ];
 async function probe(e){
@@ -25,7 +26,9 @@ async function probe(e){
   let ok=r.ok;
   if(e.id==='ollama')ok=r.ok&&Array.isArray(data&&data.models);
   if(e.id==='discovery')ok=r.ok&&data&&data.ok===true;
-  return {id:e.id,name:e.name,url:e.url,state:ok?'healthy':('HTTP '+r.status),latencyMs:Date.now()-start,data};
+  if(e.id==='worker')ok=r.ok&&data&&data.ok===true&&data.service==='heavenzfire-unified-field-worker';
+  const state=!ok?('HTTP '+r.status):(e.id==='worker'&&data.writable===false?'degraded':'healthy');
+  return {id:e.id,name:e.name,url:e.url,state,latencyMs:Date.now()-start,data};
  }catch(err){return {id:e.id,name:e.name,url:e.url,state:'unreachable',latencyMs:Date.now()-start,error:String(err.message||err)}}
 }
 function readJson(p){try{return JSON.parse(fs.readFileSync(p,'utf8').replace(/^\uFEFF/,''))}catch{return null}}
