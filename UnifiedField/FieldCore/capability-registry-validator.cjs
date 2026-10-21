@@ -44,8 +44,8 @@ function parseTimestamp(value, field) {
       calendar.getUTCDate() !== day || hour > 23 || minute > 59 || second > 59) {
     throw new TypeError(field + ' must be a valid timestamp');
   }
-  const offset = value.slice(19);
-  if (offset && offset !== 'Z') {
+  const offset = value.endsWith('Z') ? 'Z' : value.slice(-6);
+  if (offset !== 'Z') {
     const match = /^([+-])(\d{2}):(\d{2})$/.exec(offset);
     if (!match || Number(match[2]) > 14 || Number(match[3]) > 59 ||
         (Number(match[2]) === 14 && Number(match[3]) !== 0)) {
