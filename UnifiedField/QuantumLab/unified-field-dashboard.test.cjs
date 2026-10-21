@@ -10,6 +10,8 @@ const server = fs.readFileSync(path.join(root, 'UnifiedField-Dashboard-Server.cj
 const dashboard = fs.readFileSync(path.join(root, 'UnifiedField-Dashboard.html'), 'utf8');
 const worker = fs.readFileSync(path.join(root, 'Invoke-LocalModelWorkerBatch.ps1'), 'utf8');
 const publisher = fs.readFileSync(path.join(root, 'uf-model-worker-journal-publisher.cjs'), 'utf8');
+const validator = fs.readFileSync(path.join(root, 'Test-LocalModelWorkerResponse.ps1'), 'utf8');
+const validatorTests = fs.readFileSync(path.join(root, 'Test-LocalModelWorkerResponse.Tests.ps1'), 'utf8');
 
 test('dashboard server is loopback-only and exposes a fixed worker action', () => {
   assert.match(server, /const HOST\s*=\s*['"]127\.0\.0\.1['"]/);
@@ -60,18 +62,19 @@ test('worker batch calls local Ollama and records every model outcome', () => {
 });
 
 test('worker performs static structure and arithmetic checks without evaluating model code', () => {
-  assert.match(worker, /function Test-WorkerResponse/);
-  assert.match(worker, /ConvertFrom-Json -ErrorAction Stop/);
-  assert.match(worker, /test_expected_output_mismatch/);
-  assert.match(worker, /Parser\]::ParseInput/);
-  assert.match(worker, /powershell_parse_failed/);
-  assert.match(worker, /parsed_json_array_from_string/);
-  assert.match(worker, /trimmed_terminal_period_from_code/);
-  assert.match(worker, /normalized_response/);
+  assert.match(worker, /Test-LocalModelWorkerResponse\.ps1/);
+  assert.match(validator, /function Test-WorkerResponse/);
+  assert.match(validator, /ConvertFrom-Json -ErrorAction Stop/);
+  assert.match(validator, /test_expected_output_mismatch/);
+  assert.match(validator, /Parser\]::ParseInput/);
+  assert.match(validator, /powershell_parse_failed/);
+  assert.match(validator, /parsed_json_array_from_string/);
+  assert.match(validator, /trimmed_terminal_period_from_code/);
+  assert.match(validator, /normalized_response/);
+  assert.match(validator, /input_iteration_not_verified/);
+  assert.match(validatorTests, /VALIDATOR_TESTS=PASS/);
+  assert.doesNotMatch(validator, /Invoke-Expression|\biex\b|ScriptBlock::Create|Add-Type/i);
   assert.match(dashboard, /Normalization:/);
-  assert.match(worker, /input_iteration_not_verified/);
-  assert.match(worker, /item\.validation = Test-WorkerResponse/);
-  assert.doesNotMatch(worker, /Invoke-Expression|\biex\b|ScriptBlock::Create|Add-Type/i);
   assert.match(dashboard, /STATIC CHECKS PASSED/);
   assert.match(dashboard, /static checks failed/);
   assert.match(dashboard, /journal handoff/);
