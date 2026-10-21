@@ -66,6 +66,15 @@ class ConsentPolicyGateTests(unittest.TestCase):
         policy["grants"].append(dict(policy["grants"][0]))
         self.assertTrue(any("duplicate grant id" in error for error in validate_policy(policy)))
 
+    def test_wildcard_grant_scope_is_invalid(self):
+        policy = sample_policy()
+        policy["grants"][0]["destination"] = "*"
+        self.assertEqual(authorize(policy, sample_request())["reason"], "invalid_policy")
+
+    def test_wildcard_data_class_request_denies(self):
+        request = sample_request(data_classes=["*"])
+        self.assertEqual(authorize(sample_policy(), request)["reason"], "invalid_request")
+
     def test_unhashable_status_type_fails_closed(self):
         policy = sample_policy()
         policy["grants"][0]["status"] = ["active"]
