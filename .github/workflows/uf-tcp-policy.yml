@@ -5,6 +5,8 @@ on:
     paths:
       - 'UnifiedField/QuantumLab/uf-tcp-policy.cjs'
       - 'UnifiedField/QuantumLab/uf-tcp-policy.test.cjs'
+      - 'UnifiedField/QuantumLab/uf-144-council.cjs'
+      - 'UnifiedField/QuantumLab/uf-144-council.test.cjs'
       - '.github/workflows/uf-tcp-policy.yml'
   workflow_dispatch:
 
@@ -22,4 +24,4 @@ jobs:
         with:
           node-version: '22'
       - name: Run deterministic policy tests
-        run: node --test UnifiedField/QuantumLab/uf-tcp-policy.test.cjs
+        run: node --test UnifiedField/QuantumLab/uf-tcp-policy.test.cjs UnifiedField/QuantumLab/uf-144-council.test.cjs
