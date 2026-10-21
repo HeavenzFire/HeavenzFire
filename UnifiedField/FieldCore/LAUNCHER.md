@@ -1,6 +1,6 @@
 # Unified Field Task Inbox Launcher
 
-The root `Enter-UnifiedField.ps1` remains the diagnostic entrypoint by default. The optional `-TaskInbox` mode starts, checks, or stops only the local loopback task inbox.
+The root `Enter-UnifiedField.ps1` remains the diagnostic entrypoint. `Invoke-TaskInbox.ps1` independently manages only the local loopback task inbox.
 
 ## Commands
 
