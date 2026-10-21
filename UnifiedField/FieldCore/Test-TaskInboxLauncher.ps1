@@ -3,6 +3,8 @@ $ErrorActionPreference = 'Stop'
 $Launcher = Join-Path $PSScriptRoot 'Invoke-TaskInbox.ps1'
 $TempRoot = Join-Path $env:RUNNER_TEMP ('hf-launcher-smoke-' + [guid]::NewGuid().ToString('N'))
 $OriginalLocalAppData = $env:LOCALAPPDATA
+$OriginalStateRoot = $env:HF_UNIFIED_FIELD_STATE_ROOT
+$StateRoot = Join-Path $TempRoot 'isolated-state'
 $null = New-Item -ItemType Directory -Path $TempRoot -Force
 $listener = New-Object System.Net.Sockets.TcpListener([System.Net.IPAddress]::Loopback, 0)
 $listener.Start()
@@ -11,6 +13,7 @@ $listener.Stop()
 
 try {
     $env:LOCALAPPDATA = $TempRoot
+    $env:HF_UNIFIED_FIELD_STATE_ROOT = $StateRoot
     $start = & $Launcher -Action Start -Port $Port | ConvertFrom-Json
     if ($start.status -ne 'ALIVE' -or $start.taskExecutionEnabled -ne $false -or $start.modelWorkersStarted -ne $false) {
         throw ('Launcher start returned unexpected state: ' + ($start | ConvertTo-Json -Compress))
@@ -56,7 +59,7 @@ try {
     if ($stop.status -ne 'STOPPED' -or $stop.stopped -ne $true -or $stop.inboxPreserved -ne $true) {
         throw ('Stop returned unexpected state: ' + ($stop | ConvertTo-Json -Compress))
     }
-    $inbox = Join-Path $TempRoot 'HeavenzFire\UnifiedField\task-inbox.jsonl'
+    $inbox = Join-Path $StateRoot 'task-inbox.jsonl'
     $persisted = Get-Content -LiteralPath $inbox -Raw -Encoding UTF8 | ConvertFrom-Json
     if ($persisted.taskRecord.status -ne 'proposed' -or $persisted.taskRecord.approvalState -ne 'pending') {
         throw 'Persisted proposal was not retained in pending state.'
@@ -66,6 +69,8 @@ try {
 finally {
     if ($null -ne $OriginalLocalAppData) { $env:LOCALAPPDATA = $OriginalLocalAppData }
     else { Remove-Item Env:LOCALAPPDATA -ErrorAction SilentlyContinue }
+    if ($null -ne $OriginalStateRoot) { $env:HF_UNIFIED_FIELD_STATE_ROOT = $OriginalStateRoot }
+    else { Remove-Item Env:HF_UNIFIED_FIELD_STATE_ROOT -ErrorAction SilentlyContinue }
     if (Test-Path -LiteralPath $TempRoot) {
         Get-ChildItem -LiteralPath $TempRoot -Recurse -File -ErrorAction SilentlyContinue | Out-Null
         Remove-Item -LiteralPath $TempRoot -Recurse -Force -ErrorAction SilentlyContinue
