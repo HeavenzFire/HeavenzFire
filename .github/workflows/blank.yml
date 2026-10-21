@@ -21,15 +21,23 @@ jobs:
         run: |
           node --check UnifiedField/QuantumLab/UnifiedField-Dashboard-Server.cjs
           node --check UnifiedField/QuantumLab/uf-model-worker-journal-publisher.cjs
-      - name: Parse worker PowerShell without executing it
+      - name: Parse worker and validator PowerShell without executing generated code
         shell: pwsh
         run: |
-          $tokens = $null
-          $parseErrors = $null
-          [System.Management.Automation.Language.Parser]::ParseFile("${{ github.workspace }}/UnifiedField/QuantumLab/Invoke-LocalModelWorkerBatch.ps1", [ref]$tokens, [ref]$parseErrors) | Out-Null
-          if ($parseErrors.Count -gt 0) {
-            $parseErrors | ForEach-Object { Write-Error $_.Message }
-            exit 1
+          $paths = @(
+            "${{ github.workspace }}/UnifiedField/QuantumLab/Invoke-LocalModelWorkerBatch.ps1",
+            "${{ github.workspace }}/UnifiedField/QuantumLab/Test-LocalModelWorkerResponse.ps1",
+            "${{ github.workspace }}/UnifiedField/QuantumLab/Test-LocalModelWorkerResponse.Tests.ps1"
+          )
+          foreach ($path in $paths) {
+            $tokens = $null
+            $parseErrors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($path, [ref]$tokens, [ref]$parseErrors) | Out-Null
+            if ($parseErrors.Count -gt 0) {
+              $parseErrors | ForEach-Object { Write-Error $_.Message }
+              exit 1
+            }
           }
+          & "${{ github.workspace }}/UnifiedField/QuantumLab/Test-LocalModelWorkerResponse.Tests.ps1"
       - name: Test dashboard-worker safety contract and dashboard script syntax
         run: node --test UnifiedField/QuantumLab/unified-field-dashboard.test.cjs UnifiedField/QuantumLab/uf-model-worker-journal-publisher.test.cjs
