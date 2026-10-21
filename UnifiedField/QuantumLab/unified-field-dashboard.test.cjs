@@ -31,6 +31,8 @@ test('dashboard exposes model batch control and renders status from overview', (
   assert.match(server, /\/api\/forge\/evaluate/);
   assert.match(server, /\/api\/forge\/registry/);
   assert.match(server, /\/api\/forge\/register/);
+  assert.match(server, /\/api\/forge\/attach-artifact/);
+  assert.match(server, /artifact_not_adversarial_smoke_evidence/);
   assert.match(server, /workerRegistry\.recordSmoke/);
   assert.match(server, /\/api\/forge\/evaluation-status/);
   assert.match(server, /runAdversarialSmokeSuite/);
@@ -60,6 +62,8 @@ test('dashboard exposes model batch control and renders status from overview', (
   assert.match(dashboard, /id="runAdversarialSmoke"/);
   assert.match(dashboard, /id="registerWorkerCandidate"/);
   assert.match(dashboard, /id="workerRegistryList"/);
+  assert.match(dashboard, /id="attachSmokeArtifact"/);
+  assert.match(dashboard, /fetch\('\/api\/forge\/attach-artifact'/);
   assert.match(dashboard, /NOT QUALIFIED/);
   assert.match(dashboard, /fetch\('\/api\/forge\/evaluate'/);
   assert.match(dashboard, /SMOKE PASS · NOT QUALIFIED/);
