@@ -5,9 +5,11 @@ on:
     branches:
       - main
       - feat/shared-task-contract-v1
+      - 'worker/**'
   pull_request:
     branches:
       - main
+      - feat/shared-task-contract-v1
 
 jobs:
   task-inbox:
