@@ -43,6 +43,9 @@ The proposed protocol and role architecture are documented in:
 - `uf-tcp-policy.test.cjs`: Node.js built-in test suite (11/11 passed locally on Node.js 22.14.0).\n- `uf-144-council.cjs`: deterministic 144-seat role registry; every seat starts `NOT_CONFIGURED`, with zero live agents claimed.\n- `uf-144-council.test.cjs`: tests for 144-seat count, one-to-one pairing, explicit unconfigured state, and deterministic output.
 - `uf-bridge-journal.cjs`: append-only JSONL task journal with idempotency, restart recovery, state transitions, corruption reporting, and stale-target conflict checks. It records metadata only and does not execute commands.
 - `uf-bridge-journal.test.cjs`: tests persistence, deduplication, replay conflict detection, state transitions, corruption reporting, and executable-payload rejection.
+- `uf-local-worker.cjs`: loopback-only task metadata API; bearer authentication for task routes; no shell execution, network sync, or automatic replay.
+- `uf-local-worker.test.cjs`: tests loopback binding, authentication, idempotent enqueue, replay conflict checks, and route rejection.
+- `Start-UnifiedFieldWorker.ps1`: PowerShell 5.1 launcher for the local worker.
 - `uf-topology.cjs`: deterministic, plan-only clustered topology proposal with bounded inter-cluster fanout; it does not create connections or replicate data.
 - `uf-topology.test.cjs`: tests determinism, bounded links, known-node edges, and invalid configurations.
 - `uf-topology-cli.cjs`: CLI to produce a topology proposal from a JSON node manifest; no network calls or replication.
@@ -67,3 +70,24 @@ node .\uf-topology-cli.cjs --input .\topology-nodes.example.json --replication-f
 ```
 
 The CLI writes a JSON `PLAN_ONLY` proposal to standard output. It does not establish network connections, discover devices, replicate data, or prove that any listed node is online. Replace the illustrative manifest with an explicitly reviewed inventory before using the output for deployment planning.
+
+## Start the local worker (metadata queue only)
+
+Open Windows PowerShell 5.1 in this directory. Configure a high-entropy token in this session before starting the worker; keep it out of Git and logs:
+
+```powershell
+$bytes = New-Object byte[] 32
+$rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+$rng.GetBytes($bytes)
+$env:HEAVENZFIRE_BRIDGE_TOKEN = ([System.BitConverter]::ToString($bytes) -replace '-', '').ToLowerInvariant()
+$rng.Dispose()
+& .\Start-UnifiedFieldWorker.ps1
+```
+
+The worker prints its loopback address and journal path. In a second PowerShell window, health can be checked with:
+
+```powershell
+Invoke-RestMethod -Uri "http://127.0.0.1:8798/health"
+```
+
+The token is scoped to the PowerShell session and inherited by the worker process. Restarting in a new session requires setting it again. Task-list and enqueue endpoints require a bearer token. This MVP stores task metadata only; it is not yet a general task executor or a networked mesh.
