@@ -75,6 +75,8 @@ test('journal handoff sends metadata-only tasks with stable idempotency keys', a
   assert.equal(requests[0].payload.task.idempotency_key, requests[2].payload.task.idempotency_key);
   assert.equal(requests[0].payload.task.task_id, requests[2].payload.task.task_id);
   assert.deepEqual(requests[0].payload.task.scope, ['local-artifact-review', 'independent-verification']);
+  assert.deepEqual(requests[1].payload.task.scope, ['local-model-failure-triage', 'independent-verification']);
+  assert.match(requests[1].payload.task.objective, /generation failure/);
   assert.deepEqual(requests[0].payload.task.evidence_refs, ['worker-smoke-test.json']);
   for (const request of requests) {
     assert.equal(Object.hasOwn(request.payload.task, 'command'), false);
@@ -124,6 +126,7 @@ test('publisher integrates with the real loopback journal and duplicate publicat
     assert.equal(snapshot.tasks.length, 2);
     assert.ok(snapshot.tasks.every(task => task.status === 'QUEUED'));
     assert.ok(snapshot.tasks.every(task => task.scope.includes('independent-verification')));
+    assert.ok(snapshot.tasks.some(task => task.scope.includes('local-model-failure-triage')));
     assert.ok(snapshot.tasks.every(task => !Object.hasOwn(task, 'command') && !Object.hasOwn(task, 'script')));
     assert.equal(snapshot.corruptLines.length, 0);
   } finally {
