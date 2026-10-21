@@ -68,6 +68,7 @@ function validateBlueprint(blueprint) {
   if (!blueprint.input_schema || typeof blueprint.input_schema !== 'object' || Array.isArray(blueprint.input_schema)) errors.push('input_schema_required');
   if (!blueprint.output_schema || typeof blueprint.output_schema !== 'object' || Array.isArray(blueprint.output_schema)) errors.push('output_schema_required');
   if (!uniqueNonEmptyArray(blueprint.capabilities)) errors.push('capabilities_must_be_unique_nonempty_array');
+  if (blueprint.policy_rules !== undefined && (!uniqueNonEmptyArray(blueprint.policy_rules) || blueprint.policy_rules.length > 32 || blueprint.policy_rules.some(rule => typeof rule !== 'string' || rule.trim().length > 300))) errors.push('invalid_policy_rules');
   else if (blueprint.capabilities.some(x => !SAFE_CAPABILITIES.has(x))) errors.push('capability_not_allowlisted');
   if (!uniqueNonEmptyArray(blueprint.forbidden_capabilities)) errors.push('forbidden_capabilities_required');
   else if (blueprint.forbidden_capabilities.some(x => !FORBIDDEN_CAPABILITIES.has(x))) errors.push('forbidden_capability_not_recognized');
