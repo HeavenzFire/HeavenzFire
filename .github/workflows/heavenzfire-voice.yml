@@ -1,0 +1,36 @@
+name: HeavenzFire Unified Field Integration
+on:
+  push:
+    paths:
+      - 'UnifiedField/Voice/**'
+      - 'UnifiedField/QuantumLab/**'
+      - '.github/workflows/heavenzfire-voice.yml'
+  pull_request:
+    paths:
+      - 'UnifiedField/Voice/**'
+      - 'UnifiedField/QuantumLab/**'
+      - '.github/workflows/heavenzfire-voice.yml'
+jobs:
+  integration-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Syntax checks
+        run: |
+          node --check UnifiedField/Voice/index-voice-sources.cjs
+          node --check UnifiedField/Voice/voice-service.cjs
+          node --check UnifiedField/QuantumLab/UnifiedField-Dashboard-Server.cjs
+          node --check UnifiedField/QuantumLab/HeavenzFire-DigitalBrain-Server.cjs
+          node --check UnifiedField/QuantumLab/heavenzfire-mesh-bridge.cjs
+          python -m py_compile UnifiedField/QuantumLab/HeavenzFire-Avatar-Vision.py
+      - name: Voice source intake tests
+        run: node --test UnifiedField/Voice/*.test.cjs
+      - name: Unified Field integration and worker regression tests
+        run: |
+          node --test UnifiedField/AvatarBody/avatar-body.test.cjs UnifiedField/QuantumLab/unified-field-dashboard.test.cjs UnifiedField/QuantumLab/embodied-avatar.integration.test.cjs UnifiedField/QuantumLab/worker-forge.test.cjs UnifiedField/QuantumLab/worker-result-store.test.cjs UnifiedField/QuantumLab/worker-forge-drafter.test.cjs UnifiedField/QuantumLab/worker-forge-adversarial.test.cjs UnifiedField/QuantumLab/worker-registry.test.cjs UnifiedField/QuantumLab/uf-model-worker-journal-publisher.test.cjs UnifiedField/QuantumLab/worker-forge-remediation.test.cjs

@@ -2,9 +2,9 @@
 [CmdletBinding()]
 param(
     [string]$OutputDirectory = (Join-Path $PSScriptRoot 'LocalAI'),
-    [string]$OllamaBaseUrl = 'http://127.0.0.1:11434',
+    [string]$InferenceBaseUrl = 'http://127.0.0.1:11800/v1',
     [ValidateRange(0,1)][int]$MaxRepairAttempts = 1,
-    [ValidateNotNullOrEmpty()][string[]]$Models = @('qwen2.5:0.5b','heavenzfire-runtime:latest','heavenzfire:latest','llama3.2:1b')
+    [ValidateNotNullOrEmpty()][string[]]$Models = @('heavenzfire-qwen-0.5b')
 )
 $ErrorActionPreference = 'Stop'
 $prompt = @'
@@ -19,10 +19,10 @@ foreach ($model in $Models) {
     $item = [ordered]@{ model=$model; started=(Get-Date).ToString('o'); ok=$false; response=''; error=''; duration_ms=0; validation=$null; repair_attempted=$false; repair_error=''; repair_validation=$null; initial_response=''; repair_response=''; attempt_count=0 }
     $timer = [Diagnostics.Stopwatch]::StartNew()
     try {
-        $body = @{ model=$model; prompt=$prompt; stream=$false; options=@{ temperature=0; num_predict=220 } } | ConvertTo-Json -Depth 6
-        $response = Invoke-RestMethod -Uri ($OllamaBaseUrl.TrimEnd('/') + '/api/generate') -Method Post -ContentType 'application/json' -Body $body -TimeoutSec 180
-        $item.response = [string]$response.response
-        $item.ok = [bool]$response.done -and -not [string]::IsNullOrWhiteSpace($item.response)
+        $body = @{ model=$model; messages=@(@{role='system';content='Return only the requested JSON artifact. Do not claim tests ran unless executed.'},@{role='user';content=$prompt}); stream=$false; temperature=0; max_tokens=220 } | ConvertTo-Json -Depth 6
+        $response = Invoke-RestMethod -Uri ($InferenceBaseUrl.TrimEnd('/') + '/chat/completions') -Method Post -ContentType 'application/json' -Body $body -TimeoutSec 180
+        $item.response = [string]$response.choices[0].message.content
+        $item.ok = -not [string]::IsNullOrWhiteSpace($item.response)
         $item.attempt_count = 1
         if ($item.ok) {
             $item.validation = Test-WorkerResponse -Response $item.response
@@ -34,12 +34,12 @@ foreach ($model in $Models) {
                 $item.repair_attempted = $true
                 $item.initial_response = $item.response
                 $repairPrompt = $prompt + "`nThe prior response failed static checks: " + ($item.validation.issues -join ', ') + ". Correct those issues. In tests, input must be a numeric JSON array, not a quoted string. Return only valid JSON with no fences or prose."
-                $repairBody = @{ model=$model; prompt=$repairPrompt; stream=$false; options=@{ temperature=0; num_predict=220 } } | ConvertTo-Json -Depth 6
+                $repairBody = @{ model=$model; messages=@(@{role='system';content='Return only the requested JSON artifact. Do not claim tests ran unless executed.'},@{role='user';content=$repairPrompt}); stream=$false; temperature=0; max_tokens=220 } | ConvertTo-Json -Depth 6
                 $item.attempt_count = 2
                 try {
-                    $repair = Invoke-RestMethod -Uri ($OllamaBaseUrl.TrimEnd('/') + '/api/generate') -Method Post -ContentType 'application/json' -Body $repairBody -TimeoutSec 90
-                    $repairText = [string]$repair.response
-                    if ([bool]$repair.done -and -not [string]::IsNullOrWhiteSpace($repairText)) {
+                    $repair = Invoke-RestMethod -Uri ($InferenceBaseUrl.TrimEnd('/') + '/chat/completions') -Method Post -ContentType 'application/json' -Body $repairBody -TimeoutSec 90
+                    $repairText = [string]$repair.choices[0].message.content
+                    if (-not [string]::IsNullOrWhiteSpace($repairText)) {
                         $item.repair_validation = Test-WorkerResponse -Response $repairText
                         if ($item.repair_validation.passed) {
                             $item.repair_response = $repairText
