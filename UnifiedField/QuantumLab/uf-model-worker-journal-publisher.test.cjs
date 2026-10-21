@@ -2,6 +2,10 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const { createWorkerServer } = require('./uf-local-worker.cjs');
 const { publishWorkerResultsToJournal } = require('./uf-model-worker-journal-publisher.cjs');
 
 function artifact(file = 'worker-smoke-test.json') {
@@ -94,6 +98,37 @@ test('partial journal failures are reported while later model records continue',
   assert.equal(result.published, 1);
   assert.equal(result.failed, 1);
   assert.deepEqual(result.errors, [{ model: 'qwen2.5:0.5b', error: 'journal_busy' }]);
+});
+
+
+test('publisher integrates with the real loopback journal and duplicate publication stays idempotent', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'hf-journal-publisher-'));
+  const token = 'unit-test-only-token';
+  const worker = createWorkerServer({ journalPath: path.join(dir, 'queue.jsonl'), token });
+  const address = await worker.listen(0);
+  const baseUrl = 'http://127.0.0.1:' + address.port;
+  try {
+    const first = await publishWorkerResultsToJournal(artifact(), { token, baseUrl });
+    const second = await publishWorkerResultsToJournal(artifact(), { token, baseUrl });
+    assert.equal(first.state, 'published');
+    assert.equal(first.published, 2);
+    assert.equal(second.state, 'published');
+    assert.equal(second.published, 2);
+
+    const response = await fetch(baseUrl + '/api/tasks', {
+      headers: { Authorization: 'Bearer ' + token, Accept: 'application/json' }
+    });
+    assert.equal(response.status, 200);
+    const snapshot = await response.json();
+    assert.equal(snapshot.tasks.length, 2);
+    assert.ok(snapshot.tasks.every(task => task.status === 'QUEUED'));
+    assert.ok(snapshot.tasks.every(task => task.scope.includes('independent-verification')));
+    assert.ok(snapshot.tasks.every(task => !Object.hasOwn(task, 'command') && !Object.hasOwn(task, 'script')));
+    assert.equal(snapshot.corruptLines.length, 0);
+  } finally {
+    await worker.close();
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test('invalid artifact paths are rejected to keep journal references bounded', async () => {
