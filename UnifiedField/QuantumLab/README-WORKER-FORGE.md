@@ -20,6 +20,10 @@ The dashboard also supports attaching an existing `worker-forge-eval-*.json` art
 
 The loopback dashboard can register a validated blueprint in `LocalAI/worker-registry.json`. Registry writes are atomic, registration is idempotent by blueprint hash, corrupt registries fail closed, and every new entry starts as `candidate` with qualification state `not_qualified`. Adversarial smoke results are attached as evidence, but even a perfect smoke result cannot change the candidate to qualified.
 
+## Resource admission and progress
+
+Dashboard model jobs are single-flight: batch generation, blueprint drafting, and adversarial evaluation cannot overlap. The server refuses new model work when reported free RAM is below 1 GiB, and the adversarial UI reports completed profiles as the suite runs. This admission check reduces avoidable pressure but does not replace Windows page-file/commit monitoring; if Windows reports resource exhaustion, do not start another model batch until memory headroom is restored.
+
 ## Failure-driven policy remediation
 
 A failed smoke artifact can produce a new patch-version candidate. The remediation engine maps failed adversarial profiles to fixed host-owned policy rules, checks that the artifact hash matches the registered source blueprint, preserves the parent hash and artifact reference, and registers the result as a new unqualified candidate. The adversarial evaluator includes these policy rules in its worker contract on the next run. This is deterministic **prompt-policy calibration**, not model-weight fine-tuning; it must be followed by a fresh smoke run and the full qualification matrix before any promotion.
