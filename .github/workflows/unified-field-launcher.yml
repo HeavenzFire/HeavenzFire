@@ -1,0 +1,35 @@
+name: Unified Field Windows Launcher Smoke Test
+
+on:
+  push:
+    branches: ["main", "unified-field/**"]
+    paths:
+      - "Enter-UnifiedField.ps1"
+      - "UnifiedField/FieldCore/Invoke-TaskInbox.ps1"
+      - "UnifiedField/FieldCore/task-inbox-server.cjs"
+      - "UnifiedField/FieldCore/shared-task-contract.cjs"
+      - "UnifiedField/FieldCore/Test-TaskInboxLauncher.ps1"
+      - "UnifiedField/FieldCore/LAUNCHER.md"
+      - ".github/workflows/unified-field-launcher.yml"
+  pull_request:
+    paths:
+      - "Enter-UnifiedField.ps1"
+      - "UnifiedField/FieldCore/Invoke-TaskInbox.ps1"
+      - "UnifiedField/FieldCore/task-inbox-server.cjs"
+      - "UnifiedField/FieldCore/shared-task-contract.cjs"
+      - "UnifiedField/FieldCore/Test-TaskInboxLauncher.ps1"
+      - "UnifiedField/FieldCore/LAUNCHER.md"
+      - ".github/workflows/unified-field-launcher.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  launcher-smoke:
+    runs-on: windows-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test PowerShell launcher and loopback task inbox lifecycle
+        shell: powershell
+        run: .\UnifiedField\FieldCore\Test-TaskInboxLauncher.ps1

@@ -60,6 +60,9 @@ test("integrated local control modules map to real repository paths", async () =
     assert.ok(module, `missing module registry entry: ${id}`);
     assert.ok(module.sourcePath, `missing sourcePath for ${id}`);
     assert.ok(existsSync(path.resolve(REPO_ROOT, module.sourcePath)), `source path does not exist for ${id}`);
+    if (module.launcherPath) {
+      assert.ok(existsSync(path.resolve(REPO_ROOT, module.launcherPath)), `launcher path does not exist for ${id}`);
+    }
   }
   assert.equal(byId.get("attention-guard").activation, "manual-unverified");
   assert.match(byId.get("attention-guard").status, /manual browser smoke test pending/);
