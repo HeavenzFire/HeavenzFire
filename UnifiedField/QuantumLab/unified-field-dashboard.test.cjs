@@ -157,3 +157,11 @@ test('dashboard embedded JavaScript parses successfully', () => {
   assert.ok(match, 'dashboard script element must exist');
   assert.doesNotThrow(() => new vm.Script(match[1]), 'dashboard script must be syntactically valid');
 });
+
+test('model-worker expected model list is scoped inside its renderer', () => {
+  const renderer = dashboard.match(/function renderModelWorker\(x\)\{([\\s\\S]*?)\n\}/);
+  assert.ok(renderer, 'model-worker renderer must exist');
+  assert.match(renderer[1], /const expected=\['heavenzfire-qwen-0\.5b'\]/);
+  assert.match(renderer[1], /expected\.map\(name/);
+  assert.doesNotMatch(dashboard, /Register candidate<\\/button>Validate worker blueprint<\\/button>/);
+});
