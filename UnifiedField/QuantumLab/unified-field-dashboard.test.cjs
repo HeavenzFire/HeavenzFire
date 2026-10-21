@@ -1,0 +1,48 @@
+'use strict';
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+
+const root = __dirname;
+const server = fs.readFileSync(path.join(root, 'UnifiedField-Dashboard-Server.cjs'), 'utf8');
+const dashboard = fs.readFileSync(path.join(root, 'UnifiedField-Dashboard.html'), 'utf8');
+const worker = fs.readFileSync(path.join(root, 'Invoke-LocalModelWorkerBatch.ps1'), 'utf8');
+
+test('dashboard server is loopback-only and exposes a fixed worker action', () => {
+  assert.match(server, /const HOST\s*=\s*['"]127\.0\.0\.1['"]/);
+  assert.match(server, /req\.method===['"]POST['"]&&req\.url===['"]\/api\/worker\/run['"]/);
+  assert.match(server, /if\(workerRun\.running\)/);
+  assert.match(server, /powershell\.exe/);
+  assert.match(server, /Cross-origin request denied/);
+  assert.match(server, /req\.url===['"]\/api\/overview['"]/);
+  assert.match(server, /modelWorker:\{run:workerRun,latest:latestWorkerResults\(\)\}/);
+});
+
+test('dashboard exposes model batch control and renders status from overview', () => {
+  assert.match(dashboard, /id="runModelWorker"/);
+  assert.match(dashboard, /fetch\('\/api\/worker\/run'/);
+  assert.match(dashboard, /renderModelWorker\(x\)/);
+  assert.match(dashboard, /qwen2\.5:0\.5b/);
+  assert.match(dashboard, /heavenzfire-runtime:latest/);
+  assert.match(dashboard, /heavenzfire:latest/);
+  assert.match(dashboard, /llama3\.2:1b/);
+  assert.match(dashboard, /Generated code is not executed automatically/);
+});
+
+test('worker batch calls local Ollama and records every model outcome', () => {
+  for (const model of ['qwen2.5:0.5b', 'heavenzfire-runtime:latest', 'heavenzfire:latest', 'llama3.2:1b']) {
+    assert.ok(worker.includes(model), 'missing configured model: ' + model);
+  }
+  assert.match(worker, /http:\/\/127\.0\.0\.1:11434/);
+  assert.match(worker, /stream\s*=\s*\$false/);
+  assert.match(worker, /worker-smoke-/);
+  assert.match(worker, /item\.error\s*=\s*\$_.Exception.Message/);
+  assert.doesNotMatch(worker, /Invoke-Expression|\biex\b/i);
+});
+
+test('worker script never executes generated code or accepts arbitrary task commands', () => {
+  assert.doesNotMatch(worker, /Start-Process|cmd\.exe|powershell\.exe\s+-Command/i);
+  assert.match(worker, /Do not claim tests were run/);
+  assert.match(worker, /num_predict\s*=\s*220/);
+});
