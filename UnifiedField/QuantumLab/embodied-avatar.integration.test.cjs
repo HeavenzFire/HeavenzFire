@@ -33,13 +33,29 @@ test('Digital Brain exposes bounded loopback-only vision proxy endpoints', () =>
   assert.match(server, /Content-Type must be image\/jpeg/);
 });
 
+test('Digital Brain proxies movement and observations to the actual Avatar Body service', () => {
+  const server = read('HeavenzFire-DigitalBrain-Server.cjs');
+  const html = read('HeavenzFire-DigitalBrain.html');
+  assert.match(server, /\/api\/body\/state/);
+  assert.match(server, /\/api\/body\/move/);
+  assert.match(server, /\/api\/body\/perception/);
+  assert.match(server, /req\.url\.replace\(\/\^\\\/api\\\/body\/,'\/api'\)/);
+  assert.match(html, /fetch\('\/api\/body\/move'/);
+  assert.match(html, /fetch\('\/api\/body\/perception'/);
+  assert.match(html, /refreshBodyState/);
+  assert.match(html, /syncBody\(\)/);
+});
+
 test('Unified Field dashboard embeds the Digital Brain and surfaces perception health', () => {
   const html = read('UnifiedField-Dashboard.html');
   const server = read('UnifiedField-Dashboard-Server.cjs');
+  const launcher = read('Start-UnifiedFieldDashboard.ps1');
   assert.match(html, /id="avatarFrame"/);
   assert.match(html, /http:\/\/127\.0\.0\.1:8797\//);
   assert.match(html, /avatarVisionState/);
   assert.match(server, /\/api\/avatar\/vision-health/);
+  assert.match(launcher, /AvatarBody\\avatar-body-server\.cjs/);
+  assert.match(launcher, /127\.0\.0\.1:8799\/health/);
 });
 
 test('avatar speech output follows assistant replies and scales the canvas for device pixel ratio', () => {
