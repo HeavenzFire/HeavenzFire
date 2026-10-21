@@ -278,16 +278,19 @@
       "sourcePath": "UnifiedField/FieldCore/task-inbox-server.cjs",
       "kind": "local-control-plane",
       "integration": "in-repository",
-      "status": "implemented; loopback-only; long-running deployment not yet verified",
+      "status": "implemented; PowerShell lifecycle launcher added; latest Windows smoke test pending; proposals remain pending",
       "dependencies": [
         "fieldcore"
       ],
       "capabilities": [
         "pending-task-persistence",
         "idempotent-delivery",
-        "task-lookup"
+        "task-lookup",
+        "launcher-managed-start-stop"
       ],
-      "activation": "operator-local"
+      "activation": "operator-local",
+      "launcherPath": "UnifiedField/FieldCore/Invoke-TaskInbox.ps1",
+      "entrypoint": "Enter-UnifiedField.ps1 -TaskInbox"
     },
     {
       "id": "evidence-ledger",
