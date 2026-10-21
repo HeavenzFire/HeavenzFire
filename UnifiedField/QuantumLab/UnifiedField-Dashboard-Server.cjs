@@ -23,6 +23,9 @@ const DASH=path.join(ROOT,'UnifiedField','QuantumLab','UnifiedField-Dashboard.ht
 const BUILD_MODEL=path.join(ROOT,'UnifiedField','QuantumLab','UnifiedField-BuildModel.json');
 const TASKDIR=path.join(ROOT,'144A','tasks');
 const BUILD_JOURNAL=new OfflineTaskJournal(path.join(ROOT,'UnifiedField','QuantumLab','data','bridge-tasks.jsonl'));
+const APPROVAL_LEDGER=path.join(ROOT,'UnifiedField','QuantumLab','data','approved-task-dispatches.jsonl');
+const TASK_INBOX_URL='http://127.0.0.1:18796';
+const MESH_BRIDGE_URL='http://127.0.0.1:8081';
 const BUILD_TARGETS=Object.freeze(['UnifiedField-Dashboard-Server.cjs','UnifiedField-Dashboard.html','heavenzfire-mesh-bridge.cjs','uf-local-worker.cjs','uf-bridge-journal.cjs','worker-forge.cjs','worker-forge-drafter.cjs','worker-forge-adversarial.cjs','worker-forge-remediation.cjs','worker-registry.cjs','worker-result-store.cjs','uf-model-worker-journal-publisher.cjs','UnifiedField-Dashboard.test.cjs','HeavenzFire-DigitalBrain-Server.cjs','HeavenzFire-DigitalBrain.html','embodied-avatar.integration.test.cjs','../AvatarBody/avatar-body-server.cjs','../AvatarBody/avatar-body.cjs','../AvatarBody/avatar-body.test.cjs','heavenzfire-ai-gateway.test.cjs','uf-local-worker.test.cjs','uf-bridge-journal.test.cjs','worker-forge.test.cjs','worker-forge-drafter.test.cjs','worker-forge-adversarial.test.cjs','worker-forge-remediation.test.cjs','worker-registry.test.cjs','worker-result-store.test.cjs','uf-model-worker-journal-publisher.test.cjs']);
 const GUARDIAN=path.join(ROOT,'144A','guardian-state.json');
 const LOCALAI=path.join(ROOT,'UnifiedField','QuantumLab','LocalAI');
@@ -63,6 +66,8 @@ async function probe(e){
  }catch(err){return {id:e.id,name:e.name,url:e.url,state:'unreachable',latencyMs:Date.now()-start,error:String(err.message||err)}}
 }
 function readJson(p){try{return JSON.parse(fs.readFileSync(p,'utf8').replace(/^\uFEFF/,''))}catch{return null}}
+function readApprovalLedger(){if(!fs.existsSync(APPROVAL_LEDGER))return [];return fs.readFileSync(APPROVAL_LEDGER,'utf8').split(/\r?\n/).filter(Boolean).map((line,i)=>{try{return JSON.parse(line)}catch{throw new Error('approval_ledger_corrupt_line_'+(i+1))}})}
+function appendApprovalLedger(event){fs.mkdirSync(path.dirname(APPROVAL_LEDGER),{recursive:true});const fd=fs.openSync(APPROVAL_LEDGER,'a');try{fs.writeSync(fd,JSON.stringify(event)+'\n');fs.fsyncSync(fd)}finally{fs.closeSync(fd)}}
 function compressionStatus(){
  const root=path.join(ROOT,'UnifiedField','QuantumLab','CompressionArtifacts');
  const manifestPath=path.join(root,'benchmark.json.hfqloss.manifest.json');
@@ -362,6 +367,36 @@ const server=http.createServer(async(req,res)=>{
  if(req.url==='/api/mesh/tasks'&&req.method==='GET'){
   try{const r=await fetch('http://127.0.0.1:8081/api/mesh/tasks',{signal:AbortSignal.timeout(1800)});const data=await r.json();res.writeHead(r.status,{'Content-Type':'application/json'});return res.end(JSON.stringify(data));}
   catch(err){res.writeHead(503,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'mesh_unavailable: '+String(err.message||err)}));}
+ }
+ if(req.method==='GET'&&req.url==='/api/inbox/tasks'){
+  try{
+   const [ir,mr]=await Promise.all([fetch(TASK_INBOX_URL+'/api/tasks?limit=30',{signal:AbortSignal.timeout(2000)}),fetch(MESH_BRIDGE_URL+'/api/mesh/tasks',{signal:AbortSignal.timeout(2000)})]);
+   const inbox=await ir.json(),mesh=await mr.json();if(!ir.ok||!inbox.ok)throw Error('task_inbox_unavailable');if(!mr.ok||!mesh.ok)throw Error('mesh_unavailable');
+   const ledger=readApprovalLedger(),latest=new Map();for(const e of ledger)latest.set(e.taskId,e);
+   const meshById=new Map((mesh.tasks||[]).map(t=>[t.task_id,t]));
+   const tasks=(inbox.tasks||[]).map(t=>{const dispatch=latest.get(t.taskId)||null;return {...t,dispatch,meshTask:dispatch&&dispatch.meshTaskId?meshById.get(dispatch.meshTaskId)||null:null};});
+   res.writeHead(200,{'Content-Type':'application/json; charset=utf-8'});return res.end(JSON.stringify({ok:true,total:tasks.length,tasks}));
+  }catch(err){res.writeHead(503,{'Content-Type':'application/json; charset=utf-8'});return res.end(JSON.stringify({ok:false,error:String(err.message||err)}));}
+ }
+ if(req.method==='POST'&&req.url==='/api/inbox/dispatch-approved'){
+  const origin=req.headers.origin||'';if(origin&&origin!=='http://127.0.0.1:8800'&&origin!=='http://localhost:8800'){res.writeHead(403,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'Cross-origin request denied'}));}
+  let raw='';try{for await(const chunk of req){raw+=chunk.toString('utf8');if(Buffer.byteLength(raw)>8192){res.writeHead(413,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'Approval request exceeds 8 KiB'}));}}}catch(err){res.writeHead(400,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'invalid_request_body'}));}
+  let b;try{b=JSON.parse(raw||'{}')}catch{res.writeHead(400,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'invalid_json'}));}
+  if(!b||b.approved!==true||typeof b.taskId!=='string'||!b.taskId.trim()||b.taskId.length>128){res.writeHead(400,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'explicit_approval_and_taskId_required'}));}
+  try{
+   const inboxResponse=await fetch(TASK_INBOX_URL+'/api/tasks/'+encodeURIComponent(b.taskId),{signal:AbortSignal.timeout(2000)});const inboxData=await inboxResponse.json();if(!inboxResponse.ok||!inboxData.ok||!inboxData.taskRecord){res.writeHead(404,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'proposal_not_found'}));}
+   const task=inboxData.taskRecord,meta=task.metadata||{};
+   if(task.status!=='proposed'||task.approvalState!=='pending'){res.writeHead(409,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'proposal_not_pending'}));}
+   if(meta.test===true||meta.executionAllowed!==true){res.writeHead(403,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'proposal_not_authorized_for_execution'}));}
+   const dispatch=meta.dispatch;if(!dispatch||!['hash_task','model_task'].includes(dispatch.type)||!dispatch.payload||typeof dispatch.payload!=='object'||Array.isArray(dispatch.payload)){res.writeHead(422,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'bounded_dispatch_metadata_required'}));}
+   let payload=dispatch.payload;
+   if(dispatch.type==='hash_task'){const rounds=payload.rounds===undefined?1:payload.rounds;if(typeof payload.input!=='string'||payload.input.length>2000||!Number.isInteger(rounds)||rounds<1||rounds>100000){res.writeHead(422,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'invalid_bounded_hash_payload'}));}payload={input:payload.input,rounds};}
+   if(dispatch.type==='model_task'){if(typeof payload.prompt!=='string'||!payload.prompt.trim()||payload.prompt.length>3000){res.writeHead(422,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'invalid_bounded_model_payload'}));}const model=payload.model||'heavenzfire-qwen-0.5b';if(!WORKER_MODEL_ALLOWLIST.includes(model)){res.writeHead(422,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'model_not_allowlisted'}));}payload={prompt:payload.prompt,model};}
+   const ledger=readApprovalLedger(),prior=ledger.find(e=>e.taskId===task.taskId&&e.status==='dispatched');if(prior){res.writeHead(200,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:true,duplicate:true,taskId:task.taskId,meshTaskId:prior.meshTaskId,status:'dispatched'}));}
+   const upstream=await fetch(MESH_BRIDGE_URL+'/api/mesh/enqueue',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:dispatch.type,payload,client_task_id:task.taskId}),signal:AbortSignal.timeout(3000)});const result=await upstream.json();if(!upstream.ok||!result.ok){res.writeHead(upstream.status||502,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:result.error||'mesh_dispatch_failed'}));}
+   const event={taskId:task.taskId,goal:task.goal,type:dispatch.type,status:'dispatched',actor:'unified-field-dashboard-explicit-approval',approvedAt:new Date().toISOString(),meshTaskId:result.task_id,payloadSha256:crypto.createHash('sha256').update(JSON.stringify(payload)).digest('hex'),duplicate:result.duplicate===true};
+   appendApprovalLedger(event);res.writeHead(202,{'Content-Type':'application/json; charset=utf-8'});return res.end(JSON.stringify({ok:true,duplicate:result.duplicate===true,taskId:task.taskId,meshTaskId:result.task_id,status:result.status||'queued'}));
+  }catch(err){res.writeHead(502,{'Content-Type':'application/json; charset=utf-8'});return res.end(JSON.stringify({ok:false,error:String(err.message||err)}));}
  }
  if(req.url==='/api/mesh/enqueue'&&req.method==='POST'){
   const origin=req.headers.origin||'';
