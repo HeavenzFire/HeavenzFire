@@ -170,5 +170,9 @@ test('Avatar Body is surfaced in the Unified Field and movement remains simulate
   assert.ok(dashboard.includes('id="avatarBodyCard"'));
   assert.ok(dashboard.includes('renderAvatarBody(x.avatarBody)'));
   assert.ok(dashboard.includes('sendAvatarMove'));
+  assert.ok(dashboard.includes('getUserMedia'));
+  assert.ok(dashboard.includes('grayscale_luma_0_15'));
+  assert.ok(dashboard.includes('audio:false'));
+  assert.ok(dashboard.includes('Semantic object recognition is not yet implemented.'));
   assert.ok(dashboard.includes('physical actuation=false'));
 });
