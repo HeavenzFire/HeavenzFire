@@ -23,4 +23,4 @@ Status: applied to the connected Windows installation and verified locally. The 
 
 - Add a read-only Watchtower journal/resource summary to the dashboard.
 - Test sustained stability, shutdown/restart, and reboot recovery.
-- Do not enable model batch inference until RAM headroom improves; the latest post-mesh-recovery snapshot was about 1.29 GB available RAM and 8.45 GB free on C:.
+- Do not enable model batch inference until RAM headroom improves; the latest snapshot was about 0.91 GB available RAM and 8.41 GB free on C:. The dashboard now blocks model-task enqueue below 1 GiB available RAM.
