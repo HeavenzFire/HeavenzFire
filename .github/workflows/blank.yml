@@ -2,7 +2,7 @@ name: Unified Field dashboard and local worker checks
 
 on:
   push:
-    branches: ["main", "feat/unified-field-local-model-workers", "fix/worker-result-aggregation", "feat/worker-forge-child-blueprints", "fix/worker-forge-draft-repair", "fix/worker-forge-template-fallback", "feat/worker-adversarial-smoke-suite", "feat/worker-registry", "feat/worker-smoke-artifact-import", "fix/worker-registry-windows-replace", "feat/worker-forge-remediation"]
+    branches: ["main", "feat/unified-field-local-model-workers", "fix/worker-result-aggregation", "feat/worker-forge-child-blueprints", "fix/worker-forge-draft-repair", "fix/worker-forge-template-fallback", "feat/worker-adversarial-smoke-suite", "feat/worker-registry", "feat/worker-smoke-artifact-import", "fix/worker-registry-windows-replace", "feat/worker-forge-remediation", "feat/unified-field-five-agent-build-pipeline"]
   pull_request:
     branches: ["main"]
   workflow_dispatch:
@@ -27,6 +27,7 @@ jobs:
           node --check UnifiedField/QuantumLab/worker-forge-adversarial.cjs
           node --check UnifiedField/QuantumLab/worker-registry.cjs
           node --check UnifiedField/QuantumLab/worker-forge-remediation.cjs
+          node --check UnifiedField/QuantumLab/five-agent-build-pipeline.cjs
       - name: Parse worker and validator PowerShell without executing generated code
         shell: pwsh
         run: |
@@ -46,4 +47,4 @@ jobs:
           }
           & "${{ github.workspace }}/UnifiedField/QuantumLab/Test-LocalModelWorkerResponse.Tests.ps1"
       - name: Test dashboard-worker safety contract and deterministic worker forge
-        run: node --test UnifiedField/QuantumLab/unified-field-dashboard.test.cjs UnifiedField/QuantumLab/uf-model-worker-journal-publisher.test.cjs UnifiedField/QuantumLab/worker-forge.test.cjs UnifiedField/QuantumLab/worker-result-store.test.cjs UnifiedField/QuantumLab/worker-forge-drafter.test.cjs UnifiedField/QuantumLab/worker-forge-adversarial.test.cjs UnifiedField/QuantumLab/worker-registry.test.cjs UnifiedField/QuantumLab/worker-forge-remediation.test.cjs
+        run: node --test UnifiedField/QuantumLab/unified-field-dashboard.test.cjs UnifiedField/QuantumLab/uf-model-worker-journal-publisher.test.cjs UnifiedField/QuantumLab/worker-forge.test.cjs UnifiedField/QuantumLab/worker-result-store.test.cjs UnifiedField/QuantumLab/worker-forge-drafter.test.cjs UnifiedField/QuantumLab/worker-forge-adversarial.test.cjs UnifiedField/QuantumLab/worker-registry.test.cjs UnifiedField/QuantumLab/worker-forge-remediation.test.cjs UnifiedField/QuantumLab/five-agent-build-pipeline.test.cjs
