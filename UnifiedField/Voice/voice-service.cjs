@@ -4,7 +4,7 @@ const path = require('node:path');
 const { indexSources } = require('./index-voice-sources.cjs');
 
 const HOST = '127.0.0.1';
-const PORT = Number(process.env.HEAVENZFIRE_VOICE_PORT || 8796);
+const PORT = Number(process.env.HEAVENZFIRE_VOICE_PORT || 8793);
 const SOURCES = path.join(__dirname, 'sources');
 const MAX_TEXT_BYTES = 1024;
 
