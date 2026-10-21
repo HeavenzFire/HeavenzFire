@@ -9,6 +9,8 @@ The Unified Field dashboard exposes a fixed, loopback-only action that asks the 
 - `UnifiedField-Dashboard-Server.cjs` exposes `POST /api/worker/run` and includes the latest result artifact in `GET /api/overview`.
 - The dashboard displays model availability, generation status, elapsed time, and a bounded response preview.
 
+The dashboard also exposes a **Retry failed models** control after a batch. It submits only the failed or statically rejected model tags from the latest result artifact; the server checks every tag against a fixed allowlist and rejects duplicates or unknown models. It does not accept shell commands or arbitrary prompts. A retry is still a new generation attempt and must pass the same static checks before being counted as validated.
+
 ## Run locally
 
 From PowerShell 5.1:
