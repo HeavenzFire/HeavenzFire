@@ -1,6 +1,14 @@
 [CmdletBinding()]
 param(
     [Parameter()]
+    [switch]$TaskInbox,
+    [Parameter()]
+    [ValidateSet("Start", "Status", "Stop")]
+    [string]$TaskInboxAction = "Start",
+    [Parameter()]
+    [ValidateRange(1024, 65535)]
+    [int]$TaskInboxPort = 18796,
+    [Parameter()]
     [string]$CapabilityRegistry = (Join-Path $PSScriptRoot "examples\capability-registry.json"),
     [Parameter()]
     [string]$NodeRegistry = (Join-Path $PSScriptRoot "examples\nodes.json"),
