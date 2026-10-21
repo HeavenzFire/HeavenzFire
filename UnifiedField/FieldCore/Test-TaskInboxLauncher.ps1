@@ -1,6 +1,6 @@
 #requires -Version 5.1
 $ErrorActionPreference = 'Stop'
-$Launcher = Join-Path $PSScriptRoot 'Invoke-TaskInbox.ps1'
+$Launcher = Join-Path $PSScriptRoot '..\Invoke-UnifiedFieldTaskInbox.ps1'
 $TempRoot = Join-Path $env:RUNNER_TEMP ('hf-launcher-smoke-' + [guid]::NewGuid().ToString('N'))
 $OriginalLocalAppData = $env:LOCALAPPDATA
 $OriginalStateRoot = $env:HF_UNIFIED_FIELD_STATE_ROOT
@@ -14,7 +14,7 @@ $listener.Stop()
 try {
     $env:LOCALAPPDATA = $TempRoot
     $env:HF_UNIFIED_FIELD_STATE_ROOT = $StateRoot
-    $start = & $Launcher -Action Start -Port $Port | ConvertFrom-Json
+    $start = & $Launcher -Action Start -Port $Port -StateRoot $StateRoot | ConvertFrom-Json
     if ($start.status -ne 'ALIVE' -or $start.taskExecutionEnabled -ne $false -or $start.modelWorkersStarted -ne $false) {
         throw ('Launcher start returned unexpected state: ' + ($start | ConvertTo-Json -Compress))
     }
@@ -39,23 +39,22 @@ try {
     $posted = Invoke-RestMethod -Method Post -Uri ($start.url + '/api/tasks') -ContentType 'application/json' -Body $body -TimeoutSec 3
     if ($posted.ok -ne $true -or $posted.status -ne 'proposed') { throw 'Task inbox did not accept a pending proposal.' }
 
-    $reviewScript = Join-Path $PSScriptRoot 'Review-TaskInbox.ps1'
-    $review = & $reviewScript -Port $Port -AsJson | ConvertFrom-Json
+    $review = & $Launcher -Action Review -Port $Port -StateRoot $StateRoot -AsJson | ConvertFrom-Json
     if ($review.readOnly -ne $true -or $review.returned -ne 1 -or $review.tasks[0].taskId -ne 'launcher-smoke-task') {
         throw ('Read-only review returned unexpected data: ' + ($review | ConvertTo-Json -Compress))
     }
     Write-Host 'PASS: read-only review CLI lists the pending proposal without changing state.'
 
-    $again = & $Launcher -Action Start -Port $Port | ConvertFrom-Json
+    $again = & $Launcher -Action Start -Port $Port -StateRoot $StateRoot | ConvertFrom-Json
     if ($again.status -ne 'ALREADY_RUNNING') { throw 'Second Start did not report ALREADY_RUNNING.' }
     Write-Host 'PASS: start is idempotent and proposals remain pending.'
 
-    $status = & $Launcher -Action Status -Port $Port | ConvertFrom-Json
+    $status = & $Launcher -Action Status -Port $Port -StateRoot $StateRoot | ConvertFrom-Json
     if ($status.status -ne 'ALIVE' -or $status.ownedByLauncher -ne $true -or $status.storedTaskCount -ne 1) {
         throw ('Status returned unexpected state: ' + ($status | ConvertTo-Json -Compress))
     }
 
-    $stop = & $Launcher -Action Stop -Port $Port | ConvertFrom-Json
+    $stop = & $Launcher -Action Stop -Port $Port -StateRoot $StateRoot | ConvertFrom-Json
     if ($stop.status -ne 'STOPPED' -or $stop.stopped -ne $true -or $stop.inboxPreserved -ne $true) {
         throw ('Stop returned unexpected state: ' + ($stop | ConvertTo-Json -Compress))
     }
