@@ -33,6 +33,7 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:11px;color:var(--muted
 <section class="card span3"><div class="eyebrow">Orchestrator tasks</div><div class="metric" id="taskMetric">—</div><div class="detail" id="taskDetail">Live from orchestrator health</div></section>
 <section class="card span3"><div class="eyebrow">Gyroid cognitive graph</div><div class="metric" id="graphMetric">—</div><div class="detail" id="graphDetail">Existing Digital Brain runtime</div></section>
 <section class="card span3 warning" id="hostCard"><div class="eyebrow">Host resource guard</div><div class="metric" id="hostMetric">—</div><div class="detail" id="hostDetail">Reading existing guardian state</div></section>
+<section class="card span5" id="avatarBodyCard"><h2>Avatar Body · perception & movement</h2><div class="metric" id="avatarBodyMode">BODY OFFLINE</div><div class="detail" id="avatarBodyPose">Waiting for body state from 127.0.0.1:8799</div><div class="service-list" id="avatarBodySensors" style="margin:10px 0"><div class="detail">No sensor observations yet.</div></div><div class="detail" style="margin-bottom:8px">Virtual movement only · no physical actuator is connected or enabled.</div><div class="actions" id="avatarMoveControls"><button data-dx="0" data-dy="0" data-dz="-0.1">Forward</button><button data-dx="-0.1" data-dy="0" data-dz="0">Left</button><button data-dx="0" data-dy="0" data-dz="0.1">Back</button><button data-dx="0.1" data-dy="0" data-dz="0">Right</button><button data-dx="0" data-dy="0.1" data-dz="0">Rise</button><button data-dx="0" data-dy="-0.1" data-dz="0">Lower</button></div><div class="detail" id="avatarBodyAction" style="margin-top:9px">Movement controls activate only when the local Avatar Body service responds.</div></section>
 <section class="card span7"><h2>Local service mesh</h2><div class="service-list" id="services"><div class="detail">Connecting to services…</div></div></section>
 </section>
 <section class="card span12"><h2>Local AI worker pool · assigned build tasks</h2><div class="detail">Fixed, bounded local batch. Each model receives the same utility task. Outputs are stored as artifacts; generated code is not executed automatically and requires independent verification.</div><div class="actions" style="margin:12px 0"><button id="runModelWorker">Run build-task batch</button><button id="retryFailedModels" disabled>Retry failed models</button><span class="pill" id="modelWorkerStatus">READY · NOT YET RUN</span></div><div id="modelPool" class="service-list"><div class="detail">Reading local model inventory…</div></div><div class="detail" id="modelWorkerMeta" style="margin-top:10px">Dashboard refreshes status every 8 seconds.</div></section>
@@ -228,6 +229,24 @@ async function attachSmokeArtifact(){
  finally{button.disabled=false}
 }
 $('attachSmokeArtifact').addEventListener('click',attachSmokeArtifact);
+function renderAvatarBody(result){
+ const mode=$('avatarBodyMode'),pose=$('avatarBodyPose'),sensors=$('avatarBodySensors'),card=$('avatarBodyCard');
+ const s=result&&result.ok&&result.state;
+ if(!s){mode.textContent='BODY OFFLINE';pose.textContent='Avatar Body service unavailable · start avatar-body-server.cjs';sensors.innerHTML='<div class="detail">No sensor observations received.</div>';card.className='card span5 warning';return;}
+ const p=s.pose.position,o=s.pose.orientation;
+ mode.textContent='SIMULATED BODY · '+s.motion.sequence+' moves';
+ pose.textContent='Position ('+p.x.toFixed(2)+', '+p.y.toFixed(2)+', '+p.z.toFixed(2)+') · yaw '+o.yaw.toFixed(1)+'° · observations '+s.perception.observationCount;
+ const types=Object.keys(s.perception.latestByType||{});
+ sensors.innerHTML='<div class="service"><strong>Camera</strong>'+pill(s.hardware.camera)+'</div><div class="service"><strong>Microphone</strong>'+pill(s.hardware.microphone)+'</div><div class="service"><strong>Actuators</strong>'+pill(s.hardware.actuators)+'</div><div class="service"><strong>Latest modalities</strong><span class="detail">'+esc(types.join(', ')||'none yet')+'</span></div>';
+ card.className='card span5';
+}
+async function sendAvatarMove(button){
+ const status=$('avatarBodyAction');
+ const payload={delta:{x:Number(button.dataset.dx),y:Number(button.dataset.dy),z:Number(button.dataset.dz)},source:'unified-dashboard'};
+ status.textContent='Sending bounded virtual movement…';
+ try{const r=await fetch('http://127.0.0.1:8799/api/move',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),cache:'no-store'});const x=await r.json();if(!r.ok||!x.ok)throw Error(x.error||('HTTP '+r.status));status.textContent='Virtual move accepted · physical actuation=false';await refresh();}
+ catch(e){status.textContent='Move not applied: '+String(e.message||e);}
+}
 async function refresh(){
  $('overallText').textContent='Refreshing local state…';
  try{
@@ -242,6 +261,7 @@ async function refresh(){
   $('hostCard').className='card span3 '+((disk&&disk.state==='critical')?'warning':'');
   $('services').innerHTML=sv.map(serviceRow).join('');
   renderModelWorker(x);
+  renderAvatarBody(x.avatarBody);
   $('tasks').innerHTML=(x.tasks||[]).length?x.tasks.map(t=>'<div class="task"><div class="taskhead"><div><strong>'+esc(t.title||t.id)+'</strong><div class="detail">'+esc(t.id)+' · '+esc(t.updated||'')+'</div></div>'+pill(t.status)+'</div><p>'+esc(t.goal||'No goal description in task record')+'</p></div>').join(''):'<div class="detail">No task records found.</div>';
   const f=(x.guardian&&x.guardian.findings)||[];$('findings').innerHTML=f.length?f.map(q=>'<div class="service"><span>'+esc(q)+'</span>'+pill(/critical/i.test(q)?'critical':'warning')+'</div>').join(''):'<div class="detail">No findings in guardian snapshot.</div>';
   $('overallDot').className='dot '+(healthy===sv.length?'ok':healthy===0?'bad':'');$('overallText').textContent=healthy===sv.length?'Local hub connected · all monitored endpoints healthy':('Local hub connected · '+healthy+'/'+sv.length+' endpoints healthy');
@@ -250,5 +270,6 @@ async function refresh(){
 async function github(){
  try{const r=await fetch('https://api.github.com/repos/HeavenzFire/HeavenzFire',{headers:{'Accept':'application/vnd.github+json'}});if(!r.ok)throw Error('GitHub HTTP '+r.status);const x=await r.json();$('repoStars').textContent=x.stargazers_count??'—';$('githubInfo').innerHTML=[['Default branch',x.default_branch],['Open issues',x.open_issues_count],['Forks',x.forks_count],['Updated',x.updated_at?new Date(x.updated_at).toLocaleDateString():'—'],['Visibility',x.private?'private':'public']].map(([k,v])=>'<div class="service"><strong>'+esc(k)+'</strong><span class="detail">'+esc(v)+'</span></div>').join('');}catch(e){$('githubInfo').innerHTML='<div class="detail">Public GitHub metadata unavailable: '+esc(e.message)+'</div>'}}
 function drawGraph(s){const c=$('graph'),ctx=c.getContext('2d'),w=c.width,h=c.height;ctx.clearRect(0,0,w,h);ctx.strokeStyle='#1e3447';ctx.lineWidth=1;for(let i=0;i<6;i++){ctx.beginPath();ctx.ellipse(w/2,h/2,70+i*54,25+i*24,i*.18,0,Math.PI*2);ctx.stroke()}if(!s||!s.nodes){ctx.fillStyle='#91a3b8';ctx.fillText('Waiting for Digital Brain graph…',24,30);return}const nodes=s.nodes,edges=s.edges||[],p={};nodes.forEach((n,i)=>{const a=i*2.39996,rad=35+((i*37)%120);p[n.id]={x:w/2+Math.cos(a)*rad*2.1,y:h/2+Math.sin(a)*rad*.9,n}});ctx.globalAlpha=.23;ctx.strokeStyle='#64d9ed';edges.forEach(e=>{const a=p[e.a],b=p[e.b];if(a&&b){ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}});ctx.globalAlpha=1;nodes.forEach(n=>{const q=p[n.id],v=n.activation||0;ctx.beginPath();ctx.arc(q.x,q.y,2.5+v*5,0,Math.PI*2);ctx.fillStyle=v>.65?'#65e0a0':v>.35?'#64d9ed':'#637b94';ctx.fill()});ctx.fillStyle='#91a3b8';ctx.font='12px Segoe UI';ctx.fillText(nodes.length+' nodes · '+edges.length+' connections · '+(s.topology||'').slice(0,70),12,h-12)}
+$('avatarMoveControls').addEventListener('click',event=>{const button=event.target.closest('button[data-dx]');if(button)sendAvatarMove(button)});
 $('refresh').addEventListener('click',()=>{refresh();github()});refresh();github();setInterval(refresh,8000);setInterval(github,60000);loadWorkerRegistry();
 </script></body></html>
