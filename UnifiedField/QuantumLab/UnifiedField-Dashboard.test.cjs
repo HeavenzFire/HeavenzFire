@@ -115,3 +115,20 @@ test('proposal inbox requires explicit bounded approval and idempotent mesh disp
   assert.match(dashboard, /Approve &amp; dispatch/);
   assert.match(dashboard, /window\.confirm/);
 });
+test('five-role build endpoint is loopback-only, bounded, serialized, and visible in the dashboard', () => {
+  const pipeline = fs.readFileSync(path.join(root, 'five-agent-build-pipeline.cjs'), 'utf8');
+  assert.match(server, /require\('\.\/five-agent-build-pipeline\.cjs'\)/);
+  assert.match(server, /\/api\/build-agents\/run/);
+  assert.match(server, /\/api\/build-agents\/status/);
+  assert.match(server, /modelWorkloadBusy\(\)/);
+  assert.match(server, /modelWorkloadAdmission\(\)/);
+  assert.match(server, /objective\.trim\(\)\.length<20/);
+  assert.match(dashboard, /id="runFiveAgentBuild"/);
+  assert.match(dashboard, /id="fiveAgentBuildStatus"/);
+  assert.match(dashboard, /id="fiveAgentBuildResults"/);
+  assert.match(dashboard, /fetch\('\/api\/build-agents\/run'/);
+  assert.match(dashboard, /fetch\('\/api\/build-agents\/status'/);
+  assert.match(pipeline, /independent_processes: false/);
+  assert.match(pipeline, /code_executed: false/);
+  assert.match(pipeline, /const AGENTS = Object\.freeze\(\[/);
+});
