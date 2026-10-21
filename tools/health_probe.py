@@ -103,11 +103,29 @@ def validate_nodes(data: Any) -> list[str]:
     return errors
 
 
-def probe_node(node: dict[str, Any], timeout: float = 2.0) -> dict[str, Any]:
-    """Return ALIVE only for an HTTP 2xx response; never infer liveness from configuration."""
+def probe_node(
+    node: dict[str, Any],
+    timeout: float = 2.0,
+    allowed_hosts: list[str] | set[str] | None = None,
+) -> dict[str, Any]:
+    """Probe one node; non-loopback targets require an explicit exact-host allowlist."""
     node_id = node.get("id", "unknown")
     url = node.get("health_url", "")
     started = time.monotonic()
+    parsed = urlparse(url) if isinstance(url, str) else None
+    if (parsed is None or parsed.scheme not in {"http", "https"} or not parsed.hostname
+            or parsed.username or parsed.password):
+        return {"id": node_id, "status": "DARK", "reason": "health URL is invalid",
+                "http_status": None, "latency_ms": 0.0}
+    allowlist = {
+        host.lower().rstrip(".")
+        for host in (allowed_hosts or [])
+        if _valid_allowlist_host(host)
+    }
+    host = parsed.hostname.lower().rstrip(".")
+    if not _is_loopback(host) and host not in allowlist:
+        return {"id": node_id, "status": "DARK", "reason": f"health host '{host}' is not allowlisted",
+                "http_status": None, "latency_ms": 0.0}
     try:
         request = Request(url, headers={"Accept": "application/json", "User-Agent": "HeavenzFire-HealthProbe/1.1"})
         with _open_url(request, timeout=timeout) as response:
@@ -130,7 +148,7 @@ def run_registry(data: dict[str, Any], timeout: float = 2.0) -> dict[str, Any]:
     errors = validate_nodes(data)
     if errors:
         return {"schema_version": "1.0", "overall": "DARK", "validation_errors": errors, "nodes": []}
-    results = [probe_node(node, timeout) for node in data["nodes"]]
+    results = [probe_node(node, timeout, data.get("allowed_hosts", [])) for node in data["nodes"]]
     alive = sum(item["status"] == "ALIVE" for item in results)
     return {"schema_version": "1.0", "overall": "ALIVE" if results and alive == len(results) else "DARK",
             "summary": {"total": len(results), "alive": alive, "dark": len(results)-alive}, "nodes": results}
