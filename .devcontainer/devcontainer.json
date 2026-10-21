@@ -1,0 +1,19 @@
+{
+  "name": "HeavenzFire Unified Field",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:1-20-bookworm",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "editorconfig.editorconfig"
+      ]
+    }
+  },
+  "forwardPorts": [],
+  "portsAttributes": {},
+  "remoteUser": "node",
+  "postCreateCommand": "node unified-field/env-fabric.mjs validate",
+  "containerEnv": {
+    "HEAVENZFIRE_ENV_FABRIC_MODE": "registry-only"
+  }
+}
