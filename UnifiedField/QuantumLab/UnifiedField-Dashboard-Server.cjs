@@ -8,6 +8,7 @@ const {latestWorkerResults}=require('./worker-result-store.cjs');
 const {draftWorkerBlueprint}=require('./worker-forge-drafter.cjs');
 const {runAdversarialSmokeSuite}=require('./worker-forge-adversarial.cjs');
 const {createWorkerRegistry}=require('./worker-registry.cjs');
+const {remediateBlueprint}=require('./worker-forge-remediation.cjs');
 const FORGE_AXES={
  task_type:['build','review'],
  risk_class:['LOW','MEDIUM','HIGH'],
@@ -100,6 +101,36 @@ const server=http.createServer(async(req,res)=>{
    const result=workerRegistry.register(body.blueprint,body.source||'manual');
    res.writeHead(result.ok?200:400,{'Content-Type':'application/json'});
    return res.end(JSON.stringify(result));
+  }catch(err){
+   res.writeHead(400,{'Content-Type':'application/json'});
+   return res.end(JSON.stringify({ok:false,error:String(err.message||err)}));
+  }
+ }
+ if(req.method==='POST'&&req.url==='/api/forge/remediate'){
+  const origin=req.headers.origin||'';
+  if(origin&&origin!=='http://127.0.0.1:8800'&&origin!=='http://localhost:8800'){res.writeHead(403,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'Cross-origin request denied'}));}
+  let raw='';
+  try{
+   for await(const chunk of req){raw+=chunk.toString('utf8');if(Buffer.byteLength(raw)>32768){res.writeHead(413,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'Remediation request exceeds 32 KiB'}));}}
+   const body=JSON.parse(raw||'{}');
+   const file=body.artifact_file;
+   if(typeof file!=='string'||!file||file!==path.basename(file)||!file.startsWith('worker-forge-eval-')||!file.endsWith('.json')){
+    res.writeHead(400,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'artifact_file must name a local Worker Forge evaluation artifact'}));
+   }
+   const artifactPath=path.join(LOCALAI,file);
+   if(!fs.existsSync(artifactPath)){res.writeHead(404,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'artifact_not_found'}));}
+   let artifact;
+   try{artifact=JSON.parse(fs.readFileSync(artifactPath,'utf8').replace(/^\uFEFF/,''));}
+   catch{res.writeHead(400,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'artifact_json_invalid'}));}
+   const current=workerRegistry.list().workers.find(worker=>worker.blueprint_hash===artifact.blueprint_hash);
+   if(!current){res.writeHead(400,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'source_worker_not_registered'}));}
+   const result=remediateBlueprint(body.blueprint,artifact,file);
+   if(!result.ok){res.writeHead(400,{'Content-Type':'application/json'});return res.end(JSON.stringify(result));}
+   if(current.blueprint_hash!==result.source_blueprint_hash){res.writeHead(400,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'registered_blueprint_hash_mismatch'}));}
+   const registered=workerRegistry.register(result.blueprint,'remediation',{parent_blueprint_hash:result.source_blueprint_hash,remediation:result.report});
+   if(!registered.ok){res.writeHead(400,{'Content-Type':'application/json'});return res.end(JSON.stringify(registered));}
+   res.writeHead(200,{'Content-Type':'application/json'});
+   return res.end(JSON.stringify({...result,registered:true,duplicate:registered.duplicate,worker:registered.worker}));
   }catch(err){
    res.writeHead(400,{'Content-Type':'application/json'});
    return res.end(JSON.stringify({ok:false,error:String(err.message||err)}));
