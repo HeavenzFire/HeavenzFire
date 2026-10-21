@@ -1,21 +1,36 @@
-# Unified Field Browser Bridge
+# HeavenzFire 144A Tasker and BrowserBridge
 
-A minimal Manifest V3 extension that sends user-reviewed text to the local Unified Field proposal inbox.
+The 144A Tasker is the desktop-style Edge app launched at `http://127.0.0.1:18795/`. The canonical source file is `HeavenzFire-144A-Tasker.html` at the repository root. The local BrowserBridge serves that file and owns the shared Windows task queue.
 
-## Permission and data boundaries
+## Scoped source writer
 
-- Requests only `activeTab` and `scripting`; it does not register a content script or read all pages automatically.
-- Has host permission only for `http://127.0.0.1:18796/*`.
-- Capturing text requires a click in the popup. The captured text is shown in an editable field, and sending requires a separate explicit click.
-- It creates a `heavenzfire.shared-task.v1` record in `proposed` / `pending` state. It does not approve or execute the proposal.
-- No provider API keys, external hosts, or page URLs are copied into task metadata.
+The Coder Workbench now has an explicit source writer wired into the existing BrowserBridge:
 
-## Local setup
+- `GET /api/scoped-write/target?file=...` reads an existing file inside `%USERPROFILE%\HeavenzFire\UnifiedField` and returns its SHA-256.
+- `POST /api/tasks/:taskId/scoped-write` requires the local Tasker origin, a Planned or ReviewRequired task, `approved: true`, the exact current SHA-256, and replacement text no larger than 60 KiB.
+- Only existing regular files inside the UnifiedField workspace are eligible. Absolute paths, traversal, symlink escapes, and unsupported extensions are rejected.
+- A backup is written before replacement. JavaScript syntax and JSON parsing are checked; an optional existing `.test.cjs` or `.test.js` can run through Node's test runner. A failed check triggers restoration of the original bytes.
+- Successful changes remain `ReviewRequired`; the Tasker does not mark a code change complete merely because a file was written.
+- No generated shell commands are accepted or executed by this writer.
 
-1. Start the Unified Field core inbox from the matching core branch on the same computer:
-   `node .\task-inbox-server.cjs`
-2. In Chromium/Edge, open the Extensions page and enable Developer mode.
-3. Choose **Load unpacked** and select this `BrowserBridge` directory.
-4. Select text in a page, open the extension, choose **Capture selected text**, review/edit the text, then choose **Submit pending proposal**.
+## Start and verify (Windows PowerShell 5.1)
 
-If the inbox is not running, the extension reports the connection failure and does not send the text elsewhere.
+From `C:\Users\rucke\HeavenzFire`, start the existing bridge with:
+
+```powershell
+node .\UnifiedField\BrowserBridge\bridge-server.cjs
+```
+
+Open the existing desktop shortcut, which should target `http://127.0.0.1:18795/` in Edge app mode. The bridge is loopback-only.
+
+## Verification recorded for this change
+
+- BrowserBridge JavaScript syntax check passed.
+- Tasker inline JavaScript syntax check passed.
+- Six local FieldCore suites passed: 20 tests total.
+- Live scoped-writer smoke test on an unchanged existing Markdown file succeeded; before/after hashes matched and a backup was present.
+- Negative checks confirmed traversal rejection, stale-hash rejection, and missing-approval rejection.
+
+## Explicit limitation
+
+This adds a real, reversible file-writing path. It does **not** yet make the local model autonomously generate and apply a code patch from a natural-language objective. Patch content must be reviewed in the Tasker editor and explicitly approved before it is written. Model output and a task's queue status are not evidence that code was implemented.
