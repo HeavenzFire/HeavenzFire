@@ -46,7 +46,10 @@ const endpoints=[
  {id:'voice',name:'Research / voice service',url:'http://127.0.0.1:8796/health'},
  {id:'brain',name:'Digital Brain runtime',url:'http://127.0.0.1:8797/api/health'},
  {id:'avatarvision',name:'Avatar local vision (OpenCV)',url:'http://127.0.0.1:11802/health'},
- {id:'mesh',name:'Mesh coordinator',url:'http://127.0.0.1:8080/health'}
+ {id:'meshbridge',name:'Unified Field mesh bridge',url:'http://127.0.0.1:8081/health'},
+ {id:'taskinbox',name:'Unified Field proposal inbox',url:'http://127.0.0.1:18796/health'},
+ {id:'legacy-mesh',name:'Legacy mesh coordinator',url:'http://127.0.0.1:8080/health'},
+ ...Array.from({length:16},(_,i)=>{const port=18111+i;const role=['text','coding','browser'][i%3];return {id:'swarm-'+port,name:'Swarm '+role+' worker '+port,url:'http://127.0.0.1:'+port+'/health'};})
 ];
 async function probe(e){
  const start=Date.now();
