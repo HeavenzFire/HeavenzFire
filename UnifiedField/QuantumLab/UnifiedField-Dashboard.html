@@ -59,7 +59,7 @@ async function refresh(){
   $('healthyMetric').textContent=healthy+'/'+sv.length;$('healthyDetail').textContent=(sv.length-healthy)+' unavailable or unverified';
   const orch=sv.find(s=>s.id==='orchestrator');$('taskMetric').textContent=orch&&orch.data?((orch.data.completed_tasks||0)+' / '+((orch.data.completed_tasks||0)+(orch.data.failed_tasks||0)+(orch.data.active_tasks||0))):'—';
   $('taskDetail').textContent=orch&&orch.data?('completed · '+(orch.data.active_tasks||0)+' active · '+(orch.data.failed_tasks||0)+' failed'):'Orchestrator response unavailable';
-  const brain=x.brain&&(x.brain.data||x.brain);$('graphMetric').textContent=brain?(brain.graphNodes+' / '+brain.graphEdges):'—';$('graphDetail').textContent=brain?(brain.model+' · tick '+brain.tick):'Digital Brain API unavailable';
+  const brain=x.brain&&(x.brain.data||x.brain);$('graphMetric').textContent=brain?(((brain.nodes||[]).length)+' / '+((brain.edges||[]).length)):'—';$('graphDetail').textContent=brain?(brain.model+' · tick '+brain.tick):'Digital Brain API unavailable';
   const h=x.guardian&&x.guardian.host;const mem=h&&h.memory,disk=h&&h.disk;
   $('hostMetric').textContent=disk?(disk.freeGB+' GB free'):'—';$('hostDetail').textContent=mem?('RAM free '+mem.freeGB+' GB ('+mem.freePercent+'%) · '+(x.guardian.overall||'guardian state')):'Guardian host snapshot unavailable';
   $('hostCard').className='card span3 '+((disk&&disk.state==='critical')?'warning':'');
