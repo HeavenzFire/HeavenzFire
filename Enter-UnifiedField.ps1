@@ -1,14 +1,6 @@
 [CmdletBinding()]
 param(
     [Parameter()]
-    [switch]$TaskInbox,
-    [Parameter()]
-    [ValidateSet("Start", "Status", "Stop")]
-    [string]$TaskInboxAction = "Start",
-    [Parameter()]
-    [ValidateRange(1024, 65535)]
-    [int]$TaskInboxPort = 18796,
-    [Parameter()]
     [string]$CapabilityRegistry = (Join-Path $PSScriptRoot "examples\capability-registry.json"),
     [Parameter()]
     [string]$NodeRegistry = (Join-Path $PSScriptRoot "examples\nodes.json"),
@@ -19,15 +11,6 @@ param(
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
-
-if ($TaskInbox) {
-    $taskInboxManager = Join-Path $PSScriptRoot "UnifiedField\FieldCore\Invoke-TaskInbox.ps1"
-    if (-not (Test-Path -LiteralPath $taskInboxManager -PathType Leaf)) {
-        throw "Task inbox manager is missing: $taskInboxManager"
-    }
-    & $taskInboxManager -Action $TaskInboxAction -Port $TaskInboxPort
-    return
-}
 
 $python = Get-Command python -ErrorAction SilentlyContinue
 if (-not $python) {
