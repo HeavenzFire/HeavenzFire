@@ -41,3 +41,12 @@ test('dashboard embedded JavaScript parses', () => {
   assert.ok(match, 'dashboard script must exist');
   assert.doesNotThrow(() => new vm.Script(match[1]));
 });
+test('mesh task console exposes bounded hash/model routes only', () => {
+  assert.ok(server.includes('/api/mesh/enqueue'));
+  assert.ok(server.includes('/api/mesh/task'));
+  assert.ok(server.includes('127.0.0.1:8081'));
+  assert.ok(dashboard.includes('id="meshHashButton"'));
+  assert.ok(dashboard.includes('id="meshModelButton"'));
+  assert.ok(dashboard.includes('No shell commands are accepted'));
+  assert.doesNotMatch(server, /req\.body\.command|req\.body\.script|exec\(.*req\.body/i);
+});
