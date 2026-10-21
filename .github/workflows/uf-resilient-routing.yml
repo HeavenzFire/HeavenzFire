@@ -1,0 +1,29 @@
+name: Unified Field Resilient Routing Tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'UnifiedField/QuantumLab/uf-resilient-routing.cjs'
+      - 'UnifiedField/QuantumLab/uf-resilient-routing.test.cjs'
+      - '.github/workflows/uf-resilient-routing.yml'
+  pull_request:
+    paths:
+      - 'UnifiedField/QuantumLab/uf-resilient-routing.cjs'
+      - 'UnifiedField/QuantumLab/uf-resilient-routing.test.cjs'
+      - '.github/workflows/uf-resilient-routing.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  route-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run resilient routing tests
+        run: node --test UnifiedField/QuantumLab/uf-resilient-routing.test.cjs
