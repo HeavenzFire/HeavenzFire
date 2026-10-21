@@ -102,7 +102,15 @@ class OfflineTaskJournal {
     return this.inspect().tasks.find(x => x.task_id === taskId);
   }
   evaluateReplay(taskId, currentCommitSha) {
-    const t = this.inspect().tasks.find(x => x.task_id === taskId);
+    const snapshot = this.inspect();
+    if (snapshot.corruptLines.length) {
+      return {
+        action: 'HOLD',
+        reason: 'JOURNAL_CORRUPT',
+        corruptLines: snapshot.corruptLines.map(x => x.line)
+      };
+    }
+    const t = snapshot.tasks.find(x => x.task_id === taskId);
     if (!t) return { action: 'NOT_FOUND' };
     if (t.status === 'DONE') return { action: 'SKIP_ALREADY_DONE' };
     if (t.target_commit_sha && t.target_commit_sha !== currentCommitSha) return { action: 'CONFLICT', reason: 'TARGET_COMMIT_CHANGED', expected: t.target_commit_sha, actual: currentCommitSha };
