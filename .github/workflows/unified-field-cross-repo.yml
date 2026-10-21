@@ -33,5 +33,5 @@ jobs:
           node --check UnifiedField/FieldCore/public-record-adapter.cjs
       - name: Test task contract, inbox, browser bridge, evidence ledger, public-record adapter, and cross-repository transport
         env:
-          HF_HUB_ADAPTER_PATH: $GITHUB_WORKSPACE/UnifiedCodebase/integrations/shared-task-proposal-adapter.mjs
+          HF_HUB_ADAPTER_PATH: ${{ github.workspace }}/UnifiedCodebase/integrations/shared-task-proposal-adapter.mjs
         run: node --test UnifiedField/FieldCore/shared-task-contract.test.cjs UnifiedField/FieldCore/task-inbox-server.test.cjs UnifiedField/BrowserBridge/browser-bridge.test.cjs UnifiedField/FieldCore/evidence-ledger.test.cjs UnifiedField/FieldCore/public-record-adapter.test.cjs UnifiedField/FieldCore/cross-repo-task-transport.test.cjs
