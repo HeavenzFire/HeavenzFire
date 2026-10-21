@@ -93,5 +93,10 @@ if (!adapterPath || !governedLifecyclePath) {
     );
     assert.equal(governed.get(task.taskId).status, 'queued');
     assert.equal(governed.approvalAudit().length, 0);
+
+    governed.approve(task.taskId, { actor: 'human-reviewer', reason: 'separate explicit review' });
+    assert.equal(governed.isApproved(task.taskId), true);
+    assert.equal(governed.get(task.taskId).status, 'queued');
+    assert.equal(governed.approvalAudit().length, 1);
   });
 }
