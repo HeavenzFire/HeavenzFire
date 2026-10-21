@@ -1,0 +1,29 @@
+name: Mistral Bridge PowerShell Smoke Test
+
+on:
+  push:
+    branches: ["main", "feat/mistral-free-handoff-bridge"]
+    paths:
+      - "unified-field/Invoke-HeavenzFireMistralBridge.ps1"
+      - "unified-field/MISTRAL-BRIDGE.md"
+      - "unified-field/Test-MistralBridgeSmoke.ps1"
+      - ".github/workflows/mistral-bridge-smoke.yml"
+  pull_request:
+    paths:
+      - "unified-field/Invoke-HeavenzFireMistralBridge.ps1"
+      - "unified-field/MISTRAL-BRIDGE.md"
+      - "unified-field/Test-MistralBridgeSmoke.ps1"
+      - ".github/workflows/mistral-bridge-smoke.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  powershell-smoke:
+    runs-on: windows-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test export/import without API credentials
+        shell: powershell
+        run: .\unified-field\Test-MistralBridgeSmoke.ps1
