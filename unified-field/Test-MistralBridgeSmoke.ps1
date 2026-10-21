@@ -6,43 +6,26 @@ $outputDirectory = Join-Path $tempRoot 'out'
 $responsePath = Join-Path $tempRoot 'sample-response.txt'
 $null = New-Item -ItemType Directory -Path $tempRoot -Force
 
-function Invoke-BridgeProcess([string[]]$BridgeArguments, [int]$TimeoutMilliseconds = 30000) {
-    $stdoutPath = Join-Path $tempRoot ([guid]::NewGuid().ToString('N') + '.stdout.txt')
-    $stderrPath = Join-Path $tempRoot ([guid]::NewGuid().ToString('N') + '.stderr.txt')
-    $allArguments = @('-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', $bridge) + $BridgeArguments
-    $argumentLine = (@($allArguments | ForEach-Object { '"' + ([string]$_).Replace('"', '\"') + '"' }) -join ' ')
-    $process = Start-Process -FilePath (Join-Path $PSHOME 'powershell.exe') -ArgumentList $argumentLine -PassThru -RedirectStandardOutput $stdoutPath -RedirectStandardError $stderrPath
-    if (-not $process.WaitForExit($TimeoutMilliseconds)) {
-        $process.Kill()
-        $process.WaitForExit()
-        throw 'Mistral bridge process exceeded the 30-second smoke-test timeout.'
-    }
-    $stdout = if (Test-Path -LiteralPath $stdoutPath) { Get-Content -LiteralPath $stdoutPath -Raw -Encoding UTF8 } else { '' }
-    $stderr = if (Test-Path -LiteralPath $stderrPath) { Get-Content -LiteralPath $stderrPath -Raw -Encoding UTF8 } else { '' }
-    return [pscustomobject]@{ ExitCode = $process.ExitCode; Stdout = $stdout; Stderr = $stderr }
-}
-
 try {
     $task = 'CI smoke test: preserve task identity and never execute imported model output.'
-    $exportProcess = Invoke-BridgeProcess @('-Mode', 'Export', '-Task', $task, '-OutputDirectory', $outputDirectory)
-    if ($exportProcess.ExitCode -ne 0) { throw ('Export failed: ' + $exportProcess.Stderr) }
-    $export = $exportProcess.Stdout | ConvertFrom-Json
+    $export = & $bridge -Mode Export -Task $task -OutputDirectory $outputDirectory | ConvertFrom-Json
     if ($export.status -ne 'PROMPT_EXPORTED') { throw 'Export mode did not report PROMPT_EXPORTED.' }
     if ([string]::IsNullOrWhiteSpace($export.task_id)) { throw 'Export mode did not return a task ID.' }
     if (-not (Test-Path -LiteralPath $export.prompt_file -PathType Leaf)) { throw 'Export prompt file is missing.' }
     if (-not (Test-Path -LiteralPath $export.envelope_file -PathType Leaf)) { throw 'Export envelope file is missing.' }
     Write-Host 'PASS: export mode creates prompt and envelope.'
 
-    $badIdProcess = Invoke-BridgeProcess @('-Mode', 'Export', '-TaskId', '..\outside', '-Task', $task, '-OutputDirectory', $outputDirectory)
-    if ($badIdProcess.ExitCode -eq 0 -or $badIdProcess.Stderr -notmatch 'TaskId must contain only') {
-        throw 'Path-like TaskId was not rejected.'
+    $badTaskIdRejected = $false
+    try {
+        & $bridge -Mode Export -TaskId '..\outside' -Task $task -OutputDirectory $outputDirectory | Out-Null
+    } catch {
+        if ($_.Exception.Message -match 'TaskId must contain only') { $badTaskIdRejected = $true } else { throw }
     }
+    if (-not $badTaskIdRejected) { throw 'Path-like TaskId was not rejected.' }
     Write-Host 'PASS: path-like task IDs are rejected.'
 
     Set-Content -LiteralPath $responsePath -Value 'Unverified CI sample response. No code execution.' -Encoding UTF8
-    $importProcess = Invoke-BridgeProcess @('-Mode', 'Import', '-TaskId', $export.task_id, '-Task', $task, '-ResponsePath', $responsePath, '-OutputDirectory', $outputDirectory)
-    if ($importProcess.ExitCode -ne 0) { throw ('Import failed: ' + $importProcess.Stderr) }
-    $import = $importProcess.Stdout | ConvertFrom-Json
+    $import = & $bridge -Mode Import -TaskId $export.task_id -Task $task -ResponsePath $responsePath -OutputDirectory $outputDirectory | ConvertFrom-Json
     if ($import.status -ne 'MANUAL_RESPONSE_IMPORTED') { throw 'Import mode did not report MANUAL_RESPONSE_IMPORTED.' }
     if ($import.task_id -ne $export.task_id) { throw 'Task ID changed between export and import.' }
     if ($import.code_executed -ne $false) { throw 'Import mode must explicitly report code_executed=false.' }
