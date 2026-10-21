@@ -57,7 +57,9 @@ test('rejects malformed required fields and invalid timestamps', () => {
   assert.throws(() => validateCapabilityRecord(capability({ id: ' ' }), { now: NOW }), /id must be a non-empty string/);
   assert.throws(() => validateCapabilityRecord(capability({ provider: '' }), { now: NOW }), /provider must be a non-empty string/);
   assert.throws(() => validateCapabilityRecord(capability({ evidence: {} }), { now: NOW }), /evidence must be an array/);
-  assert.throws(() => validateCapabilityRecord(capability({ checkedAt: 'not-a-date' }), { now: NOW }), /checkedAt must be a valid timestamp/);
+  assert.throws(() => validateCapabilityRecord(capability({ checkedAt: 'not-a-date' }), { now: NOW }), /checkedAt must be an ISO-8601 timestamp/);
+  assert.throws(() => validateCapabilityRecord(capability({ checkedAt: 'October 20, 2026' }), { now: NOW }), /checkedAt must be an ISO-8601 timestamp/);
+  assert.throws(() => validateCapabilityRecord(capability({ checkedAt: '2026-10-20' }), { now: NOW }), /checkedAt must be an ISO-8601 timestamp/);
   assert.throws(() => validateCapabilityRecord(capability({ status: 'available', checkedAt: null }), { now: NOW }), /available status requires checkedAt evidence/);
 });
 
