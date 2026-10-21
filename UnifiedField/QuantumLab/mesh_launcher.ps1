@@ -3,6 +3,7 @@ $Root = Split-Path $PSScriptRoot -Parent
 $DataDir = Join-Path $Root "data"
 $Coord = Join-Path $PSScriptRoot "coordinator.py"
 $Worker = Join-Path $PSScriptRoot "worker.py"
+$Bridge = Join-Path $PSScriptRoot "dashboard_bridge.py"
 $LogDir = Join-Path $PSScriptRoot "logs"
 
 New-Item -ItemType Directory -Path $DataDir -Force | Out-Null
@@ -14,7 +15,7 @@ $Rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
 try { $Rng.GetBytes($TokenBytes) } finally { $Rng.Dispose() }
 $env:HEAVENZFIRE_TOKEN = [Convert]::ToBase64String($TokenBytes)
 
-$Ports = @(8080,18101,18102,18103)
+$Ports = @(8080,8081,18101,18102,18103)
 foreach ($Port in $Ports) {
     $Existing = netstat -ano | Select-String (":" + $Port + "\s+.*LISTENING\s+(\d+)")
     if ($Existing) {
@@ -32,6 +33,11 @@ try {
     $CoordProc = Start-Process -FilePath "py" -ArgumentList @("-3.12", $Coord) -PassThru -WindowStyle Hidden -RedirectStandardOutput (Join-Path $LogDir "coordinator.stdout.log") -RedirectStandardError (Join-Path $LogDir "coordinator.stderr.log")
     $Processes += $CoordProc
     Start-Sleep -Seconds 2
+
+    Write-Host "Starting loopback dashboard bridge on 127.0.0.1:8081..." -ForegroundColor Cyan
+    $BridgeProc = Start-Process -FilePath "py" -ArgumentList @("-3.12", $Bridge) -PassThru -WindowStyle Hidden -RedirectStandardOutput (Join-Path $LogDir "bridge.stdout.log") -RedirectStandardError (Join-Path $LogDir "bridge.stderr.log")
+    $Processes += $BridgeProc
+    Start-Sleep -Milliseconds 700
 
     foreach ($Port in @(18101,18102,18103)) {
         Write-Host "Starting authenticated worker on 127.0.0.1:$Port..." -ForegroundColor Cyan
