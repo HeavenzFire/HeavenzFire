@@ -33,6 +33,25 @@ async function probe(e){
  }catch(err){return {id:e.id,name:e.name,url:e.url,state:'unreachable',latencyMs:Date.now()-start,error:String(err.message||err)}}
 }
 function readJson(p){try{return JSON.parse(fs.readFileSync(p,'utf8').replace(/^\uFEFF/,''))}catch{return null}}
+async function publishWorkerResultsToJournal(artifact){
+ const token=process.env.HEAVENZFIRE_BRIDGE_TOKEN||'';
+ const base=(process.env.HEAVENZFIRE_BRIDGE_URL||'http://127.0.0.1:8798').replace(/\/$/,'');
+ if(!token)return {state:'blocked',reason:'HEAVENZFIRE_BRIDGE_TOKEN is not configured',published:0,failed:0};
+ if(!artifact||!Array.isArray(artifact.results))return {state:'blocked',reason:'No valid worker result artifact',published:0,failed:0};
+ let published=0,failed=0;const errors=[];
+ for(const item of artifact.results){
+  const identity=artifact.file+'|'+String(item.model||'unknown');
+  const digest=require('crypto').createHash('sha256').update(identity).digest('hex');
+  const task={task_id:'local-worker-'+digest.slice(0,24),objective:'Independently review the untrusted local model draft from '+String(item.model||'unknown')+'; do not execute generated code. Artifact: '+artifact.file,scope:['local-artifact-review','independent-verification'],risk_class:'LOW',idempotency_key:'local-worker-result-'+digest,evidence_refs:[artifact.file],dependencies:[]};
+  try{
+   const response=await fetch(base+'/api/tasks',{method:'POST',signal:AbortSignal.timeout(2500),headers:{'Accept':'application/json','Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({task})});
+   const data=await response.json().catch(()=>null);
+   if(!response.ok||!data||data.ok!==true)throw new Error((data&&data.error)||('HTTP '+response.status));
+   published++;
+  }catch(err){failed++;errors.push({model:item.model||'unknown',error:String(err.message||err)});}
+ }
+ return {state:failed?'partial':'published',published,failed,errors};
+}
 function tasks(){
  try{return fs.readdirSync(TASKDIR).filter(n=>/^HF-.*\.json$/i.test(n)).map(n=>readJson(path.join(TASKDIR,n))).filter(Boolean).map(t=>({id:t.id,title:t.title,goal:t.goal,status:t.status,updated:t.updated||t.created||null,leadAgentName:t.leadAgentName})).sort((a,b)=>String(b.updated||'').localeCompare(String(a.updated||''))).slice(0,8)}catch{return []}
 }
@@ -47,7 +66,7 @@ const server=http.createServer(async(req,res)=>{
   const child=cp.spawn('powershell.exe',['-NoProfile','-ExecutionPolicy','Bypass','-File',WORKER_SCRIPT],{windowsHide:true,stdio:'ignore'});
   workerRun={running:true,pid:child.pid||null,startedAt:new Date().toISOString(),finishedAt:null,exitCode:null,error:null};
   child.on('error',e=>{workerRun={...workerRun,running:false,finishedAt:new Date().toISOString(),error:String(e.message||e)}});
-  child.on('close',code=>{workerRun={...workerRun,running:false,finishedAt:new Date().toISOString(),exitCode:code}});
+  child.on('close',async code=>{workerRun={...workerRun,running:false,finishedAt:new Date().toISOString(),exitCode:code};const artifact=latestWorkerResults();if(artifact){const journalPublish=await publishWorkerResultsToJournal(artifact);workerRun={...workerRun,journalPublish};}});
   res.writeHead(202,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:true,accepted:true,workerRun}));
  }
  if(req.method!=='GET'){res.writeHead(405,{'Content-Type':'text/plain'});return res.end('GET only');}
