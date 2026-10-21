@@ -368,7 +368,7 @@ async function launchFiveAgentBuild(){
   const r=await fetch('/api/build-agents/run',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({objective})});
   const x=await r.json();if(!r.ok||!x.ok)throw Error(x.error||('HTTP '+r.status));
   $('fiveAgentBuildStatus').textContent='FIVE-ROLE BUILD · RUNNING';await refreshFiveAgentBuild();
- }catch(e){$('fiveAgentBuildStatus').textContent='FIVE-ROLE BUILD · BLOCKED';$('fiveAgentBuildResults').textContent=String(e.message||e)}finally{button.disabled=false;}
+ }catch(e){$('fiveAgentBuildStatus').textContent='FIVE-ROLE BUILD · BLOCKED';$('fiveAgentBuildResults').textContent=String(e.message||e);button.disabled=false;}
 }
 async function dispatchHashCanary(){
  const button=$('meshHashButton');button.disabled=true;
