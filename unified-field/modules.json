@@ -234,6 +234,114 @@
         "operator-dashboard"
       ],
       "activation": "disabled-until-reviewed"
+    },
+    {
+      "id": "health-probe",
+      "name": "Unified Field Health Probe",
+      "repository": "HeavenzFire/HeavenzFire",
+      "sourcePath": "tools/health_probe.py",
+      "kind": "diagnostics",
+      "integration": "in-repository",
+      "status": "implemented; loopback default and exact allowlist for external hosts; CI verified",
+      "dependencies": [
+        "fieldcore"
+      ],
+      "capabilities": [
+        "bounded-health-probes",
+        "egress-allowlist",
+        "redirect-denial"
+      ],
+      "activation": "operator-local"
+    },
+    {
+      "id": "consent-policy-gate",
+      "name": "Unified Field Consent Policy Gate",
+      "repository": "HeavenzFire/HeavenzFire",
+      "sourcePath": "tools/policy_gate.py",
+      "kind": "governance-control",
+      "integration": "in-repository",
+      "status": "implemented; fail-closed decision helper; caller enforcement still required",
+      "dependencies": [
+        "fieldcore"
+      ],
+      "capabilities": [
+        "explicit-consent-check",
+        "exact-scope-grants",
+        "wildcard-rejection"
+      ],
+      "activation": "manual-until-enforced-by-caller"
+    },
+    {
+      "id": "shared-task-inbox",
+      "name": "Unified Field Shared Task Inbox",
+      "repository": "HeavenzFire/HeavenzFire",
+      "sourcePath": "UnifiedField/FieldCore/task-inbox-server.cjs",
+      "kind": "local-control-plane",
+      "integration": "in-repository",
+      "status": "implemented; loopback-only; long-running deployment not yet verified",
+      "dependencies": [
+        "fieldcore"
+      ],
+      "capabilities": [
+        "pending-task-persistence",
+        "idempotent-delivery",
+        "task-lookup"
+      ],
+      "activation": "operator-local"
+    },
+    {
+      "id": "evidence-ledger",
+      "name": "Unified Field Evidence Ledger",
+      "repository": "HeavenzFire/HeavenzFire",
+      "sourcePath": "UnifiedField/FieldCore/evidence-ledger.cjs",
+      "kind": "provenance-control",
+      "integration": "in-repository",
+      "status": "implemented; hash-chained JSONL; single-writer assumption",
+      "dependencies": [
+        "fieldcore"
+      ],
+      "capabilities": [
+        "sha256-chain",
+        "artifact-digests",
+        "tamper-detection"
+      ],
+      "activation": "operator-local"
+    },
+    {
+      "id": "browser-bridge",
+      "name": "Unified Field Browser Bridge",
+      "repository": "HeavenzFire/HeavenzFire",
+      "sourcePath": "UnifiedField/BrowserBridge",
+      "kind": "browser-adapter",
+      "integration": "in-repository",
+      "status": "implemented; automated tests pass; real-browser installation smoke test pending",
+      "dependencies": [
+        "shared-task-inbox"
+      ],
+      "capabilities": [
+        "user-reviewed-text-capture",
+        "pending-only-task-submit",
+        "loopback-only-transport"
+      ],
+      "activation": "manual-unverified"
+    },
+    {
+      "id": "attention-guard",
+      "name": "HeavenzFire Attention Guard",
+      "repository": "HeavenzFire/HeavenzFire",
+      "sourcePath": "UnifiedField/AttentionGuard",
+      "kind": "attention-control",
+      "integration": "in-repository",
+      "status": "implemented; automated policy checks pass; manual browser smoke test pending",
+      "dependencies": [
+        "fieldcore"
+      ],
+      "capabilities": [
+        "user-controlled-focus-session",
+        "exact-domain-blocklist",
+        "local-only-preferences"
+      ],
+      "activation": "manual-unverified"
     }
   ]
 }
