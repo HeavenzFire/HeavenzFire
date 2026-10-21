@@ -38,7 +38,12 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:11px;color:var(--muted
 <section class="card span12"><h2>Local AI worker pool · assigned build tasks</h2><div class="detail">Fixed, bounded local batch. Each model receives the same utility task. Outputs are stored as artifacts; generated code is not executed automatically and requires independent verification.</div><div class="actions" style="margin:12px 0"><button id="runModelWorker">Run build-task batch</button><button id="retryFailedModels" disabled>Retry failed models</button><span class="pill" id="modelWorkerStatus">READY · NOT YET RUN</span></div><div id="modelPool" class="service-list"><div class="detail">Reading local model inventory…</div></div><div class="detail" id="modelWorkerMeta" style="margin-top:10px">Dashboard refreshes status every 8 seconds.</div></section>
 <section class="card span12"><h2>Worker Forge · create, stress-test, qualify</h2>
 <div class="detail">Blueprint validation and deterministic adversarial test planning are live. The Forge does not fine-tune model weights or execute candidate code. Promotion requires two matching evaluation runs, zero critical adversarial failures, a passing threshold, and independent review.</div>
-<div class="actions" style="margin:12px 0"><button id="validateWorkerBlueprint">Validate worker blueprint</button><button id="buildWorkerEvalPlan">Build adversarial tensor</button><span class="pill" id="forgeStatus">FORGE READY · NOT YET RUN</span></div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:9px;margin:12px 0">
+<div><label for="forgeModel" class="detail" style="display:block;margin-bottom:5px">Local drafting model</label><select id="forgeModel" style="width:100%;background:#080f18;color:#e9f0f7;border:1px solid #34516a;border-radius:9px;padding:9px"><option>qwen2.5:0.5b</option><option>heavenzfire-runtime:latest</option><option>heavenzfire:latest</option><option>llama3.2:1b</option></select></div>
+<div><label for="forgeRole" class="detail" style="display:block;margin-bottom:5px">Child worker role</label><input id="forgeRole" value="artifact verifier" maxlength="80" style="width:100%;background:#080f18;color:#e9f0f7;border:1px solid #34516a;border-radius:9px;padding:9px"/></div>
+<div style="grid-column:1/-1"><label for="forgeObjective" class="detail" style="display:block;margin-bottom:5px">Bounded objective (20–500 characters)</label><textarea id="forgeObjective" maxlength="500" style="width:100%;min-height:65px;background:#080f18;color:#e9f0f7;border:1px solid #34516a;border-radius:9px;padding:9px">Verify scoped local artifacts, challenge unsupported claims, and return reproducible findings with evidence references.</textarea></div>
+</div>
+<div class="actions" style="margin:12px 0"><button id="generateChildBlueprint">Generate child blueprint</button><button id="validateWorkerBlueprint">Validate worker blueprint</button>Validate worker blueprint</button><button id="buildWorkerEvalPlan">Build adversarial tensor</button><span class="pill" id="forgeStatus">FORGE READY · NOT YET RUN</span></div>
 <label for="workerBlueprint" class="detail" style="display:block;margin:10px 0 6px">Candidate blueprint JSON</label>
 <textarea id="workerBlueprint" spellcheck="false" style="width:100%;min-height:205px;background:#080f18;color:#e9f0f7;border:1px solid #34516a;border-radius:9px;padding:12px;font:12px/1.5 Consolas,monospace">{
   "id": "hf-child-worker-template",
@@ -126,6 +131,19 @@ async function buildWorkerEvalPlan(){
  }catch(e){$('forgeStatus').textContent='PLAN ERROR';$('forgePlanMeta').textContent=String(e.message||e)}
  finally{button.disabled=false}
 }
+async function generateChildBlueprint(){
+ const button=$('generateChildBlueprint');button.disabled=true;$('forgeStatus').textContent='DRAFTING CHILD WORKER LOCALLY…';
+ try{
+  const body={model:$('forgeModel').value,role:$('forgeRole').value,objective:$('forgeObjective').value};
+  const r=await fetch('/api/forge/draft',{method:'POST',headers:{'Accept':'application/json','Content-Type':'application/json'},body:JSON.stringify(body)});
+  const x=await r.json();if(!r.ok||!x.ok)throw Error(x.error||('HTTP '+r.status));
+  if(x.blueprint)$('workerBlueprint').value=JSON.stringify(x.blueprint,null,2);
+  $('forgeStatus').textContent=x.valid?'CHILD BLUEPRINT GENERATED · VALIDATED':'CHILD DRAFT REJECTED · NOT PROMOTED';
+  $('forgeBlueprintResult').textContent=x.valid?('Locally generated candidate · '+x.attempts+' attempt(s) · SHA-256 '+x.blueprint_hash+' · no code executed'):('Draft did not pass validation · '+(x.errors||[]).join(', '));
+ }catch(e){$('forgeStatus').textContent='DRAFT ERROR';$('forgeBlueprintResult').textContent=String(e.message||e)}
+ finally{button.disabled=false}
+}
+$('generateChildBlueprint').addEventListener('click',generateChildBlueprint);
 $('validateWorkerBlueprint').addEventListener('click',validateForgeBlueprint);
 $('buildWorkerEvalPlan').addEventListener('click',buildWorkerEvalPlan);
 async function refresh(){
