@@ -30,6 +30,7 @@ Open the existing desktop shortcut, which should target `http://127.0.0.1:18795/
 - Six local FieldCore suites passed: 20 tests total.
 - Live scoped-writer smoke test on an unchanged existing Markdown file succeeded; before/after hashes matched and a backup was present.
 - Negative checks confirmed traversal rejection, stale-hash rejection, and missing-approval rejection.
+- A deliberately failing regression test was used to exercise rollback after a valid JavaScript replacement was written; the route returned 422 and the original SHA-256 was restored exactly. This caught and fixed a Windows temp-file-extension issue in the syntax-check step.
 
 ## Explicit limitation
 
