@@ -56,7 +56,21 @@ if (!adapterPath) {
     assert.equal(second.ok, true);
     assert.equal(second.duplicate, true);
 
-    const conflicting = await submitProposal({ ...task, title: 'Conflicting payload with same ID' }, { endpoint });
-    assert.fail('conflicting proposal should have been rejected: ' + JSON.stringify(conflicting), { cause: 'unexpected acceptance' });
+    await assert.rejects(
+      submitProposal({ ...task, title: 'Conflicting payload with same ID' }, { endpoint }),
+      /HTTP 409.*task_id_conflict/
+    );
+
+    assert.equal(fs.readFileSync(inboxPath, 'utf8').trim().split(/\\r?\\n/).length, 1);
+    await stopServer();
+
+    const restartedEndpoint = await startServer();
+    const response = await fetch(restartedEndpoint.replace('/api/tasks', '/api/tasks/' + encodeURIComponent(task.taskId)));
+    const detail = await response.json();
+    assert.equal(response.status, 200);
+    assert.equal(detail.taskRecord.taskId, task.taskId);
+    assert.equal(detail.taskRecord.status, 'proposed');
+    assert.equal(detail.taskRecord.approvalState, 'pending');
+    assert.equal(detail.taskRecord.goal, task.title);
   });
 }
