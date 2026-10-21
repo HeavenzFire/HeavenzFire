@@ -42,3 +42,13 @@ node --test "$env:USERPROFILE\HeavenzFire\UnifiedField\QuantumLab\UnifiedField-D
 ```
 
 Safety boundary: worker outputs are untrusted text and are not executed. The service binds to 127.0.0.1 only. The mesh coordinator is reported offline if its health endpoint fails; a dashboard health response alone is not proof that every subsystem is online.
+
+## Mesh coordinator authentication repair
+
+The local mesh launcher creates a fresh 256-bit random bearer token in memory and passes it through the inherited environment to the coordinator and all three workers. It does not write the token to disk. The coordinator remains bound to loopback. Startup checks all four health endpoints and stops if any endpoint is unhealthy. The launcher uses bounded local port checks and writes process output to the local mesh logs directory.
+
+Live repair verification on 2026-10-21:
+- Coordinator `127.0.0.1:8080/health`: healthy; 101 recorded tasks (99 completed, 2 failed), queue empty at verification time.
+- Workers `18101`, `18102`, `18103`: all healthy and reporting `authenticated: true`.
+- Dashboard `/api/overview`: mesh healthy; all 10 monitored services healthy.
+- Prior failure evidence: worker polling was repeatedly rejected with HTTP 401 when the shared token was absent.
