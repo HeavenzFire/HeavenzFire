@@ -55,7 +55,12 @@ if ($Mode -eq 'Import') {
 
 $null = New-Item -ItemType Directory -Path $OutputDirectory -Force
 $stamp = Get-Date -Format 'yyyyMMdd-HHmmss-fff'
-if ([string]::IsNullOrWhiteSpace($TaskId)) {`n    $resolvedTaskId = [guid]::NewGuid().ToString('N')`n} else {`n    if ($TaskId.Length -gt 128) { throw 'TaskId exceeds the 128 character safety limit.' }`n    $resolvedTaskId = $TaskId.Trim()`n}
+if ([string]::IsNullOrWhiteSpace($TaskId)) {
+    $resolvedTaskId = [guid]::NewGuid().ToString('N')
+} else {
+    if ($TaskId.Length -gt 128) { throw 'TaskId exceeds the 128 character safety limit.' }
+    $resolvedTaskId = $TaskId.Trim()
+}
 $started = (Get-Date).ToUniversalTime().ToString('o')
 $systemPrompt = @'
 You are a collaborating engineering reviewer for the HeavenzFire UnifiedField project.
