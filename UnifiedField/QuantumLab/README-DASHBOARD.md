@@ -40,7 +40,7 @@ The proposed protocol and role architecture are documented in:
 - `UF-TCP-SPEC.md`: deterministic ternary decision policy and evidence contract.
 - `UF-144-COUNCIL-ARCHITECTURE.md`: 72 proposal-side roles and 72 counter-examination roles.
 - `uf-tcp-policy.cjs`: pure policy evaluator; no network, filesystem, model calls, or side effects.
-- `uf-tcp-policy.test.cjs`: Node.js built-in test suite.
+- `uf-tcp-policy.test.cjs`: Node.js built-in test suite (11/11 passed locally on Node.js 22.14.0).\n- `uf-144-council.cjs`: deterministic 144-seat role registry; every seat starts `NOT_CONFIGURED`, with zero live agents claimed.\n- `uf-144-council.test.cjs`: tests for 144-seat count, one-to-one pairing, explicit unconfigured state, and deterministic output.\n- `.github/workflows/uf-tcp-policy.yml`: CI workflow intended to run both test suites; execution status must be checked in GitHub Actions.
 
 From this directory, run the policy tests with a recent Node.js runtime:
 
