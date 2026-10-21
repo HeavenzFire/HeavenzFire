@@ -1,6 +1,20 @@
 name: Unified Field Ternary Policy Tests
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'UnifiedField/QuantumLab/uf-tcp-policy.cjs'
+      - 'UnifiedField/QuantumLab/uf-tcp-policy.test.cjs'
+      - 'UnifiedField/QuantumLab/uf-144-council.cjs'
+      - 'UnifiedField/QuantumLab/uf-144-council.test.cjs'
+      - 'UnifiedField/QuantumLab/uf-bridge-journal.cjs'
+      - 'UnifiedField/QuantumLab/uf-bridge-journal.test.cjs'
+      - 'UnifiedField/QuantumLab/uf-topology.cjs'
+      - 'UnifiedField/QuantumLab/uf-topology.test.cjs'
+      - 'UnifiedField/QuantumLab/uf-topology-cli.cjs'
+      - 'UnifiedField/QuantumLab/uf-topology-cli.test.cjs'
+      - '.github/workflows/uf-tcp-policy.yml'
   pull_request:
     paths:
       - 'UnifiedField/QuantumLab/uf-tcp-policy.cjs'
