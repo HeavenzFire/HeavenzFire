@@ -1,69 +1,42 @@
 #requires -Version 5.1
+[CmdletBinding()]
+param([switch]$NoBrowser)
 $ErrorActionPreference = 'Stop'
 $Root = Join-Path $env:USERPROFILE 'HeavenzFire\UnifiedField\QuantumLab'
+$MeshLauncher = Join-Path $Root 'Start-HeavenzFireMeshBridge.ps1'
+if (-not (Test-Path -LiteralPath $MeshLauncher)) { throw "Mesh bridge launcher missing: $MeshLauncher" }
+& $MeshLauncher
+# Ensure the cognitive brain and loopback-only avatar vision worker are part of the same startup path.
+$BrainServer = Join-Path $Root 'HeavenzFire-DigitalBrain-Server.cjs'
+$BrainHealthy = $false
+try { $BrainHealth = Invoke-RestMethod -Uri 'http://127.0.0.1:8797/api/health' -TimeoutSec 2; $BrainHealthy = ($BrainHealth.ok -eq $true) } catch {}
+if (-not $BrainHealthy) {
+    if (-not (Test-Path -LiteralPath $BrainServer)) { throw "Digital Brain server missing: $BrainServer" }
+    $Node = Get-Command 'node.exe' -ErrorAction Stop
+    Start-Process -FilePath $Node.Source -ArgumentList ('"' + $BrainServer + '"') -WorkingDirectory $Root -WindowStyle Hidden | Out-Null
+    for ($i = 0; $i -lt 20 -and -not $BrainHealthy; $i++) {
+        Start-Sleep -Milliseconds 300
+        try { $BrainHealth = Invoke-RestMethod -Uri 'http://127.0.0.1:8797/api/health' -TimeoutSec 1; $BrainHealthy = ($BrainHealth.ok -eq $true) } catch {}
+    }
+}
+if (-not $BrainHealthy) { throw 'Digital Brain did not become healthy on 127.0.0.1:8797.' }
+$VisionScript = Join-Path $Root 'HeavenzFire-Avatar-Vision.py'
+$VisionHealthy = $false
+try { $VisionHealth = Invoke-RestMethod -Uri 'http://127.0.0.1:11802/health' -TimeoutSec 2; $VisionHealthy = ($VisionHealth.ok -eq $true -and $VisionHealth.service -eq 'local-opencv-avatar-vision') } catch {}
+if (-not $VisionHealthy) {
+    if (-not (Test-Path -LiteralPath $VisionScript)) { throw "Avatar vision worker missing: $VisionScript" }
+    $Python = 'C:\Python312\python.exe'
+    if (-not (Test-Path -LiteralPath $Python)) { throw "Python 3.12 runtime missing: $Python" }
+    Start-Process -FilePath $Python -ArgumentList ('"' + $VisionScript + '"') -WorkingDirectory $Root -WindowStyle Hidden | Out-Null
+    for ($i = 0; $i -lt 20 -and -not $VisionHealthy; $i++) {
+        Start-Sleep -Milliseconds 300
+        try { $VisionHealth = Invoke-RestMethod -Uri 'http://127.0.0.1:11802/health' -TimeoutSec 1; $VisionHealthy = ($VisionHealth.ok -eq $true -and $VisionHealth.service -eq 'local-opencv-avatar-vision') } catch {}
+    }
+}
+if (-not $VisionHealthy) { throw 'Avatar vision worker did not become healthy on 127.0.0.1:11802.' }
 $Server = Join-Path $Root 'UnifiedField-Dashboard-Server.cjs'
 $Url = 'http://127.0.0.1:8800/'
 if (-not (Test-Path $Server)) { throw "Dashboard server file not found: $Server" }
-$AvatarServer = Join-Path (Split-Path $Root -Parent) 'AvatarBody\avatar-body-server.cjs'
-$AvatarUrl = 'http://127.0.0.1:8799/health'
-$AvatarHealthy = $false
-if (Test-Path $AvatarServer) {
-    try {
-        $AvatarHealth = Invoke-RestMethod -Uri $AvatarUrl -TimeoutSec 2
-        $AvatarHealthy = ($AvatarHealth.ok -eq $true -and $AvatarHealth.service -eq 'heavenzfire-avatar-body')
-    } catch {}
-    if (-not $AvatarHealthy) {
-        try {
-            $Node = Get-Command 'node.exe' -ErrorAction Stop
-            $QuotedAvatarServer = '"' + $AvatarServer + '"'
-            Start-Process -FilePath $Node.Source -ArgumentList $QuotedAvatarServer -WorkingDirectory (Split-Path $AvatarServer -Parent) -WindowStyle Normal | Out-Null
-            for ($i = 0; $i -lt 20 -and -not $AvatarHealthy; $i++) {
-                Start-Sleep -Milliseconds 300
-                try {
-                    $AvatarHealth = Invoke-RestMethod -Uri $AvatarUrl -TimeoutSec 1
-                    $AvatarHealthy = ($AvatarHealth.ok -eq $true -and $AvatarHealth.service -eq 'heavenzfire-avatar-body')
-                } catch {}
-            }
-        } catch {}
-    }
-    if ($AvatarHealthy) {
-        Write-Output "Avatar Body service healthy: $AvatarUrl"
-    } else {
-        Write-Warning 'Avatar Body did not start. The dashboard will show the body as offline; existing services will not be stopped.'
-    }
-} else {
-    Write-Warning "Avatar Body server file not found: $AvatarServer"
-}
-$VoiceServer = Join-Path (Split-Path $Root -Parent) 'Voice\voice-service.cjs'
-$VoiceUrl = 'http://127.0.0.1:8796/health'
-$VoiceHealthy = $false
-if (Test-Path $VoiceServer) {
-    try {
-        $VoiceHealth = Invoke-RestMethod -Uri $VoiceUrl -TimeoutSec 2
-        $VoiceHealthy = ($VoiceHealth.ok -eq $true -and $VoiceHealth.service -eq 'heavenzfire-voice-source-intake')
-    } catch {}
-    if (-not $VoiceHealthy) {
-        try {
-            $Node = Get-Command 'node.exe' -ErrorAction Stop
-            $QuotedVoiceServer = '"' + $VoiceServer + '"'
-            Start-Process -FilePath $Node.Source -ArgumentList $QuotedVoiceServer -WorkingDirectory (Split-Path $VoiceServer -Parent) -WindowStyle Normal | Out-Null
-            for ($i = 0; $i -lt 20 -and -not $VoiceHealthy; $i++) {
-                Start-Sleep -Milliseconds 300
-                try {
-                    $VoiceHealth = Invoke-RestMethod -Uri $VoiceUrl -TimeoutSec 1
-                    $VoiceHealthy = ($VoiceHealth.ok -eq $true -and $VoiceHealth.service -eq 'heavenzfire-voice-source-intake')
-                } catch {}
-            }
-        } catch {}
-    }
-    if ($VoiceHealthy) {
-        Write-Output "Voice source intake healthy: $VoiceUrl"
-    } else {
-        Write-Warning 'Voice source intake did not start. Dashboard will continue without voice source status.'
-    }
-} else {
-    Write-Warning "Voice source intake server not found: $VoiceServer"
-}
 $Healthy = $false
 try {
     $Health = Invoke-RestMethod -Uri 'http://127.0.0.1:8800/health' -TimeoutSec 2
@@ -82,5 +55,5 @@ if (-not $Healthy) {
     }
 }
 if (-not $Healthy) { throw 'Dashboard did not become healthy on 127.0.0.1:8800. Check the Node.js console.' }
-Start-Process -FilePath 'chrome.exe' -ArgumentList @('--new-tab', $Url)
-Write-Output "HeavenzFire Unified Field dashboard opened: $Url"
+if (-not $NoBrowser) { Start-Process -FilePath 'chrome.exe' -ArgumentList @('--new-tab', $Url) }
+Write-Output "HeavenzFire Unified Field dashboard ready: $Url"
