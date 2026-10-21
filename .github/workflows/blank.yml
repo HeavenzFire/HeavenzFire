@@ -2,7 +2,7 @@ name: Unified Field dashboard and local worker checks
 
 on:
   push:
-    branches: ["main", "feat/unified-field-local-model-workers", "fix/worker-result-aggregation", "feat/worker-forge-child-blueprints", "fix/worker-forge-draft-repair", "fix/worker-forge-template-fallback", "feat/worker-adversarial-smoke-suite", "feat/worker-registry", "feat/worker-smoke-artifact-import", "fix/worker-registry-windows-replace", "feat/worker-forge-remediation"]
+    branches: ["main", "feat/unified-field-local-model-workers", "fix/worker-result-aggregation", "feat/worker-forge-child-blueprints", "fix/worker-forge-draft-repair", "fix/worker-forge-template-fallback", "feat/worker-adversarial-smoke-suite", "feat/worker-registry", "feat/worker-smoke-artifact-import", "fix/worker-registry-windows-replace", "feat/worker-forge-remediation", "fix/model-workload-admission-progress"]
   pull_request:
     branches: ["main"]
   workflow_dispatch:
