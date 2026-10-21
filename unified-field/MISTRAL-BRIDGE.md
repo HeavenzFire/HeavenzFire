@@ -14,17 +14,17 @@ No Mistral API key or browser-automation credits are needed for this route. It d
 From a checkout of this repository, in PowerShell 5.1:
 
     $bridge = Join-Path $PWD 'unified-field\Invoke-HeavenzFireMistralBridge.ps1'
-    & $bridge -Mode Export -Task 'Review the current UnifiedField R&D runner for reliability, missing tests, and security risks.'
+    $export = & $bridge -Mode Export -Task 'Review the current UnifiedField R&D runner for reliability, missing tests, and security risks.' | ConvertFrom-Json
 
 Open the generated Markdown prompt, paste it into Le Chat, and save the response locally. Import the response:
 
-    & $bridge -Mode Import -Task 'Review the current UnifiedField R&D runner for reliability, missing tests, and security risks.' -ResponsePath "$env:USERPROFILE\Downloads\mistral-review.txt"
+    & $bridge -Mode Import -TaskId $export.task_id -Task 'Review the current UnifiedField R&D runner for reliability, missing tests, and security risks.' -ResponsePath "$env:USERPROFILE\Downloads\mistral-review.txt"
 
 Imported results are saved under unified-field\artifacts\mistral\. They are labeled unverified and are not executed or automatically adopted.
 
 ## Route B: optional direct API
 
-The script also supports API mode when MISTRAL_API_KEY has already been configured securely in the process or user environment:
+The script also supports API mode when MISTRAL_API_KEY has already been configured securely in the process or user environment. The bridge returns normally to its caller, and `-TaskId` preserves one handoff identity across export/import:
 
     & $bridge -Mode Call -Model mistral-small-latest -Task 'Review the current UnifiedField R&D runner for reliability, missing tests, and security risks.'
 
