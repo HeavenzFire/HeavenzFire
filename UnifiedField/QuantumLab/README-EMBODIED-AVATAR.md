@@ -6,12 +6,13 @@ This source set joins the existing local dashboard, Digital Brain, camera-percep
 
 - Dashboard UI/API: `http://127.0.0.1:8800/`
 - Digital Brain UI/API: `http://127.0.0.1:8797/`
+- Avatar Body state/movement API: `http://127.0.0.1:8799/`
 - Local inference gateway: `http://127.0.0.1:11800/v1`
 - Local OpenCV perception: `http://127.0.0.1:11802/health`
 - Bounded mesh bridge: `http://127.0.0.1:8081/health`
 - Existing HeavenzFire Tesla voice/chat service: `http://127.0.0.1:8796/health`
 
-The dashboard embeds the Digital Brain page. The brain's chat calls the shared local inference gateway and writes bounded observations to its local memory. The avatar's optional camera path requests browser permission, captures low-resolution JPEG frames, and sends them to the same-origin brain proxy `/api/vision/analyze`; the brain forwards them only to the loopback OpenCV worker. The vision worker returns face/person boxes and brightness metrics. Raw frames are processed in memory and are not stored.
+The dashboard embeds the Digital Brain page. The brain's chat calls the shared local inference gateway and writes bounded observations to its local memory. The browser avatar's movement and perception updates also pass through the Digital Brain's same-origin `/api/body/*` proxy into the Avatar Body service. The service records a bounded simulated pose and event history; the dashboard and brain therefore share one body-state source rather than maintaining an unrelated canvas-only position. The avatar's optional camera path requests browser permission, captures low-resolution JPEG frames, and sends them to the same-origin brain proxy `/api/vision/analyze`; the brain forwards them only to the loopback OpenCV worker. The vision worker returns face/person boxes and brightness metrics. Raw frames are processed in memory and are not stored.
 
 ## Start on Windows PowerShell 5.1
 
@@ -42,7 +43,7 @@ The synthetic-frame test proves the local analysis path works; it does not prove
 
 - Avatar rendering is a detailed animated 2D canvas character, not a 3D rig.
 - Perception currently covers face/person detection, brightness, and frame-to-frame motion; it is not general semantic vision.
-- Movement is UI-level avatar motion, not physical robot actuation.
+- Movement is UI-level avatar motion, mirrored into the Avatar Body's simulated pose; it is not physical robot actuation.
 - Voice cloning and personalized synthesis remain unconfigured until a local model is trained/installed and evaluated.
 
 ## Verification
