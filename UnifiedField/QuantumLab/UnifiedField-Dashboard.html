@@ -33,7 +33,7 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:11px;color:var(--muted
 <section class="card span3"><div class="eyebrow">Orchestrator tasks</div><div class="metric" id="taskMetric">—</div><div class="detail" id="taskDetail">Live from orchestrator health</div></section>
 <section class="card span3"><div class="eyebrow">Gyroid cognitive graph</div><div class="metric" id="graphMetric">—</div><div class="detail" id="graphDetail">Existing Digital Brain runtime</div></section>
 <section class="card span3 warning" id="hostCard"><div class="eyebrow">Host resource guard</div><div class="metric" id="hostMetric">—</div><div class="detail" id="hostDetail">Reading existing guardian state</div></section>
-<section class="card span5" id="avatarBodyCard"><h2>Avatar Body · perception & movement</h2><div class="metric" id="avatarBodyMode">BODY OFFLINE</div><div class="detail" id="avatarBodyPose">Waiting for body state from 127.0.0.1:8799</div><div class="service-list" id="avatarBodySensors" style="margin:10px 0"><div class="detail">No sensor observations yet.</div></div><div class="actions" style="margin:10px 0"><button id="startAvatarCamera">Enable camera perception</button><button id="stopAvatarCamera" disabled>Stop camera</button><span class="pill" id="avatarCameraStatus">CAMERA OFF</span></div><video id="avatarCameraVideo" muted playsinline style="display:none;width:100%;max-height:220px;object-fit:contain;background:#050a10;border-radius:9px"></video><canvas id="avatarCameraCanvas" width="16" height="12" style="display:none"></canvas><div class="detail" id="avatarVisionNote">Camera access requires your explicit browser permission. Only a 16×12 grayscale sample and a simple frame-change score are sent to the local body service; no video stream is uploaded.</div><div class="detail" style="margin-bottom:8px">Virtual movement only · no physical actuator is connected or enabled.</div><div class="actions" id="avatarMoveControls"><button data-dx="0" data-dy="0" data-dz="-0.1">Forward</button><button data-dx="-0.1" data-dy="0" data-dz="0">Left</button><button data-dx="0" data-dy="0" data-dz="0.1">Back</button><button data-dx="0.1" data-dy="0" data-dz="0">Right</button><button data-dx="0" data-dy="0.1" data-dz="0">Rise</button><button data-dx="0" data-dy="-0.1" data-dz="0">Lower</button></div><div class="detail" id="avatarBodyAction" style="margin-top:9px">Movement controls activate only when the local Avatar Body service responds.</div></section>
+<section class="card span5" id="avatarBodyCard"><h2>Avatar Body · perception & movement</h2><div class="metric" id="avatarBodyMode">BODY OFFLINE</div><div style="border:1px solid #243c50;border-radius:12px;overflow:hidden;margin:10px 0;background:#07111b"><canvas id="avatarBodyVisual" width="640" height="360" style="display:block;width:100%;height:auto"></canvas></div><div class="detail" id="avatarBodyPose">Waiting for body state from 127.0.0.1:8799</div><div class="service-list" id="avatarBodySensors" style="margin:10px 0"><div class="detail">No sensor observations yet.</div></div><div class="actions" style="margin:10px 0"><button id="startAvatarCamera">Enable camera perception</button><button id="stopAvatarCamera" disabled>Stop camera</button><span class="pill" id="avatarCameraStatus">CAMERA OFF</span></div><video id="avatarCameraVideo" muted playsinline style="display:none;width:100%;max-height:220px;object-fit:contain;background:#050a10;border-radius:9px"></video><canvas id="avatarCameraCanvas" width="16" height="12" style="display:none"></canvas><div class="detail" id="avatarVisionNote">Camera access requires your explicit browser permission. Only a 16×12 grayscale sample and a simple frame-change score are sent to the local body service; no video stream is uploaded.</div><div class="detail" style="margin-bottom:8px">Virtual movement only · no physical actuator is connected or enabled.</div><div class="actions" id="avatarMoveControls"><button data-dx="0" data-dy="0" data-dz="-0.1">Forward</button><button data-dx="-0.1" data-dy="0" data-dz="0">Left</button><button data-dx="0" data-dy="0" data-dz="0.1">Back</button><button data-dx="0.1" data-dy="0" data-dz="0">Right</button><button data-dx="0" data-dy="0.1" data-dz="0">Rise</button><button data-dx="0" data-dy="-0.1" data-dz="0">Lower</button><button data-dx="0" data-dy="0" data-dz="0" data-turn-yaw="-15">Turn left</button><button data-dx="0" data-dy="0" data-dz="0" data-turn-yaw="15">Turn right</button></div><div class="detail" id="avatarBodyAction" style="margin-top:9px">Movement controls activate only when the local Avatar Body service responds.</div></section>
 <section class="card span7"><h2>Local service mesh</h2><div class="service-list" id="services"><div class="detail">Connecting to services…</div></div></section>
 </section>
 <section class="card span12"><h2>Local AI worker pool · assigned build tasks</h2><div class="detail">Fixed, bounded local batch. Each model receives the same utility task. Outputs are stored as artifacts; generated code is not executed automatically and requires independent verification.</div><div class="actions" style="margin:12px 0"><button id="runModelWorker">Run build-task batch</button><button id="retryFailedModels" disabled>Retry failed models</button><span class="pill" id="modelWorkerStatus">READY · NOT YET RUN</span></div><div id="modelPool" class="service-list"><div class="detail">Reading local model inventory…</div></div><div class="detail" id="modelWorkerMeta" style="margin-top:10px">Dashboard refreshes status every 8 seconds.</div></section>
@@ -257,9 +257,40 @@ async function startAvatarCamera(){
  try{status.textContent='REQUESTING PERMISSION';avatarCameraStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'},audio:false});const video=$('avatarCameraVideo');video.srcObject=avatarCameraStream;video.style.display='block';await video.play();reportAvatarCameraStatus('connected');$('startAvatarCamera').disabled=true;$('stopAvatarCamera').disabled=false;note.textContent='Camera is processed locally. Only compact grayscale samples and frame-change scores are sent to 127.0.0.1:8799; audio is disabled.';await captureAvatarFrame();avatarCameraTimer=setInterval(captureAvatarFrame,1000);}
  catch(e){stopAvatarCamera();status.textContent='CAMERA NOT STARTED';note.textContent='Camera permission or startup failed: '+String(e.message||e);}
 }
+let avatarBodyRenderState=null,avatarBodyFrame=0;
+function drawAvatarVisual(s){
+ const canvas=$('avatarBodyVisual');if(!canvas)return;const ctx=canvas.getContext('2d'),w=canvas.width,h=canvas.height;
+ ctx.clearRect(0,0,w,h);ctx.fillStyle='#07111b';ctx.fillRect(0,0,w,h);
+ ctx.strokeStyle='rgba(100,217,237,.12)';ctx.lineWidth=1;
+ for(let x=0;x<w;x+=32){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke();}
+ for(let y=0;y<h;y+=32){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke();}
+ ctx.fillStyle='#91a3b8';ctx.font='16px Segoe UI';ctx.fillText('PROCEDURAL AVATAR BODY · LIVE POSE',18,25);
+ if(!s){ctx.fillStyle='#91a3b8';ctx.fillText('Body service offline',18,55);return;}
+ const p=s.pose.position,o=s.pose.orientation,rad=o.yaw*Math.PI/180;
+ const centerX=w/2+Math.max(-10,Math.min(10,p.x))*8,groundY=h*.78-Math.max(0,Math.min(5,p.y))*16;
+ const turnScale=Math.max(.28,Math.abs(Math.cos(rad))),sway=Math.sin(performance.now()/360+s.motion.sequence*.7)*5;
+ const torsoW=42*turnScale,headR=22*turnScale,topY=groundY-130;
+ ctx.strokeStyle='rgba(100,217,237,.3)';ctx.beginPath();ctx.ellipse(centerX,groundY+9,60,13,0,0,Math.PI*2);ctx.stroke();
+ ctx.save();ctx.translate(centerX,0);
+ ctx.lineCap='round';ctx.lineJoin='round';
+ ctx.strokeStyle='#64d9ed';ctx.lineWidth=13*turnScale;
+ ctx.beginPath();ctx.moveTo(-torsoW*.48,topY+42);ctx.lineTo(-torsoW*.9,topY+83+sway);ctx.lineTo(-torsoW*.95,groundY-20);ctx.stroke();
+ ctx.beginPath();ctx.moveTo(torsoW*.48,topY+42);ctx.lineTo(torsoW*.9,topY+83-sway);ctx.lineTo(torsoW*.95,groundY-20);ctx.stroke();
+ ctx.strokeStyle='#8b9df7';ctx.lineWidth=16*turnScale;
+ ctx.beginPath();ctx.moveTo(-torsoW*.32,topY+78);ctx.lineTo(-18*turnScale+sway*.35,groundY-47);ctx.lineTo(-22*turnScale+sway*.35,groundY);ctx.stroke();
+ ctx.beginPath();ctx.moveTo(torsoW*.32,topY+78);ctx.lineTo(18*turnScale-sway*.35,groundY-47);ctx.lineTo(22*turnScale-sway*.35,groundY);ctx.stroke();
+ ctx.fillStyle='#142e43';ctx.strokeStyle='#64d9ed';ctx.lineWidth=3;
+ ctx.beginPath();ctx.roundRect(-torsoW/2,topY+27,torsoW,61,12);ctx.fill();ctx.stroke();
+ ctx.beginPath();ctx.arc(0,topY+headR,headR,0,Math.PI*2);ctx.fill();ctx.stroke();
+ ctx.fillStyle='#65e0a0';ctx.beginPath();ctx.arc(-headR*.38,topY+headR,3.8,0,Math.PI*2);ctx.arc(headR*.38,topY+headR,3.8,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle='#91a3b8';ctx.font='12px Segoe UI';ctx.fillText('yaw '+o.yaw.toFixed(0)+'°',-25,groundY+31);
+ ctx.restore();
+ ctx.fillStyle='#91a3b8';ctx.font='12px Segoe UI';ctx.fillText('X '+p.x.toFixed(2)+' · Y '+p.y.toFixed(2)+' · Z '+p.z.toFixed(2),18,h-18);
+}
+function animateAvatarBody(){drawAvatarVisual(avatarBodyRenderState);avatarBodyFrame=requestAnimationFrame(animateAvatarBody);}
 function renderAvatarBody(result){
  const mode=$('avatarBodyMode'),pose=$('avatarBodyPose'),sensors=$('avatarBodySensors'),card=$('avatarBodyCard');
- const s=result&&result.ok&&result.state;
+ const s=result&&result.ok&&result.state;avatarBodyRenderState=s||null;
  if(!s){mode.textContent='BODY OFFLINE';pose.textContent='Avatar Body service unavailable · start avatar-body-server.cjs';sensors.innerHTML='<div class="detail">No sensor observations received.</div>';card.className='card span5 warning';return;}
  const p=s.pose.position,o=s.pose.orientation;
  mode.textContent='SIMULATED BODY · '+s.motion.sequence+' moves';
@@ -270,7 +301,7 @@ function renderAvatarBody(result){
 }
 async function sendAvatarMove(button){
  const status=$('avatarBodyAction');
- const payload={delta:{x:Number(button.dataset.dx),y:Number(button.dataset.dy),z:Number(button.dataset.dz)},source:'unified-dashboard'};
+ const payload={delta:{x:Number(button.dataset.dx),y:Number(button.dataset.dy),z:Number(button.dataset.dz)},turn:{yaw:Number(button.dataset.turnYaw||0)},source:'unified-dashboard'};
  status.textContent='Sending bounded virtual movement…';
  try{const r=await fetch('http://127.0.0.1:8799/api/move',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),cache:'no-store'});const x=await r.json();if(!r.ok||!x.ok)throw Error(x.error||('HTTP '+r.status));status.textContent='Virtual move accepted · physical actuation=false';await refresh();}
  catch(e){status.textContent='Move not applied: '+String(e.message||e);}
@@ -302,5 +333,6 @@ $('avatarMoveControls').addEventListener('click',event=>{const button=event.targ
 $('startAvatarCamera').addEventListener('click',startAvatarCamera);
 $('stopAvatarCamera').addEventListener('click',stopAvatarCamera);
 window.addEventListener('beforeunload',stopAvatarCamera);
+animateAvatarBody();
 $('refresh').addEventListener('click',()=>{refresh();github()});refresh();github();setInterval(refresh,8000);setInterval(github,60000);loadWorkerRegistry();
 </script></body></html>
