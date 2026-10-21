@@ -5,9 +5,11 @@ on:
     branches:
       - main
       - feat/shared-task-contract-v1
+      - 'worker/**'
   pull_request:
     branches:
       - main
+      - feat/shared-task-contract-v1
 
 jobs:
   task-inbox:
@@ -31,7 +33,8 @@ jobs:
           node --check UnifiedField/BrowserBridge/popup.js
           node --check UnifiedField/FieldCore/evidence-ledger.cjs
           node --check UnifiedField/FieldCore/public-record-adapter.cjs
+          node --check UnifiedField/FieldCore/capability-registry-validator.cjs
       - name: Test task contract, inbox, browser bridge, evidence ledger, public-record adapter, and cross-repository transport
         env:
           HF_HUB_ADAPTER_PATH: ${{ github.workspace }}/UnifiedCodebase/integrations/shared-task-proposal-adapter.mjs
-        run: node --test UnifiedField/FieldCore/shared-task-contract.test.cjs UnifiedField/FieldCore/task-inbox-server.test.cjs UnifiedField/BrowserBridge/browser-bridge.test.cjs UnifiedField/FieldCore/evidence-ledger.test.cjs UnifiedField/FieldCore/public-record-adapter.test.cjs UnifiedField/FieldCore/cross-repo-task-transport.test.cjs
+        run: node --test UnifiedField/FieldCore/shared-task-contract.test.cjs UnifiedField/FieldCore/task-inbox-server.test.cjs UnifiedField/BrowserBridge/browser-bridge.test.cjs UnifiedField/FieldCore/evidence-ledger.test.cjs UnifiedField/FieldCore/public-record-adapter.test.cjs UnifiedField/FieldCore/cross-repo-task-transport.test.cjs UnifiedField/FieldCore/capability-registry-validator.test.cjs UnifiedField/FieldCore/capability-registry-integration.test.cjs
