@@ -1,5 +1,6 @@
 'use strict';
 
+const crypto = require('node:crypto');
 const { createBlueprint, validateBlueprint } = require('./worker-forge.cjs');
 
 const ALLOWED_MODELS = Object.freeze([
@@ -16,6 +17,44 @@ const FORBIDDEN_CAPABILITIES = Object.freeze([
   'self_modify_production',
   'disable_audit'
 ]);
+
+function createDeterministicFallback(role, objective, axes, attempts, modelAssist) {
+  const slug = role.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 42).replace(/-+$/g, '') || 'worker';
+  const suffix = crypto.createHash('sha256').update(role + '\n' + objective).digest('hex').slice(0, 8);
+  const blueprint = {
+    id: 'hf-' + slug + '-' + suffix,
+    version: '1.0.0',
+    role,
+    objective,
+    input_schema: {
+      type: 'object',
+      required: ['task_id', 'objective', 'evidence_refs'],
+      properties: { task_id: { type: 'string' }, objective: { type: 'string' }, evidence_refs: { type: 'array', items: { type: 'string' } } }
+    },
+    output_schema: {
+      type: 'object',
+      required: ['status', 'summary', 'evidence_refs', 'limitations'],
+      properties: { status: { type: 'string' }, summary: { type: 'string' }, evidence_refs: { type: 'array', items: { type: 'string' } }, limitations: { type: 'array', items: { type: 'string' } } }
+    },
+    capabilities: ['read_local_artifacts', 'request_peer_review'],
+    forbidden_capabilities: FORBIDDEN_CAPABILITIES.slice(),
+    execution: { mode: 'proposal_only', max_tool_calls: 4 },
+    axes
+  };
+  const built = createBlueprint(blueprint);
+  if (!built.ok) return { ok: false, error: 'fallback_blueprint_invalid', attempts, errors: built.errors, model_assist: modelAssist };
+  return {
+    ok: true,
+    generated: true,
+    valid: true,
+    source: 'deterministic_template_fallback',
+    attempts,
+    errors: [],
+    model_assist: modelAssist,
+    blueprint: built.blueprint,
+    blueprint_hash: built.blueprint_hash
+  };
+}
 
 function parseJsonCandidate(text) {
   if (typeof text !== 'string') return null;
@@ -110,7 +149,7 @@ async function draftWorkerBlueprint(input, options = {}) {
         JSON.stringify(malformed) + '\nReturn one corrected JSON object with the four required keys only. Do not explain.');
       attempts = 2;
       candidate = parseJsonCandidate(raw);
-      if (!candidate) return { ok: false, error: 'repair_response_not_json', attempts, raw_response: raw.slice(0, 4000) };
+      if (!candidate) return createDeterministicFallback(role.trim(), objective.trim(), axes, attempts, { status: 'rejected', reason: 'repair_response_not_json', raw_response: raw.slice(0, 1200) });
     }
 
     const assemble = partial => ({
@@ -139,20 +178,22 @@ async function draftWorkerBlueprint(input, options = {}) {
       validation = validateBlueprint(blueprint);
     }
     if (!validation.ok) {
-      return { ok: true, generated: true, valid: false, attempts, errors: validation.errors, blueprint, raw_response: raw.slice(0, 4000) };
+      return createDeterministicFallback(role.trim(), objective.trim(), axes, attempts, { status: 'rejected', errors: validation.errors, raw_response: raw.slice(0, 1200) });
     }
     const built = createBlueprint(blueprint);
     return {
       ok: true,
       generated: true,
       valid: true,
+      source: attempts > 1 ? 'local_model_repaired' : 'local_model',
       attempts,
       errors: [],
+      model_assist: { status: 'accepted' },
       blueprint: built.blueprint,
       blueprint_hash: built.blueprint_hash
     };
   } catch (err) {
-    return { ok: false, error: String(err && err.message || err), attempts };
+    return createDeterministicFallback(role.trim(), objective.trim(), axes, attempts, { status: 'unavailable', error: String(err && err.message || err) });
   }
 }
 

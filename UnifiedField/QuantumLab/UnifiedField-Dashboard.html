@@ -138,8 +138,8 @@ async function generateChildBlueprint(){
   const r=await fetch('/api/forge/draft',{method:'POST',headers:{'Accept':'application/json','Content-Type':'application/json'},body:JSON.stringify(body)});
   const x=await r.json();if(!r.ok||!x.ok)throw Error(x.error||('HTTP '+r.status));
   if(x.blueprint)$('workerBlueprint').value=JSON.stringify(x.blueprint,null,2);
-  $('forgeStatus').textContent=x.valid?'CHILD BLUEPRINT GENERATED · VALIDATED':'CHILD DRAFT REJECTED · NOT PROMOTED';
-  $('forgeBlueprintResult').textContent=x.valid?('Locally generated candidate · '+x.attempts+' attempt(s) · SHA-256 '+x.blueprint_hash+' · no code executed'):('Draft did not pass validation · '+(x.errors||[]).join(', '));
+  $('forgeStatus').textContent=x.valid?(x.source==='deterministic_template_fallback'?'CHILD TEMPLATE GENERATED · MODEL DRAFT REJECTED':'CHILD BLUEPRINT GENERATED · VALIDATED'):'CHILD DRAFT REJECTED · NOT PROMOTED';
+  $('forgeBlueprintResult').textContent=x.valid?(x.source==='deterministic_template_fallback'?('Host-generated deterministic fallback · model assist '+(x.model_assist&&x.model_assist.status||'unknown')+' · '+x.attempts+' attempt(s) · SHA-256 '+x.blueprint_hash+' · no code executed'):('Locally generated candidate · '+x.attempts+' attempt(s) · SHA-256 '+x.blueprint_hash+' · no code executed')):('Draft did not pass validation · '+(x.errors||[]).join(', '));
  }catch(e){$('forgeStatus').textContent='DRAFT ERROR';$('forgeBlueprintResult').textContent=String(e.message||e)}
  finally{button.disabled=false}
 }

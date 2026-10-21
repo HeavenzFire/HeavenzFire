@@ -51,6 +51,8 @@ test('dashboard exposes model batch control and renders status from overview', (
   assert.match(dashboard, /Generated code is not executed automatically/);
   assert.match(dashboard, /id="workerBlueprint"/);
   assert.match(dashboard, /id="generateChildBlueprint"/);
+  assert.match(dashboard, /CHILD TEMPLATE GENERATED · MODEL DRAFT REJECTED/);
+  assert.match(dashboard, /deterministic_template_fallback/);
   assert.match(dashboard, /fetch\('\/api\/forge\/draft'/);
   assert.match(dashboard, /does not fine-tune model weights/);
   assert.match(dashboard, /id="validateWorkerBlueprint"/);
