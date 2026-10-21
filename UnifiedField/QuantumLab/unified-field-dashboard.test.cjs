@@ -70,6 +70,7 @@ test('worker performs static structure and arithmetic checks without evaluating 
   assert.match(dashboard, /static checks failed/);
   assert.match(dashboard, /journal handoff/);
   assert.match(dashboard, /attempt\(s\)/);
+  assert.match(dashboard, /Checks: /);
 });
 
 test('worker script never executes generated code or accepts arbitrary task commands', () => {
