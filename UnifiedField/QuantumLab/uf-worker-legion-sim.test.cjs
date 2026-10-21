@@ -60,3 +60,12 @@ test('simulation never reports real execution', () => {
   assert.equal(sim.snapshot().mode, 'SIMULATION_ONLY');
   assert.ok(sim.snapshot().workers.every(w => w.status.startsWith('SIMULATED_')));
 });
+
+test('task is never assigned to a worker with the wrong role', () => {
+  const sim = createSimulation({ workerCount: 1, concurrency: 1 });
+  sim.enqueue({ taskId: 'wrong-role', role: 'verifier' });
+  const [result] = sim.runBatch();
+  assert.equal(result.state, 'BLOCKED');
+  assert.equal(result.workerId, null);
+  assert.equal(result.reason, 'NO_SIMULATED_WORKER_FOR_ROLE');
+});
