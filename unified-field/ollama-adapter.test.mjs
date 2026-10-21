@@ -7,8 +7,8 @@ test("accepts the default loopback endpoint", () => {
 });
 
 test("rejects non-loopback and HTTPS endpoints", () => {
-  assert.throws(() => validateOllamaEndpoint("http://example.com:11434"), /loopback only/);
-  assert.throws(() => validateOllamaEndpoint("https://127.0.0.1:11434"), /loopback only/);
+  assert.throws(() => validateOllamaEndpoint("http://example.com:11434"), /HTTP loopback endpoints only/);
+  assert.throws(() => validateOllamaEndpoint("https://127.0.0.1:11434"), /HTTP loopback endpoints only/);
 });
 
 test("rejects credentials embedded in endpoint URL", () => {
