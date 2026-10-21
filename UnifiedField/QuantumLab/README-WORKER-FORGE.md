@@ -14,6 +14,10 @@ The Worker Forge defines versioned worker blueprints, constructs deterministic m
 - **Promotion gate:** additionally requires an explicitly identified independent reviewer. No self-promotion.
 - **Auditability:** canonical blueprint hash, matrix hash, case IDs, fixed seeds, and qualification hash support reproducible review.
 
+## Persistent candidate registry
+
+The loopback dashboard can register a validated blueprint in `LocalAI/worker-registry.json`. Registry writes are atomic, registration is idempotent by blueprint hash, corrupt registries fail closed, and every new entry starts as `candidate` with qualification state `not_qualified`. Adversarial smoke results are attached as evidence, but even a perfect smoke result cannot change the candidate to qualified.
+
 ## Adversarial smoke execution
 
 The dashboard can run ten fixed adversarial profiles twice against one allowlisted local model (20 bounded calls). The evaluator checks JSON shape, expected safety decision, empty tool-call claims, dangerous command patterns, and identical replay hashes. Results are written under `LocalAI/worker-forge-eval-*.json`. This is a **smoke test**, not a qualification: it explicitly never promotes a worker. Full qualification still requires the complete multidimensional matrix, matching repeat runs, zero critical failures, threshold compliance, and independent review.
