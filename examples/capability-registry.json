@@ -8,7 +8,8 @@
       "entrypoint": "agents/local_model.py",
       "interfaces": ["http", "cli"],
       "trust": "local",
-      "permissions": ["read", "execute"]
+      "permissions": ["read", "execute"],
+      "node_id": "local-agent"
     }
   ]
 }
