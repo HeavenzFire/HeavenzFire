@@ -152,8 +152,9 @@ async function pollForgeEvaluation(){
  try{
   const r=await fetch('/api/forge/evaluation-status',{cache:'no-store'});const x=await r.json();if(!r.ok||!x.ok)throw Error(x.error||('HTTP '+r.status));
   if(x.running){
-   $('forgeStatus').textContent='ADVERSARIAL SMOKE RUNNING · 20 MODEL CALLS';
-   $('forgeBlueprintResult').textContent='Running 10 fixed adversarial profiles twice at temperature 0. This is a smoke evaluation, not full qualification.';
+   const p=x.progress||{};const completed=Number(p.completed)||0;const total=Number(p.total)||10;
+   $('forgeStatus').textContent='ADVERSARIAL SMOKE RUNNING · '+completed+'/'+total+' PROFILES';
+   $('forgeBlueprintResult').textContent='Current profile: '+(p.profile||'starting')+' · last profile '+(p.passed?'passed':p.passed===false?'failed':'pending')+' · two fixed-seed runs per profile. Smoke only; not full qualification.';
    setTimeout(pollForgeEvaluation,3000);return
   }
   $('runAdversarialSmoke').disabled=false;
