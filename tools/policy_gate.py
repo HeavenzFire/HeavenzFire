@@ -50,7 +50,8 @@ def validate_policy(policy: Any) -> list[str]:
                 or any(not isinstance(value, str) or not value.strip() for value in classes)
                 or len(classes) != len(set(classes) if isinstance(classes, list) else [])):
             errors.append(f"{prefix}.data_classes must be a non-empty array of unique non-empty strings")
-        if grant.get("status") not in STATUSES:
+        status = grant.get("status")
+        if not isinstance(status, str) or status not in STATUSES:
             errors.append(f"{prefix}.status must be one of {sorted(STATUSES)}")
     return errors
 
