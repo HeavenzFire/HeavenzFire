@@ -19,12 +19,12 @@ function Invoke-BridgeProcess([string[]]$BridgeArguments, [int]$TimeoutMilliseco
     $argumentLine = $quotedArguments -join ' '
     $process = Start-Process -FilePath (Join-Path $PSHOME 'powershell.exe') -ArgumentList $argumentLine -PassThru -RedirectStandardOutput $stdoutPath -RedirectStandardError $stderrPath -WindowStyle Hidden
     if (-not $process.WaitForExit($TimeoutMilliseconds)) {
+        $processInfo = Get-CimInstance Win32_Process -Filter ("ProcessId = {0}" -f $process.Id) -ErrorAction SilentlyContinue
+        $commandLine = if ($processInfo) { $processInfo.CommandLine } else { '<process exited>' }
         $process.Kill()
         $process.WaitForExit()
         $partialOut = if (Test-Path -LiteralPath $stdoutPath) { Get-Content -LiteralPath $stdoutPath -Raw -Encoding UTF8 } else { '' }
         $partialErr = if (Test-Path -LiteralPath $stderrPath) { Get-Content -LiteralPath $stderrPath -Raw -Encoding UTF8 } else { '' }
-        $processInfo = Get-CimInstance Win32_Process -Filter ("ProcessId = {0}" -f $process.Id) -ErrorAction SilentlyContinue
-        $commandLine = if ($processInfo) { $processInfo.CommandLine } else { '<process exited>' }
         throw ('Mistral bridge process exceeded the 30-second smoke-test timeout. commandLine=' + $commandLine + ' stdout=' + $partialOut + ' stderr=' + $partialErr)
     }
     $process.Refresh()
