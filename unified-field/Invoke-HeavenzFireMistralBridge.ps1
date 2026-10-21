@@ -15,6 +15,8 @@ param(
 
     [string]$Task,
 
+    [string]$TaskId,
+
     [ValidateSet('mistral-small-latest', 'mistral-medium-latest', 'mistral-large-latest')]
     [string]$Model = 'mistral-small-latest',
 
@@ -53,7 +55,7 @@ if ($Mode -eq 'Import') {
 
 $null = New-Item -ItemType Directory -Path $OutputDirectory -Force
 $stamp = Get-Date -Format 'yyyyMMdd-HHmmss-fff'
-$taskId = [guid]::NewGuid().ToString('N')
+if ([string]::IsNullOrWhiteSpace($TaskId)) {`n    $resolvedTaskId = [guid]::NewGuid().ToString('N')`n} else {`n    if ($TaskId.Length -gt 128) { throw 'TaskId exceeds the 128 character safety limit.' }`n    $resolvedTaskId = $TaskId.Trim()`n}
 $started = (Get-Date).ToUniversalTime().ToString('o')
 $systemPrompt = @'
 You are a collaborating engineering reviewer for the HeavenzFire UnifiedField project.
@@ -74,7 +76,7 @@ Do not invent repository paths or claim changes were committed.
 if ($Mode -eq 'Export') {
     $envelope = [ordered]@{
         schema = 'heavenzfire.model-handoff.v1'
-        task_id = $taskId
+        task_id = $resolvedTaskId
         created_utc = $started
         provider = 'mistral-le-chat-manual'
         project = 'HeavenzFire UnifiedField'
@@ -82,13 +84,13 @@ if ($Mode -eq 'Export') {
         status = 'prompt_exported_not_sent'
         trust = 'Mistral response must be independently reviewed; generated code is never auto-executed.'
     }
-    $jsonPath = Join-Path $OutputDirectory ("handoff-{0}-{1}.json" -f $taskId, $stamp)
-    $promptPath = Join-Path $OutputDirectory ("handoff-{0}-{1}.md" -f $taskId, $stamp)
+    $jsonPath = Join-Path $OutputDirectory ("handoff-{0}-{1}.json" -f $resolvedTaskId, $stamp)
+    $promptPath = Join-Path $OutputDirectory ("handoff-{0}-{1}.md" -f $resolvedTaskId, $stamp)
     $envelope | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $jsonPath -Encoding UTF8
     $prompt = @"
 # HeavenzFire / Mistral engineering handoff
 
-Task ID: $taskId
+Task ID: $resolvedTaskId
 Created UTC: $started
 Project: HeavenzFire UnifiedField
 
@@ -108,14 +110,14 @@ Return a review only. Do not claim execution or repository writes. Mark each sta
     [pscustomobject]@{
         status = 'PROMPT_EXPORTED'
         provider = 'mistral-le-chat-manual'
-        task_id = $taskId
+        task_id = $resolvedTaskId
         prompt_file = $promptPath
         envelope_file = $jsonPath
         next_step = 'Open https://chat.mistral.ai, paste the Markdown prompt, save the response as a UTF-8 text file, then run this script with -Mode Import -Task <same task> -ResponsePath <saved response>.'
         api_key_required = $false
         paid_automation_required = $false
     } | ConvertTo-Json -Depth 5
-    exit 0
+    return
 }
 
 if ($Mode -eq 'Call') {
@@ -153,7 +155,7 @@ if ($Mode -eq 'Call') {
     }
     $result = [ordered]@{
         schema = 'heavenzfire.model-review.v1'
-        task_id = $taskId
+        task_id = $resolvedTaskId
         created_utc = (Get-Date).ToUniversalTime().ToString('o')
         provider = 'mistral-api'
         model = $Model
@@ -163,11 +165,11 @@ if ($Mode -eq 'Call') {
         executed_tests = @()
         repository_changes = @()
     }
-    $resultPath = Join-Path $OutputDirectory ("review-{0}-{1}.json" -f $taskId, $stamp)
+    $resultPath = Join-Path $OutputDirectory ("review-{0}-{1}.json" -f $resolvedTaskId, $stamp)
     $result | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $resultPath -Encoding UTF8
     [pscustomobject]@{
         status = 'API_RESPONSE_SAVED'
-        task_id = $taskId
+        task_id = $resolvedTaskId
         model = $Model
         result_file = $resultPath
         verification = 'UNVERIFIED_MODEL_OUTPUT'
@@ -180,7 +182,7 @@ if ($Mode -eq 'Import') {
     $text = Get-Content -LiteralPath $ResponsePath -Raw -Encoding UTF8
     $result = [ordered]@{
         schema = 'heavenzfire.model-review.v1'
-        task_id = $taskId
+        task_id = $resolvedTaskId
         created_utc = (Get-Date).ToUniversalTime().ToString('o')
         provider = 'mistral-le-chat-manual'
         task = $Task
@@ -191,11 +193,11 @@ if ($Mode -eq 'Import') {
         repository_changes = @()
         safety_note = 'Imported text is evidence for review only. It has not been executed, validated, or committed.'
     }
-    $resultPath = Join-Path $OutputDirectory ("review-{0}-{1}.json" -f $taskId, $stamp)
+    $resultPath = Join-Path $OutputDirectory ("review-{0}-{1}.json" -f $resolvedTaskId, $stamp)
     $result | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $resultPath -Encoding UTF8
     [pscustomobject]@{
         status = 'MANUAL_RESPONSE_IMPORTED'
-        task_id = $taskId
+        task_id = $resolvedTaskId
         result_file = $resultPath
         verification = 'UNVERIFIED_USER_SUPPLIED_MODEL_OUTPUT'
         code_executed = $false
