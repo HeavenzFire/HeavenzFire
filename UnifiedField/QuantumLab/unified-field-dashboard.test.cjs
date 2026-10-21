@@ -10,6 +10,7 @@ const server = fs.readFileSync(path.join(root, 'UnifiedField-Dashboard-Server.cj
 const dashboard = fs.readFileSync(path.join(root, 'UnifiedField-Dashboard.html'), 'utf8');
 const worker = fs.readFileSync(path.join(root, 'Invoke-LocalModelWorkerBatch.ps1'), 'utf8');
 const publisher = fs.readFileSync(path.join(root, 'uf-model-worker-journal-publisher.cjs'), 'utf8');
+const resultStore = fs.readFileSync(path.join(root, 'worker-result-store.cjs'), 'utf8');
 const validator = fs.readFileSync(path.join(root, 'Test-LocalModelWorkerResponse.ps1'), 'utf8');
 const validatorTests = fs.readFileSync(path.join(root, 'Test-LocalModelWorkerResponse.Tests.ps1'), 'utf8');
 
@@ -55,6 +56,9 @@ test('dashboard exposes model batch control and renders status from overview', (
 });
 
 test('worker artifacts publish metadata-only review tasks with idempotency and bounded local API', () => {
+  assert.match(server, /latestWorkerResults\(LOCALAI\)/);
+  assert.match(resultStore, /newestByModel/);
+  assert.match(resultStore, /artifact_file/);
   assert.match(server, /publishWorkerResultsToJournal/);
   assert.match(server, /uf-model-worker-journal-publisher\.cjs/);
   assert.match(publisher, /HEAVENZFIRE_BRIDGE_TOKEN/);
@@ -67,7 +71,7 @@ test('worker artifacts publish metadata-only review tasks with idempotency and b
   assert.ok(publisher.includes("'local-artifact-review'"));
   assert.ok(publisher.includes("'local-model-failure-triage'"));
   assert.match(publisher, /Independently review the untrusted local model draft/);
-  assert.ok(server.includes('latestWorkerResults(Date.parse(startedAt'));
+  assert.ok(server.includes('latestWorkerResults(LOCALAI,Date.parse(startedAt'));
   assert.doesNotMatch(publisher, /task\.command\s*=|task\.shell\s*=|task\.script\s*=/);
 });
 
