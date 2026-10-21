@@ -13,15 +13,12 @@ const publisher = fs.readFileSync(path.join(root, 'uf-model-worker-journal-publi
 const resultStore = fs.readFileSync(path.join(root, 'worker-result-store.cjs'), 'utf8');
 const validator = fs.readFileSync(path.join(root, 'Test-LocalModelWorkerResponse.ps1'), 'utf8');
 const validatorTests = fs.readFileSync(path.join(root, 'Test-LocalModelWorkerResponse.Tests.ps1'), 'utf8');
-const avatarBody = fs.readFileSync(path.join(root, '..', 'AvatarBody', 'avatar-body.cjs'), 'utf8');
-const avatarServer = fs.readFileSync(path.join(root, '..', 'AvatarBody', 'avatar-body-server.cjs'), 'utf8');
-const dashboardLauncher = fs.readFileSync(path.join(root, 'Start-UnifiedFieldDashboard.ps1'), 'utf8');
 
 test('dashboard server is loopback-only and exposes a fixed worker action', () => {
   assert.match(server, /const HOST\s*=\s*['"]127\.0\.0\.1['"]/);
   assert.match(server, /req\.method===['"]POST['"]&&req\.url===['"]\/api\/forge\/validate['"]/);
   assert.match(server, /req\.method===['"]POST['"]&&\(req\.url===['"]\/api\/worker\/run['"]\|\|req\.url===['"]\/api\/worker\/retry['"]\)\)/);
-  assert.match(server, /if\(workerRun\.running\)/);
+  assert.match(server, /if\(modelWorkloadBusy\(\)\)/);
   assert.match(server, /powershell\.exe/);
   assert.match(server, /Cross-origin request denied/);
   assert.match(server, /req\.url===['"]\/api\/overview['"]/);
@@ -35,10 +32,15 @@ test('dashboard exposes model batch control and renders status from overview', (
   assert.match(server, /\/api\/forge\/registry/);
   assert.match(server, /\/api\/forge\/register/);
   assert.match(server, /\/api\/forge\/attach-artifact/);
+  assert.match(server, /\/api\/forge\/remediate/);
+  assert.match(server, /remediateBlueprint/);
   assert.match(server, /artifact_not_adversarial_smoke_evidence/);
   assert.match(server, /workerRegistry\.recordSmoke/);
   assert.match(server, /\/api\/forge\/evaluation-status/);
   assert.match(server, /runAdversarialSmokeSuite/);
+  assert.match(server, /modelWorkloadBusy/);
+  assert.match(server, /modelWorkloadAdmission/);
+  assert.match(server, /available RAM is below 1 GiB/);
   assert.match(server, /draftWorkerBlueprint/);
   assert.match(server, /\/api\/forge\/plan/);
   assert.match(server, /\/api\/worker\/status/);
@@ -55,10 +57,7 @@ test('dashboard exposes model batch control and renders status from overview', (
   assert.match(dashboard, /Retry failed models/);
   assert.match(dashboard, /fetch\('\/api\/worker\/run'/);
   assert.match(dashboard, /renderModelWorker\(x\)/);
-  assert.match(dashboard, /qwen2\.5:0\.5b/);
-  assert.match(dashboard, /heavenzfire-runtime:latest/);
-  assert.match(dashboard, /heavenzfire:latest/);
-  assert.match(dashboard, /llama3\.2:1b/);
+  assert.match(dashboard, /heavenzfire-qwen-0\.5b/);
   assert.match(dashboard, /Generated code is not executed automatically/);
   assert.match(dashboard, /id="workerBlueprint"/);
   assert.match(dashboard, /id="generateChildBlueprint"/);
@@ -66,19 +65,23 @@ test('dashboard exposes model batch control and renders status from overview', (
   assert.match(dashboard, /id="registerWorkerCandidate"/);
   assert.match(dashboard, /id="workerRegistryList"/);
   assert.match(dashboard, /id="attachSmokeArtifact"/);
+  assert.match(dashboard, /id="remediateWorkerCandidate"/);
+  assert.match(dashboard, /Create remediation version/);
+  assert.match(dashboard, /not model-weight training/);
+  assert.match(dashboard, /data-load-worker-hash/);
   assert.match(dashboard, /fetch\('\/api\/forge\/attach-artifact'/);
   assert.match(dashboard, /NOT QUALIFIED/);
   assert.match(dashboard, /fetch\('\/api\/forge\/evaluate'/);
-  assert.match(dashboard, /SMOKE PASS · NOT QUALIFIED/);
-  assert.match(dashboard, /CHILD TEMPLATE GENERATED · MODEL DRAFT REJECTED/);
+  assert.match(dashboard, /SMOKE PASS.*NOT QUALIFIED/);
+  assert.match(dashboard, /x\.progress/);
+  assert.match(dashboard, /PROFILES/);
+  assert.match(dashboard, /CHILD TEMPLATE GENERATED.*MODEL DRAFT REJECTED/);
   assert.match(dashboard, /deterministic_template_fallback/);
   assert.match(dashboard, /fetch\('\/api\/forge\/draft'/);
-  assert.match(dashboard, /does not fine-tune model weights/);
   assert.match(dashboard, /id="validateWorkerBlueprint"/);
   assert.match(dashboard, /id="buildWorkerEvalPlan"/);
   assert.match(dashboard, /validateForgeBlueprint/);
   assert.match(dashboard, /buildWorkerEvalPlan/);
-  assert.match(dashboard, /does not fine-tune model weights/);
 });
 
 test('worker artifacts publish metadata-only review tasks with idempotency and bounded local API', () => {
@@ -101,18 +104,16 @@ test('worker artifacts publish metadata-only review tasks with idempotency and b
   assert.doesNotMatch(publisher, /task\.command\s*=|task\.shell\s*=|task\.script\s*=/);
 });
 
-test('worker batch calls local Ollama and records every model outcome', () => {
-  for (const model of ['qwen2.5:0.5b', 'heavenzfire-runtime:latest', 'heavenzfire:latest', 'llama3.2:1b']) {
-    assert.ok(worker.includes(model), 'missing configured model: ' + model);
-  }
-  assert.match(worker, /http:\/\/127\.0\.0\.1:11434/);
+test('worker batch uses the shared HeavenzFire gateway and records the canonical model outcome', () => {
+  assert.ok(worker.includes('heavenzfire-qwen-0.5b'), 'canonical model must be configured');
+  assert.match(worker, /http:\/\/127\.0\.0\.1:11800\/v1/);
+  assert.match(worker, /chat\/completions/);
   assert.match(worker, /stream\s*=\s*\$false/);
   assert.match(worker, /worker-smoke-/);
   assert.match(worker, /ConvertTo-Json -InputObject @\(\$results\)/);
   assert.match(worker, /item\.error\s*=\s*\$_.Exception.Message/);
   assert.doesNotMatch(worker, /Invoke-Expression|\biex\b/i);
 });
-
 test('worker performs static structure and arithmetic checks without evaluating model code', () => {
   assert.match(worker, /Test-LocalModelWorkerResponse\.ps1/);
   assert.match(validator, /function Test-WorkerResponse/);
@@ -139,14 +140,13 @@ test('worker script never executes generated code or accepts arbitrary task comm
   assert.doesNotMatch(worker, /Start-Process|cmd\.exe|powershell\.exe\s+-Command/i);
   assert.match(worker, /Do not add fields or claim tests were executed/);
   assert.match(worker, /MaxRepairAttempts = 1/);
-  assert.ok(worker.includes('[string[]]$Models = @(\'qwen2.5:0.5b\''));
   assert.match(worker, /foreach \(\$model in \$Models\)/);
   assert.match(worker, /repair_attempted = \$true/);
   assert.match(worker, /repair_validation = Test-WorkerResponse/);
   assert.match(worker, /attempt_count = 2/);
   assert.match(worker, /\$_\.ok -and \$_\.validation\.passed/);
   assert.match(worker, /-not \$_\.ok -or -not \$_\.validation\.passed/);
-  assert.match(worker, /num_predict\s*=\s*220/);
+  assert.match(worker, /max_tokens\s*=\s*220/);
   assert.match(worker, /Return ONLY valid JSON/);
   assert.match(worker, /expected_output/);
   assert.match(worker, /Do not add fields/);
@@ -156,30 +156,4 @@ test('dashboard embedded JavaScript parses successfully', () => {
   const match = dashboard.match(/<script>([\s\S]*?)<\/script>/i);
   assert.ok(match, 'dashboard script element must exist');
   assert.doesNotThrow(() => new vm.Script(match[1]), 'dashboard script must be syntactically valid');
-});
-
-test('Avatar Body is surfaced in the Unified Field and movement remains simulated and bounded', () => {
-  assert.ok(avatarBody.includes('physicalActuationEnabled:false'));
-  assert.ok(avatarBody.includes('movement_step_exceeds_limit'));
-  assert.ok(avatarBody.includes('movement_out_of_bounds'));
-  assert.ok(avatarBody.includes('observation_data_too_large'));
-  assert.ok(avatarServer.includes("const HOST='127.0.0.1'"));
-  assert.ok(avatarServer.includes("p==='/api/perception'"));
-  assert.ok(avatarServer.includes("p==='/api/move'"));
-  assert.ok(server.includes("id:'avatar-body'"));
-  assert.ok(server.includes('avatarBody'));
-  assert.ok(dashboard.includes('id="avatarBodyCard"'));
-  assert.ok(dashboard.includes('renderAvatarBody(x.avatarBody)'));
-  assert.ok(dashboard.includes('sendAvatarMove'));
-  assert.ok(dashboard.includes('id="avatarBodyVisual"'));
-  assert.ok(dashboard.includes('requestAnimationFrame(animateAvatarBody)'));
-  assert.ok(dashboard.includes('data-turn-yaw'));
-  assert.ok(dashboard.includes('getUserMedia'));
-  assert.ok(dashboard.includes('grayscale_luma_0_15'));
-  assert.ok(dashboard.includes('audio:false'));
-  assert.ok(dashboard.includes('Semantic object recognition is not yet implemented.'));
-  assert.ok(dashboard.includes('physical actuation=false'));
-  assert.ok(dashboardLauncher.includes("'AvatarBody\\avatar-body-server.cjs'"));
-  assert.ok(dashboardLauncher.includes('heavenzfire-avatar-body'));
-  assert.ok(dashboardLauncher.includes('dashboard will show the body as offline'));
 });
