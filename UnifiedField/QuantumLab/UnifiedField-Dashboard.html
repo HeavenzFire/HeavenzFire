@@ -229,29 +229,32 @@ async function attachSmokeArtifact(){
  finally{button.disabled=false}
 }
 $('attachSmokeArtifact').addEventListener('click',attachSmokeArtifact);
-let avatarCameraStream=null,avatarCameraTimer=null,avatarPreviousGrid=null;
+let avatarCameraStream=null,avatarCameraTimer=null,avatarPreviousGrid=null,avatarCameraBusy=false;
+function reportAvatarCameraStatus(status){fetch('http://127.0.0.1:8799/api/hardware-status',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({camera:status}),cache:'no-store'}).catch(()=>{});}
 function stopAvatarCamera(){
  if(avatarCameraTimer!==null){clearInterval(avatarCameraTimer);avatarCameraTimer=null;}
- if(avatarCameraStream){avatarCameraStream.getTracks().forEach(track=>track.stop());avatarCameraStream=null;}
+ if(avatarCameraStream){avatarCameraStream.getTracks().forEach(track=>track.stop());avatarCameraStream=null;reportAvatarCameraStatus('not_connected');}
  const video=$('avatarCameraVideo');video.pause();video.srcObject=null;video.style.display='none';
  $('startAvatarCamera').disabled=false;$('stopAvatarCamera').disabled=true;$('avatarCameraStatus').textContent='CAMERA OFF';
  $('avatarVisionNote').textContent='Camera stopped. Previously submitted observations remain in the local body event history.';
 }
 async function captureAvatarFrame(){
  const video=$('avatarCameraVideo'),canvas=$('avatarCameraCanvas'),ctx=canvas.getContext('2d',{willReadFrequently:true});
- if(!avatarCameraStream||video.readyState<2||!video.videoWidth)return;
+ if(!avatarCameraStream||video.readyState<2||!video.videoWidth||avatarCameraBusy)return;
+ avatarCameraBusy=true;
  ctx.drawImage(video,0,0,16,12);const pixels=ctx.getImageData(0,0,16,12).data,grid=[];
- for(let i=0;i<pixels.length;i+=4)grid.push(Math.round((pixels[i]*.2126+pixels[i+1]*.7152+pixels[i+2]*.0722)/16));
+ for(let i=0;i<pixels.length;i+=4)grid.push(Math.min(15,Math.round((pixels[i]*.2126+pixels[i+1]*.7152+pixels[i+2]*.0722)/16)));
  const motion=avatarPreviousGrid?grid.reduce((sum,value,i)=>sum+Math.abs(value-avatarPreviousGrid[i]),0)/grid.length:0;
  avatarPreviousGrid=grid;
  const data={width:16,height:12,format:'grayscale_luma_0_15',grid,averageBrightness:Number((grid.reduce((a,b)=>a+b,0)/grid.length/15).toFixed(3)),frameChangeScore:Number((motion/15).toFixed(3)),source:'browser-camera-local-downsample'};
  try{const r=await fetch('http://127.0.0.1:8799/api/perception',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sensorId:'dashboard.camera.front',type:'visual',observedAt:new Date().toISOString(),data}),cache:'no-store'});const result=await r.json();if(!r.ok||!result.ok)throw Error(result.error||('HTTP '+r.status));$('avatarCameraStatus').textContent='PERCEPTION LIVE';$('avatarVisionNote').textContent='Local camera samples accepted · brightness '+data.averageBrightness+' · frame-change '+data.frameChangeScore+'. Semantic object recognition is not yet implemented.';}
- catch(e){$('avatarCameraStatus').textContent='BODY API UNAVAILABLE';$('avatarVisionNote').textContent='Frame not submitted: '+String(e.message||e);stopAvatarCamera();}
+ catch(e){stopAvatarCamera();$('avatarCameraStatus').textContent='BODY API UNAVAILABLE';$('avatarVisionNote').textContent='Frame not submitted: '+String(e.message||e);}
+ finally{avatarCameraBusy=false;}
 }
 async function startAvatarCamera(){
  const status=$('avatarCameraStatus'),note=$('avatarVisionNote');
  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){status.textContent='CAMERA UNSUPPORTED';note.textContent='This browser does not expose camera capture in this context.';return;}
- try{status.textContent='REQUESTING PERMISSION';avatarCameraStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'},audio:false});const video=$('avatarCameraVideo');video.srcObject=avatarCameraStream;video.style.display='block';await video.play();$('startAvatarCamera').disabled=true;$('stopAvatarCamera').disabled=false;note.textContent='Camera is processed locally. Only compact grayscale samples and frame-change scores are sent to 127.0.0.1:8799; audio is disabled.';await captureAvatarFrame();avatarCameraTimer=setInterval(captureAvatarFrame,1000);}
+ try{status.textContent='REQUESTING PERMISSION';avatarCameraStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'},audio:false});const video=$('avatarCameraVideo');video.srcObject=avatarCameraStream;video.style.display='block';await video.play();reportAvatarCameraStatus('connected');$('startAvatarCamera').disabled=true;$('stopAvatarCamera').disabled=false;note.textContent='Camera is processed locally. Only compact grayscale samples and frame-change scores are sent to 127.0.0.1:8799; audio is disabled.';await captureAvatarFrame();avatarCameraTimer=setInterval(captureAvatarFrame,1000);}
  catch(e){stopAvatarCamera();status.textContent='CAMERA NOT STARTED';note.textContent='Camera permission or startup failed: '+String(e.message||e);}
 }
 function renderAvatarBody(result){
