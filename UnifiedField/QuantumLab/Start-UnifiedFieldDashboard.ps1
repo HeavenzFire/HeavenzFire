@@ -34,6 +34,36 @@ if (Test-Path $AvatarServer) {
 } else {
     Write-Warning "Avatar Body server file not found: $AvatarServer"
 }
+$VoiceServer = Join-Path (Split-Path $Root -Parent) 'Voice\voice-service.cjs'
+$VoiceUrl = 'http://127.0.0.1:8796/health'
+$VoiceHealthy = $false
+if (Test-Path $VoiceServer) {
+    try {
+        $VoiceHealth = Invoke-RestMethod -Uri $VoiceUrl -TimeoutSec 2
+        $VoiceHealthy = ($VoiceHealth.ok -eq $true -and $VoiceHealth.service -eq 'heavenzfire-voice-source-intake')
+    } catch {}
+    if (-not $VoiceHealthy) {
+        try {
+            $Node = Get-Command 'node.exe' -ErrorAction Stop
+            $QuotedVoiceServer = '"' + $VoiceServer + '"'
+            Start-Process -FilePath $Node.Source -ArgumentList $QuotedVoiceServer -WorkingDirectory (Split-Path $VoiceServer -Parent) -WindowStyle Normal | Out-Null
+            for ($i = 0; $i -lt 20 -and -not $VoiceHealthy; $i++) {
+                Start-Sleep -Milliseconds 300
+                try {
+                    $VoiceHealth = Invoke-RestMethod -Uri $VoiceUrl -TimeoutSec 1
+                    $VoiceHealthy = ($VoiceHealth.ok -eq $true -and $VoiceHealth.service -eq 'heavenzfire-voice-source-intake')
+                } catch {}
+            }
+        } catch {}
+    }
+    if ($VoiceHealthy) {
+        Write-Output "Voice source intake healthy: $VoiceUrl"
+    } else {
+        Write-Warning 'Voice source intake did not start. Dashboard will continue without voice source status.'
+    }
+} else {
+    Write-Warning "Voice source intake server not found: $VoiceServer"
+}
 $Healthy = $false
 try {
     $Health = Invoke-RestMethod -Uri 'http://127.0.0.1:8800/health' -TimeoutSec 2
