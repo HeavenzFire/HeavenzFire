@@ -2,7 +2,7 @@ name: Unified Field dashboard and local worker checks
 
 on:
   push:
-    branches: ["main", "feat/unified-field-local-model-workers", "fix/worker-result-aggregation"]
+    branches: ["main", "feat/unified-field-local-model-workers", "fix/worker-result-aggregation", "feat/worker-forge-child-blueprints"]
   pull_request:
     branches: ["main"]
   workflow_dispatch:
