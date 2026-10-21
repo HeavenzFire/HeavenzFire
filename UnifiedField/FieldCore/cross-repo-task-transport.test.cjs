@@ -62,7 +62,7 @@ if (!adapterPath || !governedLifecyclePath) {
       /HTTP 409.*task_id_conflict/
     );
 
-    assert.equal(fs.readFileSync(inboxPath, 'utf8').trim().split(/\\r?\\n/).length, 1);
+    assert.equal(fs.readFileSync(inboxPath, 'utf8').trim().split(/\r?\n/).length, 1);
     await stopServer();
 
     const restartedEndpoint = await startServer();
