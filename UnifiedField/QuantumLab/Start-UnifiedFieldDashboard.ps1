@@ -34,7 +34,27 @@ if (-not $VisionHealthy) {
     }
 }
 if (-not $VisionHealthy) { throw 'Avatar vision worker did not become healthy on 127.0.0.1:11802.' }
-$Server = Join-Path $Root 'UnifiedField-Dashboard-Server.cjs'
+$AvatarBodyServer = Join-Path (Split-Path $Root -Parent) 'AvatarBody\avatar-body-server.cjs'
+$AvatarBodyUrl = 'http://127.0.0.1:8799/health'
+$AvatarBodyHealthy = $false
+try {
+    $AvatarBodyHealth = Invoke-RestMethod -Uri $AvatarBodyUrl -TimeoutSec 2
+    $AvatarBodyHealthy = ($AvatarBodyHealth.ok -eq $true -and $AvatarBodyHealth.service -eq 'heavenzfire-avatar-body')
+} catch {}
+if (-not $AvatarBodyHealthy) {
+    if (-not (Test-Path -LiteralPath $AvatarBodyServer)) { throw "Avatar Body server missing: $AvatarBodyServer" }
+    $Node = Get-Command 'node.exe' -ErrorAction Stop
+    Start-Process -FilePath $Node.Source -ArgumentList ('"' + $AvatarBodyServer + '"') -WorkingDirectory (Split-Path $AvatarBodyServer -Parent) -WindowStyle Hidden | Out-Null
+    for ($i = 0; $i -lt 20 -and -not $AvatarBodyHealthy; $i++) {
+        Start-Sleep -Milliseconds 300
+        try {
+            $AvatarBodyHealth = Invoke-RestMethod -Uri $AvatarBodyUrl -TimeoutSec 1
+            $AvatarBodyHealthy = ($AvatarBodyHealth.ok -eq $true -and $AvatarBodyHealth.service -eq 'heavenzfire-avatar-body')
+        } catch {}
+    }
+}
+if (-not $AvatarBodyHealthy) { throw 'Avatar Body did not become healthy on 127.0.0.1:8799.' }
+Write-Output "Avatar Body service healthy: $AvatarBodyUrl"$Server = Join-Path $Root 'UnifiedField-Dashboard-Server.cjs'
 $Url = 'http://127.0.0.1:8800/'
 if (-not (Test-Path $Server)) { throw "Dashboard server file not found: $Server" }
 $Healthy = $false
