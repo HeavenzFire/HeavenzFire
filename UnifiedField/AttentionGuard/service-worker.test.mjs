@@ -113,6 +113,7 @@ test("service worker resets an expired focus session on startup", async () => {
     focus: { active: true, endsAt: Date.now() - 1000 }
   });
   await listeners.startup[0]();
+  await new Promise(resolve => setTimeout(resolve, 0));
   assert.equal(storageData.focus.active, false);
   assert.equal(dynamicRules.size, 0);
 });
