@@ -57,6 +57,17 @@ test('worker batch calls local Ollama and records every model outcome', () => {
   assert.doesNotMatch(worker, /Invoke-Expression|\biex\b/i);
 });
 
+test('worker performs static structure and arithmetic checks without evaluating model code', () => {
+  assert.match(worker, /function Test-WorkerResponse/);
+  assert.match(worker, /ConvertFrom-Json -ErrorAction Stop/);
+  assert.match(worker, /test_expected_output_mismatch/);
+  assert.match(worker, /input_iteration_not_verified/);
+  assert.match(worker, /item\.validation = Test-WorkerResponse/);
+  assert.doesNotMatch(worker, /Invoke-Expression|\biex\b|ScriptBlock::Create|Add-Type/i);
+  assert.match(dashboard, /STATIC CHECKS PASSED/);
+  assert.match(dashboard, /static checks failed/);
+});
+
 test('worker script never executes generated code or accepts arbitrary task commands', () => {
   assert.doesNotMatch(worker, /Start-Process|cmd\.exe|powershell\.exe\s+-Command/i);
   assert.match(worker, /Do not claim tests were run/);
