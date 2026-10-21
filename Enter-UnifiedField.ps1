@@ -12,6 +12,15 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
+if ($TaskInbox) {
+    $taskInboxManager = Join-Path $PSScriptRoot "UnifiedField\\FieldCore\\Invoke-TaskInbox.ps1"
+    if (-not (Test-Path -LiteralPath $taskInboxManager -PathType Leaf)) {
+        throw "Task inbox manager is missing: $taskInboxManager"
+    }
+    & $taskInboxManager -Action $TaskInboxAction -Port $TaskInboxPort
+    return
+}
+
 $python = Get-Command python -ErrorAction SilentlyContinue
 if (-not $python) {
     Write-Error "Python 3.10+ is required. Install Python and ensure 'python' is on PATH."
