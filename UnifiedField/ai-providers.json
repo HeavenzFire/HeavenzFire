@@ -1,0 +1,160 @@
+{
+  "schemaVersion": 1,
+  "status": "proposal",
+  "providers": [
+    {
+      "id": "openai",
+      "name": "OpenAI GPT",
+      "transport": "official-api",
+      "status": "catalogued",
+      "capabilities": [
+        "reasoning",
+        "code",
+        "structured-output"
+      ],
+      "credentialEnv": [
+        "OPENAI_API_KEY"
+      ],
+      "dataPolicy": "external-request-explicit",
+      "adapter": "provider-native-required"
+    },
+    {
+      "id": "anthropic",
+      "name": "Anthropic Claude",
+      "transport": "official-api",
+      "status": "catalogued",
+      "capabilities": [
+        "reasoning",
+        "code",
+        "long-context"
+      ],
+      "credentialEnv": [
+        "ANTHROPIC_API_KEY"
+      ],
+      "dataPolicy": "external-request-explicit",
+      "adapter": "provider-native-required"
+    },
+    {
+      "id": "google-gemini",
+      "name": "Google Gemini",
+      "transport": "official-api",
+      "status": "catalogued",
+      "capabilities": [
+        "reasoning",
+        "multimodal",
+        "structured-output"
+      ],
+      "credentialEnv": [
+        "GEMINI_API_KEY"
+      ],
+      "dataPolicy": "external-request-explicit",
+      "adapter": "provider-native-required"
+    },
+    {
+      "id": "deepseek",
+      "name": "DeepSeek",
+      "transport": "official-api-or-compatible",
+      "status": "catalogued",
+      "capabilities": [
+        "reasoning",
+        "code"
+      ],
+      "credentialEnv": [
+        "DEEPSEEK_API_KEY"
+      ],
+      "dataPolicy": "external-request-explicit",
+      "adapter": "compatible-chat-completions-candidate"
+    },
+    {
+      "id": "mistral",
+      "name": "Mistral",
+      "transport": "official-api-or-compatible",
+      "status": "catalogued",
+      "capabilities": [
+        "reasoning",
+        "code",
+        "embeddings"
+      ],
+      "credentialEnv": [
+        "MISTRAL_API_KEY"
+      ],
+      "dataPolicy": "external-request-explicit",
+      "adapter": "compatible-chat-completions-candidate"
+    },
+    {
+      "id": "ollama-llama",
+      "name": "Llama through local Ollama",
+      "transport": "local-http",
+      "status": "catalogued",
+      "capabilities": [
+        "reasoning",
+        "code",
+        "local-inference"
+      ],
+      "credentialEnv": [],
+      "dataPolicy": "local-only-by-default",
+      "adapter": "ollama-adapter-candidate"
+    },
+    {
+      "id": "heavenzfire",
+      "name": "HeavenzFire orchestration",
+      "transport": "in-repository",
+      "status": "catalogued",
+      "capabilities": [
+        "task-orchestration",
+        "policy-gating",
+        "evidence-ledger",
+        "local-agent-routing"
+      ],
+      "credentialEnv": [],
+      "dataPolicy": "local-first",
+      "adapter": "unified-field-core"
+    },
+    {
+      "id": "perplexity",
+      "name": "Perplexity",
+      "transport": "research-api-or-attended-browser",
+      "status": "catalogued",
+      "capabilities": [
+        "web-research",
+        "source-discovery"
+      ],
+      "credentialEnv": [
+        "PERPLEXITY_API_KEY"
+      ],
+      "dataPolicy": "external-request-explicit",
+      "adapter": "provider-native-required"
+    },
+    {
+      "id": "monica",
+      "name": "Monica",
+      "transport": "official-supported-integration-only",
+      "status": "unverified",
+      "capabilities": [
+        "assistant-workflows"
+      ],
+      "credentialEnv": [],
+      "dataPolicy": "external-request-explicit",
+      "adapter": "not-implemented"
+    },
+    {
+      "id": "merlin",
+      "name": "Merlin",
+      "transport": "official-supported-integration-only",
+      "status": "unverified",
+      "capabilities": [
+        "assistant-workflows",
+        "research-assistance"
+      ],
+      "credentialEnv": [],
+      "dataPolicy": "external-request-explicit",
+      "adapter": "not-implemented"
+    }
+  ],
+  "routing": {
+    "defaultMode": "plan-only",
+    "automaticFallback": false,
+    "requireExplicitExternalDataPolicy": true,
+    "requireHumanApprovalForConsequentialActions": true
+  }
+}
