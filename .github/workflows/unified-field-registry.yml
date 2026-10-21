@@ -5,43 +5,50 @@ on:
     paths:
       - "tools/validate_capabilities.py"
       - "tools/health_probe.py"
+      - "tools/unified_field.py"
       - "tools/policy_gate.py"
-      - "tests/test_policy_gate.py"
-      - "examples/consent-policy.json"
-      - "examples/consent-request.json"
-      - "docs/CONSENT_POLICY_GATE.md"
       - "tests/test_validate_capabilities.py"
       - "tests/test_health_probe.py"
       - "tests/test_unified_field.py"
-      - "tools/unified_field.py"
-      - "tools/policy_gate.py"
       - "tests/test_policy_gate.py"
-      - "examples/consent-policy.json"
-      - "examples/consent-request.json"
-      - "docs/CONSENT_POLICY_GATE.md"
       - "Enter-UnifiedField.ps1"
       - "docs/UNIFIED_FIELD_INTEGRATION.md"
+      - "docs/CONSENT_POLICY_GATE.md"
       - "examples/capability-registry.json"
       - "examples/nodes.json"
+      - "examples/consent-policy.json"
+      - "examples/consent-request.json"
       - ".github/workflows/unified-field-registry.yml"
   pull_request:
     paths:
       - "tools/validate_capabilities.py"
       - "tools/health_probe.py"
+      - "tools/unified_field.py"
+      - "tools/policy_gate.py"
       - "tests/test_validate_capabilities.py"
       - "tests/test_health_probe.py"
+      - "tests/test_unified_field.py"
+      - "tests/test_policy_gate.py"
+      - "Enter-UnifiedField.ps1"
+      - "docs/UNIFIED_FIELD_INTEGRATION.md"
+      - "docs/CONSENT_POLICY_GATE.md"
       - "examples/capability-registry.json"
       - "examples/nodes.json"
+      - "examples/consent-policy.json"
+      - "examples/consent-request.json"
       - ".github/workflows/unified-field-registry.yml"
 jobs:
   unified-field-tests:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Run registry and health protocol tests
+      - name: Run registry, health, integration, and consent tests
         run: python -m unittest tests.test_validate_capabilities tests.test_health_probe tests.test_unified_field tests.test_policy_gate -v
       - name: Evaluate synthetic consent policy (must allow explicit request)
         run: python tools/policy_gate.py examples/consent-policy.json examples/consent-request.json
@@ -49,5 +56,5 @@ jobs:
         run: python tools/validate_capabilities.py examples/capability-registry.json
       - name: Validate integrated example registries
         run: python -c "import json; from tools.unified_field import build_report; caps=json.load(open('examples/capability-registry.json', encoding='utf-8')); nodes=json.load(open('examples/nodes.json', encoding='utf-8')); report=build_report(caps, {'schema_version':'1.0','nodes':[]}); errors=report.get('validation_errors', {}); print(errors or 'VALID integrated registry schemas'); raise SystemExit(bool(errors))"
-      - name: Validate health registry and show expected local status
-        run: python -c "import json; from tools.health_probe import validate_nodes; data=json.load(open('examples/nodes.json', encoding='utf-8')); errors=validate_nodes(data); print(errors or 'VALID node health registry') ; raise SystemExit(bool(errors))"
+      - name: Validate health registry
+        run: python -c "import json; from tools.health_probe import validate_nodes; data=json.load(open('examples/nodes.json', encoding='utf-8')); errors=validate_nodes(data); print(errors or 'VALID node health registry'); raise SystemExit(bool(errors))"
