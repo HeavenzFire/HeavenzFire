@@ -14,14 +14,22 @@ Return ONLY valid JSON: no markdown fences and no prose. Use exactly these field
 function Test-WorkerResponse {
     param([string]$Response)
     $issues = New-Object System.Collections.Generic.List[string]
+    $warnings = New-Object System.Collections.Generic.List[string]
     $candidate = $Response.Trim()
     $fence = [string][char]96 + [string][char]96 + [string][char]96
     $candidate = $candidate.Replace($fence + 'json', '').Replace($fence + 'powershell', '').Replace($fence + 'PowerShell', '').Replace($fence, '').Trim()
     try { $doc = $candidate | ConvertFrom-Json -ErrorAction Stop }
-    catch { return [pscustomobject]@{ passed=$false; issues=@('response_not_json') } }
+    catch { return [pscustomobject]@{ passed=$false; issues=@('response_not_json'); warnings=@(); normalized_response='' } }
 
     foreach ($field in @('task','function_name','code','tests')) {
         if (-not ($doc.PSObject.Properties.Name -contains $field)) { $issues.Add('missing_field_' + $field) }
+    }
+    if ($doc.code -is [string]) {
+        $trimmedCode = $doc.code.TrimEnd()
+        if ($trimmedCode.EndsWith('.')) {
+            $doc.code = $trimmedCode.Substring(0, $trimmedCode.Length - 1).TrimEnd()
+            $warnings.Add('trimmed_terminal_period_from_code')
+        }
     }
     if (-not ($doc.code -is [string]) -or $doc.code -notmatch '(?is)function\s+Get-SumSafe\b') { $issues.Add('function_definition_missing') }
     if ($doc.code -notmatch '(?is)foreach\s*\(\s*\$\w+\s+in\s+\$InputValues\s*\)') { $issues.Add('input_iteration_not_verified') }
@@ -35,13 +43,30 @@ function Test-WorkerResponse {
         $issues.Add('tests_schema_invalid')
     } else {
         foreach ($case in $doc.tests) {
-            if ($null -eq $case.input -or $case.input -isnot [System.Array] -or $null -eq $case.expected_output) {
+            $inputValues = $case.input
+            if ($inputValues -is [string]) {
+                try {
+                    $parsedInput = ConvertFrom-Json -InputObject $inputValues -ErrorAction Stop
+                    if ($parsedInput -is [System.Array]) {
+                        $inputValues = @($parsedInput)
+                        $case.input = $inputValues
+                        $warnings.Add('parsed_json_array_from_string')
+                    } else {
+                        $issues.Add('test_case_schema_invalid')
+                        continue
+                    }
+                } catch {
+                    $issues.Add('test_case_schema_invalid')
+                    continue
+                }
+            }
+            if ($null -eq $inputValues -or $inputValues -isnot [System.Array] -or $null -eq $case.expected_output) {
                 $issues.Add('test_case_schema_invalid')
                 continue
             }
             $sum = 0.0
             $validInputs = $true
-            foreach ($value in $case.input) {
+            foreach ($value in $inputValues) {
                 $number = 0.0
                 if (-not [double]::TryParse([string]$value, [ref]$number)) { $validInputs = $false; break }
                 $sum += $number
@@ -54,9 +79,13 @@ function Test-WorkerResponse {
             }
         }
     }
-    return [pscustomobject]@{ passed=($issues.Count -eq 0); issues=@($issues.ToArray()) }
+    return [pscustomobject]@{
+        passed=($issues.Count -eq 0)
+        issues=@($issues.ToArray())
+        warnings=@($warnings.ToArray())
+        normalized_response=($doc | ConvertTo-Json -Depth 8 -Compress)
+    }
 }
-
 New-Item -ItemType Directory -Path $OutputDirectory -Force | Out-Null
 $results = @()
 foreach ($model in $Models) {
@@ -70,6 +99,10 @@ foreach ($model in $Models) {
         $item.attempt_count = 1
         if ($item.ok) {
             $item.validation = Test-WorkerResponse -Response $item.response
+            if ($item.validation.passed -and $item.validation.normalized_response -and $item.validation.normalized_response -ne $item.response) {
+                $item.initial_response = $item.response
+                $item.response = $item.validation.normalized_response
+            }
             if (-not $item.validation.passed -and $MaxRepairAttempts -gt 0) {
                 $item.repair_attempted = $true
                 $item.initial_response = $item.response
@@ -82,7 +115,8 @@ foreach ($model in $Models) {
                     if ([bool]$repair.done -and -not [string]::IsNullOrWhiteSpace($repairText)) {
                         $item.repair_validation = Test-WorkerResponse -Response $repairText
                         if ($item.repair_validation.passed) {
-                            $item.response = $repairText
+                            $item.repair_response = $repairText
+                            $item.response = $item.repair_validation.normalized_response
                             $item.validation = $item.repair_validation
                         } else {
                             $item.repair_response = $repairText
