@@ -158,17 +158,17 @@ test('dashboard embedded JavaScript parses successfully', () => {
 });
 
 test('Avatar Body is surfaced in the Unified Field and movement remains simulated and bounded', () => {
-  assert.match(avatarBody, /physicalActuationEnabled:false|physicalActuationEnabled:false/);
-  assert.match(avatarBody, /movement_step_exceeds_limit/);
-  assert.match(avatarBody, /movement_out_of_bounds/);
-  assert.match(avatarBody, /observation_data_too_large/);
-  assert.match(avatarServer, /const HOST='127\\.0\\.0\\.1'/);
-  assert.match(avatarServer, /\\/api\\/perception/);
-  assert.match(avatarServer, /\\/api\\/move/);
-  assert.match(server, /id:'avatar-body'/);
-  assert.match(server, /avatarBody/);
-  assert.match(dashboard, /id="avatarBodyCard"/);
-  assert.match(dashboard, /renderAvatarBody\\(x\\.avatarBody\\)/);
-  assert.match(dashboard, /sendAvatarMove/);
-  assert.match(dashboard, /physical actuation=false/);
+  assert.ok(avatarBody.includes('physicalActuationEnabled:false'));
+  assert.ok(avatarBody.includes('movement_step_exceeds_limit'));
+  assert.ok(avatarBody.includes('movement_out_of_bounds'));
+  assert.ok(avatarBody.includes('observation_data_too_large'));
+  assert.ok(avatarServer.includes("const HOST='127.0.0.1'"));
+  assert.ok(avatarServer.includes("p==='/api/perception'"));
+  assert.ok(avatarServer.includes("p==='/api/move'"));
+  assert.ok(server.includes("id:'avatar-body'"));
+  assert.ok(server.includes('avatarBody'));
+  assert.ok(dashboard.includes('id="avatarBodyCard"'));
+  assert.ok(dashboard.includes('renderAvatarBody(x.avatarBody)'));
+  assert.ok(dashboard.includes('sendAvatarMove'));
+  assert.ok(dashboard.includes('physical actuation=false'));
 });
