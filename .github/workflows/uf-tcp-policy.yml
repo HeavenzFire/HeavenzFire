@@ -32,6 +32,8 @@ on:
       - 'UnifiedField/QuantumLab/uf-topology.test.cjs'
       - 'UnifiedField/QuantumLab/uf-topology-cli.cjs'
       - 'UnifiedField/QuantumLab/uf-topology-cli.test.cjs'
+      - 'UnifiedField/QuantumLab/uf-bridge-contract.cjs'
+      - 'UnifiedField/QuantumLab/uf-bridge-contract.test.cjs'
       - 'UnifiedField/QuantumLab/uf-local-worker.cjs'
       - 'UnifiedField/QuantumLab/uf-local-worker.test.cjs'
       - 'UnifiedField/QuantumLab/Start-UnifiedFieldWorker.ps1'
@@ -52,4 +54,4 @@ jobs:
         with:
           node-version: '22'
       - name: Run deterministic policy tests
-        run: node --test UnifiedField/QuantumLab/uf-tcp-policy.test.cjs UnifiedField/QuantumLab/uf-144-council.test.cjs UnifiedField/QuantumLab/uf-bridge-journal.test.cjs UnifiedField/QuantumLab/uf-topology.test.cjs UnifiedField/QuantumLab/uf-topology-cli.test.cjs UnifiedField/QuantumLab/uf-local-worker.test.cjs
+        run: node --test UnifiedField/QuantumLab/uf-tcp-policy.test.cjs UnifiedField/QuantumLab/uf-144-council.test.cjs UnifiedField/QuantumLab/uf-bridge-journal.test.cjs UnifiedField/QuantumLab/uf-topology.test.cjs UnifiedField/QuantumLab/uf-topology-cli.test.cjs UnifiedField/QuantumLab/uf-local-worker.test.cjs UnifiedField/QuantumLab/uf-bridge-contract.test.cjs
