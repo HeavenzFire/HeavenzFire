@@ -23,8 +23,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-      - name: Test attention policy
-        run: node --test UnifiedField/AttentionGuard/attention-policy.test.mjs
+      - name: Test attention policy and service worker behavior
+        run: node --test UnifiedField/AttentionGuard/attention-policy.test.mjs UnifiedField/AttentionGuard/service-worker.test.mjs
       - name: Check extension JavaScript syntax
         run: |
           node --check UnifiedField/AttentionGuard/service-worker.js
