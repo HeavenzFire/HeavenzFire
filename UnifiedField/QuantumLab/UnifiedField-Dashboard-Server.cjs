@@ -35,7 +35,8 @@ async function probe(e){
 function readJson(p){try{return JSON.parse(fs.readFileSync(p,'utf8').replace(/^\uFEFF/,''))}catch{return null}}
 async function publishWorkerResultsToJournal(artifact){
  const token=process.env.HEAVENZFIRE_BRIDGE_TOKEN||'';
- const base=(process.env.HEAVENZFIRE_BRIDGE_URL||'http://127.0.0.1:8798').replace(/\/$/,'');
+ const configuredBase=process.env.HEAVENZFIRE_BRIDGE_URL||'http://127.0.0.1:8798';
+ let base;try{const parsed=new URL(configuredBase);if(parsed.protocol!=='http:'||parsed.hostname!=='127.0.0.1'||parsed.username||parsed.password||parsed.search||parsed.hash||parsed.pathname!=='/')return {state:'blocked',reason:'Journal URL must be a plain loopback HTTP origin',published:0,failed:0};base=parsed.origin;}catch{return {state:'blocked',reason:'Journal URL is invalid',published:0,failed:0};}
  if(!token)return {state:'blocked',reason:'HEAVENZFIRE_BRIDGE_TOKEN is not configured',published:0,failed:0};
  if(!artifact||!Array.isArray(artifact.results))return {state:'blocked',reason:'No valid worker result artifact',published:0,failed:0};
  let published=0,failed=0;const errors=[];
