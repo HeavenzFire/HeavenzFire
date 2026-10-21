@@ -82,6 +82,23 @@ test('inbox rejects approved execution states and malformed JSON records', async
   });
 });
 
+test('task inbox lists newest pending proposals with a bounded limit', async t => {
+  await withInbox(t, async ({ baseUrl }) => {
+    assert.equal((await post(baseUrl, proposal('list-1', 'First proposal'))).status, 201);
+    assert.equal((await post(baseUrl, proposal('list-2', 'Second proposal'))).status, 201);
+    const response = await fetch(baseUrl + '/api/tasks?limit=1');
+    const body = await response.json();
+    assert.equal(response.status, 200);
+    assert.equal(body.total, 2);
+    assert.equal(body.returned, 1);
+    assert.equal(body.tasks[0].taskId, 'list-2');
+    assert.equal(body.tasks[0].status, 'proposed');
+    assert.equal(body.tasks[0].approvalState, 'pending');
+    const invalid = await fetch(baseUrl + '/api/tasks?limit=101');
+    assert.equal(invalid.status, 400);
+  });
+});
+
 test('task inbox reports health and returns 404 for unknown task IDs', async t => {
   await withInbox(t, async ({ baseUrl }) => {
     const health = await (await fetch(baseUrl + '/health')).json();
