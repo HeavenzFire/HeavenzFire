@@ -66,7 +66,7 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:11px;color:var(--muted
 }</textarea>
 <div class="detail" id="forgeBlueprintResult" style="margin-top:9px">Candidate JSON stays in this browser page until you validate it; validation does not execute it.</div>
 <div class="task" style="margin-top:12px"><div class="taskhead"><strong>Multidimensional evaluation plan</strong><span class="pill" id="forgePlanState">NOT BUILT</span></div><div class="detail" id="forgePlanMeta">Six axes: task type × risk × evidence × tool scope × adversarial profile × failure mode.</div><div id="forgeProfiles" class="actions" style="margin-top:9px"></div></div>
-<div class="task" style="margin-top:12px"><div class="taskhead"><strong>Persistent worker registry</strong><span class="pill" id="workerRegistryCount">0 candidates</span><button id="refreshWorkerRegistry">Refresh registry</button></div><div class="detail">Saved blueprints remain candidates until the full qualification matrix and independent review pass. A smoke pass is not promotion.</div><div id="workerRegistryList" class="service-list" style="margin-top:9px">Loading candidate registry…</div></div>
+<div class="task" style="margin-top:12px"><div class="taskhead"><strong>Persistent worker registry</strong><span class="pill" id="workerRegistryCount">0 candidates</span><button id="refreshWorkerRegistry">Refresh registry</button></div><div class="detail">Saved blueprints remain candidates until the full qualification matrix and independent review pass. A smoke pass is not promotion.</div><div id="workerRegistryList" class="service-list" style="margin-top:9px">Loading candidate registry…</div><div class="actions" style="margin-top:9px"><input id="smokeArtifactFile" placeholder="worker-forge-eval-…json" style="min-width:250px;background:#080f18;color:#e9f0f7;border:1px solid #34516a;border-radius:9px;padding:9px"/><button id="attachSmokeArtifact">Attach saved smoke artifact</button></div></div>
 </section>
 <section class="card span5"><h2>Agent lanes · coordination status</h2><div class="roles">
 <div class="role"><h3>01 · Architect</h3><p>Map dependencies, interfaces, acceptance criteria, and preserve existing artifacts.</p><div class="state">WORKFLOW ROLE · NOT A SEPARATE MODEL</div></div>
@@ -215,6 +215,19 @@ async function registerWorkerCandidate(){
 }
 $('registerWorkerCandidate').addEventListener('click',registerWorkerCandidate);
 $('refreshWorkerRegistry').addEventListener('click',loadWorkerRegistry);
+async function attachSmokeArtifact(){
+ const button=$('attachSmokeArtifact');button.disabled=true;
+ try{
+  const artifact_file=$('smokeArtifactFile').value.trim();
+  const r=await fetch('/api/forge/attach-artifact',{method:'POST',headers:{'Accept':'application/json','Content-Type':'application/json'},body:JSON.stringify({artifact_file})});
+  const x=await r.json();if(!r.ok||!x.ok)throw Error(x.error||('HTTP '+r.status));
+  $('forgeStatus').textContent='SMOKE EVIDENCE ATTACHED · CANDIDATE STILL NOT QUALIFIED';
+  $('forgeBlueprintResult').textContent='Attached '+x.last_smoke.artifact_file+' · '+x.last_smoke.pass_count+'/'+x.last_smoke.total_cases+' passed · critical failures '+x.last_smoke.critical_failures+'. No promotion occurred.';
+  await loadWorkerRegistry()
+ }catch(e){$('forgeStatus').textContent='EVIDENCE ATTACH ERROR';$('forgeBlueprintResult').textContent=String(e.message||e)}
+ finally{button.disabled=false}
+}
+$('attachSmokeArtifact').addEventListener('click',attachSmokeArtifact);
 async function refresh(){
  $('overallText').textContent='Refreshing local state…';
  try{
