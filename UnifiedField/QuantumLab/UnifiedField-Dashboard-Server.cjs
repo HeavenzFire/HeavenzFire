@@ -35,6 +35,7 @@ const endpoints=[
  {id:'discovery',name:'Open-source model discovery',url:'http://127.0.0.1:8795/api/discover'},
  {id:'voice',name:'Research / voice service',url:'http://127.0.0.1:8796/health'},
  {id:'brain',name:'Digital Brain runtime',url:'http://127.0.0.1:8797/api/health'},
+ {id:'avatar-body',name:'Avatar Body',url:'http://127.0.0.1:8799/health'},
  {id:'mesh',name:'Mesh coordinator',url:'http://127.0.0.1:8080/health'}
 ];
 async function probe(e){
@@ -228,8 +229,9 @@ const server=http.createServer(async(req,res)=>{
   const guardian=readJson(GUARDIAN);
   const brain=sv.find(s=>s.id==='brain');
   let state=null;try{const r=await fetch('http://127.0.0.1:8797/api/state',{signal:AbortSignal.timeout(1700)});if(r.ok)state=await r.json()}catch{}
+  let avatarBody=null;try{const r=await fetch('http://127.0.0.1:8799/api/state',{signal:AbortSignal.timeout(1200)});if(r.ok)avatarBody=await r.json()}catch{}
   res.writeHead(200,{'Content-Type':'application/json; charset=utf-8'});
-  return res.end(JSON.stringify({ok:true,at:new Date().toISOString(),services:sv,guardian,tasks:tasks(),brain:state|| (brain&&brain.data)||null,modelWorker:{run:workerRun,latest:latestWorkerResults()},mode:'local monitor + fixed worker batch',host:HOST}));
+  return res.end(JSON.stringify({ok:true,at:new Date().toISOString(),services:sv,guardian,tasks:tasks(),brain:state|| (brain&&brain.data)||null,avatarBody,modelWorker:{run:workerRun,latest:latestWorkerResults()},mode:'local monitor + fixed worker batch',host:HOST}));
  }
  if(req.url==='/'||req.url==='/index.html'){
   if(!fs.existsSync(DASH)){res.writeHead(404);return res.end('Dashboard file missing');}
