@@ -1,6 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { existsSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { loadRegistry, validateRegistry, listModules } from "./registry.mjs";
+
+const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 
 test("committed module registry loads and validates", async () => {
   const registry = await loadRegistry();
@@ -37,4 +42,26 @@ test("list command returns only the declared modules", async () => {
   const listed = listModules(registry);
   assert.equal(listed.length, registry.modules.length);
   assert.equal(listed[0].id, "fieldcore");
+});
+
+test("integrated local control modules map to real repository paths", async () => {
+  const registry = await loadRegistry();
+  const byId = new Map(registry.modules.map(module => [module.id, module]));
+  const required = [
+    "health-probe",
+    "consent-policy-gate",
+    "shared-task-inbox",
+    "evidence-ledger",
+    "browser-bridge",
+    "attention-guard"
+  ];
+  for (const id of required) {
+    const module = byId.get(id);
+    assert.ok(module, `missing module registry entry: ${id}`);
+    assert.ok(module.sourcePath, `missing sourcePath for ${id}`);
+    assert.ok(existsSync(path.resolve(REPO_ROOT, module.sourcePath)), `source path does not exist for ${id}`);
+  }
+  assert.equal(byId.get("attention-guard").activation, "manual-unverified");
+  assert.match(byId.get("attention-guard").status, /manual browser smoke test pending/);
+  assert.equal(byId.get("consent-policy-gate").activation, "manual-until-enforced-by-caller");
 });
