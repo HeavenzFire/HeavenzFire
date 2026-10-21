@@ -6,6 +6,7 @@ const {publishWorkerResultsToJournal}=require('./uf-model-worker-journal-publish
 const {OfflineTaskJournal}=require('./uf-bridge-journal.cjs');
 const {createBlueprint,validateBlueprint,buildEvaluationMatrix,REQUIRED_ADVERSARIAL_PROFILES}=require('./worker-forge.cjs');
 const {latestWorkerResults}=require('./worker-result-store.cjs');
+const {runFiveAgentBuild}=require('./five-agent-build-pipeline.cjs');
 const {draftWorkerBlueprint}=require('./worker-forge-drafter.cjs');
 const {runAdversarialSmokeSuite}=require('./worker-forge-adversarial.cjs');
 const {createWorkerRegistry}=require('./worker-registry.cjs');
@@ -32,9 +33,10 @@ const LOCALAI=path.join(ROOT,'UnifiedField','QuantumLab','LocalAI');
 const workerRegistry=createWorkerRegistry(path.join(LOCALAI,'worker-registry.json'));
 const WORKER_SCRIPT=path.join(ROOT,'UnifiedField','QuantumLab','Invoke-LocalModelWorkerBatch.ps1');
 let workerRun={running:false,pid:null,startedAt:null,finishedAt:null,exitCode:null,error:null};
+let buildAgentRun={running:false,startedAt:null,finishedAt:null,status:'NOT_RUN',completed:0,total:5,agents:[],error:null};
 let forgeEvaluationRun={running:false,startedAt:null,finishedAt:null,error:null,result:null,artifact_file:null};
 let forgeDraftRunning=false;
-function modelWorkloadBusy(){return workerRun.running||forgeEvaluationRun.running||forgeDraftRunning;}
+function modelWorkloadBusy(){return workerRun.running||forgeEvaluationRun.running||forgeDraftRunning||buildAgentRun.running;}
 function modelWorkloadAdmission(){return require('node:os').freemem()>=1024*1024*1024;}
 const endpoints=[
  {id:'browserbridge',name:'144A BrowserBridge',url:'http://127.0.0.1:18795/health'},
@@ -317,6 +319,34 @@ const server=http.createServer(async(req,res)=>{
   const plan=buildEvaluationMatrix(FORGE_AXES,{maxCases:2048});
   res.writeHead(200,{'Content-Type':'application/json'});
   return res.end(JSON.stringify({ok:true,state:'plan_ready_not_executed',axis_order:plan.axis_order,shape:plan.shape,cell_count:plan.cell_count,matrix_hash:plan.matrix_hash,adversarial_profiles:REQUIRED_ADVERSARIAL_PROFILES,axes:FORGE_AXES,note:'Plan only. No model weights trained and no candidate code executed.'}));
+ }
+ if(req.method==='POST'&&req.url==='/api/build-agents/run'){
+  const origin=req.headers.origin||'';
+  if(origin&&origin!=='http://127.0.0.1:8800'&&origin!=='http://localhost:8800'){res.writeHead(403,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'Cross-origin request denied'}));}
+  if(modelWorkloadBusy()){res.writeHead(409,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'another local model workload is active'}));}
+  if(!modelWorkloadAdmission()){res.writeHead(503,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'five-role build paused: available RAM is below 1 GiB'}));}
+  let raw='';
+  try{
+   for await(const chunk of req){raw+=chunk.toString('utf8');if(Buffer.byteLength(raw)>4096){res.writeHead(413,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'Build objective request exceeds 4 KiB'}));}}
+   const body=JSON.parse(raw||'{}');
+   if(typeof body.objective!=='string'||body.objective.trim().length<20||body.objective.trim().length>500){res.writeHead(400,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'objective must contain 20-500 non-whitespace characters'}));}
+   const objective=body.objective.trim();
+   buildAgentRun={running:true,startedAt:new Date().toISOString(),finishedAt:null,status:'RUNNING',objective,completed:0,total:5,agents:[],error:null,mode:'sequential_logical_roles_single_model'};
+   runFiveAgentBuild({objective,onProgress:progress=>{buildAgentRun={...buildAgentRun,...progress,status:'RUNNING'};}}).then(result=>{
+    buildAgentRun={...buildAgentRun,running:false,finishedAt:result.finished_at,status:result.ok?'COMPLETED':'PARTIAL_FAILURE',...result};
+   }).catch(error=>{
+    buildAgentRun={...buildAgentRun,running:false,finishedAt:new Date().toISOString(),status:'FAILED',error:String(error&&error.message||error).slice(0,500)};
+   });
+   res.writeHead(202,{'Content-Type':'application/json'});
+   return res.end(JSON.stringify({ok:true,accepted:true,status:'RUNNING',total:5,mode:'sequential_logical_roles_single_model'}));
+  }catch(error){
+   res.writeHead(400,{'Content-Type':'application/json'});
+   return res.end(JSON.stringify({ok:false,error:String(error&&error.message||error)}));
+  }
+ }
+ if(req.method==='GET'&&req.url==='/api/build-agents/status'){
+  res.writeHead(200,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});
+  return res.end(JSON.stringify({ok:true,run:buildAgentRun}));
  }
  if(req.method==='POST'&&(req.url==='/api/worker/run'||req.url==='/api/worker/retry')){
   const origin=req.headers.origin||'';
