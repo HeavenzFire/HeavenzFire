@@ -73,3 +73,35 @@ test('executable payloads are rejected', () => {
 test('mode vocabulary is explicit and deterministic', () => {
   assert.deepEqual([...MODES].sort(), ['DEGRADED', 'OFFLINE', 'ONLINE', 'RECONNECTING']);
 });
+
+test('semantically malformed JSON events are reported and do not crash inspection', () => {
+  const f = fixture();
+  try {
+    const q = new OfflineTaskJournal(f.file);
+    q.enqueue(task());
+    fs.appendFileSync(f.file, JSON.stringify({ event_id: 'bad', type: 'TASK_ENQUEUED', payload: {} }) + '\\n');
+    const result = q.inspect();
+    assert.equal(result.tasks.length, 1);
+    assert.equal(result.corruptLines.length, 1);
+  } finally { f.cleanup(); }
+});
+test('terminal states cannot be reopened or overwritten', () => {
+  const f = fixture();
+  try {
+    const q = new OfflineTaskJournal(f.file);
+    q.enqueue(task());
+    q.setState('task-1', 'RUNNING', { attempts: 1 });
+    q.setState('task-1', 'DONE');
+    assert.throws(() => q.setState('task-1', 'RUNNING'), /cannot transition/);
+    assert.throws(() => q.setState('task-1', 'FAILED'), /cannot transition/);
+  } finally { f.cleanup(); }
+});
+test('conflict state requires a non-empty explanation', () => {
+  const f = fixture();
+  try {
+    const q = new OfflineTaskJournal(f.file);
+    q.enqueue(task());
+    assert.throws(() => q.setState('task-1', 'CONFLICT'), /requires an explanatory/);
+    assert.equal(q.setState('task-1', 'CONFLICT', { last_error: 'target revision changed' }).status, 'CONFLICT');
+  } finally { f.cleanup(); }
+});
