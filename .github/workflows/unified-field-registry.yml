@@ -9,6 +9,8 @@ on:
       - "tests/test_health_probe.py"
       - "tests/test_unified_field.py"
       - "tools/unified_field.py"
+      - "Enter-UnifiedField.ps1"
+      - "docs/UNIFIED_FIELD_INTEGRATION.md"
       - "examples/capability-registry.json"
       - "examples/nodes.json"
       - ".github/workflows/unified-field-registry.yml"
