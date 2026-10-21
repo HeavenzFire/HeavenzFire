@@ -153,10 +153,10 @@ test('worker script never executes generated code or accepts arbitrary task comm
 });
 
 test('dashboard model list is declared and matches the server allowlist', () => {
-  const uiMatch = dashboard.match(/const expected\\s*=\\s*Object\\.freeze\\(\\[([^\\]]*)\\]\\)/);
+  const uiMatch = dashboard.match(/const expected\s*=\s*Object\.freeze\(\[([^\]]*)\]\)/);
   assert.ok(uiMatch, 'dashboard must declare its expected model list before rendering');
   const uiModels = Array.from(uiMatch[1].matchAll(/['"]([^'"]+)['"]/g), match => match[1]);
-  const serverMatch = server.match(/WORKER_MODEL_ALLOWLIST\\s*=\\s*Object\\.freeze\\(\\[([^\\]]*)\\]\\)/);
+  const serverMatch = server.match(/WORKER_MODEL_ALLOWLIST\s*=\s*Object\.freeze\(\[([^\]]*)\]\)/);
   assert.ok(serverMatch, 'server must expose a fixed model allowlist');
   const serverModels = Array.from(serverMatch[1].matchAll(/['"]([^'"]+)['"]/g), match => match[1]);
   assert.deepEqual(uiModels, serverModels, 'dashboard model list must match server allowlist');
