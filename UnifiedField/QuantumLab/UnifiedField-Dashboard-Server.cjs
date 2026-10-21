@@ -1,10 +1,14 @@
 'use strict';
-const http=require('http'),fs=require('fs'),path=require('path');
+const http=require('http'),fs=require('fs'),path=require('path'),cp=require('child_process');
 const HOST='127.0.0.1',PORT=8800;
 const ROOT=path.join(process.env.USERPROFILE,'HeavenzFire');
 const DASH=path.join(ROOT,'UnifiedField','QuantumLab','UnifiedField-Dashboard.html');
 const TASKDIR=path.join(ROOT,'144A','tasks');
 const GUARDIAN=path.join(ROOT,'144A','guardian-state.json');
+const LOCALAI=path.join(ROOT,'UnifiedField','QuantumLab','LocalAI');
+const WORKER_SCRIPT=path.join(ROOT,'UnifiedField','QuantumLab','Invoke-LocalModelWorkerBatch.ps1');
+let workerRun={running:false,pid:null,startedAt:null,finishedAt:null,exitCode:null,error:null};
+function latestWorkerResults(){try{const files=fs.readdirSync(LOCALAI).filter(n=>/^worker-smoke-.*\\.json$/i.test(n)).map(n=>({name:n,mtime:fs.statSync(path.join(LOCALAI,n)).mtimeMs})).sort((a,b)=>b.mtime-a.mtime);if(!files.length)return null;return {file:files[0].name,results:readJson(path.join(LOCALAI,files[0].name))}}catch{return null}}
 const endpoints=[
  {id:'browserbridge',name:'144A BrowserBridge',url:'http://127.0.0.1:18795/health'},
  {id:'ollama',name:'Local model runtime',url:'http://127.0.0.1:11434/api/tags'},
@@ -35,15 +39,26 @@ function tasks(){
 const server=http.createServer(async(req,res)=>{
  res.setHeader('X-Content-Type-Options','nosniff');
  res.setHeader('Cache-Control','no-store');
+ if(req.method==='POST'&&req.url==='/api/worker/run'){
+  const origin=req.headers.origin||'';
+  if(origin&&!/^http:\\/\\/(127\\.0\\.0\\.1|localhost):8800$/.test(origin)){res.writeHead(403,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'Cross-origin request denied'}));}
+  if(workerRun.running){res.writeHead(409,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'Worker run already active',workerRun}));}
+  if(!fs.existsSync(WORKER_SCRIPT)){res.writeHead(500,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'Worker script missing'}));}
+  const child=cp.spawn('powershell.exe',['-NoProfile','-ExecutionPolicy','Bypass','-File',WORKER_SCRIPT],{windowsHide:true,stdio:'ignore'});
+  workerRun={running:true,pid:child.pid||null,startedAt:new Date().toISOString(),finishedAt:null,exitCode:null,error:null};
+  child.on('error',e=>{workerRun={...workerRun,running:false,finishedAt:new Date().toISOString(),error:String(e.message||e)}});
+  child.on('close',code=>{workerRun={...workerRun,running:false,finishedAt:new Date().toISOString(),exitCode:code}});
+  res.writeHead(202,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:true,accepted:true,workerRun}));
+ }
  if(req.method!=='GET'){res.writeHead(405,{'Content-Type':'text/plain'});return res.end('GET only');}
- if(req.url==='/health'){res.writeHead(200,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:true,service:'heavenzfire-unified-field-dashboard',host:HOST,port:PORT,mode:'read-only'}));}
+ if(req.url==='/health'){res.writeHead(200,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:true,service:'heavenzfire-unified-field-dashboard',host:HOST,port:PORT,mode:'local fixed-worker control'}));}
  if(req.url==='/api/overview'){
   const [sv]=await Promise.all([Promise.all(endpoints.map(probe))]);
   const guardian=readJson(GUARDIAN);
   const brain=sv.find(s=>s.id==='brain');
   let state=null;try{const r=await fetch('http://127.0.0.1:8797/api/state',{signal:AbortSignal.timeout(1700)});if(r.ok)state=await r.json()}catch{}
   res.writeHead(200,{'Content-Type':'application/json; charset=utf-8'});
-  return res.end(JSON.stringify({ok:true,at:new Date().toISOString(),services:sv,guardian,tasks:tasks(),brain:state|| (brain&&brain.data)||null,mode:'read-only monitor',host:HOST}));
+  return res.end(JSON.stringify({ok:true,at:new Date().toISOString(),services:sv,guardian,tasks:tasks(),brain:state|| (brain&&brain.data)||null,modelWorker:{run:workerRun,latest:latestWorkerResults()},mode:'local monitor + fixed worker batch',host:HOST}));
  }
  if(req.url==='/'||req.url==='/index.html'){
   if(!fs.existsSync(DASH)){res.writeHead(404);return res.end('Dashboard file missing');}
