@@ -4,7 +4,8 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 $Root = Join-Path $env:LOCALAPPDATA 'HeavenzFire\Watchtower'
-$ScriptPath = Join-Path $Root 'watchtower.py'
+$InstallDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$ScriptPath = Join-Path $InstallDir 'watchtower.py'
 $PidDir = Join-Path $Root 'pids'
 $LogDir = Join-Path $Root 'logs'
 $Roles = @('health','integrity')
