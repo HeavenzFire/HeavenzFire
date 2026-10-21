@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "capabilities": [
+    {
+      "id": "local.model",
+      "name": "Local Model Runtime",
+      "version": "1.0.0",
+      "entrypoint": "agents/local_model.py",
+      "interfaces": ["http", "cli"],
+      "trust": "local",
+      "permissions": ["read", "execute"],
+      "node_id": "local-agent"
+    }
+  ]
+}

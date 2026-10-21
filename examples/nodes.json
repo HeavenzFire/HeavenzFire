@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0",
+  "nodes": [
+    {
+      "id": "local-orchestrator",
+      "health_url": "http://127.0.0.1:8788/health"
+    },
+    {
+      "id": "local-agent",
+      "health_url": "http://127.0.0.1:8790/health"
+    }
+  ]
+}
