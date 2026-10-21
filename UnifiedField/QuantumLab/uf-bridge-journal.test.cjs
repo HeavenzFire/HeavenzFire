@@ -71,7 +71,7 @@ test('corrupt journal blocks replay eligibility even when task metadata is reada
   try {
     const q = new OfflineTaskJournal(f.file);
     q.enqueue(task());
-    fs.appendFileSync(f.file, '{not-json}\\n');
+    fs.appendFileSync(f.file, '{not-json}\n');
     const result = q.evaluateReplay('task-1', 'abc123');
     assert.equal(result.action, 'HOLD');
     assert.equal(result.reason, 'JOURNAL_CORRUPT');
