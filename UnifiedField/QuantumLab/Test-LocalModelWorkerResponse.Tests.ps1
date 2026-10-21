@@ -32,4 +32,9 @@ if ($syntax.passed -or $syntax.issues -notcontains 'powershell_parse_failed') { 
 $prose = Test-WorkerResponse -Response 'Here is a function, with no JSON contract.'
 if ($prose.passed -or $prose.issues -notcontains 'response_not_json') { throw 'non-JSON model response was not rejected' }
 
-Write-Output 'VALIDATOR_TESTS=PASS (5 scenarios; no generated code executed)'
+$singleResult = @([pscustomobject]@{ model = 'llama3.2:1b'; ok = $true })
+$singleJson = ConvertTo-Json -InputObject @($singleResult) -Depth 4
+$singleRoundTrip = ConvertFrom-Json -InputObject $singleJson
+if ($singleRoundTrip -isnot [System.Array]) { throw 'single-model artifact must remain a JSON array for journal publication' }
+
+Write-Output 'VALIDATOR_TESTS=PASS (6 scenarios; no generated code executed)'
