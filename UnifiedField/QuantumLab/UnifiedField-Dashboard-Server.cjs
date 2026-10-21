@@ -1,7 +1,16 @@
 'use strict';
 const http=require('http'),fs=require('fs'),path=require('path'),cp=require('child_process');
 const HOST='127.0.0.1',PORT=8800;
+const FORGE_AXES={
+ task_type:['build','review'],
+ risk_class:['LOW','MEDIUM','HIGH'],
+ evidence_quality:['verified','partial'],
+ tool_scope:['read_only','scoped_write'],
+ adversarial_profile:REQUIRED_ADVERSARIAL_PROFILES.slice(),
+ failure_mode:['timeout','invalid_output','dependency_failure']
+};
 const {publishWorkerResultsToJournal}=require('./uf-model-worker-journal-publisher.cjs');
+const {createBlueprint,validateBlueprint,buildEvaluationMatrix,REQUIRED_ADVERSARIAL_PROFILES}=require('./worker-forge.cjs');
 const ROOT=path.join(process.env.USERPROFILE,'HeavenzFire');
 const DASH=path.join(ROOT,'UnifiedField','QuantumLab','UnifiedField-Dashboard.html');
 const TASKDIR=path.join(ROOT,'144A','tasks');
@@ -40,6 +49,27 @@ function tasks(){
 const server=http.createServer(async(req,res)=>{
  res.setHeader('X-Content-Type-Options','nosniff');
  res.setHeader('Cache-Control','no-store');
+ if(req.method==='POST'&&req.url==='/api/forge/validate'){
+  const origin=req.headers.origin||'';
+  if(origin&&origin!=='http://127.0.0.1:8800'&&origin!=='http://localhost:8800'){res.writeHead(403,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'Cross-origin request denied'}));}
+  let raw='';
+  try{
+   for await(const chunk of req){raw+=chunk.toString('utf8');if(Buffer.byteLength(raw)>32768){res.writeHead(413,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'Blueprint body exceeds 32 KiB'}));}}
+   const body=JSON.parse(raw||'{}');
+   const validation=validateBlueprint(body.blueprint);
+   const built=validation.ok?createBlueprint(body.blueprint):null;
+   res.writeHead(200,{'Content-Type':'application/json'});
+   return res.end(JSON.stringify({ok:true,valid:validation.ok,errors:validation.errors,blueprint_hash:built&&built.blueprint_hash}));
+  }catch(err){
+   res.writeHead(400,{'Content-Type':'application/json'});
+   return res.end(JSON.stringify({ok:false,error:String(err.message||err)}));
+  }
+ }
+ if(req.method==='GET'&&req.url==='/api/forge/plan'){
+  const plan=buildEvaluationMatrix(FORGE_AXES,{maxCases:2048});
+  res.writeHead(200,{'Content-Type':'application/json'});
+  return res.end(JSON.stringify({ok:true,state:'plan_ready_not_executed',axis_order:plan.axis_order,shape:plan.shape,cell_count:plan.cell_count,matrix_hash:plan.matrix_hash,adversarial_profiles:REQUIRED_ADVERSARIAL_PROFILES,axes:FORGE_AXES,note:'Plan only. No model weights trained and no candidate code executed.'}));
+ }
  if(req.method==='POST'&&req.url==='/api/worker/run'){
   const origin=req.headers.origin||'';
   if(origin&&origin!=='http://127.0.0.1:8800'&&origin!=='http://localhost:8800'){res.writeHead(403,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'Cross-origin request denied'}));}
