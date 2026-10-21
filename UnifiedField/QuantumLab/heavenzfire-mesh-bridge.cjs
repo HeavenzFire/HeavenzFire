@@ -8,7 +8,7 @@ const ALLOWED=new Set(['qwen2.5:0.5b','heavenzfire-runtime:latest','heavenzfire:
 const tasks=new Map();
 function send(res,status,data){res.writeHead(status,{'content-type':'application/json; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff'});res.end(JSON.stringify(data));}
 function readBody(req){return new Promise((resolve,reject)=>{let raw='',bytes=0;req.on('data',chunk=>{bytes+=chunk.length;if(bytes>8192){reject(Object.assign(new Error('request exceeds 8 KiB'),{status:413}));req.destroy();return;}raw+=chunk.toString('utf8')});req.on('end',()=>{try{resolve(JSON.parse(raw||'{}'))}catch{reject(Object.assign(new Error('invalid JSON'),{status:400}))}});req.on('error',reject)})}
-function taskView(t){return {task_id:t.task_id,type:t.type,status:t.status,created_at:t.created_at,started_at:t.started_at||null,finished_at:t.finished_at||null,result:t.result||null,error:t.error||null}}
+function taskView(t){return {task_id:t.task_id,source_task_id:t.source_task_id||null,type:t.type,status:t.status,created_at:t.created_at,started_at:t.started_at||null,finished_at:t.finished_at||null,result:t.result||null,error:t.error||null}}
 const server=http.createServer(async(req,res)=>{
  const url=new URL(req.url,'http://127.0.0.1');
  if(req.method==='GET'&&url.pathname==='/health')return send(res,200,{ok:true,service:'heavenzfire-local-mesh-bridge',host:HOST,port:PORT,model_runtime:RUNTIME,queue_size:tasks.size,mode:'loopback bounded queue'});
@@ -16,9 +16,11 @@ const server=http.createServer(async(req,res)=>{
  if(req.method==='POST'&&url.pathname==='/api/mesh/enqueue'){
   let b;try{b=await readBody(req)}catch(e){return send(res,e.status||400,{ok:false,error:e.message})}
   if(!b||typeof b!=='object'||Array.isArray(b))return send(res,400,{ok:false,error:'JSON object required'});
+  if(b.client_task_id!==undefined&&(typeof b.client_task_id!=='string'||!b.client_task_id.trim()||b.client_task_id.length>128))return send(res,400,{ok:false,error:'client_task_id must be 1-128 characters'});
+  if(b.client_task_id){const prior=[...tasks.values()].find(t=>t.source_task_id===b.client_task_id);if(prior)return send(res,200,{ok:true,duplicate:true,task_id:prior.task_id,source_task_id:prior.source_task_id,status:prior.status});}
   if(tasks.size>=1000){for(const [id,t] of tasks){if(t.status==='completed'||t.status==='failed')tasks.delete(id);if(tasks.size<800)break;}if(tasks.size>=1000)return send(res,503,{ok:false,error:'queue capacity reached'});}
   const id='hfmesh-'+Date.now().toString(36)+'-'+crypto.randomBytes(4).toString('hex');
-  const t={task_id:id,type:b.type,status:'queued',created_at:new Date().toISOString()};tasks.set(id,t);
+  const t={task_id:id,source_task_id:b.client_task_id||null,type:b.type,status:'queued',created_at:new Date().toISOString()};tasks.set(id,t);
   setImmediate(async()=>{t.status='running';t.started_at=new Date().toISOString();try{
    if(b.type==='hash_task'){
     const p=b.payload||{},input=p.input,rounds=p.rounds===undefined?1:p.rounds;
