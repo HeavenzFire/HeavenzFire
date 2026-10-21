@@ -9,7 +9,7 @@ const AGENTS = Object.freeze([
   { id: 'integrator', title: 'Integration Agent', system: 'Act as the integration role. Reconcile prior role outputs into an ordered implementation plan with dependencies, blockers, and measurable done criteria. Preserve disagreements and unknowns.' }
 ]);
 
-async function runFiveAgentBuild({ objective, inferenceBaseUrl = 'http://127.0.0.1:11800/v1', fetchImpl = fetch }) {
+async function runFiveAgentBuild({ objective, inferenceBaseUrl = 'http://127.0.0.1:11800/v1', fetchImpl = fetch, onProgress = () => {} }) {
   if (typeof objective !== 'string' || objective.trim().length < 20 || objective.trim().length > 500) {
     throw new Error('objective must contain 20-500 non-whitespace characters');
   }
@@ -48,6 +48,9 @@ async function runFiveAgentBuild({ objective, inferenceBaseUrl = 'http://127.0.0
       results.push({ id: agent.id, title: agent.title, status: 'failed', started_at: started, finished_at: new Date().toISOString(), model: MODEL, error: String(error && error.message || error).slice(0, 500) });
     } finally {
       clearTimeout(timer);
+      if (typeof onProgress === 'function') {
+        try { onProgress({ completed: results.filter(item => item.status === 'completed').length, total: AGENTS.length, agents: results.map(item => ({ ...item })) }); } catch {}
+      }
     }
   }
   return {
