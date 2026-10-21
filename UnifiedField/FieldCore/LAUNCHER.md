@@ -11,6 +11,9 @@ Use the root `Enter-UnifiedField.ps1` for diagnostics. Use the one-command wrapp
 # Check status
 .\UnifiedField\Invoke-UnifiedFieldTaskInbox.ps1 -Action Status
 
+# Submit a pending proposal (never executes it)
+.\UnifiedField\Invoke-UnifiedFieldTaskInbox.ps1 -Action Submit -Source 'manual-review' -Goal 'Describe the bounded task here.'
+
 # Review pending proposals (read-only)
 .\UnifiedField\Invoke-UnifiedFieldTaskInbox.ps1 -Action Review
 
