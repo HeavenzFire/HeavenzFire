@@ -9,8 +9,9 @@ const { pathToFileURL } = require('node:url');
 const { createTaskInboxServer } = require('./task-inbox-server.cjs');
 
 const adapterPath = process.env.HF_HUB_ADAPTER_PATH;
-if (!adapterPath) {
-  test('cross-repository adapter path is configured', { skip: 'CI must check out UnifiedCodebase and set HF_HUB_ADAPTER_PATH' }, () => {});
+const governedLifecyclePath = process.env.HF_GOVERNED_LIFECYCLE_PATH;
+if (!adapterPath || !governedLifecyclePath) {
+  test('cross-repository adapter and governed lifecycle paths are configured', { skip: 'CI must check out UnifiedCodebase and set both adapter/lifecycle paths' }, () => {});
 } else {
   test('UnifiedCodebase proposal reaches real inbox, deduplicates, rejects conflicts, and survives restart', async t => {
     const { submitProposal } = await import(pathToFileURL(path.resolve(adapterPath)).href);
@@ -61,7 +62,7 @@ if (!adapterPath) {
       /HTTP 409.*task_id_conflict/
     );
 
-    assert.equal(fs.readFileSync(inboxPath, 'utf8').trim().split(/\\r?\\n/).length, 1);
+    assert.equal(fs.readFileSync(inboxPath, 'utf8').trim().split(/\r?\n/).length, 1);
     await stopServer();
 
     const restartedEndpoint = await startServer();
@@ -72,5 +73,30 @@ if (!adapterPath) {
     assert.equal(detail.taskRecord.status, 'proposed');
     assert.equal(detail.taskRecord.approvalState, 'pending');
     assert.equal(detail.taskRecord.goal, task.title);
+
+    // The proposal is data, not authorization: a host using the governed lifecycle
+    // must refuse to enter running until a separate explicit approval is recorded.
+    const { createGovernedTaskLifecycle } = await import(pathToFileURL(path.resolve(governedLifecyclePath)).href);
+    const governed = createGovernedTaskLifecycle({
+      taskFilePath: path.join(dir, 'governed-tasks.jsonl'),
+      approvalFilePath: path.join(dir, 'governed-approvals.jsonl')
+    });
+    governed.create({
+      taskId: detail.taskRecord.taskId,
+      title: detail.taskRecord.goal,
+      requestedBy: detail.taskRecord.requestedBy || 'integration-test',
+      metadata: { inboxStatus: detail.taskRecord.status, inboxApprovalState: detail.taskRecord.approvalState }
+    });
+    assert.throws(
+      () => governed.transition(task.taskId, 'running', { actor: 'integration-test', reason: 'must not bypass approval' }),
+      /Explicit human approval required/
+    );
+    assert.equal(governed.get(task.taskId).status, 'queued');
+    assert.equal(governed.approvalAudit().length, 0);
+
+    governed.approve(task.taskId, { actor: 'human-reviewer', reason: 'separate explicit review' });
+    assert.equal(governed.isApproved(task.taskId), true);
+    assert.equal(governed.get(task.taskId).status, 'queued');
+    assert.equal(governed.approvalAudit().length, 1);
   });
 }
