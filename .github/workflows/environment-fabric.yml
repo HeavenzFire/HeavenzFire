@@ -1,0 +1,41 @@
+name: Environment Fabric
+
+on:
+  pull_request:
+    paths:
+      - "UnifiedField/ENVIRONMENT_FABRIC.md"
+      - "UnifiedField/sandboxes/**"
+      - "unified-field/env-fabric.mjs"
+      - "unified-field/env-fabric.test.mjs"
+      - ".devcontainer/**"
+      - ".github/workflows/environment-fabric.yml"
+  push:
+    branches: [main]
+    paths:
+      - "UnifiedField/ENVIRONMENT_FABRIC.md"
+      - "UnifiedField/sandboxes/**"
+      - "unified-field/env-fabric.mjs"
+      - "unified-field/env-fabric.test.mjs"
+      - ".devcontainer/**"
+      - ".github/workflows/environment-fabric.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate-environment-fabric:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Validate declared profiles
+        run: node unified-field/env-fabric.mjs validate
+      - name: Test validation and status reporting
+        run: node --test unified-field/env-fabric.test.mjs
+      - name: Confirm listing is declaration-only
+        run: node unified-field/env-fabric.mjs list
