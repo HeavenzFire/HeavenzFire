@@ -8,7 +8,9 @@ on:
       - 'UnifiedField/QuantumLab/uf-144-council.cjs'
       - 'UnifiedField/QuantumLab/uf-144-council.test.cjs'
       - 'UnifiedField/QuantumLab/uf-bridge-journal.cjs'
-      - 'UnifiedField/QuantumLab/uf-bridge-journal.test.cjs'
+      - 'UnifiedField/QuantumLab/uf-bridge-journal.test.cjs UnifiedField/QuantumLab/uf-topology.test.cjs'
+      - 'UnifiedField/QuantumLab/uf-topology.cjs'
+      - 'UnifiedField/QuantumLab/uf-topology.test.cjs'
       - '.github/workflows/uf-tcp-policy.yml'
   workflow_dispatch:
 
