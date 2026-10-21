@@ -95,19 +95,31 @@ test('external model URLs are rejected before a token or prompt is sent', async 
   assert.equal(calls, 0);
 });
 
-test('malformed responses and still-invalid repairs never qualify a candidate', async () => {
+test('a malformed first response receives one bounded repair attempt', async () => {
   let calls = 0;
   const result = await draftWorkerBlueprint(input, {
     axes,
     fetchImpl: async () => {
       calls++;
-      return response(calls === 1 ? 'not json' : candidate(['unbounded_shell']));
+      return response(calls === 1 ? 'not json' : candidate());
     }
   });
+  assert.equal(calls, 2);
+  assert.equal(result.ok, true);
+  assert.equal(result.valid, true);
+  assert.equal(result.attempts, 2);
+});
+
+test('malformed output after the single repair never qualifies a candidate', async () => {
+  let calls = 0;
+  const result = await draftWorkerBlueprint(input, {
+    axes,
+    fetchImpl: async () => { calls++; return response('still not json'); }
+  });
   assert.equal(result.ok, false);
-  assert.equal(result.error, 'response_not_json');
-  assert.equal(result.valid, undefined);
-  assert.equal(calls, 1);
+  assert.equal(result.error, 'repair_response_not_json');
+  assert.equal(result.attempts, 2);
+  assert.equal(calls, 2);
   const fence = String.fromCharCode(96, 96, 96);
   assert.equal(parseJsonCandidate(fence + 'json\n{"ok":true}\n' + fence).ok, true);
 });
