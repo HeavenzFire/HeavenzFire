@@ -27,7 +27,10 @@ Open `http://127.0.0.1:8800/` and use **Run build-task batch**. Only one batch m
 - Model responses are untrusted artifacts. The batch does not execute generated code or treat model-provided tests as passing tests.
 - A successful generation means only that a non-empty response was returned. It is not proof of correctness, independent verification, or four autonomous agents.
 - Results are local JSON artifacts. No public repository write, external model call, or network peer synchronization is performed by this worker.
-- Task assignment into the durable 144A journal and independent sandboxed code verification remain follow-up integration work.
+- When `HEAVENZFIRE_BRIDGE_TOKEN` is configured and the local journal worker is listening (default `http://127.0.0.1:8798`), the dashboard submits metadata-only review tasks to `POST /api/tasks` using bearer authentication. Override the endpoint with `HEAVENZFIRE_BRIDGE_URL` if needed.
+- Each model/artifact pair receives a deterministic task ID and idempotency key, so repeated publication is deduplicated by the journal. Only the artifact written during the current batch is eligible for publication; old output is not silently relabeled as current.
+- If the token or journal service is unavailable, the local output artifact is preserved and the dashboard reports a blocked/partial publication state. It does not delete the output or retry indefinitely in the background; operators can safely re-run publication because the journal is idempotent.
+- Journal entries ask for independent review and reference the artifact filename; they do not embed or execute generated code. Actual sandboxed code verification and automatic retry/reassignment remain incomplete.
 
 ## Acceptance checks
 
