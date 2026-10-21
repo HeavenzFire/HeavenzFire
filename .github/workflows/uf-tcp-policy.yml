@@ -14,6 +14,8 @@ on:
       - 'UnifiedField/QuantumLab/uf-topology.test.cjs'
       - 'UnifiedField/QuantumLab/uf-topology-cli.cjs'
       - 'UnifiedField/QuantumLab/uf-topology-cli.test.cjs'
+      - 'UnifiedField/QuantumLab/uf-bridge-contract.cjs'
+      - 'UnifiedField/QuantumLab/uf-bridge-contract.test.cjs'
       - 'UnifiedField/QuantumLab/uf-local-worker.cjs'
       - 'UnifiedField/QuantumLab/uf-local-worker.test.cjs'
       - 'UnifiedField/QuantumLab/Start-UnifiedFieldWorker.ps1'
