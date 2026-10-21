@@ -23,7 +23,8 @@ Health check: `http://127.0.0.1:8800/health`
 
 - The server binds only to `127.0.0.1`; it is not a LAN or public endpoint.
 - The dashboard exposes existing fixed, allowlisted worker actions and the Avatar Body's bounded simulated movement. It does not accept arbitrary shell commands or enable physical actuation.
-- Avatar Body defaults to a separate loopback service on `127.0.0.1:8799`; if that service is stopped, the dashboard marks the body offline rather than fabricating state.
+- The PowerShell 5.1 dashboard launcher starts the Avatar Body service on `127.0.0.1:8799` if its health endpoint is not already responding. If startup fails, the dashboard marks the body offline rather than fabricating state.
+- Camera sampling is opt-in: a user presses Enable camera perception and approves the browser permission prompt. Only a 16×12 grayscale sample and frame-change score are sent to the local body service; audio is disabled. This is low-level visual sensing, not object recognition.
 - The local API reads existing `HeavenzFire\144A\tasks` records and the guardian snapshot.
 - GitHub data is fetched from the public API. No GitHub token or other secret is stored.
 - The ChatGPT link opens ChatGPT; it is not a private API connection to the active conversation.
@@ -32,9 +33,9 @@ Health check: `http://127.0.0.1:8800/health`
 ## Files
 
 - `UnifiedField-Dashboard.html`: browser UI, polling, graph visualization, GitHub public metadata.
-- `UnifiedField-Dashboard-Server.cjs`: read-only local aggregator for service health, brain state, task records, and guardian snapshot.
+- `UnifiedField-Dashboard-Server.cjs`: local aggregator for service health, brain state, Avatar Body state, task records, and guardian snapshot.
 - `Start-UnifiedFieldDashboard.ps1`: PowerShell 5.1-compatible launch helper.
-- `../AvatarBody/avatar-body-server.cjs`: local perception/event API and bounded simulated pose controller. Start it separately with `node .\\UnifiedField\\AvatarBody\\avatar-body-server.cjs` from the repository root.
+- `../AvatarBody/avatar-body-server.cjs`: local perception/event API and bounded simulated pose controller, started by the dashboard launcher when available.
 
 ## Ternary consensus and 144-seat council (implementation status)
 
