@@ -105,6 +105,33 @@ const server=http.createServer(async(req,res)=>{
    return res.end(JSON.stringify({ok:false,error:String(err.message||err)}));
   }
  }
+ if(req.method==='POST'&&req.url==='/api/forge/attach-artifact'){
+  const origin=req.headers.origin||'';
+  if(origin&&origin!=='http://127.0.0.1:8800'&&origin!=='http://localhost:8800'){res.writeHead(403,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'Cross-origin request denied'}));}
+  let raw='';
+  try{
+   for await(const chunk of req){raw+=chunk.toString('utf8');if(Buffer.byteLength(raw)>4096){res.writeHead(413,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'Artifact reference request exceeds 4 KiB'}));}}
+   const body=JSON.parse(raw||'{}');
+   const file=body.artifact_file;
+   if(typeof file!=='string'||!file||file!==path.basename(file)||!file.startsWith('worker-forge-eval-')||!file.endsWith('.json')){
+    res.writeHead(400,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'artifact_file must name a local Worker Forge evaluation artifact'}));
+   }
+   const artifactPath=path.join(LOCALAI,file);
+   if(!fs.existsSync(artifactPath)){res.writeHead(404,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'artifact_not_found'}));}
+   let artifact;
+   try{artifact=JSON.parse(fs.readFileSync(artifactPath,'utf8').replace(/^\uFEFF/,''));}
+   catch{res.writeHead(400,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'artifact_json_invalid'}));}
+   if(!artifact||artifact.mode!=='adversarial_smoke_only'||artifact.qualified!==false){
+    res.writeHead(400,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'artifact_not_adversarial_smoke_evidence'}));
+   }
+   const result=workerRegistry.recordSmoke(artifact.blueprint_hash,artifact,file);
+   res.writeHead(result.ok?200:400,{'Content-Type':'application/json'});
+   return res.end(JSON.stringify(result.ok?{ok:true,attached:true,worker_id:result.worker.worker_id,last_smoke:result.worker.last_smoke}:{ok:false,error:result.error}));
+  }catch(err){
+   res.writeHead(400,{'Content-Type':'application/json'});
+   return res.end(JSON.stringify({ok:false,error:String(err.message||err)}));
+  }
+ }
  if(req.method==='POST'&&req.url==='/api/forge/evaluate'){
   const origin=req.headers.origin||'';
   if(origin&&origin!=='http://127.0.0.1:8800'&&origin!=='http://localhost:8800'){res.writeHead(403,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'Cross-origin request denied'}));}
