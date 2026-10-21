@@ -2,7 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { createSimulation, ROLES } = require('./uf-worker-legion-sim');
+const { createSimulation, ROLES } = require('./uf-worker-legion-sim.cjs');
 
 test('defaults to bounded logical workers and labels them simulated', () => {
   const sim = createSimulation();
