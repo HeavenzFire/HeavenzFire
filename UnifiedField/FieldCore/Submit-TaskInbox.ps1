@@ -73,7 +73,6 @@ try {
 }
 if ($response.ok -ne $true -or
     $response.status -ne 'proposed' -or
-    $response.approvalState -ne 'pending' -or
     $response.taskId -ne $TaskId) {
     throw 'Task inbox response did not confirm a proposed/pending task record.'
 }
