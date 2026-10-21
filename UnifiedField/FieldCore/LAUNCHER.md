@@ -6,22 +6,22 @@ The root `Enter-UnifiedField.ps1` remains the diagnostic entrypoint. `Invoke-Tas
 
 ```powershell
 # Start the local task inbox
-.\Enter-UnifiedField.ps1 -TaskInbox
+.\UnifiedField\FieldCore\Invoke-TaskInbox.ps1 -Action Start
 
 # Check status
-.\Enter-UnifiedField.ps1 -TaskInbox -TaskInboxAction Status
+.\UnifiedField\FieldCore\Invoke-TaskInbox.ps1 -Action Status
 
 # Stop only a process owned by the launcher
-.\Enter-UnifiedField.ps1 -TaskInbox -TaskInboxAction Stop
+.\UnifiedField\FieldCore\Invoke-TaskInbox.ps1 -Action Stop
 
 # Use a non-default port for testing
-.\Enter-UnifiedField.ps1 -TaskInbox -TaskInboxAction Start -TaskInboxPort 19876
+.\UnifiedField\FieldCore\Invoke-TaskInbox.ps1 -Action Start -Port 19876
 ```
 
-The launcher requires Node.js 18+, binds the service to `127.0.0.1`, stores task records and logs under `%LOCALAPPDATA%\HeavenzFire\UnifiedField`, and writes a PID file for lifecycle management. It refuses to stop a process unless the recorded PID's command line matches the expected task inbox server.
+The manager requires Node.js 18+, binds the service to `127.0.0.1`, stores task records and logs under `%LOCALAPPDATA%\HeavenzFire\UnifiedField`, and writes a PID file for lifecycle management. It refuses to stop a process unless the recorded PID's command line matches the expected task inbox server.
 
 ## Scope and safety
 
-This starts **only the task inbox**. It does not start model workers, execute queued tasks, enable unattended agent actions, install browser extensions, or claim that all Unified Field components are operational. Proposals remain `proposed` / `pending` until a separate approval workflow is implemented and exercised. The JSONL inbox is preserved when the service stops.
+This starts **only the task inbox**. It does not start model workers, execute queued tasks, enable unattended agent actions, or claim that all Unified Field components are operational. Proposals remain `proposed` / `pending` until a separate approval workflow is implemented and exercised. The JSONL inbox is preserved when the service stops.
 
 The Windows CI smoke test starts the service on a temporary loopback port, posts one synthetic pending task, verifies idempotent start and status, stops the owned process, and checks that the pending record remains on disk.
