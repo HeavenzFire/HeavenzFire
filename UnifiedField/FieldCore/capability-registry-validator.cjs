@@ -9,7 +9,7 @@ const STATUSES = new Set([
   'unknown'
 ]);
 
-const SECRET_KEY = /(?:^|[_-])(api[_-]?key|access[_-]?token|refresh[_-]?token|auth(?:orization)?|password|passwd|secret|credential|private[_-]?key|client[_-]?secret)(?:$|[_-])/i;
+const SECRET_KEY = /^(?:apikey|accesstoken|refreshtoken|token|authorization|auth|password|passwd|secret|credential|credentials|privatekey|clientsecret)$/;
 const SECRET_VALUE = /(?:-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----|\bBearer\s+[A-Za-z0-9._~+/-]+=*|\b(?:sk-[A-Za-z0-9_-]{16,}|gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,})\b)/i;
 
 function assertObject(value, label) {
@@ -18,13 +18,11 @@ function assertObject(value, label) {
   }
 }
 
-function hasSecret(value, path = '$') {
-  if (Array.isArray(value)) {
-    return value.some((item, index) => hasSecret(item, path + '[' + index + ']'));
-  }
+function hasSecret(value) {
+  if (Array.isArray(value)) return value.some(hasSecret);
   if (value && typeof value === 'object') {
     return Object.entries(value).some(([key, child]) =>
-      SECRET_KEY.test(key) || hasSecret(child, path + '.' + key)
+      SECRET_KEY.test(key.replace(/[^a-z0-9]/gi, '').toLowerCase()) || hasSecret(child)
     );
   }
   return typeof value === 'string' && SECRET_VALUE.test(value);
