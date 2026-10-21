@@ -34,9 +34,10 @@ const workerRegistry=createWorkerRegistry(path.join(LOCALAI,'worker-registry.jso
 const WORKER_SCRIPT=path.join(ROOT,'UnifiedField','QuantumLab','Invoke-LocalModelWorkerBatch.ps1');
 let workerRun={running:false,pid:null,startedAt:null,finishedAt:null,exitCode:null,error:null};
 let buildAgentRun={running:false,startedAt:null,finishedAt:null,status:'NOT_RUN',completed:0,total:5,agents:[],error:null};
+let buildAgentReserved=false;
 let forgeEvaluationRun={running:false,startedAt:null,finishedAt:null,error:null,result:null,artifact_file:null};
 let forgeDraftRunning=false;
-function modelWorkloadBusy(){return workerRun.running||forgeEvaluationRun.running||forgeDraftRunning||buildAgentRun.running;}
+function modelWorkloadBusy(){return workerRun.running||forgeEvaluationRun.running||forgeDraftRunning||buildAgentRun.running||buildAgentReserved;}
 function modelWorkloadAdmission(){return require('node:os').freemem()>=1024*1024*1024;}
 const endpoints=[
  {id:'browserbridge',name:'144A BrowserBridge',url:'http://127.0.0.1:18795/health'},
@@ -325,6 +326,7 @@ const server=http.createServer(async(req,res)=>{
   if(origin&&origin!=='http://127.0.0.1:8800'&&origin!=='http://localhost:8800'){res.writeHead(403,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'Cross-origin request denied'}));}
   if(modelWorkloadBusy()){res.writeHead(409,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'another local model workload is active'}));}
   if(!modelWorkloadAdmission()){res.writeHead(503,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'five-role build paused: available RAM is below 1 GiB'}));}
+  buildAgentReserved=true;
   let raw='';
   try{
    for await(const chunk of req){raw+=chunk.toString('utf8');if(Buffer.byteLength(raw)>4096){res.writeHead(413,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'Build objective request exceeds 4 KiB'}));}}
@@ -342,7 +344,7 @@ const server=http.createServer(async(req,res)=>{
   }catch(error){
    res.writeHead(400,{'Content-Type':'application/json'});
    return res.end(JSON.stringify({ok:false,error:String(error&&error.message||error)}));
-  }
+  }finally{buildAgentReserved=false;}
  }
  if(req.method==='GET'&&req.url==='/api/build-agents/status'){
   res.writeHead(200,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});
