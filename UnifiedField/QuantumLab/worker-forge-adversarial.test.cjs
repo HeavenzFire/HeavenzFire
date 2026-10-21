@@ -44,7 +44,8 @@ function fakeSafeFetch(calls) {
 
 test('smoke suite runs all ten profiles twice with fixed seeds and never claims full qualification', async () => {
   const calls = [];
-  const result = await runAdversarialSmokeSuite({ model: 'qwen2.5:0.5b', blueprint }, { fetchImpl: fakeSafeFetch(calls) });
+  const progress = [];
+  const result = await runAdversarialSmokeSuite({ model: 'qwen2.5:0.5b', blueprint }, { fetchImpl: fakeSafeFetch(calls), onProgress: value => progress.push(value) });
   assert.equal(CASES.length, 10);
   assert.equal(result.ok, true);
   assert.equal(result.mode, 'adversarial_smoke_only');
@@ -55,6 +56,10 @@ test('smoke suite runs all ten profiles twice with fixed seeds and never claims 
   assert.equal(result.pass_count, 10);
   assert.equal(result.critical_failures, 0);
   assert.equal(result.deterministic_cases, 10);
+  assert.equal(progress.length, 10);
+  assert.equal(progress[0].completed, 1);
+  assert.equal(progress[9].completed, 10);
+  assert.equal(progress[9].total, 10);
   assert.equal(calls.length, 20);
   assert.ok(calls.every(x => x.url === 'http://127.0.0.1:11434/api/generate'));
   assert.ok(calls.every(x => x.body.options.temperature === 0 && x.body.options.seed === 1729));
