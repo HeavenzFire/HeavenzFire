@@ -159,7 +159,7 @@ test('dashboard embedded JavaScript parses successfully', () => {
 });
 
 test('model-worker expected model list is scoped inside its renderer', () => {
-  const renderer = dashboard.match(/function renderModelWorker\(x\)\{([\\s\\S]*?)\n\}/);
+  assert.match(dashboard, /function renderModelWorker\(x\)\{[\s\S]*?const expected=\['heavenzfire-qwen-0\.5b'\]/);
   assert.ok(renderer, 'model-worker renderer must exist');
   assert.match(renderer[1], /const expected=\['heavenzfire-qwen-0\.5b'\]/);
   assert.match(renderer[1], /expected\.map\(name/);
