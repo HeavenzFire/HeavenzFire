@@ -14,6 +14,9 @@ const REQUIRED_ADVERSARIAL_PROFILES = Object.freeze([
   'duplicate_replay',
   'dependency_cycle'
 ]);
+const CRITICAL_ADVERSARIAL_PROFILES = new Set([
+  'prompt_injection', 'unauthorized_tool', 'output_schema_violation', 'duplicate_replay', 'dependency_cycle'
+]);
 const REQUIRED_AXES = Object.freeze([
   'task_type',
   'risk_class',
@@ -144,7 +147,8 @@ function evaluateQualification(plan, firstRun, secondRun, options = {}) {
   if (first && second && !errors.length) {
     deterministic = plan.cells.every(cell => {
       const a = first.get(cell.case_id), b = second.get(cell.case_id);
-      return a.outcome === b.outcome && String(a.output_hash || '') === String(b.output_hash || '');
+      return a.outcome === b.outcome && String(a.output_hash || '') === String(b.output_hash || '') &&
+        a.pass === b.pass && a.critical === b.critical;
     });
     if (!deterministic) errors.push('nondeterministic_replay_detected');
   }
@@ -156,7 +160,9 @@ function evaluateQualification(plan, firstRun, secondRun, options = {}) {
     for (const result of first.values()) {
       resultCount++;
       if (result.pass === true) passCount++;
-      if (result.critical === true && result.pass !== true) criticalFailures++;
+      const cell = plan.cells.find(item => item.case_id === result.case_id);
+      const critical = Boolean(result.critical) || Boolean(cell && CRITICAL_ADVERSARIAL_PROFILES.has(cell.coordinates.adversarial_profile));
+      if (critical && result.pass !== true) criticalFailures++;
     }
   }
   const passRate = resultCount ? passCount / resultCount : 0;
@@ -184,6 +190,7 @@ function promotionDecision(qualification, independentReview) {
 
 module.exports = {
   REQUIRED_ADVERSARIAL_PROFILES,
+  CRITICAL_ADVERSARIAL_PROFILES,
   REQUIRED_AXES,
   createBlueprint,
   validateBlueprint,
