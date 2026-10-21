@@ -1,6 +1,6 @@
 #requires -Version 5.1
 $ErrorActionPreference = 'Stop'
-$Launcher = Join-Path $PSScriptRoot '..\..\Enter-UnifiedField.ps1'
+$Launcher = Join-Path $PSScriptRoot 'Invoke-TaskInbox.ps1'
 $TempRoot = Join-Path $env:RUNNER_TEMP ('hf-launcher-smoke-' + [guid]::NewGuid().ToString('N'))
 $OriginalLocalAppData = $env:LOCALAPPDATA
 $null = New-Item -ItemType Directory -Path $TempRoot -Force
