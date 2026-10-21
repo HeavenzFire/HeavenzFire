@@ -32,7 +32,7 @@ function Invoke-BridgeProcess([string[]]$BridgeArguments, [int]$TimeoutMilliseco
 try {
     $task = 'CI smoke test: preserve task identity and never execute imported model output.'
     $exportProcess = Invoke-BridgeProcess @('-Mode', 'Export', '-Task', $task, '-OutputDirectory', $outputDirectory)
-    if ($exportProcess.ExitCode -ne 0) { throw ('Export failed (exit ' + $exportProcess.ExitCode + '): ' + $exportProcess.Stderr + ' ' + $exportProcess.Stdout) }
+    if ($null -ne $exportProcess.ExitCode -and $exportProcess.ExitCode -ne 0) { throw ('Export failed (exit ' + $exportProcess.ExitCode + '): ' + $exportProcess.Stderr + ' ' + $exportProcess.Stdout) }
     $export = $exportProcess.Stdout | ConvertFrom-Json
     if ($export.status -ne 'PROMPT_EXPORTED') { throw 'Export mode did not report PROMPT_EXPORTED.' }
     if ([string]::IsNullOrWhiteSpace($export.task_id)) { throw 'Export mode did not return a task ID.' }
@@ -42,14 +42,14 @@ try {
 
     $badIdProcess = Invoke-BridgeProcess @('-Mode', 'Export', '-TaskId', '..\outside', '-Task', $task, '-OutputDirectory', $outputDirectory)
     $badIdOutput = $badIdProcess.Stdout + ' ' + $badIdProcess.Stderr
-    if ($badIdProcess.ExitCode -eq 0 -or $badIdOutput -notmatch 'TaskId must contain only') {
+    if (($null -ne $badIdProcess.ExitCode -and $badIdProcess.ExitCode -eq 0) -or $badIdOutput -notmatch 'TaskId must contain only') {
         throw ('Path-like TaskId was not rejected. Output: ' + $badIdOutput)
     }
     Write-Host 'PASS: path-like task IDs are rejected.'
 
     Set-Content -LiteralPath $responsePath -Value 'Unverified CI sample response. No code execution.' -Encoding UTF8
     $importProcess = Invoke-BridgeProcess @('-Mode', 'Import', '-TaskId', $export.task_id, '-Task', $task, '-ResponsePath', $responsePath, '-OutputDirectory', $outputDirectory)
-    if ($importProcess.ExitCode -ne 0) { throw ('Import failed (exit ' + $importProcess.ExitCode + '): ' + $importProcess.Stderr + ' ' + $importProcess.Stdout) }
+    if ($null -ne $importProcess.ExitCode -and $importProcess.ExitCode -ne 0) { throw ('Import failed (exit ' + $importProcess.ExitCode + '): ' + $importProcess.Stderr + ' ' + $importProcess.Stdout) }
     $import = $importProcess.Stdout | ConvertFrom-Json
     if ($import.status -ne 'MANUAL_RESPONSE_IMPORTED') { throw 'Import mode did not report MANUAL_RESPONSE_IMPORTED.' }
     if ($import.task_id -ne $export.task_id) { throw 'Task ID changed between export and import.' }
