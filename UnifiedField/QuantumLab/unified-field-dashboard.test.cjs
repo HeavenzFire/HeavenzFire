@@ -35,13 +35,13 @@ test('worker artifacts publish metadata-only review tasks with idempotency and b
   assert.match(server, /publishWorkerResultsToJournal/);
   assert.match(server, /HEAVENZFIRE_BRIDGE_TOKEN/);
   assert.match(server, /HEAVENZFIRE_BRIDGE_URL/);
-  assert.match(server, /127\\.0\\.0\\.1:8798/);
+  assert.ok(server.includes('http://127.0.0.1:8798'));
   assert.match(server, /Authorization.*Bearer /);
-  assert.match(server, /idempotency_key:'local-worker-result-'/);
-  assert.match(server, /scope:\\['local-artifact-review','independent-verification'\\]/);
+  assert.ok(server.includes("idempotency_key:'local-worker-result-'"));
+  assert.ok(server.includes("scope:['local-artifact-review','independent-verification']"));
   assert.match(server, /Independently review the untrusted local model draft/);
-  assert.match(server, /latestWorkerResults\\(Date\\.parse\\(startedAt/);
-  assert.doesNotMatch(server, /task\\.command\\s*=|task\\.shell\\s*=|task\\.script\\s*=/);
+  assert.ok(server.includes('latestWorkerResults(Date.parse(startedAt'));
+  assert.doesNotMatch(server, /task\.command\s*=|task\.shell\s*=|task\.script\s*=/);
 });
 
 test('worker batch calls local Ollama and records every model outcome', () => {
