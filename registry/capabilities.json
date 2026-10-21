@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0.0",
+  "components": [
+    {
+      "id": "registry-validator",
+      "version": "0.1.0",
+      "status": "implemented",
+      "data_classes": ["public-metadata"],
+      "network_access": "none",
+      "permissions": ["read-registry-file"],
+      "entrypoints": ["python tools/validate_registry.py registry/capabilities.json"],
+      "tests": {
+        "command": "python -m unittest discover -s tests",
+        "last_result": "not-run"
+      },
+      "owner": "HeavenzFire Unified Field maintainers",
+      "limitations": [
+        "The standard-library validator checks the core contract and duplicate IDs; it is not a full JSON Schema engine.",
+        "Tests must be run in the target environment before the component can be marked verified."
+      ]
+    }
+  ]
+}
