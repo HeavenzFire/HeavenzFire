@@ -1,6 +1,8 @@
 'use strict';
 const http=require('http'),fs=require('fs'),path=require('path'),cp=require('child_process');
 const HOST='127.0.0.1',PORT=8800;
+const {publishWorkerResultsToJournal}=require('./uf-model-worker-journal-publisher.cjs');
+const {createBlueprint,validateBlueprint,buildEvaluationMatrix,REQUIRED_ADVERSARIAL_PROFILES}=require('./worker-forge.cjs');
 const FORGE_AXES={
  task_type:['build','review'],
  risk_class:['LOW','MEDIUM','HIGH'],
@@ -9,8 +11,6 @@ const FORGE_AXES={
  adversarial_profile:REQUIRED_ADVERSARIAL_PROFILES.slice(),
  failure_mode:['timeout','invalid_output','dependency_failure']
 };
-const {publishWorkerResultsToJournal}=require('./uf-model-worker-journal-publisher.cjs');
-const {createBlueprint,validateBlueprint,buildEvaluationMatrix,REQUIRED_ADVERSARIAL_PROFILES}=require('./worker-forge.cjs');
 const ROOT=path.join(process.env.USERPROFILE,'HeavenzFire');
 const DASH=path.join(ROOT,'UnifiedField','QuantumLab','UnifiedField-Dashboard.html');
 const TASKDIR=path.join(ROOT,'144A','tasks');
