@@ -38,6 +38,9 @@ test('dashboard exposes model batch control and renders status from overview', (
   assert.match(server, /workerRegistry\.recordSmoke/);
   assert.match(server, /\/api\/forge\/evaluation-status/);
   assert.match(server, /runAdversarialSmokeSuite/);
+  assert.match(server, /modelWorkloadBusy/);
+  assert.match(server, /modelWorkloadAdmission/);
+  assert.match(server, /available RAM is below 1 GiB/);
   assert.match(server, /draftWorkerBlueprint/);
   assert.match(server, /\/api\/forge\/plan/);
   assert.match(server, /\/api\/worker\/status/);
@@ -73,6 +76,8 @@ test('dashboard exposes model batch control and renders status from overview', (
   assert.match(dashboard, /NOT QUALIFIED/);
   assert.match(dashboard, /fetch\('\/api\/forge\/evaluate'/);
   assert.match(dashboard, /SMOKE PASS · NOT QUALIFIED/);
+  assert.match(dashboard, /x\.progress/);
+  assert.match(dashboard, /PROFILES/);
   assert.match(dashboard, /CHILD TEMPLATE GENERATED · MODEL DRAFT REJECTED/);
   assert.match(dashboard, /deterministic_template_fallback/);
   assert.match(dashboard, /fetch\('\/api\/forge\/draft'/);
