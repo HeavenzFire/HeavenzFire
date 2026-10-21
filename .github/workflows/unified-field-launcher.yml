@@ -5,6 +5,7 @@ on:
     branches: ["main", "unified-field/**"]
     paths:
       - "Enter-UnifiedField.ps1"
+      - "UnifiedField/Invoke-UnifiedFieldTaskInbox.ps1"
       - "UnifiedField/FieldCore/Invoke-TaskInbox.ps1"
       - "UnifiedField/FieldCore/Review-TaskInbox.ps1"
       - "UnifiedField/FieldCore/task-inbox-server.cjs"
@@ -15,6 +16,7 @@ on:
   pull_request:
     paths:
       - "Enter-UnifiedField.ps1"
+      - "UnifiedField/Invoke-UnifiedFieldTaskInbox.ps1"
       - "UnifiedField/FieldCore/Invoke-TaskInbox.ps1"
       - "UnifiedField/FieldCore/Review-TaskInbox.ps1"
       - "UnifiedField/FieldCore/task-inbox-server.cjs"
