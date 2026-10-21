@@ -54,7 +54,8 @@ if (-not $AvatarBodyHealthy) {
     }
 }
 if (-not $AvatarBodyHealthy) { throw 'Avatar Body did not become healthy on 127.0.0.1:8799.' }
-Write-Output "Avatar Body service healthy: $AvatarBodyUrl"$Server = Join-Path $Root 'UnifiedField-Dashboard-Server.cjs'
+Write-Output "Avatar Body service healthy: $AvatarBodyUrl"
+$Server = Join-Path $Root 'UnifiedField-Dashboard-Server.cjs'
 $Url = 'http://127.0.0.1:8800/'
 if (-not (Test-Path $Server)) { throw "Dashboard server file not found: $Server" }
 $Healthy = $false
