@@ -1,6 +1,6 @@
 # Unified Field Command Hub Dashboard
 
-A read-only, loopback-only dashboard for observing existing HeavenzFire Unified Field services, Digital Brain graph state, 144A task records, guardian snapshot, and public GitHub repository metadata.
+A loopback-only Unified Field dashboard for observing HeavenzFire services, Digital Brain graph state, Avatar Body state, 144A task records, guardian snapshot, and public GitHub metadata. Existing fixed worker actions and the Avatar Body's bounded virtual movement controls are explicitly scoped.
 
 ## One-command launch on Windows
 
@@ -22,7 +22,8 @@ Health check: `http://127.0.0.1:8800/health`
 ## Security boundaries
 
 - The server binds only to `127.0.0.1`; it is not a LAN or public endpoint.
-- Only GET requests are accepted. The dashboard does not execute shell commands or modify tasks.
+- The dashboard exposes existing fixed, allowlisted worker actions and the Avatar Body's bounded simulated movement. It does not accept arbitrary shell commands or enable physical actuation.
+- Avatar Body defaults to a separate loopback service on `127.0.0.1:8799`; if that service is stopped, the dashboard marks the body offline rather than fabricating state.
 - The local API reads existing `HeavenzFire\144A\tasks` records and the guardian snapshot.
 - GitHub data is fetched from the public API. No GitHub token or other secret is stored.
 - The ChatGPT link opens ChatGPT; it is not a private API connection to the active conversation.
@@ -33,6 +34,7 @@ Health check: `http://127.0.0.1:8800/health`
 - `UnifiedField-Dashboard.html`: browser UI, polling, graph visualization, GitHub public metadata.
 - `UnifiedField-Dashboard-Server.cjs`: read-only local aggregator for service health, brain state, task records, and guardian snapshot.
 - `Start-UnifiedFieldDashboard.ps1`: PowerShell 5.1-compatible launch helper.
+- `../AvatarBody/avatar-body-server.cjs`: local perception/event API and bounded simulated pose controller. Start it separately with `node .\\UnifiedField\\AvatarBody\\avatar-body-server.cjs` from the repository root.
 
 ## Ternary consensus and 144-seat council (implementation status)
 
