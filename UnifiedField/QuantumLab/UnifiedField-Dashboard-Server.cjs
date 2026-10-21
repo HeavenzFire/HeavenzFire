@@ -65,6 +65,10 @@ const server=http.createServer(async(req,res)=>{
    return res.end(JSON.stringify({ok:false,error:String(err.message||err)}));
   }
  }
+ if(req.method==='GET'&&req.url==='/api/worker/status'){
+  res.writeHead(200,{'Content-Type':'application/json'});
+  return res.end(JSON.stringify({ok:true,run:workerRun,latest:latestWorkerResults()}));
+ }
  if(req.method==='GET'&&req.url==='/api/forge/plan'){
   const plan=buildEvaluationMatrix(FORGE_AXES,{maxCases:2048});
   res.writeHead(200,{'Content-Type':'application/json'});
