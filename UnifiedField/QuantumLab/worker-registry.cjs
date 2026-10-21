@@ -26,8 +26,28 @@ function createWorkerRegistry(filePath, options = {}) {
   function write(registry) {
     fs.mkdirSync(path.dirname(filePath), { recursive: true });
     const temporary = filePath + '.tmp-' + process.pid;
+    const backup = filePath + '.bak-' + process.pid;
     fs.writeFileSync(temporary, JSON.stringify(registry, null, 2), { encoding: 'utf8', flag: 'w' });
-    fs.renameSync(temporary, filePath);
+    if (!fs.existsSync(filePath)) {
+      fs.renameSync(temporary, filePath);
+      return;
+    }
+    // Windows may reject replacing an existing destination with renameSync.
+    // Move the current file aside, promote the complete temp file, and restore
+    // the backup if promotion fails. Never delete the only known-good registry.
+    fs.renameSync(filePath, backup);
+    try {
+      fs.renameSync(temporary, filePath);
+      fs.unlinkSync(backup);
+    } catch (err) {
+      if (!fs.existsSync(filePath) && fs.existsSync(backup)) {
+        try { fs.renameSync(backup, filePath); } catch { /* retain backup for manual recovery */ }
+      }
+      if (fs.existsSync(temporary)) {
+        try { fs.unlinkSync(temporary); } catch { /* leave temp for diagnosis */ }
+      }
+      throw err;
+    }
   }
 
   function list() {
