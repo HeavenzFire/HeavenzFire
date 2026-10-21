@@ -14,7 +14,7 @@ function stableId(value) {
 }
 function validateTask(task) {
   if (!task || typeof task !== 'object' || Array.isArray(task)) throw new TypeError('task must be an object');
-  for (const k of ['task_id', 'objective', 'scope', 'risk_class', 'idempotency_key']) {
+  for (const k of ['task_id', 'objective', 'risk_class', 'idempotency_key']) {
     if (typeof task[k] !== 'string' || !task[k].trim()) throw new TypeError(k + ' is required');
   }
   if (task.objective.length > 2000) throw new RangeError('objective too long');
