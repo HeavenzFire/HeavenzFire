@@ -1,27 +1,35 @@
-name: Unified Field Capability Registry
+name: Unified Field Integration
 on:
   push:
     branches: ["main", "unified-field/**"]
     paths:
       - "tools/validate_capabilities.py"
+      - "tools/health_probe.py"
       - "tests/test_validate_capabilities.py"
+      - "tests/test_health_probe.py"
       - "examples/capability-registry.json"
+      - "examples/nodes.json"
       - ".github/workflows/unified-field-registry.yml"
   pull_request:
     paths:
       - "tools/validate_capabilities.py"
+      - "tools/health_probe.py"
       - "tests/test_validate_capabilities.py"
+      - "tests/test_health_probe.py"
       - "examples/capability-registry.json"
+      - "examples/nodes.json"
       - ".github/workflows/unified-field-registry.yml"
 jobs:
-  validate-registry:
+  unified-field-tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Run validator tests
-        run: python -m unittest tests.test_validate_capabilities -v
-      - name: Validate example registry
+      - name: Run registry and health protocol tests
+        run: python -m unittest tests.test_validate_capabilities tests.test_health_probe -v
+      - name: Validate capability registry
         run: python tools/validate_capabilities.py examples/capability-registry.json
+      - name: Validate health registry and show expected local status
+        run: python -c "import json; from tools.health_probe import validate_nodes; data=json.load(open('examples/nodes.json', encoding='utf-8')); errors=validate_nodes(data); print(errors or 'VALID node health registry') ; raise SystemExit(bool(errors))"
