@@ -213,8 +213,11 @@ if ($Mode -eq 'Import') {
         safety_note = 'Imported text is evidence for review only. It has not been executed, validated, or committed.'
     }
     Write-HfMistralTrace 'import:record-created'
+    Write-HfMistralTrace 'import:before-result-path'
     $resultPath = Join-Path $OutputDirectory ("review-{0}-{1}.json" -f $resolvedTaskId, $stamp)
-    $json = $result | ConvertTo-Json -Depth 10
+    Write-HfMistralTrace ('import:result-path=' + $resultPath)
+    Write-HfMistralTrace 'import:before-json'
+    $json = ConvertTo-Json -InputObject $result -Depth 10
     Write-HfMistralTrace ('import:serialized-chars=' + $json.Length)
     Set-Content -LiteralPath $resultPath -Value $json -Encoding UTF8
     Write-HfMistralTrace 'import:written'
