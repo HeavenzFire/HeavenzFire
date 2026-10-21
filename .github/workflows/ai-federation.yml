@@ -1,0 +1,39 @@
+name: AI Federation
+
+on:
+  pull_request:
+    paths:
+      - "UnifiedField/AI-FEDERATION.md"
+      - "UnifiedField/ai-providers.json"
+      - "unified-field/ai-federation.mjs"
+      - "unified-field/ai-federation.test.mjs"
+      - ".github/workflows/ai-federation.yml"
+  push:
+    branches: [main]
+    paths:
+      - "UnifiedField/AI-FEDERATION.md"
+      - "UnifiedField/ai-providers.json"
+      - "unified-field/ai-federation.mjs"
+      - "unified-field/ai-federation.test.mjs"
+      - ".github/workflows/ai-federation.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate-ai-federation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Validate provider inventory
+        run: node unified-field/ai-federation.mjs validate
+      - name: Test routing, privacy scope, and failure states
+        run: node --test unified-field/ai-federation.test.mjs
+      - name: Show local reasoning route plan
+        run: node unified-field/ai-federation.mjs plan reasoning --scope local
