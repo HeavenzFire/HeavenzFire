@@ -20,7 +20,8 @@ const endpoints=[
  {id:'discovery',name:'Open-source model discovery',url:'http://127.0.0.1:8795/api/discover'},
  {id:'voice',name:'Research / voice service',url:'http://127.0.0.1:8796/health'},
  {id:'brain',name:'Digital Brain runtime',url:'http://127.0.0.1:8797/api/health'},
- {id:'mesh',name:'Mesh coordinator',url:'http://127.0.0.1:8080/health'}
+ {id:'mesh',name:'Mesh coordinator',url:'http://127.0.0.1:8080/health'},
+ {id:'meshbridge',name:'Authenticated mesh dashboard bridge',url:'http://127.0.0.1:8081/health'}
 ];
 async function probe(e){
  const start=Date.now();
@@ -50,6 +51,17 @@ const server=http.createServer(async(req,res)=>{
   child.on('error',e=>{workerRun={...workerRun,running:false,finishedAt:new Date().toISOString(),error:String(e.message||e)}});
   child.on('close',async code=>{const startedAt=workerRun.startedAt;workerRun={...workerRun,running:false,finishedAt:new Date().toISOString(),exitCode:code};const artifact=latestWorkerResults(Date.parse(startedAt||'')||Date.now());if(artifact){const journalPublish=await publishWorkerResultsToJournal(artifact);workerRun={...workerRun,journalPublish};}});
   res.writeHead(202,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:true,accepted:true,workerRun}));
+ }
+ if(req.method==='POST'&&req.url==='/api/mesh/enqueue'){
+  const origin=req.headers.origin||'';
+  if(origin&&origin!=='http://127.0.0.1:8800'&&origin!=='http://localhost:8800'){res.writeHead(403,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'Cross-origin request denied'}));}
+  let raw='',tooLarge=false;
+  req.on('data',chunk=>{if(tooLarge)return;raw+=chunk;if(Buffer.byteLength(raw)>8192){tooLarge=true;res.writeHead(413,{'Content-Type':'application/json'});res.end(JSON.stringify({ok:false,error:'Request too large'}));req.destroy();}});
+  req.on('end',async()=>{if(tooLarge||res.writableEnded)return;try{const body=JSON.parse(raw);const upstream=await fetch('http://127.0.0.1:8081/api/mesh/enqueue',{method:'POST',headers:{'Content-Type':'application/json','Origin':'http://127.0.0.1:8800'},body:JSON.stringify(body),signal:AbortSignal.timeout(7000)});const data=await upstream.json();res.writeHead(upstream.status,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(JSON.stringify(data));}catch{if(!res.headersSent){res.writeHead(502,{'Content-Type':'application/json'});res.end(JSON.stringify({ok:false,error:'Mesh bridge unavailable'}));}}});
+  return;
+ }
+ if(req.method==='GET'&&req.url.startsWith('/api/mesh/task')){
+  try{const u=new URL(req.url,'http://127.0.0.1:8800');const id=u.searchParams.get('task_id')||'';if(!id||id.length>100){res.writeHead(400,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'Valid task_id required'}));}const upstream=await fetch('http://127.0.0.1:8081/api/mesh/task?task_id='+encodeURIComponent(id),{signal:AbortSignal.timeout(5000)});const data=await upstream.json();res.writeHead(upstream.status,{'Content-Type':'application/json','Cache-Control':'no-store'});return res.end(JSON.stringify(data));}catch{res.writeHead(502,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'Mesh bridge unavailable'}));}
  }
  if(req.method!=='GET'){res.writeHead(405,{'Content-Type':'text/plain'});return res.end('GET only');}
  if(req.url==='/health'){res.writeHead(200,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:true,service:'heavenzfire-unified-field-dashboard',host:HOST,port:PORT,mode:'local fixed-worker control'}));}
