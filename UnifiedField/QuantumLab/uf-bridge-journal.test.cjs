@@ -66,6 +66,19 @@ test('corrupt journal lines are reported instead of silently discarded', () => {
     assert.equal(q.inspect().tasks.length, 1);
   } finally { f.cleanup(); }
 });
+test('corrupt journal blocks replay eligibility even when task metadata is readable', () => {
+  const f = fixture();
+  try {
+    const q = new OfflineTaskJournal(f.file);
+    q.enqueue(task());
+    fs.appendFileSync(f.file, '{not-json}\\n');
+    const result = q.evaluateReplay('task-1', 'abc123');
+    assert.equal(result.action, 'HOLD');
+    assert.equal(result.reason, 'JOURNAL_CORRUPT');
+    assert.deepEqual(result.corruptLines, [2]);
+    assert.equal(result.requiresFreshEvidence, undefined);
+  } finally { f.cleanup(); }
+});
 test('executable payloads are rejected', () => {
   const f = fixture();
   try {
