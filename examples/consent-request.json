@@ -1,0 +1,7 @@
+{
+  "subject": "local-user",
+  "action": "export",
+  "data_classes": ["user-created-notes"],
+  "destination": "file://user-selected-export",
+  "purpose": "user-requested-backup"
+}
