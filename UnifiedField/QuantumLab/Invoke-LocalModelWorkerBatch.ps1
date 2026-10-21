@@ -3,10 +3,10 @@
 param(
     [string]$OutputDirectory = (Join-Path $PSScriptRoot 'LocalAI'),
     [string]$OllamaBaseUrl = 'http://127.0.0.1:11434',
-    [ValidateRange(0,1)][int]$MaxRepairAttempts = 1
+    [ValidateRange(0,1)][int]$MaxRepairAttempts = 1,
+    [ValidateNotNullOrEmpty()][string[]]$Models = @('qwen2.5:0.5b','heavenzfire-runtime:latest','heavenzfire:latest','llama3.2:1b')
 )
 $ErrorActionPreference = 'Stop'
-$models = @('qwen2.5:0.5b','heavenzfire-runtime:latest','heavenzfire:latest','llama3.2:1b')
 $prompt = @'
 Return ONLY valid JSON: no markdown fences and no prose. Use exactly these fields: task, function_name, code, tests. Set task and function_name to Get-SumSafe. The code string must define this PowerShell 5.1 function: function Get-SumSafe { param([int[]]$InputValues) $sum = 0; foreach ($value in $InputValues) { $sum += $value }; return $sum }. The tests array must contain exactly two objects: {"input":[1,2,3],"expected_output":6} and {"input":[-1,-2,-3],"expected_output":-6}. Do not add fields or claim tests were executed.
 '@
@@ -55,7 +55,7 @@ function Test-WorkerResponse {
 
 New-Item -ItemType Directory -Path $OutputDirectory -Force | Out-Null
 $results = @()
-foreach ($model in $models) {
+foreach ($model in $Models) {
     $item = [ordered]@{ model=$model; started=(Get-Date).ToString('o'); ok=$false; response=''; error=''; duration_ms=0; validation=$null; repair_attempted=$false; repair_error=''; repair_validation=$null; initial_response=''; repair_response=''; attempt_count=0 }
     $timer = [Diagnostics.Stopwatch]::StartNew()
     try {
@@ -103,6 +103,6 @@ foreach ($model in $models) {
 }
 $path = Join-Path $OutputDirectory ('worker-smoke-' + (Get-Date -Format 'yyyyMMdd-HHmmss') + '.json')
 $results | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $path -Encoding UTF8
-$summary = [ordered]@{ ok=(@($results | Where-Object { $_.ok }).Count -eq $models.Count); count=$results.Count; successful=@($results | Where-Object { $_.ok }).Count; validated=@($results | Where-Object { $_.validation.passed }).Count; file=$path; results=$results }
+$summary = [ordered]@{ ok=(@($results | Where-Object { $_.ok }).Count -eq $Models.Count); count=$results.Count; successful=@($results | Where-Object { $_.ok }).Count; validated=@($results | Where-Object { $_.validation.passed }).Count; file=$path; results=$results }
 $summary | ConvertTo-Json -Depth 8 -Compress
 if (@($results | Where-Object { -not $_.ok }).Count -gt 0) { exit 2 }
