@@ -52,9 +52,27 @@ Assert-HttpStatus 'Invalid hash rounds are rejected' 400 {
     Invoke-RestMethod -Uri ($BaseUrl.TrimEnd('/') + '/api/mesh/enqueue') -Method Post -ContentType 'application/json' -Body $badRounds -TimeoutSec 5
 }
 
+$ram = Get-CimInstance Win32_OperatingSystem
+$availableGb = $ram.FreePhysicalMemory / 1MB
 $badModel = @{ type = 'model_task'; payload = @{ prompt = 'must not run'; model = 'unapproved-model' } } | ConvertTo-Json -Depth 4 -Compress
-Assert-HttpStatus 'Unapproved model is rejected' 400 {
-    Invoke-RestMethod -Uri ($BaseUrl.TrimEnd('/') + '/api/mesh/enqueue') -Method Post -ContentType 'application/json' -Body $badModel -TimeoutSec 5
+if ($availableGb -lt 1) {
+    Assert-HttpStatus 'Model tasks are blocked by RAM admission before payload dispatch' 503 {
+        Invoke-RestMethod -Uri ($BaseUrl.TrimEnd('/') + '/api/mesh/enqueue') -Method Post -ContentType 'application/json' -Body $badModel -TimeoutSec 5
+    }
+} else {
+    Assert-HttpStatus 'Unapproved model is rejected' 400 {
+        Invoke-RestMethod -Uri ($BaseUrl.TrimEnd('/') + '/api/mesh/enqueue') -Method Post -ContentType 'application/json' -Body $badModel -TimeoutSec 5
+    }
+}
+$emptyModelPrompt = @{ type = 'model_task'; payload = @{ prompt = ''; model = 'qwen2.5:0.5b' } } | ConvertTo-Json -Depth 4 -Compress
+if ($availableGb -lt 1) {
+    Assert-HttpStatus 'Model inference is paused below 1 GiB available RAM' 503 {
+        Invoke-RestMethod -Uri ($BaseUrl.TrimEnd('/') + '/api/mesh/enqueue') -Method Post -ContentType 'application/json' -Body $emptyModelPrompt -TimeoutSec 5
+    }
+} else {
+    Assert-HttpStatus 'Empty model prompt is rejected without enqueue' 400 {
+        Invoke-RestMethod -Uri ($BaseUrl.TrimEnd('/') + '/api/mesh/enqueue') -Method Post -ContentType 'application/json' -Body $emptyModelPrompt -TimeoutSec 5
+    }
 }
 
 foreach ($port in @(8080, 8081, 18101, 18102, 18103, 8800)) {
