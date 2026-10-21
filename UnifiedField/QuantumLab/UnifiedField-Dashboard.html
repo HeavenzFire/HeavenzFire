@@ -36,6 +36,13 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:11px;color:var(--muted
 <section class="card span7"><h2>Local service mesh</h2><div class="service-list" id="services"><div class="detail">Connecting to services…</div></div></section>
 </section>
 <section class="card span12"><h2>Local AI worker pool · assigned build tasks</h2><div class="detail">Fixed, bounded local batch. Each model receives the same utility task. Outputs are stored as artifacts; generated code is not executed automatically and requires independent verification.</div><div class="actions" style="margin:12px 0"><button id="runModelWorker">Run build-task batch</button><span class="pill" id="modelWorkerStatus">READY · NOT YET RUN</span></div><div id="modelPool" class="service-list"><div class="detail">Reading local model inventory…</div></div><div class="detail" id="modelWorkerMeta" style="margin-top:10px">Dashboard refreshes status every 8 seconds.</div></section>
+<section class="card span7"><h2>Mesh task console · live worker queue</h2>
+<div class="detail">Submit a bounded local task to the authenticated mesh. Hash tasks are deterministic smoke tests; model tasks call only an allowlisted Ollama model. No shell commands are accepted.</div>
+<label for="meshTaskInput" class="eyebrow" style="display:block;margin-top:12px">Task input / prompt</label>
+<textarea id="meshTaskInput" rows="3" maxlength="3000" placeholder="Enter text to hash, or a concise engineering question for the local model." style="display:block;width:100%;margin:8px 0 10px;padding:10px;background:#07111c;color:var(--text);border:1px solid #20536d;border-radius:9px;font:inherit;resize:vertical"></textarea>
+<div class="actions"><button id="meshHashButton">Queue hash smoke test</button><button id="meshModelButton">Ask local model</button><select id="meshModelSelect" aria-label="Local model" style="background:#07111c;color:var(--text);border:1px solid #20536d;border-radius:9px;padding:8px"><option>llama3.2:1b</option><option>heavenzfire-runtime:latest</option><option>heavenzfire:latest</option><option>qwen2.5:0.5b</option></select></div>
+<div id="meshTaskStatus" class="pill" style="margin-top:12px">Ready · queue idle</div><pre id="meshTaskResult">Task results will appear here. The queue status and worker ID are returned by the coordinator.</pre>
+</section>
 <section class="card span5"><h2>Agent lanes · coordination status</h2><div class="roles">
 <div class="role"><h3>01 · Architect</h3><p>Map dependencies, interfaces, acceptance criteria, and preserve existing artifacts.</p><div class="state">WORKFLOW ROLE · NOT A SEPARATE MODEL</div></div>
 <div class="role"><h3>02 · Builder</h3><p>Implement small reversible changes in the existing Unified Field codebase.</p><div class="state">WORKFLOW ROLE · NOT A SEPARATE MODEL</div></div>
@@ -63,6 +70,31 @@ function renderModelWorker(x){
  $('modelPool').innerHTML=expected.map(name=>{const found=available.find(m=>m.name===name);const result=results.find(r=>r.model===name);const state=found?(result?(result.ok?(result.validation&&result.validation.passed?((result.validation.warnings&&result.validation.warnings.length?'static checks passed · normalized · ':'static checks passed · ')+(result.attempt_count||1)+' attempt(s) · '+result.duration_ms+' ms'):'generated · static checks failed after '+(result.attempt_count||1)+' attempt(s) · '+result.duration_ms+' ms'):'generation failed'):'runtime available · task not yet recorded'):'model tag not found';const detail=result?(result.ok?((result.validation&&result.validation.warnings&&result.validation.warnings.length?'Normalization: '+result.validation.warnings.join(', ')+' · ':'')+(result.validation&&result.validation.issues&&result.validation.issues.length?'Checks: '+result.validation.issues.join(', ')+' · ':'')+String(result.response||'').slice(0,240)):String(result.error||'error')):(found?('Size '+found.size+' bytes · awaiting task result'):'Not present in Ollama inventory');return '<div class="service"><div><strong>'+esc(name)+'</strong><small>'+esc(state)+'</small><small>'+esc(detail)+'</small></div>'+pill(found?(result?(result.ok?'generated':'failed'):'available'):'unavailable')+'</div>'}).join('');
  $('modelWorkerMeta').textContent=run.running?('Batch started '+(run.startedAt||'')):(run.finishedAt?('Last finished '+run.finishedAt+' · exit '+run.exitCode+' · journal handoff '+((run.journalPublish&&run.journalPublish.state)||'not confirmed')+(run.journalPublish?' ('+(run.journalPublish.published||0)+' new, '+(run.journalPublish.duplicate||0)+' duplicate, '+(run.journalPublish.failed||0)+' failed)':'')):'Model output is untrusted until independently tested.');
 }
+async function submitMeshTask(type){
+ const input=$('meshTaskInput').value;
+ if(!input.trim()){$('meshTaskStatus').textContent='Enter task text first';return;}
+ const buttons=[$('meshHashButton'),$('meshModelButton')];buttons.forEach(b=>b.disabled=true);
+ $('meshTaskStatus').textContent='Submitting '+type+'…';$('meshTaskResult').textContent='Waiting for coordinator acceptance.';
+ try{
+  const payload=type==='hash_task'?{type,payload:{input:input.slice(0,2000),rounds:1}}:{type,payload:{prompt:input.slice(0,3000),model:$('meshModelSelect').value}};
+  const response=await fetch('/api/mesh/enqueue',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(payload)});
+  const accepted=await response.json();if(!response.ok||!accepted.ok)throw Error(accepted.error||('HTTP '+response.status));
+  const taskId=accepted.task_id;$('meshTaskStatus').textContent='Queued · '+taskId;
+  const limit=type==='model_task'?120:30;
+  for(let i=0;i<limit;i++){
+   await new Promise(resolve=>setTimeout(resolve,750));
+   const poll=await fetch('/api/mesh/task?task_id='+encodeURIComponent(taskId),{cache:'no-store'});
+   const state=await poll.json();if(!poll.ok||!state.ok)throw Error(state.error||'Task status unavailable');
+   const t=state.task||{};$('meshTaskStatus').textContent=(t.status||'unknown')+' · '+taskId;
+   $('meshTaskResult').textContent=JSON.stringify({task_id:t.task_id,status:t.status,worker_id:t.worker_id,attempts:t.attempts,result:t.result,error:t.error},null,2);
+   if(['completed','failed'].includes(t.status))break;
+  }
+  refresh();
+ }catch(e){$('meshTaskStatus').textContent='Task error';$('meshTaskResult').textContent=String(e.message||e);}
+ finally{buttons.forEach(b=>b.disabled=false);}
+}
+$('meshHashButton').addEventListener('click',()=>submitMeshTask('hash_task'));
+$('meshModelButton').addEventListener('click',()=>submitMeshTask('model_task'));
 async function runModelWorker(){
  const b=$('runModelWorker');b.disabled=true;$('modelWorkerStatus').textContent='Submitting fixed local task batch…';
  try{const r=await fetch('/api/worker/run',{method:'POST',headers:{'Accept':'application/json'}});const x=await r.json();if(!r.ok)throw Error(x.error||('HTTP '+r.status));$('modelWorkerStatus').textContent='Accepted · worker running';await refresh()}catch(e){$('modelWorkerStatus').textContent='Could not start: '+String(e.message||e);b.disabled=false}
