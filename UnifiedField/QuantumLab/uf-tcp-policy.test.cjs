@@ -55,10 +55,12 @@ test('duplicate verifier identities do not count twice', () => {
   assert.equal(evaluate(valid({ verifiers: v })).decision, 0);
 });
 
-test('verifier rejection cannot be outvoted into acceptance', () => {
+test('verifier disagreement abstains until a discriminating test resolves it', () => {
   const v = valid().verifiers;
   v[1] = { ...v[1], decision: -1 };
-  assert.notEqual(evaluate(valid({ verifiers: v })).decision, 1);
+  const outcome = evaluate(valid({ verifiers: v }));
+  assert.equal(outcome.decision, 0);
+  assert.equal(outcome.code, 'VERIFIER_DISAGREEMENT');
 });
 
 test('verifier evidence must match the reviewed digest', () => {
