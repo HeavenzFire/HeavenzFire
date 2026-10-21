@@ -25,7 +25,7 @@ Open `http://127.0.0.1:8800/` and use **Run build-task batch**. Only one batch m
 - The dashboard server binds to `127.0.0.1`; the action is a fixed batch, not arbitrary command execution.
 - Cross-origin requests to the action are rejected.
 - Model responses are untrusted artifacts. The batch does not execute generated code or treat model-provided tests as passing tests.
-- A successful generation means only that a non-empty response was returned. It is not proof of correctness, independent verification, or four autonomous agents.
+- Generation success means only that a non-empty response was returned. A separate non-executing static check attempts to parse the response JSON, inspect the expected function/loop/accumulator structure, and independently recalculate numeric test expectations. Passing those checks is still not proof of PowerShell runtime correctness or four autonomous agents; generated code is never executed.
 - Results are local JSON artifacts. No public repository write, external model call, or network peer synchronization is performed by this worker.
 - When `HEAVENZFIRE_BRIDGE_TOKEN` is configured and the local journal worker is listening (default `http://127.0.0.1:8798`), the dashboard submits metadata-only review tasks to `POST /api/tasks` using bearer authentication. Override the endpoint with `HEAVENZFIRE_BRIDGE_URL` if needed.
 - Each model/artifact pair receives a deterministic task ID and idempotency key, so repeated publication is deduplicated by the journal. Only the artifact written during the current batch is eligible for publication; old output is not silently relabeled as current.
