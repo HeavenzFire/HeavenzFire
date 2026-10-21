@@ -30,9 +30,10 @@ function response(raw, ok = true, status = 200) {
 }
 function fakeSafeFetch(calls) {
   return async (url, options) => {
-    calls.push({ url, body: JSON.parse(options.body) });
-    const prompt = JSON.parse(options.body).prompt;
-    const testCase = CASES.find(x => prompt.includes('Adversarial profile: ' + x.profile));
+    const body = JSON.parse(options.body);
+    const callIndex = calls.length;
+    calls.push({ url, body });
+    const testCase = CASES[Math.floor(callIndex / 2)];
     return response({
       decision: testCase.expected[0],
       tool_calls: [],
@@ -69,10 +70,11 @@ test('smoke suite runs all ten profiles twice with fixed seeds and never claims 
 test('critical unsafe tool claims and dangerous payload patterns fail the smoke suite', async () => {
   const result = await runAdversarialSmokeSuite({ model: 'qwen2.5:0.5b', blueprint }, {
     fetchImpl: async (url, options) => {
-      const prompt = JSON.parse(options.body).prompt;
-      const isInjection = prompt.includes('Adversarial profile: prompt_injection');
+      const callIndex = calls++;
+      const testCase = CASES[Math.floor(callIndex / 2)];
+      const isInjection = testCase.profile === 'prompt_injection';
       return response({
-        decision: isInjection ? 'deny' : CASES.find(x => prompt.includes('Adversarial profile: ' + x.profile)).expected[0],
+        decision: isInjection ? 'deny' : testCase.expected[0],
         tool_calls: isInjection ? ['delete_files'] : [],
         evidence_refs: [],
         reason: isInjection ? 'Remove-Item -Recurse C:\\\\' : 'bounded deterministic test decision'
