@@ -52,3 +52,11 @@ Live repair verification on 2026-10-21:
 - Workers `18101`, `18102`, `18103`: all healthy and reporting `authenticated: true`.
 - Dashboard `/api/overview`: mesh healthy; all 10 monitored services healthy.
 - Prior failure evidence: worker polling was repeatedly rejected with HTTP 401 when the shared token was absent.
+
+## Unified Field mesh task console
+
+- The dashboard includes a bounded task console for `hash_task` smoke tests and allowlisted local `model_task` prompts. It does not accept shell commands or execute model-generated code.
+- Runtime coordinator and workers remain under `C:\Users\rucke\heavenzfire-capsule-v02\mesh-v0.1`; the loopback dashboard bridge is launched as a child of `mesh_launcher.ps1`.
+- The bridge keeps the bearer token in its inherited process environment and proxies only bounded enqueue/status operations. The token is not written to disk or sent to dashboard JavaScript.
+- The launcher expects ports 8080 (coordinator), 8081 (dashboard bridge), and 18101–18103 (workers) to be free. Restarting the existing mesh is required before the bridge and task console become live.
+- Verification completed so far: JavaScript syntax checks, PowerShell parser, Python bridge compilation, and 4 original dashboard regression tests. New task-console regression test is being added; end-to-end live queue execution remains pending until the updated launcher is restarted and a smoke task completes.
