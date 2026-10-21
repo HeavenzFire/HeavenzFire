@@ -48,7 +48,11 @@ def validate_registry(data: Any) -> list[str]:
         if not isinstance(cap["version"], str) or not VERSION_RE.fullmatch(cap["version"]):
             errors.append(f"{p}.version: expected semantic version MAJOR.MINOR.PATCH")
         entrypoint = cap["entrypoint"]
-        if not isinstance(entrypoint, str) or not entrypoint.strip() or entrypoint.startswith(("/", "\\")) or ".." in Path(entrypoint).parts:
+        normalized_entrypoint = entrypoint.replace("\\", "/") if isinstance(entrypoint, str) else ""
+        if (not isinstance(entrypoint, str) or not entrypoint.strip()
+                or normalized_entrypoint.startswith("/")
+                or re.match(r"^[A-Za-z]:", normalized_entrypoint)
+                or ".." in normalized_entrypoint.split("/")):
             errors.append(f"{p}.entrypoint: expected a non-empty relative path without '..' traversal")
         interfaces = cap["interfaces"]
         if not isinstance(interfaces, list) or not interfaces or any(not isinstance(x, str) or not x.strip() for x in interfaces):
