@@ -1,0 +1,35 @@
+name: Unified Field Dashboard Health Tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'UnifiedField/QuantumLab/uf-dashboard-health.cjs'
+      - 'UnifiedField/QuantumLab/uf-dashboard-health.test.cjs'
+      - 'UnifiedField/QuantumLab/UnifiedField-Dashboard-Server.cjs'
+      - '.github/workflows/unified-field-dashboard-health.yml'
+  pull_request:
+    paths:
+      - 'UnifiedField/QuantumLab/uf-dashboard-health.cjs'
+      - 'UnifiedField/QuantumLab/uf-dashboard-health.test.cjs'
+      - 'UnifiedField/QuantumLab/UnifiedField-Dashboard-Server.cjs'
+      - '.github/workflows/unified-field-dashboard-health.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dashboard-health-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run dashboard health classification tests
+        run: node --test UnifiedField/QuantumLab/uf-dashboard-health.test.cjs
+      - name: Syntax-check dashboard server
+        run: node --check UnifiedField/QuantumLab/UnifiedField-Dashboard-Server.cjs
