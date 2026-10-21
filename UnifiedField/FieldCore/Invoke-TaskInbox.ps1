@@ -33,7 +33,15 @@ if ([string]::IsNullOrWhiteSpace($env:LOCALAPPDATA)) {
     throw 'LOCALAPPDATA is not set; refusing to choose a nonstandard persistence location.'
 }
 
-$StateRoot = Join-Path $env:LOCALAPPDATA 'HeavenzFire\UnifiedField'
+$DefaultStateRoot = Join-Path $env:LOCALAPPDATA 'HeavenzFire\UnifiedField'
+if ([string]::IsNullOrWhiteSpace($env:HF_UNIFIED_FIELD_STATE_ROOT)) {
+    $StateRoot = $DefaultStateRoot
+} else {
+    if (-not [System.IO.Path]::IsPathRooted($env:HF_UNIFIED_FIELD_STATE_ROOT)) {
+        throw 'HF_UNIFIED_FIELD_STATE_ROOT must be an absolute path.'
+    }
+    $StateRoot = [System.IO.Path]::GetFullPath($env:HF_UNIFIED_FIELD_STATE_ROOT)
+}
 $PidPath = Join-Path $StateRoot ("task-inbox-{0}.pid" -f $Port)
 $InboxPath = Join-Path $StateRoot 'task-inbox.jsonl'
 $StdoutPath = Join-Path $StateRoot ("task-inbox-{0}.stdout.log" -f $Port)
