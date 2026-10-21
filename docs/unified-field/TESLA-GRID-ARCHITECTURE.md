@@ -126,3 +126,10 @@ Run destructive fault injection only against disposable fixtures, never the live
 - Existing Node dashboard test suites passed: 12 tests, 0 failures, after correcting a stale endpoint assertion to match the worker's actual local Ollama endpoint at port 11434.
 - The repeatable PowerShell 5.1 adversarial suite passed: dashboard health; five mesh endpoints visible and healthy; unauthenticated coordinator stats rejected with HTTP 401; unsupported shell task rejected with HTTP 400; cross-origin enqueue rejected with HTTP 403; oversized hash input rejected; invalid rounds rejected; unapproved model rejected; all relevant listeners loopback-only; and successful persisted canary completion.
 - The remaining dashboard work is a read-only Watchtower journal/resource summary, sustained stability tests, and reboot recovery. The latest resource snapshot remains constrained at approximately 1.29 GB available RAM and 8.45 GB free on C:; model batches remain deferred.
+
+
+## Resource admission hardening — 2026-10-21
+
+The dashboard mesh proxy now checks available physical RAM before accepting a `model_task`. If Node reports less than 1 GiB available, it returns HTTP 503 and does not enqueue the task. This is enforced server-side rather than relying only on a UI warning. The adversarial suite verified this behavior under the current constrained host state. Hash canaries remain available because they are bounded and do not invoke local model inference.
+
+Latest observed host snapshot: approximately 0.91 GB available RAM and 8.41 GB free on C:. This is a warning state; do not launch model batches. The extra test-only worker on port 18127 was stopped after its process identity and listener were verified, preserving the three mesh workers and the sixteen configured agent-worker endpoints.
