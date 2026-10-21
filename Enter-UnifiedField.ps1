@@ -21,7 +21,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 if ($TaskInbox) {
-    $taskInboxManager = Join-Path $PSScriptRoot "UnifiedField\\FieldCore\\Invoke-TaskInbox.ps1"
+    $taskInboxManager = Join-Path $PSScriptRoot "UnifiedField\FieldCore\Invoke-TaskInbox.ps1"
     if (-not (Test-Path -LiteralPath $taskInboxManager -PathType Leaf)) {
         throw "Task inbox manager is missing: $taskInboxManager"
     }
