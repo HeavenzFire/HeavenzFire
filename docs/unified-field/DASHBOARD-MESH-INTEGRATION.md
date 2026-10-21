@@ -8,6 +8,7 @@ Status: applied to the connected Windows installation and verified locally. The 
 - `UnifiedField-Dashboard-Server.cjs`: extended its read-only endpoint inventory to include the coordinator (8080), bridge (8081), and workers (18101-18103).
 - `UnifiedField-Dashboard.html`: added a Mesh Task Console for bounded hash tasks and allowlisted local model tasks. The UI polls persisted task state and explicitly says shell commands are not accepted. Model task controls are operator-initiated and may consume RAM.
 - `Test-HeavenzFireMeshAdversarial.ps1`: repeatable Windows PowerShell 5.1 acceptance test; mirrored in this repository under `tools/mesh/`.
+- `tools/dashboard/Install-MeshTaskConsole.ps1`: repeatable, backup-first installer for the dashboard route, endpoint inventory, and task console. The installed local copy was run against the current dashboard and passed both Node syntax checks.
 - Pre-change backups were preserved alongside the installed dashboard files with suffix `.bak-tesla-grid-20261021`.
 
 ## Verification results
