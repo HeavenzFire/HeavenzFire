@@ -64,3 +64,5 @@ finally {
         Remove-Item -LiteralPath $TempRoot -Recurse -Force -ErrorAction SilentlyContinue
     }
 }
+
+$global:LASTEXITCODE = 0
