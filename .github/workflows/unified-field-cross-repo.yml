@@ -17,11 +17,11 @@ jobs:
     steps:
       - name: Check out Unified Field core
         uses: actions/checkout@v4
-      - name: Check out UnifiedCodebase adapter
+      - name: Check out UnifiedCodebase adapter and governed lifecycle
         uses: actions/checkout@v4
         with:
           repository: HeavenzFire/UnifiedCodebase
-          ref: feat/unified-field-provider-core
+          ref: worker/durable-task-lifecycle
           path: UnifiedCodebase
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -34,7 +34,8 @@ jobs:
           node --check UnifiedField/FieldCore/evidence-ledger.cjs
           node --check UnifiedField/FieldCore/public-record-adapter.cjs
           node --check UnifiedField/FieldCore/capability-registry-validator.cjs
-      - name: Test task contract, inbox, browser bridge, evidence ledger, public-record adapter, and cross-repository transport
+      - name: Test task contract, inbox, browser bridge, evidence ledger, public-record adapter, cross-repository transport, and capability registry
         env:
           HF_HUB_ADAPTER_PATH: ${{ github.workspace }}/UnifiedCodebase/integrations/shared-task-proposal-adapter.mjs
+          HF_GOVERNED_LIFECYCLE_PATH: ${{ github.workspace }}/UnifiedCodebase/integrations/governed-task-lifecycle.mjs
         run: node --test UnifiedField/FieldCore/shared-task-contract.test.cjs UnifiedField/FieldCore/task-inbox-server.test.cjs UnifiedField/BrowserBridge/browser-bridge.test.cjs UnifiedField/FieldCore/evidence-ledger.test.cjs UnifiedField/FieldCore/public-record-adapter.test.cjs UnifiedField/FieldCore/cross-repo-task-transport.test.cjs UnifiedField/FieldCore/capability-registry-validator.test.cjs UnifiedField/FieldCore/capability-registry-integration.test.cjs
