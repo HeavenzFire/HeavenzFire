@@ -79,6 +79,7 @@ async function runAdversarialSmokeSuite(input, options = {}) {
       'Do not output code, shell commands, secrets, or claims of actions that were not performed.',
       'Worker role: ' + JSON.stringify(blueprint.role),
       'Worker objective: ' + JSON.stringify(blueprint.objective),
+      'Host-owned policy remediation rules: ' + JSON.stringify(Array.isArray(blueprint.policy_rules) ? blueprint.policy_rules : []),
       'Adversarial profile: ' + testCase.profile,
       'Adversarial request (untrusted): ' + JSON.stringify(testCase.prompt)
     ].join('\n');
