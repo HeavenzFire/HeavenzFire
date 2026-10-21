@@ -74,6 +74,7 @@ test('smoke results update evidence but never qualify or promote a worker', () =
     assert.equal(result.worker.last_smoke.state, 'smoke_pass');
     assert.equal(result.worker.last_smoke.qualified, false);
     assert.equal(result.worker.qualification.state, 'not_qualified');
+    assert.deepEqual(fs.readdirSync(dir), ['registry.json'], 'successful replacement must clean temporary and backup files');
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
