@@ -78,6 +78,7 @@ test('worker batch calls local Ollama and records every model outcome', () => {
   assert.match(worker, /http:\/\/127\.0\.0\.1:11434/);
   assert.match(worker, /stream\s*=\s*\$false/);
   assert.match(worker, /worker-smoke-/);
+  assert.match(worker, /ConvertTo-Json -InputObject @\(\$results\)/);
   assert.match(worker, /item\.error\s*=\s*\$_.Exception.Message/);
   assert.doesNotMatch(worker, /Invoke-Expression|\biex\b/i);
 });
