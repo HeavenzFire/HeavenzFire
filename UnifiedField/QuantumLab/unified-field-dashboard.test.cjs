@@ -163,5 +163,5 @@ test('model-worker expected model list is scoped inside its renderer', () => {
   assert.ok(renderer, 'model-worker renderer must exist');
   assert.match(renderer[1], /const expected=\['heavenzfire-qwen-0\.5b'\]/);
   assert.match(renderer[1], /expected\.map\(name/);
-  assert.doesNotMatch(dashboard, /Register candidate<\\/button>Validate worker blueprint<\\/button>/);
+  assert.ok(!dashboard.includes('Register candidate</button>Validate worker blueprint</button>'));
 });
