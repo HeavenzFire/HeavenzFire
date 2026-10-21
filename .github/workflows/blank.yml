@@ -17,7 +17,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Check dashboard server syntax
-        run: node --check UnifiedField/QuantumLab/UnifiedField-Dashboard-Server.cjs
+      - name: Check dashboard and publisher syntax
+        run: |
+          node --check UnifiedField/QuantumLab/UnifiedField-Dashboard-Server.cjs
+          node --check UnifiedField/QuantumLab/uf-model-worker-journal-publisher.cjs
       - name: Test dashboard-worker safety contract and dashboard script syntax
-        run: node --test UnifiedField/QuantumLab/unified-field-dashboard.test.cjs
+        run: node --test UnifiedField/QuantumLab/unified-field-dashboard.test.cjs UnifiedField/QuantumLab/uf-model-worker-journal-publisher.test.cjs
