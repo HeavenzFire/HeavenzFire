@@ -21,12 +21,16 @@ function boundedText(value, field, max = 4000) {
 }
 
 function createTaskRecord({ taskId = randomUUID(), source, goal, metadata = {} }) {
-  const now = new Date().toISOString();
   const record = {
-    schema: SCHEMA, taskId: boundedText(taskId, 'taskId', 128),
-    source: boundedText(source, 'source', 128), goal: boundedText(goal, 'goal', 12000),
-    status: 'proposed', approvalState: 'pending', evidence: [],
-    createdAt: now, updatedAt: now,
+    schema: SCHEMA,
+    taskId: boundedText(taskId, 'taskId', 128),
+    source: boundedText(source, 'source', 128),
+    goal: boundedText(goal, 'goal', 12000),
+    status: 'proposed',
+    approvalState: 'pending',
+    evidence: [],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
     metadata: metadata && typeof metadata === 'object' && !Array.isArray(metadata) ? metadata : {}
   };
   validateTaskRecord(record);
@@ -48,8 +52,8 @@ function validateTaskRecord(record) {
     boundedText(item.summary, 'evidence.summary', 2000);
     if (item.sourceUrl != null && (typeof item.sourceUrl !== 'string' || item.sourceUrl.length > 1000)) throw new Error('invalid evidence sourceUrl');
   }
-  if (['approved', 'running', 'completed'].includes(record.status) && record.approvalState !== 'approved') {
-    throw new Error('execution status requires explicit approval state');
+  if (record.status === 'approved' || record.status === 'running' || record.status === 'completed') {
+    if (record.approvalState !== 'approved') throw new Error('execution status requires explicit approval state');
   }
   return true;
 }
@@ -61,15 +65,20 @@ function transitionTask(record, nextStatus, { approvalState, evidenceItem, actor
   if (nextStatus === 'approved' && approvalState !== 'approved') throw new Error('explicit approvalState=approved is required');
   if (nextStatus === 'rejected' && record.status === 'proposed' && approvalState !== 'rejected') throw new Error('explicit rejection is required');
   const updated = {
-    ...record, status: nextStatus,
-    approvalState: ['approved', 'running', 'completed'].includes(nextStatus) ? 'approved' : nextStatus === 'rejected' ? 'rejected' : record.approvalState,
-    updatedAt: new Date().toISOString(), evidence: record.evidence.slice()
+    ...record,
+    status: nextStatus,
+    approvalState: nextStatus === 'approved' || nextStatus === 'running' || nextStatus === 'completed'
+      ? 'approved'
+      : nextStatus === 'rejected' ? 'rejected' : record.approvalState,
+    updatedAt: new Date().toISOString(),
+    evidence: record.evidence.slice()
   };
   if (evidenceItem) updated.evidence.push({
     kind: boundedText(evidenceItem.kind, 'evidence.kind', 80),
     summary: boundedText(evidenceItem.summary, 'evidence.summary', 2000),
     sourceUrl: evidenceItem.sourceUrl == null ? null : String(evidenceItem.sourceUrl).slice(0, 1000),
-    observedAt: new Date().toISOString(), actor: boundedText(actor, 'actor', 128)
+    observedAt: new Date().toISOString(),
+    actor: boundedText(actor, 'actor', 128)
   });
   validateTaskRecord(updated);
   return updated;
