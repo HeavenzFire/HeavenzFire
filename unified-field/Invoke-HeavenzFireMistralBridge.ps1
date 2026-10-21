@@ -179,7 +179,7 @@ if ($Mode -eq 'Call') {
         repository_changes = @()
     }
     $resultPath = Join-Path $OutputDirectory ("review-{0}-{1}.json" -f $resolvedTaskId, $stamp)
-    $json = $result | ConvertTo-Json -Depth 10
+    $json = ConvertTo-Json -InputObject $result -Depth 10
     Write-HfMistralTrace ('import:serialized-chars=' + $json.Length)
     Set-Content -LiteralPath $resultPath -Value $json -Encoding UTF8
     Write-HfMistralTrace 'import:written'
