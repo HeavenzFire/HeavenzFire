@@ -1,36 +1,44 @@
-# This is a basic workflow to help you get started with Actions
+name: Unified Field dashboard and local worker checks
 
-name: CI
-
-# Controls when the workflow will run
 on:
-  # Triggers the workflow on push or pull request events but only for the "main" branch
   push:
-    branches: [ "main" ]
+    branches: ["main", "feat/unified-field-local-model-workers"]
   pull_request:
-    branches: [ "main" ]
-
-  # Allows you to run this workflow manually from the Actions tab
+    branches: ["main"]
   workflow_dispatch:
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
-  build:
-    # The type of runner that the job will run on
+  dashboard-worker:
     runs-on: ubuntu-latest
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v4
-
-      # Runs a single command using the runners shell
-      - name: Run a one-line script
-        run: echo Hello, world!
-
-      # Runs a set of commands using the runners shell
-      - name: Run a multi-line script
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Check dashboard and publisher syntax
         run: |
-          echo Add other actions to build,
-          echo test, and deploy your project.
+          node --check UnifiedField/QuantumLab/UnifiedField-Dashboard-Server.cjs
+          node --check UnifiedField/QuantumLab/uf-model-worker-journal-publisher.cjs
+          node --check UnifiedField/QuantumLab/worker-forge.cjs
+      - name: Parse worker and validator PowerShell without executing generated code
+        shell: pwsh
+        run: |
+          $paths = @(
+            "${{ github.workspace }}/UnifiedField/QuantumLab/Invoke-LocalModelWorkerBatch.ps1",
+            "${{ github.workspace }}/UnifiedField/QuantumLab/Test-LocalModelWorkerResponse.ps1",
+            "${{ github.workspace }}/UnifiedField/QuantumLab/Test-LocalModelWorkerResponse.Tests.ps1"
+          )
+          foreach ($path in $paths) {
+            $tokens = $null
+            $parseErrors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($path, [ref]$tokens, [ref]$parseErrors) | Out-Null
+            if ($parseErrors.Count -gt 0) {
+              $parseErrors | ForEach-Object { Write-Error $_.Message }
+              exit 1
+            }
+          }
+          & "${{ github.workspace }}/UnifiedField/QuantumLab/Test-LocalModelWorkerResponse.Tests.ps1"
+      - name: Test dashboard-worker safety contract and deterministic worker forge
+        run: node --test UnifiedField/QuantumLab/unified-field-dashboard.test.cjs UnifiedField/QuantumLab/uf-model-worker-journal-publisher.test.cjs UnifiedField/QuantumLab/worker-forge.test.cjs
