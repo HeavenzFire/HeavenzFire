@@ -27,6 +27,8 @@ test('dashboard server is loopback-only and exposes a fixed worker action', () =
 
 test('dashboard exposes model batch control and renders status from overview', () => {
   assert.match(server, /\/api\/forge\/validate/);
+  assert.match(server, /\/api\/forge\/draft/);
+  assert.match(server, /draftWorkerBlueprint/);
   assert.match(server, /\/api\/forge\/plan/);
   assert.match(server, /\/api\/worker\/status/);
   assert.match(server, /\/api\/worker\/retry/);
@@ -48,6 +50,9 @@ test('dashboard exposes model batch control and renders status from overview', (
   assert.match(dashboard, /llama3\.2:1b/);
   assert.match(dashboard, /Generated code is not executed automatically/);
   assert.match(dashboard, /id="workerBlueprint"/);
+  assert.match(dashboard, /id="generateChildBlueprint"/);
+  assert.match(dashboard, /fetch\('\/api\/forge\/draft'/);
+  assert.match(dashboard, /does not fine-tune model weights/);
   assert.match(dashboard, /id="validateWorkerBlueprint"/);
   assert.match(dashboard, /id="buildWorkerEvalPlan"/);
   assert.match(dashboard, /validateForgeBlueprint/);

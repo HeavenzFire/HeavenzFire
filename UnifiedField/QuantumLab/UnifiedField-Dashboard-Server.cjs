@@ -5,6 +5,7 @@ const WORKER_MODEL_ALLOWLIST=Object.freeze(['qwen2.5:0.5b','heavenzfire-runtime:
 const {publishWorkerResultsToJournal}=require('./uf-model-worker-journal-publisher.cjs');
 const {createBlueprint,validateBlueprint,buildEvaluationMatrix,REQUIRED_ADVERSARIAL_PROFILES}=require('./worker-forge.cjs');
 const {latestWorkerResults}=require('./worker-result-store.cjs');
+const {draftWorkerBlueprint}=require('./worker-forge-drafter.cjs');
 const FORGE_AXES={
  task_type:['build','review'],
  risk_class:['LOW','MEDIUM','HIGH'],
@@ -61,6 +62,21 @@ const server=http.createServer(async(req,res)=>{
    const built=validation.ok?createBlueprint(body.blueprint):null;
    res.writeHead(200,{'Content-Type':'application/json'});
    return res.end(JSON.stringify({ok:true,valid:validation.ok,errors:validation.errors,blueprint_hash:built&&built.blueprint_hash}));
+  }catch(err){
+   res.writeHead(400,{'Content-Type':'application/json'});
+   return res.end(JSON.stringify({ok:false,error:String(err.message||err)}));
+  }
+ }
+ if(req.method==='POST'&&req.url==='/api/forge/draft'){
+  const origin=req.headers.origin||'';
+  if(origin&&origin!=='http://127.0.0.1:8800'&&origin!=='http://localhost:8800'){res.writeHead(403,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'Cross-origin request denied'}));}
+  let raw='';
+  try{
+   for await(const chunk of req){raw+=chunk.toString('utf8');if(Buffer.byteLength(raw)>4096){res.writeHead(413,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'Blueprint draft request exceeds 4 KiB'}));}}
+   const body=JSON.parse(raw||'{}');
+   const result=await draftWorkerBlueprint({model:body.model,role:body.role,objective:body.objective},{axes:FORGE_AXES});
+   res.writeHead(result.ok?200:502,{'Content-Type':'application/json'});
+   return res.end(JSON.stringify(result));
   }catch(err){
    res.writeHead(400,{'Content-Type':'application/json'});
    return res.end(JSON.stringify({ok:false,error:String(err.message||err)}));

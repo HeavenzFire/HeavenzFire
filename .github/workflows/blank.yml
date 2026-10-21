@@ -2,7 +2,7 @@ name: Unified Field dashboard and local worker checks
 
 on:
   push:
-    branches: ["main", "feat/unified-field-local-model-workers", "fix/worker-result-aggregation"]
+    branches: ["main", "feat/unified-field-local-model-workers", "fix/worker-result-aggregation", "feat/worker-forge-child-blueprints"]
   pull_request:
     branches: ["main"]
   workflow_dispatch:
@@ -23,6 +23,7 @@ jobs:
           node --check UnifiedField/QuantumLab/uf-model-worker-journal-publisher.cjs
           node --check UnifiedField/QuantumLab/worker-forge.cjs
           node --check UnifiedField/QuantumLab/worker-result-store.cjs
+          node --check UnifiedField/QuantumLab/worker-forge-drafter.cjs
       - name: Parse worker and validator PowerShell without executing generated code
         shell: pwsh
         run: |
@@ -42,4 +43,4 @@ jobs:
           }
           & "${{ github.workspace }}/UnifiedField/QuantumLab/Test-LocalModelWorkerResponse.Tests.ps1"
       - name: Test dashboard-worker safety contract and deterministic worker forge
-        run: node --test UnifiedField/QuantumLab/unified-field-dashboard.test.cjs UnifiedField/QuantumLab/uf-model-worker-journal-publisher.test.cjs UnifiedField/QuantumLab/worker-forge.test.cjs UnifiedField/QuantumLab/worker-result-store.test.cjs
+        run: node --test UnifiedField/QuantumLab/unified-field-dashboard.test.cjs UnifiedField/QuantumLab/uf-model-worker-journal-publisher.test.cjs UnifiedField/QuantumLab/worker-forge.test.cjs UnifiedField/QuantumLab/worker-result-store.test.cjs UnifiedField/QuantumLab/worker-forge-drafter.test.cjs
