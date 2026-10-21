@@ -69,6 +69,9 @@ test("integrated local control modules map to real repository paths", async () =
     if (module.controlPath) {
       assert.ok(existsSync(path.resolve(REPO_ROOT, module.controlPath)), `control path does not exist for ${id}`);
     }
+    if (module.submitPath) {
+      assert.ok(existsSync(path.resolve(REPO_ROOT, module.submitPath)), `submit path does not exist for ${id}`);
+    }
   }
   assert.equal(byId.get("attention-guard").activation, "manual-unverified");
   assert.match(byId.get("attention-guard").status, /manual browser smoke test pending/);

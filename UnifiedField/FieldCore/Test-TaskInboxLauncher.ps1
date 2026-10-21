@@ -23,21 +23,19 @@ try {
     $health = Invoke-RestMethod -Uri ($start.url + '/health') -TimeoutSec 3
     if ($health.ok -ne $true -or $health.host -ne '127.0.0.1') { throw 'Health endpoint did not report loopback service.' }
 
-    $task = [ordered]@{
-        schema = 'heavenzfire.shared-task.v1'
-        taskId = 'launcher-smoke-task'
-        source = 'launcher-smoke-test'
-        goal = 'Verify task inbox persistence; do not execute this task.'
-        status = 'proposed'
-        approvalState = 'pending'
-        evidence = @()
-        createdAt = (Get-Date).ToUniversalTime().ToString('o')
-        updatedAt = (Get-Date).ToUniversalTime().ToString('o')
-        metadata = @{}
+    $submitted = & $Launcher -Action Submit -Port $Port -StateRoot $StateRoot -TaskId 'launcher-smoke-task' -Source 'launcher-smoke-test' -Goal 'Verify task inbox persistence; do not execute this task.' -AsJson | ConvertFrom-Json
+    if ($submitted.status -ne 'PROPOSAL_SUBMITTED' -or $submitted.approvalState -ne 'pending' -or $submitted.executionStarted -ne $false) {
+        throw ('Proposal submission returned unexpected state: ' + ($submitted | ConvertTo-Json -Compress))
     }
-    $body = @{ taskRecord = $task } | ConvertTo-Json -Depth 8
-    $posted = Invoke-RestMethod -Method Post -Uri ($start.url + '/api/tasks') -ContentType 'application/json' -Body $body -TimeoutSec 3
-    if ($posted.ok -ne $true -or $posted.status -ne 'proposed') { throw 'Task inbox did not accept a pending proposal.' }
+    Write-Host 'PASS: submission CLI creates a proposed/pending record without execution.'
+
+    $badSubmissionRejected = $false
+    try {
+        & $Launcher -Action Submit -Port $Port -StateRoot $StateRoot -TaskId '..\\outside' -Source 'launcher-smoke-test' -Goal 'This must be rejected.' -AsJson | Out-Null
+    } catch {
+        if ($_.Exception.Message -match 'TaskId must contain only') { $badSubmissionRejected = $true } else { throw }
+    }
+    if (-not $badSubmissionRejected) { throw 'Path-like task ID was not rejected by the submission CLI.' }
 
     $review = & $Launcher -Action Review -Port $Port -StateRoot $StateRoot -AsJson | ConvertFrom-Json
     if ($review.readOnly -ne $true -or $review.returned -ne 1 -or $review.tasks[0].taskId -ne 'launcher-smoke-task') {
