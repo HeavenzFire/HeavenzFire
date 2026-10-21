@@ -84,18 +84,14 @@ function evaluate(input) {
   );
 
   const uniqueIds = new Set(usable.map(v => v.id.trim()));
-  if (uniqueIds.size < REQUIRED_VERIFIERS) {
-    const rejected = verifiers.some(v => v && v.decision === -1);
-    if (rejected) {
-      return result(-1, 'VERIFIER_REJECTED', ['A verifier rejected the proposal; resolve the challenge before approval.'], input);
-    }
-    return result(0, 'VERIFICATION_INSUFFICIENT',
-      ['Fewer than two unique verifier records satisfy the evidence and independence contract.'], input);
-  }
-
   if (verifiers.some(v => v && v.decision === -1)) {
     return result(0, 'VERIFIER_DISAGREEMENT',
       ['Verifier disagreement requires a recorded challenge and discriminating test.'], input);
+  }
+
+  if (uniqueIds.size < REQUIRED_VERIFIERS) {
+    return result(0, 'VERIFICATION_INSUFFICIENT',
+      ['Fewer than two unique verifier records satisfy the evidence and independence contract.'], input);
   }
 
   return result(1, 'ALL_GATES_PASSED',
