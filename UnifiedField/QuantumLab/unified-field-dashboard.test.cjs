@@ -44,7 +44,8 @@ test('worker artifacts publish metadata-only review tasks with idempotency and b
   assert.match(publisher, /parsed\.protocol\s*!==\s*'http:'/);
   assert.match(publisher, /Authorization.*Bearer /);
   assert.ok(publisher.includes("idempotency_key: 'local-worker-result-'"));
-  assert.ok(publisher.includes("scope: ['local-artifact-review', 'independent-verification']"));
+  assert.ok(publisher.includes("'local-artifact-review'"));
+  assert.ok(publisher.includes("'local-model-failure-triage'"));
   assert.match(publisher, /Independently review the untrusted local model draft/);
   assert.ok(server.includes('latestWorkerResults(Date.parse(startedAt'));
   assert.doesNotMatch(publisher, /task\.command\s*=|task\.shell\s*=|task\.script\s*=/);
