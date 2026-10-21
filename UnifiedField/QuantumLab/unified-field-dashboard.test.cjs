@@ -27,6 +27,7 @@ test('dashboard exposes model batch control and renders status from overview', (
   assert.match(server, /\/api\/forge\/validate/);
   assert.match(server, /\/api\/forge\/plan/);
   assert.match(server, /buildEvaluationMatrix\(FORGE_AXES/);
+  assert.ok(server.indexOf("require('./worker-forge.cjs')") < server.indexOf('const FORGE_AXES='), 'Worker Forge must load before its constants are referenced');
   assert.match(server, /Cross-origin request denied/);
   assert.match(dashboard, /id="runModelWorker"/);
   assert.match(dashboard, /fetch\('\/api\/worker\/run'/);
