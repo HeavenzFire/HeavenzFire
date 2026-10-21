@@ -104,6 +104,20 @@ function createTaskInboxServer({ inboxPath = DEFAULT_INBOX_PATH, port = DEFAULT_
         records.set(task.taskId, task);
         return sendJson(res, 201, { ok: true, duplicate: false, taskId: task.taskId, status: 'proposed' });
       }
+      if (req.method === 'GET' && url.pathname === '/api/tasks') {
+        const rawLimit = url.searchParams.get('limit');
+        const limit = rawLimit === null ? 50 : Number(rawLimit);
+        if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
+          return sendJson(res, 400, { ok: false, error: 'limit_must_be_integer_1_to_100' });
+        }
+        const tasks = Array.from(records.values()).slice(-limit).reverse();
+        return sendJson(res, 200, {
+          ok: true,
+          total: records.size,
+          returned: tasks.length,
+          tasks
+        });
+      }
       if (req.method === 'GET' && url.pathname.startsWith('/api/tasks/')) {
         const taskId = decodeURIComponent(url.pathname.slice('/api/tasks/'.length));
         const task = records.get(taskId);
