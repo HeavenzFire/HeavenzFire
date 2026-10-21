@@ -78,6 +78,12 @@ function planReplay(tasks, currentCommitSha, mode) {
     if (task.status === 'CONFLICT' || task.status === 'FAILED') {
       return { task_id: task.task_id, action: 'HOLD', reason: task.status };
     }
+    if (task.status !== 'QUEUED' && task.status !== 'BLOCKED') {
+      return { task_id: task.task_id, action: 'HOLD', reason: 'UNSUPPORTED_TASK_STATE' };
+    }
+    if (typeof currentCommitSha !== 'string' || !currentCommitSha.trim()) {
+      return { task_id: task.task_id, action: 'HOLD', reason: 'CURRENT_REVISION_UNAVAILABLE' };
+    }
     if (task.target_commit_sha && task.target_commit_sha !== currentCommitSha) {
       return { task_id: task.task_id, action: 'CONFLICT', reason: 'TARGET_COMMIT_CHANGED' };
     }
