@@ -47,7 +47,7 @@ test('state transitions require RUNNING before DONE', () => {
   try {
     const q = new OfflineTaskJournal(f.file);
     q.enqueue(task());
-    assert.throws(() => q.setState('task-1', 'DONE'), /must be RUNNING/);
+    assert.throws(() => q.setState('task-1', 'DONE'), /cannot transition/);
     q.setState('task-1', 'RUNNING', { attempts: 1 });
     assert.equal(q.setState('task-1', 'DONE').status, 'DONE');
     assert.equal(q.evaluateReplay('task-1', 'abc123').action, 'SKIP_ALREADY_DONE');
