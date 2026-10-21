@@ -36,17 +36,17 @@ test('Digital Brain exposes bounded loopback-only vision proxy endpoints', () =>
 test('Digital Brain proxies movement and observations to the actual Avatar Body service', () => {
   const server = read('HeavenzFire-DigitalBrain-Server.cjs');
   const html = read('HeavenzFire-DigitalBrain.html');
-  assert.match(server, /\/api\/body\/state/);
-  assert.match(server, /\/api\/body\/move/);
-  assert.match(server, /\/api\/body\/perception/);
-  assert.match(server, /req\.url\.replace\(\/\^\\\/api\\\/body\/,'\/api'\)/);
+  assert.match(server, /state\|events\|observations/);
+  assert.match(server, /move\|perception\|hardware-status/);
+  assert.match(server, /req\.url\.replace/);
+  assert.match(server, /via:'digital-brain-body-proxy'/);
   assert.match(html, /fetch\('\/api\/body\/move'/);
   assert.match(html, /fetch\('\/api\/body\/perception'/);
   assert.match(html, /refreshBodyState/);
   assert.match(html, /syncBody\(\)/);
 });
 
-test('Unified Field dashboard embeds the Digital Brain and surfaces perception health', () => {
+test('Unified Field dashboard embeds the Digital Brain and starts Avatar Body', () => {
   const html = read('UnifiedField-Dashboard.html');
   const server = read('UnifiedField-Dashboard-Server.cjs');
   const launcher = read('Start-UnifiedFieldDashboard.ps1');
