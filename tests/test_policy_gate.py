@@ -66,6 +66,11 @@ class ConsentPolicyGateTests(unittest.TestCase):
         policy["grants"].append(dict(policy["grants"][0]))
         self.assertTrue(any("duplicate grant id" in error for error in validate_policy(policy)))
 
+    def test_unhashable_status_type_fails_closed(self):
+        policy = sample_policy()
+        policy["grants"][0]["status"] = ["active"]
+        self.assertEqual(authorize(policy, sample_request())["reason"], "invalid_policy")
+
     def test_malformed_request_denies(self):
         self.assertEqual(authorize(sample_policy(), {"subject": "local-user"})["reason"], "invalid_request")
 
