@@ -71,9 +71,18 @@ class OfflineTaskJournal {
     const r = readJournal(this.file);
     return { tasks: materialize(r.events), corruptLines: r.corruptLines, eventCount: r.events.length };
   }
+
+  _assertWritable() {
+    const snapshot = this.inspect();
+    if (snapshot.corruptLines.length) {
+      const lines = snapshot.corruptLines.map(x => x.line).join(', ');
+      throw new Error('journal contains corrupt line(s) ' + lines + '; writes are blocked until the journal is repaired');
+    }
+    return snapshot;
+  }
   enqueue(task) {
     validateTask(task);
-    const snapshot = this.inspect();
+    const snapshot = this._assertWritable();
     const existing = snapshot.tasks.find(t => t.idempotency_key === task.idempotency_key);
     if (existing) return { accepted: false, duplicate: true, task: existing, corruptLines: snapshot.corruptLines };
     if (snapshot.tasks.some(t => t.task_id === task.task_id)) return { accepted: false, duplicate: true, task: snapshot.tasks.find(t => t.task_id === task.task_id), corruptLines: snapshot.corruptLines };
@@ -83,7 +92,8 @@ class OfflineTaskJournal {
   }
   setState(taskId, status, details = {}) {
     if (!STATES.has(status)) throw new TypeError('unsupported task state');
-    const t = this.inspect().tasks.find(x => x.task_id === taskId);
+    const snapshot = this._assertWritable();
+    const t = snapshot.tasks.find(x => x.task_id === taskId);
     if (!t) throw new Error('unknown task_id');
     if (status === 'RUNNING' && t.status !== 'QUEUED' && t.status !== 'BLOCKED') throw new Error('task cannot enter RUNNING from ' + t.status);
     if (status === 'DONE' && t.status !== 'RUNNING') throw new Error('task must be RUNNING before DONE');
