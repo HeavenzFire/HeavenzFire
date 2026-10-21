@@ -11,6 +11,12 @@ The root `Enter-UnifiedField.ps1` remains the diagnostic entrypoint. `Invoke-Tas
 # Check status
 .\UnifiedField\FieldCore\Invoke-TaskInbox.ps1 -Action Status
 
+# List pending proposals (read-only; no approval or execution)
+.\UnifiedField\FieldCore\Review-TaskInbox.ps1
+
+# Get machine-readable review data
+.\UnifiedField\FieldCore\Review-TaskInbox.ps1 -AsJson
+
 # Stop only a process owned by the launcher
 .\UnifiedField\FieldCore\Invoke-TaskInbox.ps1 -Action Stop
 
