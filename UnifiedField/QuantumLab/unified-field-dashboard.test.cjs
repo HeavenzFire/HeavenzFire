@@ -49,7 +49,7 @@ test('worker script never executes generated code or accepts arbitrary task comm
 });
 
 test('dashboard embedded JavaScript parses successfully', () => {
-  const match = dashboard.match(/<script>([\\s\\S]*?)<\\/script>/i);
+  const match = dashboard.match(/<script>([\s\S]*?)<\/script>/i);
   assert.ok(match, 'dashboard script element must exist');
   assert.doesNotThrow(() => new vm.Script(match[1]), 'dashboard script must be syntactically valid');
 });
