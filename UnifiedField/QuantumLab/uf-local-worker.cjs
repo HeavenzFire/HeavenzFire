@@ -5,6 +5,7 @@
 const http = require('node:http');
 const crypto = require('node:crypto');
 const { OfflineTaskJournal, MODES } = require('./uf-bridge-journal.cjs');
+const { createScopedExecutor } = require('./uf-scoped-executor.cjs');
 
 const MAX_BODY_BYTES = 16 * 1024;
 function safeEqual(a, b) {
@@ -47,6 +48,7 @@ function createWorkerServer(options = {}) {
   const journal = options.journal || new OfflineTaskJournal(options.journalPath);
   const token = options.token || process.env.HEAVENZFIRE_BRIDGE_TOKEN || '';
   let mode = 'OFFLINE';
+  const executor = options.executor || createScopedExecutor({ workspaceRoot: options.workspaceRoot || process.env.HEAVENZFIRE_WORKSPACE_ROOT });
   const server = http.createServer(async (req, res) => {
     try {
       if (req.headers.host && !/^127\.0\.0\.1(?::\d+)?$/.test(req.headers.host)) {
@@ -64,8 +66,20 @@ function createWorkerServer(options = {}) {
           writable: Boolean(token) && snapshot.corruptLines.length === 0,
           journal: { tasks: snapshot.tasks.length, corruptLines: snapshot.corruptLines.length, eventCount: snapshot.eventCount },
           capabilities: ['task-metadata-journal', 'idempotency', 'replay-eligibility-check'],
-          limitations: ['no-shell-execution', 'no-network-sync', 'no-automatic-replay', 'no-live-mesh']
+          limitations: ['no-arbitrary-shell', 'no-network-sync', 'no-automatic-replay', 'no-live-mesh'],
+          execution: executor.capabilities()
         });
+      }
+      if (req.method === 'POST' && url.pathname === '/api/execute') {
+        if (!token) return send(res, 503, { ok: false, error: 'execution_token_not_configured' });
+        const authorization = req.headers.authorization || '';
+        if (!authorization.startsWith('Bearer ') || !safeEqual(authorization.slice(7), token)) return send(res, 401, { ok: false, error: 'unauthorized' });
+        const body = await readJson(req);
+        if (body.approved !== true) return send(res, 403, { ok: false, error: 'explicit_approval_required' });
+        const requestId = typeof body.request_id === 'string' && /^[A-Za-z0-9._:-]{8,100}$/.test(body.request_id) ? body.request_id : '';
+        if (!requestId) return send(res, 400, { ok: false, error: 'valid_request_id_required' });
+        const result = await executor.execute(body.action, body.input || {});
+        return send(res, result.ok ? 200 : 400, { ok: result.ok, request_id: requestId, action: body.action, result });
       }
       if (req.method === 'GET' && url.pathname === '/api/tasks') {
         if (!token) return send(res, 503, { ok: false, error: 'read_token_not_configured' });
