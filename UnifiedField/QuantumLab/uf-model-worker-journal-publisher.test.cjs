@@ -113,7 +113,8 @@ test('publisher integrates with the real loopback journal and duplicate publicat
     assert.equal(first.state, 'published');
     assert.equal(first.published, 2);
     assert.equal(second.state, 'published');
-    assert.equal(second.published, 2);
+    assert.equal(second.published, 0);
+    assert.equal(second.duplicate, 2);
 
     const response = await fetch(baseUrl + '/api/tasks', {
       headers: { Authorization: 'Bearer ' + token, Accept: 'application/json' }
