@@ -59,7 +59,11 @@ if ([string]::IsNullOrWhiteSpace($TaskId)) {
     $resolvedTaskId = [guid]::NewGuid().ToString('N')
 } else {
     $candidateTaskId = $TaskId.Trim()
-    if ($candidateTaskId.Length -gt 128 -or $candidateTaskId -notmatch '^[A-Za-z0-9_-]{1,128}}
+    if ($candidateTaskId.Length -gt 128 -or -not [regex]::IsMatch($candidateTaskId, '^[A-Za-z0-9_-]+$')) {
+        throw 'TaskId must contain only letters, digits, underscores, or hyphens (maximum 128 characters).'
+    }
+    $resolvedTaskId = $candidateTaskId
+}
 $started = (Get-Date).ToUniversalTime().ToString('o')
 $systemPrompt = @'
 You are a collaborating engineering reviewer for the HeavenzFire UnifiedField project.
