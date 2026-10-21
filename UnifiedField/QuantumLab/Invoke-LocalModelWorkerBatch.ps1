@@ -7,7 +7,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $models = @('qwen2.5:0.5b','heavenzfire-runtime:latest','heavenzfire:latest','llama3.2:1b')
 $prompt = @'
-Return one JSON object with keys task, function_name, code, tests. Draft a PowerShell 5.1 function Get-SumSafe that accepts [int[]] InputValues and returns their sum. Include two test cases with input and expected_output. No markdown. Do not claim tests were run.
+Return ONLY valid JSON: no markdown fences and no prose. Use exactly these fields: task, function_name, code, tests. Set task and function_name to Get-SumSafe. The code string must define this PowerShell 5.1 function: function Get-SumSafe { param([int[]]$InputValues) $sum = 0; foreach ($value in $InputValues) { $sum += $value }; return $sum }. The tests array must contain exactly two objects: {"input":[1,2,3],"expected_output":6} and {"input":[-1,-2,-3],"expected_output":-6}. Do not add fields or claim tests were executed.
 '@
 
 function Test-WorkerResponse {
