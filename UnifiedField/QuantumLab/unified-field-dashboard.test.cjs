@@ -72,6 +72,10 @@ test('worker performs static structure and arithmetic checks without evaluating 
 test('worker script never executes generated code or accepts arbitrary task commands', () => {
   assert.doesNotMatch(worker, /Start-Process|cmd\.exe|powershell\.exe\s+-Command/i);
   assert.match(worker, /Do not add fields or claim tests were executed/);
+  assert.match(worker, /MaxRepairAttempts = 1/);
+  assert.match(worker, /repair_attempted = \$true/);
+  assert.match(worker, /repair_validation = Test-WorkerResponse/);
+  assert.match(worker, /attempt_count = 2/);
   assert.match(worker, /num_predict\s*=\s*220/);
   assert.match(worker, /Return ONLY valid JSON/);
   assert.match(worker, /expected_output/);
