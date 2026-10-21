@@ -58,6 +58,11 @@ class HealthProbeTests(unittest.TestCase):
         }
         self.assertTrue(any("allowed_hosts: expected an array" in e for e in validate_nodes(data)))
 
+    def test_direct_probe_rejects_unallowlisted_external_host(self):
+        result = probe_node({"id": "remote", "health_url": "https://api.example.com/health"})
+        self.assertEqual(result["status"], "DARK")
+        self.assertIn("not allowlisted", result["reason"])
+
     def test_redirect_handler_does_not_follow_redirects(self):
         handler = NoRedirectHandler()
         request = Request("http://127.0.0.1/start")
