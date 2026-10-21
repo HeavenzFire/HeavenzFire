@@ -43,7 +43,7 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:11px;color:var(--muted
 <div><label for="forgeRole" class="detail" style="display:block;margin-bottom:5px">Child worker role</label><input id="forgeRole" value="artifact verifier" maxlength="80" style="width:100%;background:#080f18;color:#e9f0f7;border:1px solid #34516a;border-radius:9px;padding:9px"/></div>
 <div style="grid-column:1/-1"><label for="forgeObjective" class="detail" style="display:block;margin-bottom:5px">Bounded objective (20–500 characters)</label><textarea id="forgeObjective" maxlength="500" style="width:100%;min-height:65px;background:#080f18;color:#e9f0f7;border:1px solid #34516a;border-radius:9px;padding:9px">Verify scoped local artifacts, challenge unsupported claims, and return reproducible findings with evidence references.</textarea></div>
 </div>
-<div class="actions" style="margin:12px 0"><button id="generateChildBlueprint">Generate child blueprint</button><button id="validateWorkerBlueprint">Validate worker blueprint</button><button id="runAdversarialSmoke">Run 10-profile adversarial smoke (20 calls)</button>Validate worker blueprint</button><button id="buildWorkerEvalPlan">Build adversarial tensor</button><span class="pill" id="forgeStatus">FORGE READY · NOT YET RUN</span></div>
+<div class="actions" style="margin:12px 0"><button id="generateChildBlueprint">Generate child blueprint</button><button id="validateWorkerBlueprint">Validate worker blueprint</button><button id="runAdversarialSmoke">Run 10-profile adversarial smoke (20 calls)</button><button id="registerWorkerCandidate">Register candidate</button>Validate worker blueprint</button><button id="buildWorkerEvalPlan">Build adversarial tensor</button><span class="pill" id="forgeStatus">FORGE READY · NOT YET RUN</span></div>
 <label for="workerBlueprint" class="detail" style="display:block;margin:10px 0 6px">Candidate blueprint JSON</label>
 <textarea id="workerBlueprint" spellcheck="false" style="width:100%;min-height:205px;background:#080f18;color:#e9f0f7;border:1px solid #34516a;border-radius:9px;padding:12px;font:12px/1.5 Consolas,monospace">{
   "id": "hf-child-worker-template",
@@ -66,6 +66,7 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:11px;color:var(--muted
 }</textarea>
 <div class="detail" id="forgeBlueprintResult" style="margin-top:9px">Candidate JSON stays in this browser page until you validate it; validation does not execute it.</div>
 <div class="task" style="margin-top:12px"><div class="taskhead"><strong>Multidimensional evaluation plan</strong><span class="pill" id="forgePlanState">NOT BUILT</span></div><div class="detail" id="forgePlanMeta">Six axes: task type × risk × evidence × tool scope × adversarial profile × failure mode.</div><div id="forgeProfiles" class="actions" style="margin-top:9px"></div></div>
+<div class="task" style="margin-top:12px"><div class="taskhead"><strong>Persistent worker registry</strong><span class="pill" id="workerRegistryCount">0 candidates</span><button id="refreshWorkerRegistry">Refresh registry</button></div><div class="detail">Saved blueprints remain candidates until the full qualification matrix and independent review pass. A smoke pass is not promotion.</div><div id="workerRegistryList" class="service-list" style="margin-top:9px">Loading candidate registry…</div></div>
 </section>
 <section class="card span5"><h2>Agent lanes · coordination status</h2><div class="roles">
 <div class="role"><h3>01 · Architect</h3><p>Map dependencies, interfaces, acceptance criteria, and preserve existing artifacts.</p><div class="state">WORKFLOW ROLE · NOT A SEPARATE MODEL</div></div>
@@ -80,7 +81,7 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:11px;color:var(--muted
 <section class="card span12"><h2>Evidence and limits</h2><div class="detail">This dashboard polls loopback services, reads local task/guardian state, and can launch one fixed local model batch. Generated code is not executed automatically. Model availability or text generation does not prove code correctness; outputs require independent tests. Workflow lanes are not separate model instances. The hub binds only to 127.0.0.1.</div><div class="foot"><span>HeavenzFire · A Light In The Dark</span><span id="version">Dashboard build: local model-worker panel v2</span><span>Refresh interval: 8 seconds</span></div></section>
 </div></main>
 <script>
-const $=id=>document.getElementById(id);let lastOverview=null,graphData=null;
+const $=id=>document.getElementById(id);let lastOverview=null,graphData=null,lastBlueprintSource='manual';
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function pill(state){const s=String(state||'unknown').toLowerCase();const cls=/healthy|ok|active|completed|success/.test(s)?'ok':/critical|failed|offline|unreachable|error/.test(s)?'bad':'warn';return '<span class="pill '+cls+'">'+esc(state||'unknown')+'</span>'}
 function serviceRow(s){return '<div class="service"><div><strong>'+esc(s.name)+'</strong><small>'+esc(s.url||s.id||'')+(s.latencyMs!=null?' · '+s.latencyMs+' ms':'')+'</small></div>'+pill(s.state||s.status|| (s.ok?'healthy':'unknown'))+'</div>'}
@@ -138,6 +139,7 @@ async function generateChildBlueprint(){
   const r=await fetch('/api/forge/draft',{method:'POST',headers:{'Accept':'application/json','Content-Type':'application/json'},body:JSON.stringify(body)});
   const x=await r.json();if(!r.ok||!x.ok)throw Error(x.error||('HTTP '+r.status));
   if(x.blueprint)$('workerBlueprint').value=JSON.stringify(x.blueprint,null,2);
+  lastBlueprintSource=x.source||'manual';
   $('forgeStatus').textContent=x.valid?(x.source==='deterministic_template_fallback'?'CHILD TEMPLATE GENERATED · MODEL DRAFT REJECTED':'CHILD BLUEPRINT GENERATED · VALIDATED'):'CHILD DRAFT REJECTED · NOT PROMOTED';
   $('forgeBlueprintResult').textContent=x.valid?(x.source==='deterministic_template_fallback'?('Host-generated deterministic fallback · model assist '+(x.model_assist&&x.model_assist.status||'unknown')+' · '+x.attempts+' attempt(s) · SHA-256 '+x.blueprint_hash+' · no code executed'):('Locally generated candidate · '+x.attempts+' attempt(s) · SHA-256 '+x.blueprint_hash+' · no code executed')):('Draft did not pass validation · '+(x.errors||[]).join(', '));
  }catch(e){$('forgeStatus').textContent='DRAFT ERROR';$('forgeBlueprintResult').textContent=String(e.message||e)}
@@ -188,6 +190,30 @@ async function runAdversarialSmoke(){
  }
 }
 $('runAdversarialSmoke').addEventListener('click',runAdversarialSmoke);
+async function loadWorkerRegistry(){
+ try{
+  const r=await fetch('/api/forge/registry',{cache:'no-store'});const x=await r.json();if(!r.ok||!x.ok)throw Error(x.error||('HTTP '+r.status));
+  $('workerRegistryCount').textContent=x.count+' candidate'+(x.count===1?'':'s');
+  $('workerRegistryList').innerHTML=x.workers.length?x.workers.map(w=>{
+   const smoke=w.last_smoke?(' · last smoke '+w.last_smoke.state+' '+w.last_smoke.pass_count+'/'+w.last_smoke.total_cases):' · smoke not run';
+   return '<div class="task"><div class="taskhead"><strong>'+esc(w.worker_id)+'</strong>'+pill(w.state)+'</div><div class="detail">'+esc(w.role)+' · v'+esc(w.version)+' · source '+esc(w.source)+' · NOT QUALIFIED'+esc(smoke)+'</div><div class="detail">SHA-256 '+esc(w.blueprint_hash)+'</div></div>'
+  }).join(''):'<div class="detail">No registered worker candidates yet. Generate or validate a blueprint, then register it here.</div>';
+ }catch(e){$('workerRegistryCount').textContent='REGISTRY ERROR';$('workerRegistryList').textContent=String(e.message||e)}
+}
+async function registerWorkerCandidate(){
+ const button=$('registerWorkerCandidate');button.disabled=true;
+ try{
+  const blueprint=JSON.parse($('workerBlueprint').value);
+  const r=await fetch('/api/forge/register',{method:'POST',headers:{'Accept':'application/json','Content-Type':'application/json'},body:JSON.stringify({blueprint,source:lastBlueprintSource})});
+  const x=await r.json();if(!r.ok||!x.ok)throw Error(x.error||('HTTP '+r.status));
+  $('forgeStatus').textContent=x.duplicate?'CANDIDATE ALREADY REGISTERED':'CANDIDATE REGISTERED · NOT QUALIFIED';
+  $('forgeBlueprintResult').textContent='Saved '+x.worker.worker_id+' · source '+x.worker.source+' · state candidate · full qualification and independent review still required.';
+  await loadWorkerRegistry()
+ }catch(e){$('forgeStatus').textContent='REGISTRY ERROR';$('forgeBlueprintResult').textContent=String(e.message||e)}
+ finally{button.disabled=false}
+}
+$('registerWorkerCandidate').addEventListener('click',registerWorkerCandidate);
+$('refreshWorkerRegistry').addEventListener('click',loadWorkerRegistry);
 async function refresh(){
  $('overallText').textContent='Refreshing local state…';
  try{
@@ -210,5 +236,5 @@ async function refresh(){
 async function github(){
  try{const r=await fetch('https://api.github.com/repos/HeavenzFire/HeavenzFire',{headers:{'Accept':'application/vnd.github+json'}});if(!r.ok)throw Error('GitHub HTTP '+r.status);const x=await r.json();$('repoStars').textContent=x.stargazers_count??'—';$('githubInfo').innerHTML=[['Default branch',x.default_branch],['Open issues',x.open_issues_count],['Forks',x.forks_count],['Updated',x.updated_at?new Date(x.updated_at).toLocaleDateString():'—'],['Visibility',x.private?'private':'public']].map(([k,v])=>'<div class="service"><strong>'+esc(k)+'</strong><span class="detail">'+esc(v)+'</span></div>').join('');}catch(e){$('githubInfo').innerHTML='<div class="detail">Public GitHub metadata unavailable: '+esc(e.message)+'</div>'}}
 function drawGraph(s){const c=$('graph'),ctx=c.getContext('2d'),w=c.width,h=c.height;ctx.clearRect(0,0,w,h);ctx.strokeStyle='#1e3447';ctx.lineWidth=1;for(let i=0;i<6;i++){ctx.beginPath();ctx.ellipse(w/2,h/2,70+i*54,25+i*24,i*.18,0,Math.PI*2);ctx.stroke()}if(!s||!s.nodes){ctx.fillStyle='#91a3b8';ctx.fillText('Waiting for Digital Brain graph…',24,30);return}const nodes=s.nodes,edges=s.edges||[],p={};nodes.forEach((n,i)=>{const a=i*2.39996,rad=35+((i*37)%120);p[n.id]={x:w/2+Math.cos(a)*rad*2.1,y:h/2+Math.sin(a)*rad*.9,n}});ctx.globalAlpha=.23;ctx.strokeStyle='#64d9ed';edges.forEach(e=>{const a=p[e.a],b=p[e.b];if(a&&b){ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}});ctx.globalAlpha=1;nodes.forEach(n=>{const q=p[n.id],v=n.activation||0;ctx.beginPath();ctx.arc(q.x,q.y,2.5+v*5,0,Math.PI*2);ctx.fillStyle=v>.65?'#65e0a0':v>.35?'#64d9ed':'#637b94';ctx.fill()});ctx.fillStyle='#91a3b8';ctx.font='12px Segoe UI';ctx.fillText(nodes.length+' nodes · '+edges.length+' connections · '+(s.topology||'').slice(0,70),12,h-12)}
-$('refresh').addEventListener('click',()=>{refresh();github()});refresh();github();setInterval(refresh,8000);setInterval(github,60000);
+$('refresh').addEventListener('click',()=>{refresh();github()});refresh();github();setInterval(refresh,8000);setInterval(github,60000);loadWorkerRegistry();
 </script></body></html>
