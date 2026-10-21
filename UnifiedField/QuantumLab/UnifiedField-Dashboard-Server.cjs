@@ -7,6 +7,7 @@ const {createBlueprint,validateBlueprint,buildEvaluationMatrix,REQUIRED_ADVERSAR
 const {latestWorkerResults}=require('./worker-result-store.cjs');
 const {draftWorkerBlueprint}=require('./worker-forge-drafter.cjs');
 const {runAdversarialSmokeSuite}=require('./worker-forge-adversarial.cjs');
+const {createWorkerRegistry}=require('./worker-registry.cjs');
 const FORGE_AXES={
  task_type:['build','review'],
  risk_class:['LOW','MEDIUM','HIGH'],
@@ -20,6 +21,7 @@ const DASH=path.join(ROOT,'UnifiedField','QuantumLab','UnifiedField-Dashboard.ht
 const TASKDIR=path.join(ROOT,'144A','tasks');
 const GUARDIAN=path.join(ROOT,'144A','guardian-state.json');
 const LOCALAI=path.join(ROOT,'UnifiedField','QuantumLab','LocalAI');
+const workerRegistry=createWorkerRegistry(path.join(LOCALAI,'worker-registry.json'));
 const WORKER_SCRIPT=path.join(ROOT,'UnifiedField','QuantumLab','Invoke-LocalModelWorkerBatch.ps1');
 let workerRun={running:false,pid:null,startedAt:null,finishedAt:null,exitCode:null,error:null};
 let forgeEvaluationRun={running:false,startedAt:null,finishedAt:null,error:null,result:null,artifact_file:null};
@@ -84,6 +86,25 @@ const server=http.createServer(async(req,res)=>{
    return res.end(JSON.stringify({ok:false,error:String(err.message||err)}));
   }
  }
+ if(req.method==='GET'&&req.url==='/api/forge/registry'){
+  try{res.writeHead(200,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:true,...workerRegistry.list()}));}
+  catch(err){res.writeHead(500,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:String(err.message||err)}));}
+ }
+ if(req.method==='POST'&&req.url==='/api/forge/register'){
+  const origin=req.headers.origin||'';
+  if(origin&&origin!=='http://127.0.0.1:8800'&&origin!=='http://localhost:8800'){res.writeHead(403,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'Cross-origin request denied'}));}
+  let raw='';
+  try{
+   for await(const chunk of req){raw+=chunk.toString('utf8');if(Buffer.byteLength(raw)>32768){res.writeHead(413,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'Registry request exceeds 32 KiB'}));}}
+   const body=JSON.parse(raw||'{}');
+   const result=workerRegistry.register(body.blueprint,body.source||'manual');
+   res.writeHead(result.ok?200:400,{'Content-Type':'application/json'});
+   return res.end(JSON.stringify(result));
+  }catch(err){
+   res.writeHead(400,{'Content-Type':'application/json'});
+   return res.end(JSON.stringify({ok:false,error:String(err.message||err)}));
+  }
+ }
  if(req.method==='POST'&&req.url==='/api/forge/evaluate'){
   const origin=req.headers.origin||'';
   if(origin&&origin!=='http://127.0.0.1:8800'&&origin!=='http://localhost:8800'){res.writeHead(403,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'Cross-origin request denied'}));}
@@ -96,14 +117,15 @@ const server=http.createServer(async(req,res)=>{
    if(!validation.ok){res.writeHead(400,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'blueprint_invalid',errors:validation.errors}));}
    if(!WORKER_MODEL_ALLOWLIST.includes(body.model)){res.writeHead(400,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'model_not_allowlisted'}));}
    const startedAt=new Date().toISOString();
-   forgeEvaluationRun={running:true,startedAt,finishedAt:null,error:null,result:null,artifact_file:null,model:body.model,worker_id:body.blueprint.id};
+   forgeEvaluationRun={running:true,startedAt,finishedAt:null,error:null,result:null,artifact_file:null,model:body.model,worker_id:body.blueprint.id,blueprint_hash:createBlueprint(body.blueprint).blueprint_hash};
    setImmediate(async()=>{
     try{
      const result=await runAdversarialSmokeSuite({model:body.model,blueprint:body.blueprint},{timeoutMs:30000});
      const file='worker-forge-eval-'+new Date().toISOString().replace(/[:.]/g,'-')+'.json';
      fs.mkdirSync(LOCALAI,{recursive:true});
      fs.writeFileSync(path.join(LOCALAI,file),JSON.stringify(result,null,2),'utf8');
-     forgeEvaluationRun={...forgeEvaluationRun,running:false,finishedAt:new Date().toISOString(),result,artifact_file:file};
+     const registryUpdate=workerRegistry.recordSmoke(result.blueprint_hash,result,file);
+     forgeEvaluationRun={...forgeEvaluationRun,running:false,finishedAt:new Date().toISOString(),result,artifact_file:file,registryUpdate:{ok:registryUpdate.ok,error:registryUpdate.error||null}};
     }catch(err){
      forgeEvaluationRun={...forgeEvaluationRun,running:false,finishedAt:new Date().toISOString(),error:String(err&&err.message||err)};
     }
