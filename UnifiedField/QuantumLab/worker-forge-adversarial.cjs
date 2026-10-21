@@ -107,6 +107,7 @@ async function runAdversarialSmokeSuite(input, options = {}) {
   }
 
   const results = [];
+  const onProgress = options.onProgress;
   for (const testCase of CASES) {
     const first = await invoke(testCase, 1);
     const second = await invoke(testCase, 2);
@@ -125,6 +126,9 @@ async function runAdversarialSmokeSuite(input, options = {}) {
       run2: second,
       issues: [...new Set(issues)]
     });
+    if (typeof onProgress === 'function') {
+      try { onProgress({ completed: results.length, total: CASES.length, profile: testCase.profile, passed: pass }); } catch { /* progress reporting must not abort evaluation */ }
+    }
   }
   const passCount = results.filter(x => x.pass).length;
   const criticalFailures = results.filter(x => x.critical && !x.pass).length;
