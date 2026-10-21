@@ -26,6 +26,9 @@ const workerRegistry=createWorkerRegistry(path.join(LOCALAI,'worker-registry.jso
 const WORKER_SCRIPT=path.join(ROOT,'UnifiedField','QuantumLab','Invoke-LocalModelWorkerBatch.ps1');
 let workerRun={running:false,pid:null,startedAt:null,finishedAt:null,exitCode:null,error:null};
 let forgeEvaluationRun={running:false,startedAt:null,finishedAt:null,error:null,result:null,artifact_file:null};
+let forgeDraftRunning=false;
+function modelWorkloadBusy(){return workerRun.running||forgeEvaluationRun.running||forgeDraftRunning;}
+function modelWorkloadAdmission(){return require('node:os').freemem()>=1024*1024*1024;}
 const endpoints=[
  {id:'browserbridge',name:'144A BrowserBridge',url:'http://127.0.0.1:18795/health'},
  {id:'ollama',name:'Local model runtime',url:'http://127.0.0.1:11434/api/tags'},
@@ -75,6 +78,9 @@ const server=http.createServer(async(req,res)=>{
  if(req.method==='POST'&&req.url==='/api/forge/draft'){
   const origin=req.headers.origin||'';
   if(origin&&origin!=='http://127.0.0.1:8800'&&origin!=='http://localhost:8800'){res.writeHead(403,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'Cross-origin request denied'}));}
+  if(modelWorkloadBusy()){res.writeHead(409,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'another local model workload is active'}));}
+  if(!modelWorkloadAdmission()){res.writeHead(503,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'model drafting paused: available RAM is below 1 GiB'}));}
+  forgeDraftRunning=true;
   let raw='';
   try{
    for await(const chunk of req){raw+=chunk.toString('utf8');if(Buffer.byteLength(raw)>4096){res.writeHead(413,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'Blueprint draft request exceeds 4 KiB'}));}}
@@ -85,7 +91,7 @@ const server=http.createServer(async(req,res)=>{
   }catch(err){
    res.writeHead(400,{'Content-Type':'application/json'});
    return res.end(JSON.stringify({ok:false,error:String(err.message||err)}));
-  }
+  }finally{forgeDraftRunning=false;}
  }
  if(req.method==='GET'&&req.url==='/api/forge/registry'){
   try{res.writeHead(200,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:true,...workerRegistry.list()}));}
@@ -166,7 +172,8 @@ const server=http.createServer(async(req,res)=>{
  if(req.method==='POST'&&req.url==='/api/forge/evaluate'){
   const origin=req.headers.origin||'';
   if(origin&&origin!=='http://127.0.0.1:8800'&&origin!=='http://localhost:8800'){res.writeHead(403,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'Cross-origin request denied'}));}
-  if(forgeEvaluationRun.running){res.writeHead(409,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'Adversarial evaluation already running'}));}
+  if(modelWorkloadBusy()){res.writeHead(409,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'another local model workload is active'}));}
+  if(!modelWorkloadAdmission()){res.writeHead(503,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'adversarial evaluation paused: available RAM is below 1 GiB'}));}
   let raw='';
   try{
    for await(const chunk of req){raw+=chunk.toString('utf8');if(Buffer.byteLength(raw)>32768){res.writeHead(413,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'Evaluation request exceeds 32 KiB'}));}}
@@ -175,10 +182,10 @@ const server=http.createServer(async(req,res)=>{
    if(!validation.ok){res.writeHead(400,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'blueprint_invalid',errors:validation.errors}));}
    if(!WORKER_MODEL_ALLOWLIST.includes(body.model)){res.writeHead(400,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'model_not_allowlisted'}));}
    const startedAt=new Date().toISOString();
-   forgeEvaluationRun={running:true,startedAt,finishedAt:null,error:null,result:null,artifact_file:null,model:body.model,worker_id:body.blueprint.id,blueprint_hash:createBlueprint(body.blueprint).blueprint_hash};
+   forgeEvaluationRun={running:true,startedAt,finishedAt:null,error:null,result:null,artifact_file:null,model:body.model,worker_id:body.blueprint.id,blueprint_hash:createBlueprint(body.blueprint).blueprint_hash,progress:{completed:0,total:10,profile:null,passed:null}};
    setImmediate(async()=>{
     try{
-     const result=await runAdversarialSmokeSuite({model:body.model,blueprint:body.blueprint},{timeoutMs:30000});
+     const result=await runAdversarialSmokeSuite({model:body.model,blueprint:body.blueprint},{timeoutMs:20000,onProgress:progress=>{forgeEvaluationRun={...forgeEvaluationRun,progress};}});
      const file='worker-forge-eval-'+new Date().toISOString().replace(/[:.]/g,'-')+'.json';
      fs.mkdirSync(LOCALAI,{recursive:true});
      fs.writeFileSync(path.join(LOCALAI,file),JSON.stringify(result,null,2),'utf8');
@@ -211,6 +218,8 @@ const server=http.createServer(async(req,res)=>{
  if(req.method==='POST'&&(req.url==='/api/worker/run'||req.url==='/api/worker/retry')){
   const origin=req.headers.origin||'';
   if(origin&&origin!=='http://127.0.0.1:8800'&&origin!=='http://localhost:8800'){res.writeHead(403,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'Cross-origin request denied'}));}
+  if(modelWorkloadBusy()){res.writeHead(409,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'another local model workload is active'}));}
+  if(!modelWorkloadAdmission()){res.writeHead(503,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'model worker admission paused: available RAM is below 1 GiB'}));}
   const isRetry=req.url==='/api/worker/retry';
   let requestedModels=WORKER_MODEL_ALLOWLIST.slice();
   if(isRetry){
@@ -230,7 +239,7 @@ const server=http.createServer(async(req,res)=>{
     return res.end(JSON.stringify({ok:false,error:'Invalid retry JSON: '+String(err.message||err)}));
    }
   }
-  if(workerRun.running){res.writeHead(409,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'Worker run already active',workerRun}));}
+  if(modelWorkloadBusy()){res.writeHead(409,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'another local model workload is active',workerRun}));}
   if(!fs.existsSync(WORKER_SCRIPT)){res.writeHead(500,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'Worker script missing'}));}
   const powershell=path.join(process.env.SystemRoot||'C:\\Windows','System32','WindowsPowerShell','v1.0','powershell.exe');
   let workerStdout='',workerStderr='',spawnError=null;
