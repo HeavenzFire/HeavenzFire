@@ -13,6 +13,8 @@ const publisher = fs.readFileSync(path.join(root, 'uf-model-worker-journal-publi
 const resultStore = fs.readFileSync(path.join(root, 'worker-result-store.cjs'), 'utf8');
 const validator = fs.readFileSync(path.join(root, 'Test-LocalModelWorkerResponse.ps1'), 'utf8');
 const validatorTests = fs.readFileSync(path.join(root, 'Test-LocalModelWorkerResponse.Tests.ps1'), 'utf8');
+const avatarBody = fs.readFileSync(path.join(root, '..', 'AvatarBody', 'avatar-body.cjs'), 'utf8');
+const avatarServer = fs.readFileSync(path.join(root, '..', 'AvatarBody', 'avatar-body-server.cjs'), 'utf8');
 
 test('dashboard server is loopback-only and exposes a fixed worker action', () => {
   assert.match(server, /const HOST\s*=\s*['"]127\.0\.0\.1['"]/);
@@ -153,4 +155,20 @@ test('dashboard embedded JavaScript parses successfully', () => {
   const match = dashboard.match(/<script>([\s\S]*?)<\/script>/i);
   assert.ok(match, 'dashboard script element must exist');
   assert.doesNotThrow(() => new vm.Script(match[1]), 'dashboard script must be syntactically valid');
+});
+
+test('Avatar Body is surfaced in the Unified Field and movement remains simulated and bounded', () => {
+  assert.match(avatarBody, /physicalActuationEnabled:false|physicalActuationEnabled:false/);
+  assert.match(avatarBody, /movement_step_exceeds_limit/);
+  assert.match(avatarBody, /movement_out_of_bounds/);
+  assert.match(avatarBody, /observation_data_too_large/);
+  assert.match(avatarServer, /const HOST='127\\.0\\.0\\.1'/);
+  assert.match(avatarServer, /\\/api\\/perception/);
+  assert.match(avatarServer, /\\/api\\/move/);
+  assert.match(server, /id:'avatar-body'/);
+  assert.match(server, /avatarBody/);
+  assert.match(dashboard, /id="avatarBodyCard"/);
+  assert.match(dashboard, /renderAvatarBody\\(x\\.avatarBody\\)/);
+  assert.match(dashboard, /sendAvatarMove/);
+  assert.match(dashboard, /physical actuation=false/);
 });
