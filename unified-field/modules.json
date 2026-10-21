@@ -288,12 +288,15 @@
         "task-lookup",
         "launcher-managed-start-stop",
         "bounded-pending-task-listing",
-        "read-only-pending-review"
+        "read-only-pending-review",
+        "single-command-lifecycle-control",
+        "read-only-review-mode"
       ],
       "activation": "operator-local",
       "launcherPath": "UnifiedField/FieldCore/Invoke-TaskInbox.ps1",
       "entrypoint": "Enter-UnifiedField.ps1 -TaskInbox",
-      "reviewPath": "UnifiedField/FieldCore/Review-TaskInbox.ps1"
+      "reviewPath": "UnifiedField/FieldCore/Review-TaskInbox.ps1",
+      "controlPath": "UnifiedField/Invoke-UnifiedFieldTaskInbox.ps1"
     },
     {
       "id": "evidence-ledger",
