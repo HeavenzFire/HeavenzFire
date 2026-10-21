@@ -26,6 +26,10 @@ function Test-WorkerResponse {
     if (-not ($doc.code -is [string]) -or $doc.code -notmatch '(?is)function\s+Get-SumSafe\b') { $issues.Add('function_definition_missing') }
     if ($doc.code -notmatch '(?is)foreach\s*\(\s*\$\w+\s+in\s+\$InputValues\s*\)') { $issues.Add('input_iteration_not_verified') }
     if ($doc.code -notmatch '(?is)\$\w+\s*\+=\s*\$\w+') { $issues.Add('accumulator_not_verified') }
+    $tokens = $null
+    $parseErrors = $null
+    [System.Management.Automation.Language.Parser]::ParseInput([string]$doc.code, [ref]$tokens, [ref]$parseErrors) | Out-Null
+    if ($parseErrors.Count -gt 0) { $issues.Add('powershell_parse_failed') }
 
     if ($doc.tests -isnot [System.Array] -or $doc.tests.Count -ne 2) {
         $issues.Add('tests_schema_invalid')
