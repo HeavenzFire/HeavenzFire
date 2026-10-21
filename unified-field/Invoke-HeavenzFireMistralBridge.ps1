@@ -180,7 +180,7 @@ if ($Mode -eq 'Call') {
         verification = 'UNVERIFIED_MODEL_OUTPUT'
         secret_written_to_disk = $false
     } | ConvertTo-Json -Depth 5
-    exit 0
+    return
 }
 
 if ($Mode -eq 'Import') {
