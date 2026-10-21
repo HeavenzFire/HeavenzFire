@@ -296,10 +296,16 @@ async function applyBuildPatch(){
 $('loadBuildSource').addEventListener('click',loadBuildSource);$('buildTargetFile').addEventListener('change',loadBuildSource);$('applyBuildPatch').addEventListener('click',applyBuildPatch);loadBuildTargets();
 async function refreshMeshQueue(){
  try{
-  const r=await fetch('/api/mesh/tasks',{cache:'no-store'});const x=await r.json();if(!r.ok||!x.ok)throw Error(x.error||('HTTP '+r.status));
-  const tasks=x.tasks||[];$('meshQueueCount').textContent=tasks.length+' task'+(tasks.length===1?'':'s');$('meshQueueStatus').textContent='MESH ONLINE';
-  $('meshQueueList').innerHTML=tasks.length?tasks.map(t=>'<div class="task"><div class="taskhead"><div><strong>'+esc(t.type||'worker task')+'</strong><div class="detail">'+esc(t.task_id)+' Â· '+esc(t.created_at||'')+'</div></div>'+pill(t.status)+'</div>'+(t.error?'<p>ERROR: '+esc(t.error)+'</p>':'')+(t.result?'<pre>'+esc(JSON.stringify(t.result,null,2).slice(0,1800))+'</pre>':'')+'</div>').join(''):'<div class="detail">Queue is live; no tasks have been dispatched yet.</div>';
- }catch(e){$('meshQueueStatus').textContent='MESH UNAVAILABLE';$('meshQueueList').textContent=String(e.message||e)}
+  const [mr,br]=await Promise.all([fetch('/api/mesh/tasks',{cache:'no-store'}),fetch('/api/build/tasks',{cache:'no-store'})]);
+  const mesh=await mr.json(),journal=await br.json();
+  if(!mr.ok||!mesh.ok)throw Error(mesh.error||('mesh HTTP '+mr.status));
+  if(!br.ok||!journal.ok)throw Error(journal.error||('build journal HTTP '+br.status));
+  const meshTasks=(mesh.tasks||[]).map(t=>({...t,source:'mesh'}));
+  const buildTasks=(journal.tasks||[]).filter(t=>String(t.task_id).startsWith('hfbuild-')).map(t=>({task_id:t.task_id,type:'scoped_build',source:'persistent journal',status:String(t.status||'').toLowerCase(),created_at:t.created_utc||'',error:t.last_error||null,result:{scope:t.scope||[],evidence_refs:t.evidence_refs||[]}}));
+  const tasks=[...meshTasks,...buildTasks].sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at))).slice(0,30);
+  $('meshQueueCount').textContent=tasks.length+' task'+(tasks.length===1?'':'s');$('meshQueueStatus').textContent='MESH + BUILD JOURNAL ONLINE';
+  $('meshQueueList').innerHTML=tasks.length?tasks.map(t=>'<div class="task"><div class="taskhead"><div><strong>'+esc(t.type||'worker task')+' · '+esc(t.source||'')+'</strong><div class="detail">'+esc(t.task_id)+' · '+esc(t.created_at||'')+'</div></div>'+pill(t.status)+'</div>'+(t.error?'<p>ERROR: '+esc(t.error)+'</p>':'')+(t.result?'<pre>'+esc(JSON.stringify(t.result,null,2).slice(0,1800))+'</pre>':'')+'</div>').join(''):'<div class="detail">Unified queues are live; no mesh or build tasks yet.</div>';
+ }catch(e){$('meshQueueStatus').textContent='QUEUE DEGRADED';$('meshQueueList').textContent=String(e.message||e)}
 }
 async function dispatchMeshTask(){
  const button=$('dispatchMeshTask');button.disabled=true;$('meshQueueStatus').textContent='DISPATCHING';
