@@ -61,6 +61,8 @@ test('worker performs static structure and arithmetic checks without evaluating 
   assert.match(worker, /function Test-WorkerResponse/);
   assert.match(worker, /ConvertFrom-Json -ErrorAction Stop/);
   assert.match(worker, /test_expected_output_mismatch/);
+  assert.match(worker, /Parser\]::ParseInput/);
+  assert.match(worker, /powershell_parse_failed/);
   assert.match(worker, /input_iteration_not_verified/);
   assert.match(worker, /item\.validation = Test-WorkerResponse/);
   assert.doesNotMatch(worker, /Invoke-Expression|\biex\b|ScriptBlock::Create|Add-Type/i);
