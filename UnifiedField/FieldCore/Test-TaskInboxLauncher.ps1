@@ -36,6 +36,13 @@ try {
     $posted = Invoke-RestMethod -Method Post -Uri ($start.url + '/api/tasks') -ContentType 'application/json' -Body $body -TimeoutSec 3
     if ($posted.ok -ne $true -or $posted.status -ne 'proposed') { throw 'Task inbox did not accept a pending proposal.' }
 
+    $reviewScript = Join-Path $PSScriptRoot 'Review-TaskInbox.ps1'
+    $review = & $reviewScript -Port $Port -AsJson | ConvertFrom-Json
+    if ($review.readOnly -ne $true -or $review.returned -ne 1 -or $review.tasks[0].taskId -ne 'launcher-smoke-task') {
+        throw ('Read-only review returned unexpected data: ' + ($review | ConvertTo-Json -Compress))
+    }
+    Write-Host 'PASS: read-only review CLI lists the pending proposal without changing state.'
+
     $again = & $Launcher -Action Start -Port $Port | ConvertFrom-Json
     if ($again.status -ne 'ALREADY_RUNNING') { throw 'Second Start did not report ALREADY_RUNNING.' }
     Write-Host 'PASS: start is idempotent and proposals remain pending.'
