@@ -36,6 +36,32 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:11px;color:var(--muted
 <section class="card span7"><h2>Local service mesh</h2><div class="service-list" id="services"><div class="detail">Connecting to services…</div></div></section>
 </section>
 <section class="card span12"><h2>Local AI worker pool · assigned build tasks</h2><div class="detail">Fixed, bounded local batch. Each model receives the same utility task. Outputs are stored as artifacts; generated code is not executed automatically and requires independent verification.</div><div class="actions" style="margin:12px 0"><button id="runModelWorker">Run build-task batch</button><span class="pill" id="modelWorkerStatus">READY · NOT YET RUN</span></div><div id="modelPool" class="service-list"><div class="detail">Reading local model inventory…</div></div><div class="detail" id="modelWorkerMeta" style="margin-top:10px">Dashboard refreshes status every 8 seconds.</div></section>
+<section class="card span12"><h2>Worker Forge · create, stress-test, qualify</h2>
+<div class="detail">Blueprint validation and deterministic adversarial test planning are live. The Forge does not fine-tune model weights or execute candidate code. Promotion requires two matching evaluation runs, zero critical adversarial failures, a passing threshold, and independent review.</div>
+<div class="actions" style="margin:12px 0"><button id="validateWorkerBlueprint">Validate worker blueprint</button><button id="buildWorkerEvalPlan">Build adversarial tensor</button><span class="pill" id="forgeStatus">FORGE READY · NOT YET RUN</span></div>
+<label for="workerBlueprint" class="detail" style="display:block;margin:10px 0 6px">Candidate blueprint JSON</label>
+<textarea id="workerBlueprint" spellcheck="false" style="width:100%;min-height:205px;background:#080f18;color:#e9f0f7;border:1px solid #34516a;border-radius:9px;padding:12px;font:12px/1.5 Consolas,monospace">{
+  "id": "hf-child-worker-template",
+  "version": "1.0.0",
+  "role": "bounded child worker candidate",
+  "objective": "Independently complete scoped tasks and return evidence-backed, reproducible results.",
+  "input_schema": {"type":"object","required":["task_id"]},
+  "output_schema": {"type":"object","required":["status","evidence_refs"]},
+  "capabilities": ["read_local_artifacts","request_peer_review"],
+  "forbidden_capabilities": ["unbounded_shell","credential_exfiltration","stealth_persistence"],
+  "execution": {"mode":"proposal_only","max_tool_calls":4},
+  "axes": {
+    "task_type": ["build","review"],
+    "risk_class": ["LOW","MEDIUM","HIGH"],
+    "evidence_quality": ["verified","partial"],
+    "tool_scope": ["read_only","scoped_write"],
+    "adversarial_profile": ["prompt_injection","malformed_input","unauthorized_tool","stale_evidence","contradictory_evidence","output_schema_violation","budget_exhaustion","timeout_recovery","duplicate_replay","dependency_cycle"],
+    "failure_mode": ["timeout","invalid_output","dependency_failure"]
+  }
+}</textarea>
+<div class="detail" id="forgeBlueprintResult" style="margin-top:9px">Candidate JSON stays in this browser page until you validate it; validation does not execute it.</div>
+<div class="task" style="margin-top:12px"><div class="taskhead"><strong>Multidimensional evaluation plan</strong><span class="pill" id="forgePlanState">NOT BUILT</span></div><div class="detail" id="forgePlanMeta">Six axes: task type × risk × evidence × tool scope × adversarial profile × failure mode.</div><div id="forgeProfiles" class="actions" style="margin-top:9px"></div></div>
+</section>
 <section class="card span5"><h2>Agent lanes · coordination status</h2><div class="roles">
 <div class="role"><h3>01 · Architect</h3><p>Map dependencies, interfaces, acceptance criteria, and preserve existing artifacts.</p><div class="state">WORKFLOW ROLE · NOT A SEPARATE MODEL</div></div>
 <div class="role"><h3>02 · Builder</h3><p>Implement small reversible changes in the existing Unified Field codebase.</p><div class="state">WORKFLOW ROLE · NOT A SEPARATE MODEL</div></div>
@@ -68,6 +94,30 @@ async function runModelWorker(){
  try{const r=await fetch('/api/worker/run',{method:'POST',headers:{'Accept':'application/json'}});const x=await r.json();if(!r.ok)throw Error(x.error||('HTTP '+r.status));$('modelWorkerStatus').textContent='Accepted · worker running';await refresh()}catch(e){$('modelWorkerStatus').textContent='Could not start: '+String(e.message||e);b.disabled=false}
 }
 $('runModelWorker').addEventListener('click',runModelWorker);
+async function validateForgeBlueprint(){
+ const button=$('validateWorkerBlueprint');button.disabled=true;$('forgeStatus').textContent='VALIDATING BLUEPRINT…';
+ try{
+  const blueprint=JSON.parse($('workerBlueprint').value);
+  const r=await fetch('/api/forge/validate',{method:'POST',headers:{'Accept':'application/json','Content-Type':'application/json'},body:JSON.stringify({blueprint})});
+  const x=await r.json();if(!r.ok||!x.ok)throw Error(x.error||('HTTP '+r.status));
+  $('forgeStatus').textContent=x.valid?'BLUEPRINT VALID':'BLUEPRINT REJECTED';
+  $('forgeBlueprintResult').textContent=x.valid?('Schema and capability gates passed · SHA-256 '+x.blueprint_hash):('Rejected · '+(x.errors||[]).join(', '));
+ }catch(e){$('forgeStatus').textContent='VALIDATION ERROR';$('forgeBlueprintResult').textContent=String(e.message||e)}
+ finally{button.disabled=false}
+}
+async function buildWorkerEvalPlan(){
+ const button=$('buildWorkerEvalPlan');button.disabled=true;$('forgeStatus').textContent='BUILDING DETERMINISTIC TENSOR…';
+ try{
+  const r=await fetch('/api/forge/plan',{cache:'no-store'});const x=await r.json();if(!r.ok||!x.ok)throw Error(x.error||('HTTP '+r.status));
+  $('forgeStatus').textContent='EVALUATION PLAN READY · NOT EXECUTED';
+  $('forgePlanState').textContent=x.state.replaceAll('_',' ').toUpperCase();
+  $('forgePlanMeta').textContent='Shape '+x.shape.join(' × ')+' · '+x.cell_count+' deterministic cases · SHA-256 '+x.matrix_hash+'. '+x.note;
+  $('forgeProfiles').innerHTML=x.adversarial_profiles.map(p=>'<span class="pill">'+esc(p)+'</span>').join('');
+ }catch(e){$('forgeStatus').textContent='PLAN ERROR';$('forgePlanMeta').textContent=String(e.message||e)}
+ finally{button.disabled=false}
+}
+$('validateWorkerBlueprint').addEventListener('click',validateForgeBlueprint);
+$('buildWorkerEvalPlan').addEventListener('click',buildWorkerEvalPlan);
 async function refresh(){
  $('overallText').textContent='Refreshing local state…';
  try{
