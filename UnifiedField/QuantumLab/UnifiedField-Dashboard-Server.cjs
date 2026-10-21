@@ -1,6 +1,7 @@
 'use strict';
 const http=require('http'),fs=require('fs'),path=require('path'),cp=require('child_process');
 const HOST='127.0.0.1',PORT=8800;
+const {publishWorkerResultsToJournal}=require('./uf-model-worker-journal-publisher.cjs');
 const ROOT=path.join(process.env.USERPROFILE,'HeavenzFire');
 const DASH=path.join(ROOT,'UnifiedField','QuantumLab','UnifiedField-Dashboard.html');
 const TASKDIR=path.join(ROOT,'144A','tasks');
@@ -33,26 +34,6 @@ async function probe(e){
  }catch(err){return {id:e.id,name:e.name,url:e.url,state:'unreachable',latencyMs:Date.now()-start,error:String(err.message||err)}}
 }
 function readJson(p){try{return JSON.parse(fs.readFileSync(p,'utf8').replace(/^\uFEFF/,''))}catch{return null}}
-async function publishWorkerResultsToJournal(artifact){
- const token=process.env.HEAVENZFIRE_BRIDGE_TOKEN||'';
- const configuredBase=process.env.HEAVENZFIRE_BRIDGE_URL||'http://127.0.0.1:8798';
- let base;try{const parsed=new URL(configuredBase);if(parsed.protocol!=='http:'||parsed.hostname!=='127.0.0.1'||parsed.username||parsed.password||parsed.search||parsed.hash||parsed.pathname!=='/')return {state:'blocked',reason:'Journal URL must be a plain loopback HTTP origin',published:0,failed:0};base=parsed.origin;}catch{return {state:'blocked',reason:'Journal URL is invalid',published:0,failed:0};}
- if(!token)return {state:'blocked',reason:'HEAVENZFIRE_BRIDGE_TOKEN is not configured',published:0,failed:0};
- if(!artifact||!Array.isArray(artifact.results))return {state:'blocked',reason:'No valid worker result artifact',published:0,failed:0};
- let published=0,failed=0;const errors=[];
- for(const item of artifact.results){
-  const identity=artifact.file+'|'+String(item.model||'unknown');
-  const digest=require('crypto').createHash('sha256').update(identity).digest('hex');
-  const task={task_id:'local-worker-'+digest.slice(0,24),objective:'Independently review the untrusted local model draft from '+String(item.model||'unknown')+'; do not execute generated code. Artifact: '+artifact.file,scope:['local-artifact-review','independent-verification'],risk_class:'LOW',idempotency_key:'local-worker-result-'+digest,evidence_refs:[artifact.file],dependencies:[]};
-  try{
-   const response=await fetch(base+'/api/tasks',{method:'POST',signal:AbortSignal.timeout(2500),headers:{'Accept':'application/json','Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({task})});
-   const data=await response.json().catch(()=>null);
-   if(!response.ok||!data||data.ok!==true)throw new Error((data&&data.error)||('HTTP '+response.status));
-   published++;
-  }catch(err){failed++;errors.push({model:item.model||'unknown',error:String(err.message||err)});}
- }
- return {state:failed?'partial':'published',published,failed,errors};
-}
 function tasks(){
  try{return fs.readdirSync(TASKDIR).filter(n=>/^HF-.*\.json$/i.test(n)).map(n=>readJson(path.join(TASKDIR,n))).filter(Boolean).map(t=>({id:t.id,title:t.title,goal:t.goal,status:t.status,updated:t.updated||t.created||null,leadAgentName:t.leadAgentName})).sort((a,b)=>String(b.updated||'').localeCompare(String(a.updated||''))).slice(0,8)}catch{return []}
 }
