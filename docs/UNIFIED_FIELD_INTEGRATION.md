@@ -38,3 +38,20 @@ Add a binding to a capability entry like:
 - `permissions_declared` and `trust_declared` are descriptive metadata, not granted authority.
 
 The CLI only reads JSON and issues health GET requests. It never executes capability entrypoints. Liveness does not prove identity, readiness, artifact integrity, or authorization. A later execution gateway must verify provenance and enforce least privilege independently.
+
+
+## Windows PowerShell launcher
+
+From the repository root in Windows PowerShell 5.1 or newer:
+
+\`\`\`powershell
+.\Enter-UnifiedField.ps1
+\`\`\`
+
+Optional registry paths and probe timeout:
+
+\`\`\`powershell
+.\Enter-UnifiedField.ps1 -CapabilityRegistry .\examples\capability-registry.json -NodeRegistry .\examples\nodes.json -TimeoutSeconds 3
+\`\`\`
+
+The launcher checks that Python and required files exist, invokes the read-only diagnostic CLI, and propagates its exit code. A \`DARK\` result is a diagnostic finding to investigate, not a reason to silently mark a node healthy.
