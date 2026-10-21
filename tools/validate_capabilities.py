@@ -54,10 +54,10 @@ def validate_registry(data: Any) -> list[str]:
         if not isinstance(interfaces, list) or not interfaces or any(not isinstance(x, str) or not x.strip() for x in interfaces):
             errors.append(f"{p}.interfaces: expected a non-empty array of non-empty strings")
         trust = cap["trust"]
-        if trust not in TRUST_LEVELS:
+        if not isinstance(trust, str) or trust not in TRUST_LEVELS:
             errors.append(f"{p}.trust: expected one of {', '.join(sorted(TRUST_LEVELS))}")
         perms = cap["permissions"]
-        if not isinstance(perms, list) or any(x not in ALLOWED_PERMISSIONS for x in perms):
+        if not isinstance(perms, list) or any(not isinstance(x, str) or x not in ALLOWED_PERMISSIONS for x in perms):
             errors.append(f"{p}.permissions: expected an array containing only {', '.join(sorted(ALLOWED_PERMISSIONS))}")
         elif len(perms) != len(set(perms)):
             errors.append(f"{p}.permissions: duplicate permissions are not allowed")
