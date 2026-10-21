@@ -6,9 +6,9 @@ The 144A Tasker is the desktop-style Edge app launched at `http://127.0.0.1:1879
 
 The Coder Workbench now has an explicit source writer wired into the existing BrowserBridge:
 
-- `GET /api/scoped-write/target?file=...` reads an existing file inside `%USERPROFILE%\HeavenzFire\UnifiedField` and returns its SHA-256.
+- `GET /api/scoped-write/target?file=...` reads an existing file inside `%USERPROFILE%\HeavenzFire` and returns its SHA-256.
 - `POST /api/tasks/:taskId/scoped-write` requires the local Tasker origin, a Planned or ReviewRequired task, `approved: true`, the exact current SHA-256, and replacement text no larger than 60 KiB.
-- Only existing regular files inside the UnifiedField workspace are eligible. Absolute paths, traversal, symlink escapes, and unsupported extensions are rejected.
+- Only existing regular files inside the HeavenzFire repository are eligible. Absolute paths, traversal, symlink escapes, and unsupported extensions are rejected.
 - A backup is written before replacement. JavaScript syntax and JSON parsing are checked; an optional existing `.test.cjs` or `.test.js` can run through Node's test runner. A failed check triggers restoration of the original bytes.
 - Successful changes remain `ReviewRequired`; the Tasker does not mark a code change complete merely because a file was written.
 - No generated shell commands are accepted or executed by this writer.
@@ -34,4 +34,4 @@ Open the existing desktop shortcut, which should target `http://127.0.0.1:18795/
 
 ## Explicit limitation
 
-This adds a real, reversible file-writing path. It does **not** yet make the local model autonomously generate and apply a code patch from a natural-language objective. Patch content must be reviewed in the Tasker editor and explicitly approved before it is written. Model output and a task's queue status are not evidence that code was implemented.
+A file-launched copy of the Tasker redirects to the local app origin so browser requests pass the same-origin/CORS boundary. This adds a real, reversible file-writing path. It does **not** yet make the local model autonomously generate and apply a code patch from a natural-language objective. Patch content must be reviewed in the Tasker editor and explicitly approved before it is written. Model output and a task's queue status are not evidence that code was implemented.
