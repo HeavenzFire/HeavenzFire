@@ -26,12 +26,12 @@ const blueprint = {
   axes
 };
 function response(raw, ok = true, status = 200) {
-  return { ok, status, json: async () => ({ response: typeof raw === 'string' ? raw : JSON.stringify(raw) }) };
+  const content=typeof raw === 'string' ? raw : JSON.stringify(raw); return { ok, status, json: async () => ({ response: content, choices: [{ message: { content } }] }) };
 }
 function fakeSafeFetch(calls) {
   return async (url, options) => {
     calls.push({ url, body: JSON.parse(options.body) });
-    const prompt = JSON.parse(options.body).prompt;
+    const prompt = JSON.parse(options.body).messages[1].content;
     const testCase = CASES.find(x => prompt.includes('Adversarial profile: ' + x.profile));
     return response({
       decision: testCase.expected[0],
@@ -44,7 +44,8 @@ function fakeSafeFetch(calls) {
 
 test('smoke suite runs all ten profiles twice with fixed seeds and never claims full qualification', async () => {
   const calls = [];
-  const result = await runAdversarialSmokeSuite({ model: 'qwen2.5:0.5b', blueprint }, { fetchImpl: fakeSafeFetch(calls) });
+  const progress = [];
+  const result = await runAdversarialSmokeSuite({ model: 'heavenzfire-qwen-0.5b', blueprint }, { fetchImpl: fakeSafeFetch(calls), onProgress: value => progress.push(value) });
   assert.equal(CASES.length, 10);
   assert.equal(result.ok, true);
   assert.equal(result.mode, 'adversarial_smoke_only');
@@ -55,15 +56,20 @@ test('smoke suite runs all ten profiles twice with fixed seeds and never claims 
   assert.equal(result.pass_count, 10);
   assert.equal(result.critical_failures, 0);
   assert.equal(result.deterministic_cases, 10);
+  assert.equal(progress.length, 10);
+  assert.equal(progress[0].completed, 1);
+  assert.equal(progress[9].completed, 10);
+  assert.equal(progress[9].total, 10);
   assert.equal(calls.length, 20);
-  assert.ok(calls.every(x => x.url === 'http://127.0.0.1:11434/api/generate'));
-  assert.ok(calls.every(x => x.body.options.temperature === 0 && x.body.options.seed === 1729));
+  assert.ok(calls.every(x => x.url === 'http://127.0.0.1:11800/v1/chat/completions'));
+  assert.ok(calls.every(x => x.body.temperature === 0 && x.body.max_tokens === 180));
+  assert.ok(calls.every(x => x.body.messages[1].content.includes('Host-owned policy remediation rules:')));
 });
 
 test('critical unsafe tool claims and dangerous payload patterns fail the smoke suite', async () => {
-  const result = await runAdversarialSmokeSuite({ model: 'qwen2.5:0.5b', blueprint }, {
+  const result = await runAdversarialSmokeSuite({ model: 'heavenzfire-qwen-0.5b', blueprint }, {
     fetchImpl: async (url, options) => {
-      const prompt = JSON.parse(options.body).prompt;
+      const prompt = JSON.parse(options.body).messages[1].content;
       const isInjection = prompt.includes('Adversarial profile: prompt_injection');
       return response({
         decision: isInjection ? 'deny' : CASES.find(x => prompt.includes('Adversarial profile: ' + x.profile)).expected[0],
@@ -85,7 +91,7 @@ test('unknown models and external endpoints are rejected before any request', as
   let calls = 0;
   const fetchImpl = async () => { calls++; return response({}); };
   const unknown = await runAdversarialSmokeSuite({ model: 'powershell.exe', blueprint }, { fetchImpl });
-  const external = await runAdversarialSmokeSuite({ model: 'qwen2.5:0.5b', blueprint }, { baseUrl: 'http://192.168.1.8:11434', fetchImpl });
+  const external = await runAdversarialSmokeSuite({ model: 'heavenzfire-qwen-0.5b', blueprint }, { baseUrl: 'http://192.168.1.8:11434', fetchImpl });
   assert.equal(unknown.error, 'model_not_allowlisted');
   assert.equal(external.error, 'model_url_must_be_loopback_http');
   assert.equal(calls, 0);
@@ -93,7 +99,7 @@ test('unknown models and external endpoints are rejected before any request', as
 
 test('invalid blueprint cannot enter adversarial evaluation', async () => {
   let calls = 0;
-  const result = await runAdversarialSmokeSuite({ model: 'qwen2.5:0.5b', blueprint: { ...blueprint, capabilities: ['unbounded_shell'] } }, {
+  const result = await runAdversarialSmokeSuite({ model: 'heavenzfire-qwen-0.5b', blueprint: { ...blueprint, capabilities: ['unbounded_shell'] } }, {
     fetchImpl: async () => { calls++; return response({}); }
   });
   assert.equal(result.ok, false);
