@@ -1,0 +1,22 @@
+name: Avatar Body
+on:
+  push:
+    paths:
+      - 'UnifiedField/AvatarBody/**'
+      - '.github/workflows/avatar-body.yml'
+  pull_request:
+    paths:
+      - 'UnifiedField/AvatarBody/**'
+      - '.github/workflows/avatar-body.yml'
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node --check UnifiedField/AvatarBody/avatar-body.cjs
+      - run: node --check UnifiedField/AvatarBody/avatar-body-server.cjs
+      - run: node --test UnifiedField/AvatarBody/avatar-body.test.cjs
+      - run: node --test UnifiedField/QuantumLab/unified-field-dashboard.test.cjs
