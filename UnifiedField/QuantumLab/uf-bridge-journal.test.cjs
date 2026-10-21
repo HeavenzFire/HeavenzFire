@@ -61,6 +61,9 @@ test('corrupt journal lines are reported instead of silently discarded', () => {
     fs.appendFileSync(f.file, '{not-json}\n');
     assert.equal(q.inspect().corruptLines.length, 1);
     assert.equal(q.inspect().tasks.length, 1);
+    assert.throws(() => q.enqueue(task({ task_id: 'task-2', idempotency_key: 'idem-2' })), /writes are blocked/);
+    assert.throws(() => q.setState('task-1', 'RUNNING'), /writes are blocked/);
+    assert.equal(q.inspect().tasks.length, 1);
   } finally { f.cleanup(); }
 });
 test('executable payloads are rejected', () => {
