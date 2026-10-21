@@ -33,3 +33,19 @@ Health check: `http://127.0.0.1:8800/health`
 - `UnifiedField-Dashboard.html`: browser UI, polling, graph visualization, GitHub public metadata.
 - `UnifiedField-Dashboard-Server.cjs`: read-only local aggregator for service health, brain state, task records, and guardian snapshot.
 - `Start-UnifiedFieldDashboard.ps1`: PowerShell 5.1-compatible launch helper.
+
+## Ternary consensus and 144-seat council (implementation status)
+
+The proposed protocol and role architecture are documented in:
+- `UF-TCP-SPEC.md`: deterministic ternary decision policy and evidence contract.
+- `UF-144-COUNCIL-ARCHITECTURE.md`: 72 proposal-side roles and 72 counter-examination roles.
+- `uf-tcp-policy.cjs`: pure policy evaluator; no network, filesystem, model calls, or side effects.
+- `uf-tcp-policy.test.cjs`: Node.js built-in test suite.
+
+From this directory, run the policy tests with a recent Node.js runtime:
+
+```powershell
+node --test .\uf-tcp-policy.test.cjs
+```
+
+The dashboard remains read-only and does not yet execute the policy engine, run council seats, or dispatch cross-examination tasks. A green service-health indicator means an endpoint responded; it is not proof that the 144-role council or end-to-end workflow is operational. Do not represent role records as independent live models unless that independence is separately demonstrated.
