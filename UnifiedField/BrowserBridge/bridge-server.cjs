@@ -316,7 +316,7 @@ async function route(req, res) {
     }
   }
   // Scoped source editing: existing files only, explicit approval, hash pin, backup, syntax/test gates.
-  const scopedRoot = path.resolve(HOME, 'UnifiedField');
+  const scopedRoot = path.resolve(HOME);
   const resolveScoped = (name) => {
     if (typeof name !== 'string' || !name.trim() || path.isAbsolute(name)) throw new Error('Use a relative path inside UnifiedField.');
     const candidate = path.resolve(scopedRoot, name);
