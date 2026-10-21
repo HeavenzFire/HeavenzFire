@@ -2,7 +2,8 @@
 [CmdletBinding()]
 param(
     [string]$OutputDirectory = (Join-Path $PSScriptRoot 'LocalAI'),
-    [string]$OllamaBaseUrl = 'http://127.0.0.1:11434'
+    [string]$OllamaBaseUrl = 'http://127.0.0.1:11434',
+    [ValidateRange(0,1)][int]$MaxRepairAttempts = 1
 )
 $ErrorActionPreference = 'Stop'
 $models = @('qwen2.5:0.5b','heavenzfire-runtime:latest','heavenzfire:latest','llama3.2:1b')
@@ -55,14 +56,43 @@ function Test-WorkerResponse {
 New-Item -ItemType Directory -Path $OutputDirectory -Force | Out-Null
 $results = @()
 foreach ($model in $models) {
-    $item = [ordered]@{ model=$model; started=(Get-Date).ToString('o'); ok=$false; response=''; error=''; duration_ms=0; validation=$null }
+    $item = [ordered]@{ model=$model; started=(Get-Date).ToString('o'); ok=$false; response=''; error=''; duration_ms=0; validation=$null; repair_attempted=$false; repair_error=''; repair_validation=$null; initial_response=''; repair_response=''; attempt_count=0 }
     $timer = [Diagnostics.Stopwatch]::StartNew()
     try {
         $body = @{ model=$model; prompt=$prompt; stream=$false; options=@{ temperature=0; num_predict=220 } } | ConvertTo-Json -Depth 6
         $response = Invoke-RestMethod -Uri ($OllamaBaseUrl.TrimEnd('/') + '/api/generate') -Method Post -ContentType 'application/json' -Body $body -TimeoutSec 180
         $item.response = [string]$response.response
         $item.ok = [bool]$response.done -and -not [string]::IsNullOrWhiteSpace($item.response)
-        if ($item.ok) { $item.validation = Test-WorkerResponse -Response $item.response } else { $item.validation = [pscustomobject]@{ passed=$false; issues=@('generation_failed') } }
+        $item.attempt_count = 1
+        if ($item.ok) {
+            $item.validation = Test-WorkerResponse -Response $item.response
+            if (-not $item.validation.passed -and $MaxRepairAttempts -gt 0) {
+                $item.repair_attempted = $true
+                $item.initial_response = $item.response
+                $repairPrompt = $prompt + "`nThe prior response failed static checks: " + ($item.validation.issues -join ', ') + ". Correct those issues. In tests, input must be a numeric JSON array, not a quoted string. Return only valid JSON with no fences or prose."
+                $repairBody = @{ model=$model; prompt=$repairPrompt; stream=$false; options=@{ temperature=0; num_predict=220 } } | ConvertTo-Json -Depth 6
+                $item.attempt_count = 2
+                try {
+                    $repair = Invoke-RestMethod -Uri ($OllamaBaseUrl.TrimEnd('/') + '/api/generate') -Method Post -ContentType 'application/json' -Body $repairBody -TimeoutSec 90
+                    $repairText = [string]$repair.response
+                    if ([bool]$repair.done -and -not [string]::IsNullOrWhiteSpace($repairText)) {
+                        $item.repair_validation = Test-WorkerResponse -Response $repairText
+                        if ($item.repair_validation.passed) {
+                            $item.response = $repairText
+                            $item.validation = $item.repair_validation
+                        } else {
+                            $item.repair_response = $repairText
+                        }
+                    } else {
+                        $item.repair_error = 'empty repair response'
+                    }
+                } catch {
+                    $item.repair_error = $_.Exception.Message
+                }
+            }
+        } else {
+            $item.validation = [pscustomobject]@{ passed=$false; issues=@('generation_failed') }
+        }
     } catch {
         $item.error = $_.Exception.Message
         $item.validation = [pscustomobject]@{ passed=$false; issues=@('generation_failed') }
