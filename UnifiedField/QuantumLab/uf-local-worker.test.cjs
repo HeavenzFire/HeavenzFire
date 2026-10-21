@@ -66,3 +66,70 @@ test('unsupported routes and methods are rejected', async () => {
     assert.equal((await fetch(base + '/health', { method: 'POST' })).status, 404);
   });
 });
+
+test('journal survives worker restart and preserves idempotency', async () => {
+  const f = fixture();
+  const first = createWorkerServer({ journalPath: f.journalPath, token: 'restart-token' });
+  try {
+    const a = await first.listen(0);
+    const base = 'http://127.0.0.1:' + a.port;
+    const queued = await fetch(base + '/api/tasks', {
+      method: 'POST',
+      headers: { authorization: 'Bearer restart-token', 'content-type': 'application/json' },
+      body: JSON.stringify({ task })
+    });
+    assert.equal(queued.status, 201);
+  } finally {
+    await first.close();
+  }
+
+  const second = createWorkerServer({ journalPath: f.journalPath, token: 'restart-token' });
+  try {
+    const a = await second.listen(0);
+    const base = 'http://127.0.0.1:' + a.port;
+    const read = await fetch(base + '/api/tasks', { headers: { authorization: 'Bearer restart-token' } });
+    const data = await read.json();
+    assert.equal(read.status, 200);
+    assert.equal(data.tasks.length, 1);
+    assert.equal(data.tasks[0].task_id, task.task_id);
+    assert.equal(data.tasks[0].status, 'QUEUED');
+
+    const duplicate = await fetch(base + '/api/tasks', {
+      method: 'POST',
+      headers: { authorization: 'Bearer restart-token', 'content-type': 'application/json' },
+      body: JSON.stringify({ task })
+    });
+    assert.equal(duplicate.status, 200);
+    assert.equal((await duplicate.json()).duplicate, true);
+    const after = await (await fetch(base + '/api/tasks', { headers: { authorization: 'Bearer restart-token' } })).json();
+    assert.equal(after.tasks.length, 1);
+  } finally {
+    await second.close();
+    f.cleanup();
+  }
+});
+
+test('corrupt journal fails closed: health flags it and enqueue is rejected', async () => {
+  const f = fixture();
+  fs.writeFileSync(f.journalPath, '{broken json\\n', 'utf8');
+  const worker = createWorkerServer({ journalPath: f.journalPath, token: 'corrupt-token' });
+  try {
+    const a = await worker.listen(0);
+    const base = 'http://127.0.0.1:' + a.port;
+    const health = await (await fetch(base + '/health')).json();
+    assert.equal(health.writable, false);
+    assert.equal(health.journal.corruptLines, 1);
+
+    const rejected = await fetch(base + '/api/tasks', {
+      method: 'POST',
+      headers: { authorization: 'Bearer corrupt-token', 'content-type': 'application/json' },
+      body: JSON.stringify({ task: { ...task, task_id: 't-corrupt', idempotency_key: 'idem-corrupt' } })
+    });
+    assert.equal(rejected.status, 400);
+    assert.match((await rejected.json()).error, /writes are blocked/);
+    assert.equal(fs.readFileSync(f.journalPath, 'utf8'), '{broken json\\n');
+  } finally {
+    await worker.close();
+    f.cleanup();
+  }
+});
