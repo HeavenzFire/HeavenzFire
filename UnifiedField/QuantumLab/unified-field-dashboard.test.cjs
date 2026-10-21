@@ -38,8 +38,8 @@ test('worker artifacts publish metadata-only review tasks with idempotency and b
   assert.match(publisher, /HEAVENZFIRE_BRIDGE_TOKEN/);
   assert.match(publisher, /HEAVENZFIRE_BRIDGE_URL/);
   assert.ok(publisher.includes('http://127.0.0.1:8798'));
-  assert.match(publisher, /parsed\.hostname!=='127\.0\.0\.1'/);
-  assert.match(publisher, /parsed\.protocol!=='http:'/);
+  assert.match(publisher, /parsed\.hostname\s*!==\s*'127\.0\.0\.1'/);
+  assert.match(publisher, /parsed\.protocol\s*!==\s*'http:'/);
   assert.match(publisher, /Authorization.*Bearer /);
   assert.ok(publisher.includes("idempotency_key: 'local-worker-result-'"));
   assert.ok(publisher.includes("scope: ['local-artifact-review', 'independent-verification']"));
