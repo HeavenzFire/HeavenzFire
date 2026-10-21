@@ -27,6 +27,10 @@ test('dashboard exposes model batch control and renders status from overview', (
   assert.match(server, /\/api\/forge\/validate/);
   assert.match(server, /\/api\/forge\/plan/);
   assert.match(server, /\/api\/worker\/status/);
+  assert.match(server, /\/api\/worker\/retry/);
+  assert.match(server, /WORKER_MODEL_ALLOWLIST\.includes\(model\)/);
+  assert.match(server, /Retry requires a unique, non-empty list of allowlisted model tags/);
+  assert.match(server, /args\.push\('-Models',\.\.\.requestedModels\)/);
   assert.match(server, /buildEvaluationMatrix\(FORGE_AXES/);
   assert.ok(server.indexOf("require('./worker-forge.cjs')") < server.indexOf('const FORGE_AXES='), 'Worker Forge must load before its constants are referenced');
   assert.match(server, /Cross-origin request denied/);
