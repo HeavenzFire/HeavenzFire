@@ -32,6 +32,8 @@ test('dashboard exposes model batch control and renders status from overview', (
   assert.match(server, /\/api\/forge\/registry/);
   assert.match(server, /\/api\/forge\/register/);
   assert.match(server, /\/api\/forge\/attach-artifact/);
+  assert.match(server, /\/api\/forge\/remediate/);
+  assert.match(server, /remediateBlueprint/);
   assert.match(server, /artifact_not_adversarial_smoke_evidence/);
   assert.match(server, /workerRegistry\.recordSmoke/);
   assert.match(server, /\/api\/forge\/evaluation-status/);
@@ -63,6 +65,10 @@ test('dashboard exposes model batch control and renders status from overview', (
   assert.match(dashboard, /id="registerWorkerCandidate"/);
   assert.match(dashboard, /id="workerRegistryList"/);
   assert.match(dashboard, /id="attachSmokeArtifact"/);
+  assert.match(dashboard, /id="remediateWorkerCandidate"/);
+  assert.match(dashboard, /Create remediation version/);
+  assert.match(dashboard, /not model-weight training/);
+  assert.match(dashboard, /data-load-worker-hash/);
   assert.match(dashboard, /fetch\('\/api\/forge\/attach-artifact'/);
   assert.match(dashboard, /NOT QUALIFIED/);
   assert.match(dashboard, /fetch\('\/api\/forge\/evaluate'/);

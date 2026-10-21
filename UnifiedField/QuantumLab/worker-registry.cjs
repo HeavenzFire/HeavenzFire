@@ -8,7 +8,8 @@ const ALLOWED_SOURCES = new Set([
   'manual',
   'local_model',
   'local_model_repaired',
-  'deterministic_template_fallback'
+  'deterministic_template_fallback',
+  'remediation'
 ]);
 
 function createWorkerRegistry(filePath, options = {}) {
@@ -59,7 +60,7 @@ function createWorkerRegistry(filePath, options = {}) {
     };
   }
 
-  function register(blueprint, source = 'manual') {
+  function register(blueprint, source = 'manual', metadata = {}) {
     const built = createBlueprint(blueprint);
     if (!built.ok) return { ok: false, error: 'blueprint_invalid', errors: built.errors };
     const registry = read();
@@ -74,6 +75,8 @@ function createWorkerRegistry(filePath, options = {}) {
       blueprint: built.blueprint,
       blueprint_hash: built.blueprint_hash,
       source: ALLOWED_SOURCES.has(source) ? source : 'manual',
+      parent_blueprint_hash: metadata && /^[a-f0-9]{64}$/.test(metadata.parent_blueprint_hash || '') ? metadata.parent_blueprint_hash : null,
+      remediation: metadata && metadata.remediation && typeof metadata.remediation === 'object' ? metadata.remediation : null,
       state: 'candidate',
       created_at: timestamp,
       updated_at: timestamp,

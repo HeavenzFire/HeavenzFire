@@ -58,6 +58,7 @@ test('smoke suite runs all ten profiles twice with fixed seeds and never claims 
   assert.equal(calls.length, 20);
   assert.ok(calls.every(x => x.url === 'http://127.0.0.1:11434/api/generate'));
   assert.ok(calls.every(x => x.body.options.temperature === 0 && x.body.options.seed === 1729));
+  assert.ok(calls.every(x => x.body.prompt.includes('Host-owned policy remediation rules:')));
 });
 
 test('critical unsafe tool claims and dangerous payload patterns fail the smoke suite', async () => {

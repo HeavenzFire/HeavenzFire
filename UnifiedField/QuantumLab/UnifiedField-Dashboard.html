@@ -66,7 +66,7 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:11px;color:var(--muted
 }</textarea>
 <div class="detail" id="forgeBlueprintResult" style="margin-top:9px">Candidate JSON stays in this browser page until you validate it; validation does not execute it.</div>
 <div class="task" style="margin-top:12px"><div class="taskhead"><strong>Multidimensional evaluation plan</strong><span class="pill" id="forgePlanState">NOT BUILT</span></div><div class="detail" id="forgePlanMeta">Six axes: task type × risk × evidence × tool scope × adversarial profile × failure mode.</div><div id="forgeProfiles" class="actions" style="margin-top:9px"></div></div>
-<div class="task" style="margin-top:12px"><div class="taskhead"><strong>Persistent worker registry</strong><span class="pill" id="workerRegistryCount">0 candidates</span><button id="refreshWorkerRegistry">Refresh registry</button></div><div class="detail">Saved blueprints remain candidates until the full qualification matrix and independent review pass. A smoke pass is not promotion.</div><div id="workerRegistryList" class="service-list" style="margin-top:9px">Loading candidate registry…</div><div class="actions" style="margin-top:9px"><input id="smokeArtifactFile" placeholder="worker-forge-eval-…json" style="min-width:250px;background:#080f18;color:#e9f0f7;border:1px solid #34516a;border-radius:9px;padding:9px"/><button id="attachSmokeArtifact">Attach saved smoke artifact</button></div></div>
+<div class="task" style="margin-top:12px"><div class="taskhead"><strong>Persistent worker registry</strong><span class="pill" id="workerRegistryCount">0 candidates</span><button id="refreshWorkerRegistry">Refresh registry</button></div><div class="detail">Saved blueprints remain candidates until the full qualification matrix and independent review pass. A smoke pass is not promotion.</div><div id="workerRegistryList" class="service-list" style="margin-top:9px">Loading candidate registry…</div><div class="actions" style="margin-top:9px"><input id="smokeArtifactFile" placeholder="worker-forge-eval-…json" style="min-width:250px;background:#080f18;color:#e9f0f7;border:1px solid #34516a;border-radius:9px;padding:9px"/><button id="attachSmokeArtifact">Attach saved smoke artifact</button><button id="remediateWorkerCandidate">Create remediation version</button></div></div>
 </section>
 <section class="card span5"><h2>Agent lanes · coordination status</h2><div class="roles">
 <div class="role"><h3>01 · Architect</h3><p>Map dependencies, interfaces, acceptance criteria, and preserve existing artifacts.</p><div class="state">WORKFLOW ROLE · NOT A SEPARATE MODEL</div></div>
@@ -197,8 +197,9 @@ async function loadWorkerRegistry(){
   $('workerRegistryCount').textContent=x.count+' candidate'+(x.count===1?'':'s');
   $('workerRegistryList').innerHTML=x.workers.length?x.workers.map(w=>{
    const smoke=w.last_smoke?(' · last smoke '+w.last_smoke.state+' '+w.last_smoke.pass_count+'/'+w.last_smoke.total_cases):' · smoke not run';
-   return '<div class="task"><div class="taskhead"><strong>'+esc(w.worker_id)+'</strong>'+pill(w.state)+'</div><div class="detail">'+esc(w.role)+' · v'+esc(w.version)+' · source '+esc(w.source)+' · NOT QUALIFIED'+esc(smoke)+'</div><div class="detail">SHA-256 '+esc(w.blueprint_hash)+'</div></div>'
+   return '<div class="task"><div class="taskhead"><strong>'+esc(w.worker_id)+'</strong>'+pill(w.state)+'<button data-load-worker-hash="'+esc(w.blueprint_hash)+'">Load blueprint</button></div><div class="detail">'+esc(w.role)+' · v'+esc(w.version)+' · source '+esc(w.source)+' · NOT QUALIFIED'+esc(smoke)+'</div><div class="detail">SHA-256 '+esc(w.blueprint_hash)+'</div></div>'
   }).join(''):'<div class="detail">No registered worker candidates yet. Generate or validate a blueprint, then register it here.</div>';
+  $('workerRegistryList').querySelectorAll('[data-load-worker-hash]').forEach(button=>button.addEventListener('click',()=>{const worker=x.workers.find(item=>item.blueprint_hash===button.getAttribute('data-load-worker-hash'));if(worker){$('workerBlueprint').value=JSON.stringify(worker.blueprint,null,2);lastBlueprintSource=worker.source||'manual';$('forgeStatus').textContent='CANDIDATE LOADED · NOT QUALIFIED';$('forgeBlueprintResult').textContent='Loaded '+worker.worker_id+' v'+worker.version+' · source '+worker.source+' · qualification remains '+worker.qualification.state;}}));
  }catch(e){$('workerRegistryCount').textContent='REGISTRY ERROR';$('workerRegistryList').textContent=String(e.message||e)}
 }
 async function registerWorkerCandidate(){
@@ -228,6 +229,21 @@ async function attachSmokeArtifact(){
  finally{button.disabled=false}
 }
 $('attachSmokeArtifact').addEventListener('click',attachSmokeArtifact);
+async function remediateWorkerCandidate(){
+ const button=$('remediateWorkerCandidate');button.disabled=true;
+ try{
+  const blueprint=JSON.parse($('workerBlueprint').value);
+  const artifact_file=$('smokeArtifactFile').value.trim();
+  const r=await fetch('/api/forge/remediate',{method:'POST',headers:{'Accept':'application/json','Content-Type':'application/json'},body:JSON.stringify({blueprint,artifact_file})});
+  const x=await r.json();if(!r.ok||!x.ok)throw Error(x.error||('HTTP '+r.status));
+  $('workerBlueprint').value=JSON.stringify(x.blueprint,null,2);lastBlueprintSource='remediation';
+  $('forgeStatus').textContent='POLICY-REMEDIATED CANDIDATE · NOT QUALIFIED';
+  $('forgeBlueprintResult').textContent='Created v'+x.blueprint.version+' from '+x.report.failed_profiles.length+' failed profiles; added '+x.report.rules_added.length+' policy rules. This is prompt-policy remediation, not model-weight training. Independent smoke retest and full qualification are still required.';
+  await loadWorkerRegistry()
+ }catch(e){$('forgeStatus').textContent='REMEDIATION ERROR';$('forgeBlueprintResult').textContent=String(e.message||e)}
+ finally{button.disabled=false}
+}
+$('remediateWorkerCandidate').addEventListener('click',remediateWorkerCandidate);
 async function refresh(){
  $('overallText').textContent='Refreshing local state…';
  try{
