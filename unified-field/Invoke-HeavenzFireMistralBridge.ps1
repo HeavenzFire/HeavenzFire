@@ -198,6 +198,7 @@ if ($Mode -eq 'Import') {
     Write-HfMistralTrace 'import:before-read'
     $text = Get-Content -LiteralPath $ResponsePath -Raw -Encoding UTF8
     Write-HfMistralTrace ('import:read-chars=' + $text.Length)
+    Write-HfMistralTrace 'import:before-record'
     $result = [ordered]@{
         schema = 'heavenzfire.model-review.v1'
         task_id = $resolvedTaskId
@@ -205,14 +206,18 @@ if ($Mode -eq 'Import') {
         provider = 'mistral-le-chat-manual'
         task = $Task
         response = $text
-        source_file = (Resolve-Path -LiteralPath $ResponsePath).Path
+        source_file = [System.IO.Path]::GetFullPath($ResponsePath)
         verification = 'UNVERIFIED_USER_SUPPLIED_MODEL_OUTPUT'
         executed_tests = @()
         repository_changes = @()
         safety_note = 'Imported text is evidence for review only. It has not been executed, validated, or committed.'
     }
+    Write-HfMistralTrace 'import:record-created'
     $resultPath = Join-Path $OutputDirectory ("review-{0}-{1}.json" -f $resolvedTaskId, $stamp)
-    $result | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $resultPath -Encoding UTF8
+    $json = $result | ConvertTo-Json -Depth 10
+    Write-HfMistralTrace ('import:serialized-chars=' + $json.Length)
+    Set-Content -LiteralPath $resultPath -Value $json -Encoding UTF8
+    Write-HfMistralTrace 'import:written'
     [pscustomobject]@{
         status = 'MANUAL_RESPONSE_IMPORTED'
         task_id = $resolvedTaskId
