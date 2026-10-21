@@ -24,7 +24,7 @@ The root `Enter-UnifiedField.ps1` remains the diagnostic entrypoint. `Invoke-Tas
 .\UnifiedField\FieldCore\Invoke-TaskInbox.ps1 -Action Start -Port 19876
 ```
 
-The manager requires Node.js 18+, binds the service to `127.0.0.1`, stores task records and logs under `%LOCALAPPDATA%\HeavenzFire\UnifiedField`, and writes a PID file for lifecycle management. It refuses to stop a process unless the recorded PID's command line matches the expected task inbox server.
+The manager requires Node.js 18+, binds the service to `127.0.0.1`, stores task records and logs under `%LOCALAPPDATA%\HeavenzFire\UnifiedField`, and writes a PID file for lifecycle management. Set `HF_UNIFIED_FIELD_STATE_ROOT` to an absolute path to isolate this service's data from an existing HeavenzFire state directory; without it, the default path is retained. It refuses to stop a process unless the recorded PID's command line matches the expected task inbox server.
 
 ## Scope and safety
 
