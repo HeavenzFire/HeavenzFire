@@ -116,3 +116,13 @@ Run destructive fault injection only against disposable fixtures, never the live
 - An end-to-end smoke task was enqueued through the bridge, assigned to worker `hf-worker-18102`, completed on attempt 1, and retrieved from persisted task state. Task ID: `4514b28a-492b-4efe-b14e-b9c006b8e2d1`. The test used a bounded local SHA-256 task, not model inference.
 - After recovery, all four Watchtower observer processes still reported running. Available RAM was approximately 1.29 GB and C: free space 8.45 GB; both remain below warning thresholds (RAM near 1 GB, disk below 15 GB).
 - This verifies a live queue round-trip at the time of test; it does not prove persistence across reboot, long-duration stability, or a crash-prevention guarantee. The launcher is a foreground supervisor session and has not been installed as a startup task. Reboot persistence and dashboard integration remain open gates.
+
+
+## Dashboard integration and adversarial verification — 2026-10-21
+
+- Installed dashboard endpoint inventory now includes the mesh coordinator, bridge, and all three authenticated workers. The live overview returned 14 configured services and all five mesh endpoints healthy.
+- Added a local Mesh Task Console with bounded hash and allowlisted model task controls. The dashboard server proxies task enqueue and persisted task lookup through the loopback bridge; it rejects unsupported task types, oversized inputs, invalid rounds, unapproved model names, and cross-origin writes.
+- The dashboard-to-queue-to-worker-to-persisted-read canary completed successfully on `hf-worker-18101`, attempt 1. No model inference was used for this canary.
+- Existing Node dashboard test suites passed: 12 tests, 0 failures, after correcting a stale endpoint assertion to match the worker's actual local Ollama endpoint at port 11434.
+- The repeatable PowerShell 5.1 adversarial suite passed: dashboard health; five mesh endpoints visible and healthy; unauthenticated coordinator stats rejected with HTTP 401; unsupported shell task rejected with HTTP 400; cross-origin enqueue rejected with HTTP 403; oversized hash input rejected; invalid rounds rejected; unapproved model rejected; all relevant listeners loopback-only; and successful persisted canary completion.
+- The remaining dashboard work is a read-only Watchtower journal/resource summary, sustained stability tests, and reboot recovery. The latest resource snapshot remains constrained at approximately 1.29 GB available RAM and 8.45 GB free on C:; model batches remain deferred.
