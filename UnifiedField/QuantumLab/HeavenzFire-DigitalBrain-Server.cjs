@@ -38,7 +38,15 @@ const server=http.createServer(async(req,res)=>{
  if(req.method==='GET'&&req.url==='/'){res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'});return fs.createReadStream(path.join(ROOT,'HeavenzFire-DigitalBrain.html')).pipe(res)}
  if(req.method==='GET'&&req.url==='/api/health')return send(res,200,{ok:true,service:'HeavenzFire Cognitive Runtime',model:MODEL,inference:'http://127.0.0.1:11800/v1',memoryFile:MEMORY,requests,graphNodes:nodes.length,graphEdges:edges.length});
  if(req.method==='GET'&&req.url==='/api/state')return send(res,200,state());
- if(req.method==='GET'&&req.url==='/api/vision/health'){
+ if(req.method==='GET'&&(/^\/api\/body\/(state|events|observations)(\?.*)?$/.test(req.url))){
+  try{const br=await fetch('http://127.0.0.1:8799'+req.url.replace(/^\/api\/body/,'/api'),{signal:AbortSignal.timeout(1800)});let bd;try{bd=await br.json()}catch{bd={ok:false,error:'invalid_body_response'}};return send(res,br.status,{...bd,via:'digital-brain-body-proxy'})}
+  catch(e){return send(res,503,{ok:false,error:'avatar_body_unavailable: '+String(e.message||e).slice(0,120)})}
+}
+if(req.method==='POST'&&(/^\/api\/body\/(move|perception|hardware-status)$/.test(req.url))){
+  let bb;try{bb=await parse(req)}catch(e){return send(res,400,{ok:false,error:'invalid_body_request'})}
+  try{const br=await fetch('http://127.0.0.1:8799'+req.url.replace(/^\/api\/body/,'/api'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(bb),signal:AbortSignal.timeout(2200)});let bd;try{bd=await br.json()}catch{bd={ok:false,error:'invalid_body_response'}};return send(res,br.status,{...bd,via:'digital-brain-body-proxy'})}
+  catch(e){return send(res,503,{ok:false,error:'avatar_body_unavailable: '+String(e.message||e).slice(0,120)})}
+}if(req.method==='GET'&&req.url==='/api/vision/health'){
   try{const vr=await fetch('http://127.0.0.1:11802/health',{signal:AbortSignal.timeout(1500)});const vd=await vr.json();return send(res,vr.status,{...vd,via:'digital-brain-loopback-proxy'})}
   catch(e){return send(res,503,{ok:false,service:'local-opencv-avatar-vision',error:String(e.message||e)})}
 }
