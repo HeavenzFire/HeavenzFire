@@ -3,6 +3,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const vm = require('node:vm');
 
 const root = __dirname;
 const server = fs.readFileSync(path.join(root, 'UnifiedField-Dashboard-Server.cjs'), 'utf8');
@@ -45,4 +46,10 @@ test('worker script never executes generated code or accepts arbitrary task comm
   assert.doesNotMatch(worker, /Start-Process|cmd\.exe|powershell\.exe\s+-Command/i);
   assert.match(worker, /Do not claim tests were run/);
   assert.match(worker, /num_predict\s*=\s*220/);
+});
+
+test('dashboard embedded JavaScript parses successfully', () => {
+  const match = dashboard.match(/<script>([\\s\\S]*?)<\\/script>/i);
+  assert.ok(match, 'dashboard script element must exist');
+  assert.doesNotThrow(() => new vm.Script(match[1]), 'dashboard script must be syntactically valid');
 });
