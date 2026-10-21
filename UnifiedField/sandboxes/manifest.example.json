@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "status": "proposal",
+  "profiles": [
+    {
+      "id": "docs-check",
+      "label": "Repository documentation checks",
+      "backend": "github-actions",
+      "runtime": "node>=18",
+      "workspace": "repository",
+      "network": "disabled",
+      "capabilities": ["read-repository", "run-validation"],
+      "limits": { "timeoutSeconds": 120, "maxOutputBytes": 1048576, "maxConcurrentTasks": 1 },
+      "status": "defined",
+      "approval": "not-required-for-ci"
+    },
+    {
+      "id": "quantum-sim",
+      "label": "Quantum and quantum-inspired simulation experiments",
+      "backend": "future-isolated-runner",
+      "runtime": "node>=18",
+      "workspace": "experiment-workspace",
+      "network": "disabled",
+      "capabilities": ["read-experiment-inputs", "write-experiment-artifacts", "run-benchmarks"],
+      "limits": { "timeoutSeconds": 300, "maxOutputBytes": 4194304, "maxConcurrentTasks": 1 },
+      "status": "defined",
+      "approval": "required-for-external-effects"
+    },
+    {
+      "id": "adapter-contract-test",
+      "label": "External adapter contract tests",
+      "backend": "github-actions",
+      "runtime": "node>=18",
+      "workspace": "repository",
+      "network": "disabled",
+      "capabilities": ["read-repository", "run-contract-tests"],
+      "limits": { "timeoutSeconds": 180, "maxOutputBytes": 2097152, "maxConcurrentTasks": 1 },
+      "status": "defined",
+      "approval": "not-required-for-ci"
+    }
+  ]
+}
