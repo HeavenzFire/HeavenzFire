@@ -2,6 +2,8 @@
 
 This subsystem starts with the recordings already made for HeavenzFire. It does not ask the creator to re-record by default and does not pretend a voice model exists before one has been built and tested.
 
+The catalog API defaults to loopback port `8793` to avoid colliding with the existing HeavenzFire Tesla voice service on `8796`. It is not started by the Unified Field launcher and does not replace the existing voice service.
+
 ## Current capability
 
 - Recursively inventories supported audio files in a user-designated local folder.
