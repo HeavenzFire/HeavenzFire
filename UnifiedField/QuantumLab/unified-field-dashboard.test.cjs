@@ -15,6 +15,7 @@ const validator = fs.readFileSync(path.join(root, 'Test-LocalModelWorkerResponse
 const validatorTests = fs.readFileSync(path.join(root, 'Test-LocalModelWorkerResponse.Tests.ps1'), 'utf8');
 const avatarBody = fs.readFileSync(path.join(root, '..', 'AvatarBody', 'avatar-body.cjs'), 'utf8');
 const avatarServer = fs.readFileSync(path.join(root, '..', 'AvatarBody', 'avatar-body-server.cjs'), 'utf8');
+const dashboardLauncher = fs.readFileSync(path.join(root, 'Start-UnifiedFieldDashboard.ps1'), 'utf8');
 
 test('dashboard server is loopback-only and exposes a fixed worker action', () => {
   assert.match(server, /const HOST\s*=\s*['"]127\.0\.0\.1['"]/);
@@ -175,4 +176,7 @@ test('Avatar Body is surfaced in the Unified Field and movement remains simulate
   assert.ok(dashboard.includes('audio:false'));
   assert.ok(dashboard.includes('Semantic object recognition is not yet implemented.'));
   assert.ok(dashboard.includes('physical actuation=false'));
+  assert.ok(dashboardLauncher.includes("'AvatarBody\\avatar-body-server.cjs'"));
+  assert.ok(dashboardLauncher.includes('heavenzfire-avatar-body'));
+  assert.ok(dashboardLauncher.includes('dashboard will show the body as offline'));
 });
