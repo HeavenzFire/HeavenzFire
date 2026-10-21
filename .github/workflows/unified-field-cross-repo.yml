@@ -5,9 +5,11 @@ on:
     branches:
       - main
       - feat/shared-task-contract-v1
+      - worker/durable-lifecycle-inbox-integration
   pull_request:
     branches:
       - main
+      - feat/shared-task-contract-v1
 
 jobs:
   task-inbox:
@@ -19,7 +21,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: HeavenzFire/UnifiedCodebase
-          ref: feat/unified-field-provider-core
+          ref: worker/durable-task-lifecycle
           path: UnifiedCodebase
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -34,4 +36,5 @@ jobs:
       - name: Test task contract, inbox, browser bridge, evidence ledger, public-record adapter, and cross-repository transport
         env:
           HF_HUB_ADAPTER_PATH: ${{ github.workspace }}/UnifiedCodebase/integrations/shared-task-proposal-adapter.mjs
+          HF_GOVERNED_LIFECYCLE_PATH: ${{ github.workspace }}/UnifiedCodebase/integrations/governed-task-lifecycle.mjs
         run: node --test UnifiedField/FieldCore/shared-task-contract.test.cjs UnifiedField/FieldCore/task-inbox-server.test.cjs UnifiedField/BrowserBridge/browser-bridge.test.cjs UnifiedField/FieldCore/evidence-ledger.test.cjs UnifiedField/FieldCore/public-record-adapter.test.cjs UnifiedField/FieldCore/cross-repo-task-transport.test.cjs
