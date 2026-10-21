@@ -1,0 +1,8 @@
+{
+  "nodes": [
+    { "id": "laptop-gateway", "cluster": "local-laptop", "role": "gateway" },
+    { "id": "laptop-worker", "cluster": "local-laptop", "role": "local" },
+    { "id": "offline-observer", "cluster": "local-laptop", "role": "observer" },
+    { "id": "lab-gateway", "cluster": "independent-lab", "role": "gateway" }
+  ]
+}
