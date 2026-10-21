@@ -103,6 +103,6 @@ foreach ($model in $Models) {
 }
 $path = Join-Path $OutputDirectory ('worker-smoke-' + (Get-Date -Format 'yyyyMMdd-HHmmss') + '.json')
 $results | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $path -Encoding UTF8
-$summary = [ordered]@{ ok=(@($results | Where-Object { $_.ok }).Count -eq $Models.Count); count=$results.Count; successful=@($results | Where-Object { $_.ok }).Count; validated=@($results | Where-Object { $_.validation.passed }).Count; file=$path; results=$results }
+$summary = [ordered]@{ ok=(@($results | Where-Object { $_.ok -and $_.validation.passed }).Count -eq $Models.Count); count=$results.Count; generated=@($results | Where-Object { $_.ok }).Count; validated=@($results | Where-Object { $_.validation.passed }).Count; file=$path; results=$results }
 $summary | ConvertTo-Json -Depth 8 -Compress
-if (@($results | Where-Object { -not $_.ok }).Count -gt 0) { exit 2 }
+if (@($results | Where-Object { -not $_.ok -or -not $_.validation.passed }).Count -gt 0) { exit 2 }
