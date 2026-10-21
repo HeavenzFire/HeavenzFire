@@ -35,6 +35,9 @@ test('dashboard exposes model batch control and renders status from overview', (
   assert.ok(server.indexOf("require('./worker-forge.cjs')") < server.indexOf('const FORGE_AXES='), 'Worker Forge must load before its constants are referenced');
   assert.match(server, /Cross-origin request denied/);
   assert.match(dashboard, /id="runModelWorker"/);
+  assert.match(dashboard, /id="retryFailedModels"/);
+  assert.match(dashboard, /fetch\('\/api\/worker\/retry'/);
+  assert.match(dashboard, /Retry failed models/);
   assert.match(dashboard, /fetch\('\/api\/worker\/run'/);
   assert.match(dashboard, /renderModelWorker\(x\)/);
   assert.match(dashboard, /qwen2\.5:0\.5b/);
