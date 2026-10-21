@@ -21,6 +21,7 @@ jobs:
         run: |
           node --check UnifiedField/QuantumLab/UnifiedField-Dashboard-Server.cjs
           node --check UnifiedField/QuantumLab/uf-model-worker-journal-publisher.cjs
+          node --check UnifiedField/QuantumLab/worker-forge.cjs
       - name: Parse worker and validator PowerShell without executing generated code
         shell: pwsh
         run: |
@@ -39,5 +40,5 @@ jobs:
             }
           }
           & "${{ github.workspace }}/UnifiedField/QuantumLab/Test-LocalModelWorkerResponse.Tests.ps1"
-      - name: Test dashboard-worker safety contract and dashboard script syntax
-        run: node --test UnifiedField/QuantumLab/unified-field-dashboard.test.cjs UnifiedField/QuantumLab/uf-model-worker-journal-publisher.test.cjs
+      - name: Test dashboard-worker safety contract and deterministic worker forge
+        run: node --test UnifiedField/QuantumLab/unified-field-dashboard.test.cjs UnifiedField/QuantumLab/uf-model-worker-journal-publisher.test.cjs UnifiedField/QuantumLab/worker-forge.test.cjs
