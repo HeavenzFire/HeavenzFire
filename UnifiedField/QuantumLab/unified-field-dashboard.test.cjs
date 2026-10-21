@@ -152,6 +152,17 @@ test('worker script never executes generated code or accepts arbitrary task comm
   assert.match(worker, /Do not add fields/);
 });
 
+test('dashboard model list is declared and matches the server allowlist', () => {
+  const uiMatch = dashboard.match(/const expected\\s*=\\s*Object\\.freeze\\(\\[([^\\]]*)\\]\\)/);
+  assert.ok(uiMatch, 'dashboard must declare its expected model list before rendering');
+  const uiModels = Array.from(uiMatch[1].matchAll(/['"]([^'"]+)['"]/g), match => match[1]);
+  const serverMatch = server.match(/WORKER_MODEL_ALLOWLIST\\s*=\\s*Object\\.freeze\\(\\[([^\\]]*)\\]\\)/);
+  assert.ok(serverMatch, 'server must expose a fixed model allowlist');
+  const serverModels = Array.from(serverMatch[1].matchAll(/['"]([^'"]+)['"]/g), match => match[1]);
+  assert.deepEqual(uiModels, serverModels, 'dashboard model list must match server allowlist');
+  assert.ok(dashboard.indexOf('const expected=') < dashboard.indexOf('function renderModelWorker'), 'model list must be declared before rendering');
+});
+
 test('dashboard embedded JavaScript parses successfully', () => {
   const match = dashboard.match(/<script>([\s\S]*?)<\/script>/i);
   assert.ok(match, 'dashboard script element must exist');
