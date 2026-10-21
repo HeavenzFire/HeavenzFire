@@ -146,7 +146,7 @@ test('worker script never executes generated code or accepts arbitrary task comm
   assert.match(worker, /attempt_count = 2/);
   assert.match(worker, /\$_\.ok -and \$_\.validation\.passed/);
   assert.match(worker, /-not \$_\.ok -or -not \$_\.validation\.passed/);
-  assert.match(worker, /max_tokens\s*=\s*220/);
+  assert.match(worker, /max_tokens\s*=\s*160/);
   assert.match(worker, /Return ONLY valid JSON/);
   assert.match(worker, /expected_output/);
   assert.match(worker, /Do not add fields/);
@@ -156,4 +156,10 @@ test('dashboard embedded JavaScript parses successfully', () => {
   const match = dashboard.match(/<script>([\s\S]*?)<\/script>/i);
   assert.ok(match, 'dashboard script element must exist');
   assert.doesNotThrow(() => new vm.Script(match[1]), 'dashboard script must be syntactically valid');
+});
+
+
+test('model-worker expected model list is scoped inside its renderer', () => {
+  assert.match(dashboard, /function renderModelWorker\(x\)\{[\s\S]*?const expected=\['heavenzfire-qwen-0\.5b'\]/);
+  assert.ok(!dashboard.includes('Register candidate</button>Validate worker blueprint</button>'));
 });
