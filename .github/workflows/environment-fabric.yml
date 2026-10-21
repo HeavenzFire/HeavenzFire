@@ -7,6 +7,12 @@ on:
       - "UnifiedField/sandboxes/**"
       - "unified-field/env-fabric.mjs"
       - "unified-field/env-fabric.test.mjs"
+      - "UnifiedField/AI-FEDERATION.md"
+      - "UnifiedField/ai-providers.json"
+      - "unified-field/ai-federation.mjs"
+      - "unified-field/ai-federation.test.mjs"
+      - "unified-field/ollama-adapter.mjs"
+      - "unified-field/ollama-adapter.test.mjs"
       - ".devcontainer/**"
       - ".github/workflows/environment-fabric.yml"
   push:
@@ -39,3 +45,11 @@ jobs:
         run: node --test unified-field/env-fabric.test.mjs
       - name: Confirm listing is declaration-only
         run: node unified-field/env-fabric.mjs list
+      - name: Validate AI provider registry
+        run: node unified-field/ai-federation.mjs validate
+      - name: Test AI federation routing and privacy scope
+        run: node --test unified-field/ai-federation.test.mjs
+      - name: Test bounded local Ollama adapter
+        run: node --test unified-field/ollama-adapter.test.mjs
+      - name: Confirm local route planning does not execute providers
+        run: node unified-field/ai-federation.mjs plan reasoning --scope local
