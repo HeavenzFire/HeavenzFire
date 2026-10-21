@@ -36,6 +36,8 @@ test('worker artifacts publish metadata-only review tasks with idempotency and b
   assert.match(server, /HEAVENZFIRE_BRIDGE_TOKEN/);
   assert.match(server, /HEAVENZFIRE_BRIDGE_URL/);
   assert.ok(server.includes('http://127.0.0.1:8798'));
+  assert.match(server, /parsed\.hostname!=='127\.0\.0\.1'/);
+  assert.match(server, /parsed\.protocol!=='http:'/);
   assert.match(server, /Authorization.*Bearer /);
   assert.ok(server.includes("idempotency_key:'local-worker-result-'"));
   assert.ok(server.includes("scope:['local-artifact-review','independent-verification']"));
