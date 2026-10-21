@@ -18,5 +18,5 @@ jobs:
           node-version: 20
       - name: Syntax check
         run: node --check UnifiedField/Voice/index-voice-sources.cjs
-      - name: Source catalog tests
-        run: node --test UnifiedField/Voice/voice-source-indexer.test.cjs
+      - name: Voice source and API tests
+        run: node --test UnifiedField/Voice/*.test.cjs
