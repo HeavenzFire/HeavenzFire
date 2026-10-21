@@ -107,3 +107,12 @@ Run destructive fault injection only against disposable fixtures, never the live
 - Never log bearer tokens or decrypt them into command-line arguments.
 - Revert only the exact change that introduced a regression; preserve evidence and user data.
 - A successful health probe is a narrow fact. Production readiness requires sustained observation and end-to-end task evidence.
+
+
+## Recovery evidence — 2026-10-21
+
+- Found and fixed a startup gate defect in the mesh launcher: it checked five configured endpoints but compared the healthy count to four. The corrected check compares against the configured port count. A pre-change backup was preserved on the desktop as `mesh_launcher.ps1.bak-tesla-grid-20261021`.
+- Launched the coordinator, loopback dashboard bridge, and three authenticated workers through the corrected launcher. All five health endpoints returned `ok=true`: 8080, 8081, 18101, 18102, and 18103.
+- An end-to-end smoke task was enqueued through the bridge, assigned to worker `hf-worker-18102`, completed on attempt 1, and retrieved from persisted task state. Task ID: `4514b28a-492b-4efe-b14e-b9c006b8e2d1`. The test used a bounded local SHA-256 task, not model inference.
+- After recovery, all four Watchtower observer processes still reported running. Available RAM was approximately 1.29 GB and C: free space 8.45 GB; both remain below warning thresholds (RAM near 1 GB, disk below 15 GB).
+- This verifies a live queue round-trip at the time of test; it does not prove persistence across reboot, long-duration stability, or a crash-prevention guarantee. The launcher is a foreground supervisor session and has not been installed as a startup task. Reboot persistence and dashboard integration remain open gates.
