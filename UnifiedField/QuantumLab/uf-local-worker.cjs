@@ -68,6 +68,9 @@ function createWorkerServer(options = {}) {
         });
       }
       if (req.method === 'GET' && url.pathname === '/api/tasks') {
+        if (!token) return send(res, 503, { ok: false, error: 'read_token_not_configured' });
+        const authorization = req.headers.authorization || '';
+        if (!authorization.startsWith('Bearer ') || !safeEqual(authorization.slice(7), token)) return send(res, 401, { ok: false, error: 'unauthorized' });
         const snapshot = journal.inspect();
         return send(res, 200, { ok: true, mode, tasks: snapshot.tasks, corruptLines: snapshot.corruptLines });
       }
