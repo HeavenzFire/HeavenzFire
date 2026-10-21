@@ -1,0 +1,253 @@
+{
+  "schema": "heavenzfire.unified-field.repository-registry.v1",
+  "purpose": "Federated registry for the combined HeavenzFire repository ecosystem",
+  "model": "A repository is a component node; integration occurs through versioned adapters and shared task/evidence contracts, not by blindly copying all source into one repository.",
+  "completeness": "inventory-paginated-but-code-review-partial",
+  "inventorySnapshot": "UnifiedField/unified-field-repository-inventory.snapshot.json",
+  "inventoryLimitations": "The separate list_repositories endpoint returned 100 names at offset 0 and zero at offset 100, omitting the known OpenSourceAIHub repository. The paginated installed-repository search for user:HeavenzFire returned 276 unique repositories (pages 100, 100, 76, then 0), including OpenSourceAIHub. This is complete for that query result set, not proof that every account repository is indexed or accessible; all entries still need code-level review.",
+  "lastReviewed": "2026-10-20",
+  "taskContract": "heavenzfire.shared-task.v1",
+  "invariants": [
+    "pending approval never implies approved",
+    "component test success does not imply end-to-end verification",
+    "do not bulk-copy upstream or forked repositories without license/provenance review",
+    "only mark verified when a reproducible cross-component test exists"
+  ],
+  "components": [
+    {
+      "id": "core-project-hub",
+      "repository": "HeavenzFire/HeavenzFire",
+      "role": "shared-contract-and-integration-documentation",
+      "status": "in-progress",
+      "evidence": "draft PR feat/shared-task-contract-v1"
+    },
+    {
+      "id": "open-source-ai-hub",
+      "repository": "HeavenzFire/OpenSourceAIHub",
+      "role": "local-first-model-inventory-and-agent-handoff",
+      "status": "adapter-proposed",
+      "evidence": "README.md plus draft adapter PR #1: https://github.com/HeavenzFire/OpenSourceAIHub/pull/1; connected-PC server/pipeline/inbox syntax checks passed; 20 combined tests passed including actual cross-repository proposal delivery; persistent inbox deployment and full live R&D cycle not verified"
+    },
+    {
+      "id": "unified-codebase",
+      "repository": "HeavenzFire/UnifiedCodebase",
+      "role": "unknown-pending-inspection",
+      "status": "discovered",
+      "evidence": "repository metadata; default-branch README not found during initial pass"
+    },
+    {
+      "id": "ollama-runtime",
+      "repository": "HeavenzFire/ollama",
+      "role": "inference-runtime-dependency",
+      "status": "dependency-review-required",
+      "evidence": "repository metadata; provenance of changes must be audited before attribution"
+    },
+    {
+      "id": "llama-cpp-backend",
+      "repository": "HeavenzFire/llama.cpp",
+      "role": "inference-backend-dependency",
+      "status": "dependency-review-required",
+      "evidence": "repository metadata"
+    },
+    {
+      "id": "qwen-agent",
+      "repository": "HeavenzFire/Qwen-AgentJC",
+      "role": "agent-capability-candidate",
+      "status": "candidate-review-required",
+      "evidence": "README links QwenLM/Qwen-Agent documentation and resources; root package.json was not found. Treat as an upstream agent-framework candidate until fork provenance, license, interfaces, and isolated smoke tests are verified."
+    },
+    {
+      "id": "edge-extensions",
+      "repository": "HeavenzFire/MicrosoftEdge-Extensions",
+      "role": "browser-integration-candidate",
+      "status": "candidate-review-required",
+      "evidence": "repository metadata"
+    },
+    {
+      "id": "multimodal-root",
+      "repository": "HeavenzFire/EntangledMultimodalSystem",
+      "role": "multimodal-research-candidate",
+      "status": "candidate-review-required",
+      "evidence": "repository metadata"
+    },
+    {
+      "id": "multimodal-variant-1",
+      "repository": "HeavenzFire/EntangledMultimodalSystem-1",
+      "role": "multimodal-research-candidate",
+      "status": "candidate-review-required",
+      "evidence": "repository metadata"
+    },
+    {
+      "id": "multimodal-variant-2",
+      "repository": "HeavenzFire/EntangledMultimodalSystem-2",
+      "role": "multimodal-research-candidate",
+      "status": "candidate-review-required",
+      "evidence": "repository metadata"
+    },
+    {
+      "id": "multimodal-variant-3",
+      "repository": "HeavenzFire/EntangledMultimodalSystem-3",
+      "role": "multimodal-research-candidate",
+      "status": "candidate-review-required",
+      "evidence": "repository metadata"
+    },
+    {
+      "id": "spirit-engine",
+      "repository": "HeavenzFire/Spirit_Engine",
+      "role": "framework-candidate",
+      "status": "candidate-review-required",
+      "evidence": "repository metadata"
+    },
+    {
+      "id": "spirit-angelus",
+      "repository": "HeavenzFire/spirit-angelus",
+      "role": "framework-candidate",
+      "status": "candidate-review-required",
+      "evidence": "repository metadata"
+    },
+    {
+      "id": "spirit-angelus-framework",
+      "repository": "HeavenzFire/SpiritAngelusFramework",
+      "role": "framework-candidate",
+      "status": "candidate-review-required",
+      "evidence": "repository metadata"
+    },
+    {
+      "id": "5d-framework",
+      "repository": "HeavenzFire/5D-FRAMEWORK",
+      "role": "framework-candidate",
+      "status": "candidate-review-required",
+      "evidence": "repository metadata"
+    },
+    {
+      "id": "elysium-gateway",
+      "repository": "HeavenzFire/Elysium-Gateway",
+      "role": "multi-agent-react-frontend-using-gemini",
+      "status": "reviewed",
+      "integrationStatus": "security-hardening-required",
+      "riskLevel": "high-if-publicly-deployed",
+      "evidence": "README.md, package.json, vite.config.ts, and services/geminiService.ts inspected. Vite previously bound to 0.0.0.0 and defined API_KEY/GEMINI_API_KEY into client variables; frontend constructed GoogleGenAI with process.env.API_KEY. Security hardening is proposed in draft PR #1 https://github.com/HeavenzFire/Elysium-Gateway/pull/1: server-side Gemini proxy, loopback binding, origin/body validation, and tests. Connected-PC tests passed 6/6; CI run #9 passed before the latest package-script-only adjustment, whose CI result is pending.",
+      "sourceRefs": [
+        "https://github.com/HeavenzFire/Elysium-Gateway/blob/main/vite.config.ts",
+        "https://github.com/HeavenzFire/Elysium-Gateway/blob/main/services/geminiService.ts"
+      ]
+    },
+    {
+      "id": "sovereign-node-prototype",
+      "repository": "HeavenzFire/Sovereign-Node-",
+      "role": "express-vite-websocket-research-prototype",
+      "status": "reviewed",
+      "integrationStatus": "security-hardening-required",
+      "riskLevel": "high-if-network-reachable",
+      "evidence": "server.ts binds to 0.0.0.0:3000 and exposes POST /seal, GET /api/vault, POST /api/trinary/decide and WebSocket START_ENGINE/STOP_ENGINE without visible authentication middleware in inspected route code. /api/mesh/nodes returns hard-coded sample nodes. src/lib/syntropic-engine.ts describes a Grover-based pass but uses Math.random simulation. src/lib/model-advisors.ts sends Authorization: Bearer EMPTY to local OpenAI-compatible endpoints. Do not treat as a production mesh or verified quantum implementation.",
+      "sourceRefs": [
+        "https://github.com/HeavenzFire/Sovereign-Node-/blob/main/server.ts",
+        "https://github.com/HeavenzFire/Sovereign-Node-/blob/main/src/lib/syntropic-engine.ts",
+        "https://github.com/HeavenzFire/Sovereign-Node-/blob/main/src/lib/model-advisors.ts"
+      ]
+    },
+    {
+      "id": "spirit-engine-recovery",
+      "repository": "HeavenzFire/Spirit_Engine",
+      "role": "local-recovery-snapshot-and-verification",
+      "status": "reviewed",
+      "integrationStatus": "recovery-adapter-candidate",
+      "riskLevel": "medium-until-end-to-end-restore",
+      "evidence": "README and scripts/recovery.py describe allowlist-based inventory, plan-only mode, SHA-256 snapshot verification, secret/cache exclusions, no source deletion, and no overwrite of live projects. tests/test_recovery.py covers exclusions and tamper/path traversal cases. README explicitly says real bucket upload and complete end-to-end restore have not been validated.",
+      "sourceRefs": [
+        "https://github.com/HeavenzFire/Spirit_Engine/blob/main/README.md",
+        "https://github.com/HeavenzFire/Spirit_Engine/blob/main/scripts/recovery.py",
+        "https://github.com/HeavenzFire/Spirit_Engine/blob/main/tests/test_recovery.py"
+      ]
+    },
+    {
+      "id": "edge-extensions-upstream-samples",
+      "repository": "HeavenzFire/MicrosoftEdge-Extensions",
+      "role": "browser-extension-community-samples",
+      "status": "dependency_only",
+      "integrationStatus": "not-a-custom-extension-adapter",
+      "evidence": "README describes the MicrosoftEdge-Extensions community repository for sample code, issues, and discussions. The inspected package.json is generic workspace metadata with a placeholder test script; no root manifest.json was found. Do not treat this repository itself as a finished HeavenzFire extension.",
+      "sourceRefs": [
+        "https://github.com/HeavenzFire/MicrosoftEdge-Extensions/blob/main/README.md",
+        "https://github.com/HeavenzFire/MicrosoftEdge-Extensions/blob/main/package.json"
+      ]
+    },
+    {
+      "id": "syntropic-kernel-explore",
+      "repository": "HeavenzFire/Syntropic-Kernel-Code-Explore",
+      "role": "ai-studio-react-vite-frontend-candidate",
+      "status": "reviewed",
+      "integrationStatus": "candidate-interface-review-required",
+      "evidence": "README links an AI Studio app and recommends a GEMINI_API_KEY; package.json exposes Vite dev/build/preview scripts and React/Vite dependencies, with no dedicated backend or test script visible in the inspected package. Verify actual API call paths and deployment behavior before adapting.",
+      "sourceRefs": [
+        "https://github.com/HeavenzFire/Syntropic-Kernel-Code-Explore/blob/main/README.md",
+        "https://github.com/HeavenzFire/Syntropic-Kernel-Code-Explore/blob/main/package.json"
+      ]
+    },
+    {
+      "id": "pantheon-neural-intelligence",
+      "repository": "HeavenzFire/The-Pantheon-of-Neural-Intelligence-",
+      "role": "react-vite-server-prototype-candidate",
+      "status": "discovered",
+      "integrationStatus": "source-review-required",
+      "evidence": "Root README.md was not found in the inspected default branch. package.json declares a tsx server.ts entry, Vite build, Express/WebSocket/Gemini-related dependencies. Route behavior, permissions, secrets handling, tests, and deployment binding have not yet been reviewed.",
+      "sourceRefs": [
+        "https://github.com/HeavenzFire/The-Pantheon-of-Neural-Intelligence-/blob/main/package.json"
+      ]
+    },
+    {
+      "id": "ecosystem-audit-docs",
+      "repository": "HeavenzFire/HEAVENZFIRE-ECOSYSTEM-AUDIT",
+      "role": "portfolio-audit-documentation",
+      "status": "reviewed",
+      "integrationStatus": "source-artifact-reconciliation-required",
+      "evidence": "README claims a complete 256+ repository inventory and production readiness, but direct default-branch fetches of the linked root paths 1-COMPLETE_REPO_INVENTORY.csv and 2-ARCHITECTURE_MAP.json returned 404. Treat the README's completeness/production claims as unverified until the referenced artifacts are located and reconciled against the 276-result paginated search snapshot.",
+      "sourceRefs": [
+        "https://github.com/HeavenzFire/HEAVENZFIRE-ECOSYSTEM-AUDIT/blob/main/README.md"
+      ]
+    },
+    {
+      "id": "entangled-multimodal-root",
+      "repository": "HeavenzFire/EntangledMultimodalSystem",
+      "role": "multimodal-research-prototype",
+      "status": "reviewed",
+      "integrationStatus": "scientific-claim-validation-required",
+      "evidence": "README includes claims that its equations prove consciousness collapses quantum waves and measure collective consciousness impact, but the inspected root README did not provide reproducible experiments or empirical validation for those claims; package.json was not found at the root. Preserve as speculative research material until testable definitions, methods, data, and independent replication are supplied.",
+      "sourceRefs": [
+        "https://github.com/HeavenzFire/EntangledMultimodalSystem/blob/main/README.md"
+      ]
+    },
+    {
+      "id": "unified-field-browser-bridge",
+      "repository": "HeavenzFire/HeavenzFire",
+      "role": "manifest-v3-user-reviewed-selection-to-local-task-inbox",
+      "status": "adapter_implemented",
+      "integrationStatus": "browser-load-smoke-test-pending",
+      "evidence": "UnifiedField/BrowserBridge contains a Manifest V3 popup, shared-task record builder, and tests. It uses only activeTab/scripting and host permission http://127.0.0.1:18796/*; capture and submit are separate user clicks; records remain proposed/pending. Connected-PC tests passed 4/4; extension has not yet been loaded into a real browser for an install smoke test.",
+      "sourceRefs": [
+        "UnifiedField/BrowserBridge/README.md",
+        "UnifiedField/BrowserBridge/manifest.json",
+        "UnifiedField/BrowserBridge/browser-bridge.test.cjs"
+      ]
+    }
+  ],
+  "requiredComponentStatuses": [
+    "discovered",
+    "reviewed",
+    "adapter_proposed",
+    "adapter_implemented",
+    "verified",
+    "dependency_only",
+    "archived",
+    "duplicate",
+    "incompatible",
+    "not_yet_reviewed"
+  ],
+  "nextMilestones": [
+    "Review and reconcile security findings in Elysium-Gateway and Sovereign-Node- before any network-facing integration",
+    "Integrate Spirit_Engine as a plan-only recovery capability after its unit tests and restore semantics are verified",
+    "Build a custom least-privilege browser extension adapter rather than treating MicrosoftEdge-Extensions sample repository as an installed extension",
+    "Inspect the remaining 276 repositories in batches and classify every entry by provenance, role, license, and tests",
+    "Verify live opt-in continuous R&D proposal delivery to the core inbox without executing proposals"
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "schema": "heavenzfire.capability-registry.v1",
+  "purpose": "Describe integration health without claiming that untested providers are operational.",
+  "statuses": [
+    "available",
+    "degraded",
+    "quota_exhausted",
+    "unauthorized",
+    "disabled",
+    "unknown"
+  ],
+  "capability": {
+    "id": "example.adapter.capability",
+    "provider": "provider-name",
+    "status": "unknown",
+    "checkedAt": null,
+    "evidence": [],
+    "limits": [],
+    "localFallback": null,
+    "requiresApproval": true
+  },
+  "rules": [
+    "Unknown or stale health is not equivalent to available.",
+    "Quota exhaustion must not erase queued tasks or evidence.",
+    "Fallback must preserve approval and data-handling requirements.",
+    "Privileged execution is denied unless task-specific approval is valid.",
+    "Never store secrets in this registry."
+  ]
+}
