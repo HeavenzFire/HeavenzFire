@@ -44,6 +44,8 @@ test('draft creates a trusted, proposal-only blueprint and hashes it', async () 
   assert.equal(result.ok, true);
   assert.equal(result.generated, true);
   assert.equal(result.valid, true);
+  assert.equal(result.source, 'local_model');
+  assert.equal(result.model_assist.status, 'accepted');
   assert.equal(result.attempts, 1);
   assert.match(result.blueprint_hash, /^[a-f0-9]{64}$/);
   assert.equal(result.blueprint.role, input.role);
@@ -68,6 +70,7 @@ test('one bounded repair is attempted for an invalid capability proposal', async
   });
   assert.equal(calls, 2);
   assert.equal(result.valid, true);
+  assert.equal(result.source, 'local_model_repaired');
   assert.equal(result.attempts, 2);
 });
 
@@ -110,16 +113,32 @@ test('a malformed first response receives one bounded repair attempt', async () 
   assert.equal(result.attempts, 2);
 });
 
-test('malformed output after the single repair never qualifies a candidate', async () => {
+test('malformed output after the single repair yields a safe fallback, not a model-qualified draft', async () => {
   let calls = 0;
   const result = await draftWorkerBlueprint(input, {
     axes,
     fetchImpl: async () => { calls++; return response('still not json'); }
   });
-  assert.equal(result.ok, false);
-  assert.equal(result.error, 'repair_response_not_json');
+  assert.equal(result.ok, true);
+  assert.equal(result.valid, true);
+  assert.equal(result.source, 'deterministic_template_fallback');
+  assert.equal(result.model_assist.status, 'rejected');
   assert.equal(result.attempts, 2);
   assert.equal(calls, 2);
+  assert.match(result.blueprint.id, /^hf-artifact-verifier-[a-f0-9]{8}$/);
+  assert.equal(result.blueprint.execution.mode, 'proposal_only');
   const fence = String.fromCharCode(96, 96, 96);
   assert.equal(parseJsonCandidate(fence + 'json\n{"ok":true}\n' + fence).ok, true);
+});
+
+test('local model transport failure still creates an auditable deterministic fallback', async () => {
+  const result = await draftWorkerBlueprint(input, {
+    axes,
+    fetchImpl: async () => { throw new Error('connection refused'); }
+  });
+  assert.equal(result.ok, true);
+  assert.equal(result.valid, true);
+  assert.equal(result.source, 'deterministic_template_fallback');
+  assert.equal(result.model_assist.status, 'unavailable');
+  assert.match(result.blueprint_hash, /^[a-f0-9]{64}$/);
 });
