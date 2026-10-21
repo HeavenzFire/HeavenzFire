@@ -18,7 +18,7 @@ test('dashboard server is loopback-only and exposes a fixed worker action', () =
   assert.match(server, /const HOST\s*=\s*['"]127\.0\.0\.1['"]/);
   assert.match(server, /req\.method===['"]POST['"]&&req\.url===['"]\/api\/forge\/validate['"]/);
   assert.match(server, /req\.method===['"]POST['"]&&\(req\.url===['"]\/api\/worker\/run['"]\|\|req\.url===['"]\/api\/worker\/retry['"]\)\)/);
-  assert.match(server, /if\(workerRun\.running\)/);
+  assert.match(server, /if\(modelWorkloadBusy\(\)\)/);
   assert.match(server, /powershell\.exe/);
   assert.match(server, /Cross-origin request denied/);
   assert.match(server, /req\.url===['"]\/api\/overview['"]/);
