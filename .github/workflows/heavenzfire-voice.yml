@@ -1,0 +1,22 @@
+name: HeavenzFire Voice Source Intake
+on:
+  push:
+    paths:
+      - 'UnifiedField/Voice/**'
+      - '.github/workflows/heavenzfire-voice.yml'
+  pull_request:
+    paths:
+      - 'UnifiedField/Voice/**'
+      - '.github/workflows/heavenzfire-voice.yml'
+jobs:
+  voice-source-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Syntax check
+        run: node --check UnifiedField/Voice/index-voice-sources.cjs
+      - name: Source catalog tests
+        run: node --test UnifiedField/Voice/voice-source-indexer.test.cjs
