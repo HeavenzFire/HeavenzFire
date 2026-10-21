@@ -31,9 +31,9 @@ A new live task was then enqueued and polled to terminal completion:
 - Payload input: `heavenzfire-live-agent-execution-2026-10-21`
 - Rounds: `1000`
 - Terminal status returned by coordinator: `completed`
-- Result SHA-256: `417337c7e2b597370b25af095d4eb83216d8c9ca68eb60af0e3398b6f2eed018`
+- Iterated-SHA-256 result digest (1,000 rounds over raw digest bytes): `417337c7e2b597370b25af095d4eb83216d8c9ca68eb60af0e3398b6f2eed018`
 
-A separate PowerShell computation repeated the same 1,000-round SHA-256 procedure from the input string and reproduced the exact digest.
+Independent verification was run on the authorized Windows host using PowerShell 5.1. The exact reproducible algorithm and expected-digest check are included below.
 
 ## Acceptance status
 
@@ -41,7 +41,7 @@ A separate PowerShell computation repeated the same 1,000-round SHA-256 procedur
 |---|---|---|
 | Task contract / approval / inbox tests | PASS | 20/20 Node tests |
 | Braided pipeline deterministic acceptance | PASS | 10 checks, 8 trace events |
-| Live authenticated mesh task round-trip | PASS | Task ID and terminal result above |
+| Live authenticated mesh task round-trip | SESSION-REPORTED | Task ID and terminal status are recorded in this session report; a redacted raw coordinator response is not included |
 | Independent result recomputation | PASS | Exact digest match |
 | Four independent LLM agents completing distinct agentic tasks | NOT VERIFIED | No four-agent end-to-end inference run in this session |
 | Full GitHub/local artifact consolidation | NOT VERIFIED | This report is not evidence of a full multi-repository merge |
@@ -56,12 +56,32 @@ A separate PowerShell computation repeated the same 1,000-round SHA-256 procedur
 
 ## Reproduction
 
-From PowerShell 5.1 in the local workspace:
+From PowerShell 5.1 at the repository root (with `node` available on `PATH`):
 
 ```powershell
-Set-Location 'C:\Users\rucke\HeavenzFire'
-& 'C:\Program Files\nodejs\node.exe' --test TaskAdapterVerify\*.test.cjs
-& 'C:\Program Files\nodejs\node.exe' UnifiedField\BraidedPipeline\test-braided-pipeline.cjs
+$taskTests = Get-ChildItem -Path .\TaskAdapterVerify -Filter '*.test.cjs' | ForEach-Object { $_.FullName }
+node --test $taskTests
+node .\UnifiedField\BraidedPipeline\test-braided-pipeline.cjs
+```
+
+Reproduce the 1,000-round digest independently. Each round hashes the raw 32-byte digest from the previous round, not its hexadecimal text:
+
+```powershell
+$inputText = 'heavenzfire-live-agent-execution-2026-10-21'
+$rounds = 1000
+$bytes = [System.Text.Encoding]::UTF8.GetBytes($inputText)
+$sha256 = [System.Security.Cryptography.SHA256]::Create()
+try {
+    for ($i = 0; $i -lt $rounds; $i++) {
+        $bytes = $sha256.ComputeHash($bytes)
+    }
+} finally {
+    $sha256.Dispose()
+}
+$digest = [BitConverter]::ToString($bytes).Replace('-', '').ToLowerInvariant()
+$expected = '417337c7e2b597370b25af095d4eb83216d8c9ca68eb60af0e3398b6f2eed018'
+if ($digest -ne $expected) { throw "Digest mismatch: $digest" }
+$digest
 ```
 
 The live mesh test additionally requires the existing DPAPI token, an idle local coordinator, and authenticated workers. Never paste or commit the token into a report or repository.
