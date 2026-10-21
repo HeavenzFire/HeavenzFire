@@ -46,6 +46,7 @@ The proposed protocol and role architecture are documented in:
 - `uf-local-worker.cjs`: loopback-only task metadata API; bearer authentication for task routes; no shell execution, network sync, or automatic replay.
 - `uf-local-worker.test.cjs`: tests loopback binding, authentication, idempotent enqueue, replay conflict checks, and route rejection.
 - `Start-UnifiedFieldWorker.ps1`: PowerShell 5.1 launcher for the local worker.
+- The dashboard probes `http://127.0.0.1:8798/health` and reports the local worker as degraded if it responds but its journal is not writable; the dashboard does not expose the worker's bearer token.
 - `uf-topology.cjs`: deterministic, plan-only clustered topology proposal with bounded inter-cluster fanout; it does not create connections or replicate data.
 - `uf-topology.test.cjs`: tests determinism, bounded links, known-node edges, and invalid configurations.
 - `uf-topology-cli.cjs`: CLI to produce a topology proposal from a JSON node manifest; no network calls or replication.
