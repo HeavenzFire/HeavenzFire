@@ -16,6 +16,7 @@ on:
       - 'UnifiedField/QuantumLab/uf-topology-cli.test.cjs UnifiedField/QuantumLab/uf-local-worker.test.cjs'
       - 'UnifiedField/QuantumLab/uf-local-worker.cjs'
       - 'UnifiedField/QuantumLab/uf-local-worker.test.cjs'
+      - 'UnifiedField/QuantumLab/Start-UnifiedFieldWorker.ps1'
       - '.github/workflows/uf-tcp-policy.yml'
   pull_request:
     paths:
