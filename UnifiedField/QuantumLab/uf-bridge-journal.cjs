@@ -23,17 +23,35 @@ function validateTask(task) {
     throw new TypeError('executable payloads are not accepted by the journal');
   }
 }
+function validateEvent(e) {
+  if (!e || typeof e !== 'object' || Array.isArray(e) ||
+      typeof e.event_id !== 'string' || !e.event_id ||
+      typeof e.type !== 'string' || !e.payload || typeof e.payload !== 'object' || Array.isArray(e.payload)) {
+    throw new Error('invalid event shape');
+  }
+  if (e.type === 'TASK_ENQUEUED') {
+    const t = e.payload.task;
+    if (!t || typeof t !== 'object' || Array.isArray(t) ||
+        typeof t.task_id !== 'string' || !t.task_id ||
+        typeof t.idempotency_key !== 'string' || !t.idempotency_key) {
+      throw new Error('invalid TASK_ENQUEUED payload');
+    }
+  } else if (e.type === 'TASK_STATE') {
+    if (typeof e.payload.task_id !== 'string' || !e.payload.task_id ||
+        !STATES.has(e.payload.status)) throw new Error('invalid TASK_STATE payload');
+  } else {
+    throw new Error('unsupported event type');
+  }
+  return e;
+}
 function readJournal(file) {
   if (!fs.existsSync(file)) return { events: [], corruptLines: [] };
   const raw = fs.readFileSync(file, 'utf8');
   const events = [], corruptLines = [];
   raw.split('\n').forEach((line, i) => {
     if (!line.trim()) return;
-    try {
-      const e = JSON.parse(line);
-      if (!e || typeof e.event_id !== 'string' || typeof e.type !== 'string' || !e.payload) throw new Error('invalid event shape');
-      events.push(e);
-    } catch (err) { corruptLines.push({ line: i + 1, reason: err.message }); }
+    try { events.push(validateEvent(JSON.parse(line))); }
+    catch (err) { corruptLines.push({ line: i + 1, reason: err.message }); }
   });
   return { events, corruptLines };
 }
@@ -85,9 +103,20 @@ class OfflineTaskJournal {
     if (!STATES.has(status)) throw new TypeError('unsupported task state');
     const t = this.inspect().tasks.find(x => x.task_id === taskId);
     if (!t) throw new Error('unknown task_id');
-    if (status === 'RUNNING' && t.status !== 'QUEUED' && t.status !== 'BLOCKED') throw new Error('task cannot enter RUNNING from ' + t.status);
-    if (status === 'DONE' && t.status !== 'RUNNING') throw new Error('task must be RUNNING before DONE');
-    if (status === 'CONFLICT' && !details.last_error) throw new Error('conflict requires an explanatory last_error');
+    const allowed = {
+      QUEUED: new Set(['RUNNING', 'BLOCKED', 'CONFLICT', 'FAILED']),
+      RUNNING: new Set(['DONE', 'BLOCKED', 'CONFLICT', 'FAILED']),
+      BLOCKED: new Set(['RUNNING', 'CONFLICT', 'FAILED']),
+      DONE: new Set(),
+      CONFLICT: new Set(),
+      FAILED: new Set()
+    };
+    if (!allowed[t.status] || !allowed[t.status].has(status)) {
+      throw new Error('task cannot transition from ' + t.status + ' to ' + status);
+    }
+    if (status === 'CONFLICT' && (typeof details.last_error !== 'string' || !details.last_error.trim())) {
+      throw new Error('conflict requires an explanatory last_error');
+    }
     this._append('TASK_STATE', { task_id: taskId, status, attempts: details.attempts ?? t.attempts, last_error: details.last_error ?? null });
     return this.inspect().tasks.find(x => x.task_id === taskId);
   }
