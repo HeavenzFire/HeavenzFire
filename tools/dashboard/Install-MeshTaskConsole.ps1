@@ -44,6 +44,8 @@ try {
     if(!Number.isInteger(rounds)||rounds<1||rounds>100000)throw Error('hash_task rounds must be an integer from 1 to 100000');
     payload={input,rounds};
    }else if(body.type==='model_task'){
+    const freeRamBytes=require('node:os').freemem();
+    if(freeRamBytes<1024*1024*1024){res.writeHead(503,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'model task admission paused: available RAM is below 1 GiB'}));}
     const prompt=body.payload&&body.payload.prompt;
     const model=body.payload&&body.payload.model||'qwen2.5:0.5b';
     if(typeof prompt!=='string'||prompt.trim().length<1||prompt.length>3000)throw Error('model_task prompt must contain 1-3000 characters');
@@ -73,6 +75,24 @@ try {
  }
 '@
         $server = $server.Replace($marker, $routes + $marker)
+        $serverChanged = $true
+    }
+
+    if ($server.Contains("req.url==='/api/mesh/enqueue'") -and -not $server.Contains('model task admission paused')) {
+        $modelMarker = "}else if(body.type==='model_task'){"
+        if (([regex]::Matches($server, [regex]::Escape($modelMarker))).Count -ne 1) {
+            throw 'Could not uniquely locate model-task branch for RAM admission guard.'
+        }
+        if (-not $serverBackup) {
+            $serverBackup = $serverPath + '.bak-mesh-console-' + $stamp
+            Copy-Item -LiteralPath $serverPath -Destination $serverBackup
+        }
+        $ramGuard = @'
+}else if(body.type==='model_task'){
+    const freeRamBytes=require('node:os').freemem();
+    if(freeRamBytes<1024*1024*1024){res.writeHead(503,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'model task admission paused: available RAM is below 1 GiB'}));}
+'@
+        $server = $server.Replace($modelMarker, $ramGuard.TrimEnd())
         $serverChanged = $true
     }
 
