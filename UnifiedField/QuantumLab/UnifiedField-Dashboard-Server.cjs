@@ -4,6 +4,7 @@ const HOST='127.0.0.1',PORT=8800;
 const WORKER_MODEL_ALLOWLIST=Object.freeze(['qwen2.5:0.5b','heavenzfire-runtime:latest','heavenzfire:latest','llama3.2:1b']);
 const {publishWorkerResultsToJournal}=require('./uf-model-worker-journal-publisher.cjs');
 const {createBlueprint,validateBlueprint,buildEvaluationMatrix,REQUIRED_ADVERSARIAL_PROFILES}=require('./worker-forge.cjs');
+const {latestWorkerResults}=require('./worker-result-store.cjs');
 const FORGE_AXES={
  task_type:['build','review'],
  risk_class:['LOW','MEDIUM','HIGH'],
@@ -19,7 +20,6 @@ const GUARDIAN=path.join(ROOT,'144A','guardian-state.json');
 const LOCALAI=path.join(ROOT,'UnifiedField','QuantumLab','LocalAI');
 const WORKER_SCRIPT=path.join(ROOT,'UnifiedField','QuantumLab','Invoke-LocalModelWorkerBatch.ps1');
 let workerRun={running:false,pid:null,startedAt:null,finishedAt:null,exitCode:null,error:null};
-function latestWorkerResults(minMtime=0){try{const files=fs.readdirSync(LOCALAI).filter(n=>n.toLowerCase().startsWith('worker-smoke-')&&n.toLowerCase().endsWith('.json')).map(n=>({name:n,mtime:fs.statSync(path.join(LOCALAI,n)).mtimeMs})).filter(x=>x.mtime>=minMtime).sort((a,b)=>b.mtime-a.mtime);if(!files.length)return null;return {file:files[0].name,results:readJson(path.join(LOCALAI,files[0].name))}}catch{return null}}
 const endpoints=[
  {id:'browserbridge',name:'144A BrowserBridge',url:'http://127.0.0.1:18795/health'},
  {id:'ollama',name:'Local model runtime',url:'http://127.0.0.1:11434/api/tags'},
@@ -68,7 +68,7 @@ const server=http.createServer(async(req,res)=>{
  }
  if(req.method==='GET'&&req.url==='/api/worker/status'){
   res.writeHead(200,{'Content-Type':'application/json'});
-  return res.end(JSON.stringify({ok:true,run:workerRun,latest:latestWorkerResults()}));
+  return res.end(JSON.stringify({ok:true,run:workerRun,latest:latestWorkerResults(LOCALAI)}));
  }
  if(req.method==='GET'&&req.url==='/api/forge/plan'){
   const plan=buildEvaluationMatrix(FORGE_AXES,{maxCases:2048});
@@ -111,7 +111,7 @@ const server=http.createServer(async(req,res)=>{
   child.on('close',async code=>{
    const startedAt=workerRun.startedAt;
    workerRun={...workerRun,phase:'publishing',exitCode:code,error:spawnError||(code!==0?(workerStderr.trim()||'Worker batch exited with code '+code):null),stdout:workerStdout,stderr:workerStderr};
-   const artifact=latestWorkerResults(Date.parse(startedAt||'')||Date.now());
+   const artifact=latestWorkerResults(LOCALAI,Date.parse(startedAt||'')||Date.now());
    let journalPublish;
    if(artifact)journalPublish=await publishWorkerResultsToJournal(artifact);
    else journalPublish={state:'blocked',reason:'No result artifact was written during this batch',published:0,duplicate:0,failed:0,errors:[]};
