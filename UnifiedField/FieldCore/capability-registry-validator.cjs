@@ -35,6 +35,23 @@ function parseTimestamp(value, field) {
   }
   const timestamp = Date.parse(value);
   if (!Number.isFinite(timestamp)) throw new TypeError(field + ' must be a valid timestamp');
+  const datePart = value.slice(0, 10);
+  const timePart = value.slice(11, 19);
+  const [year, month, day] = datePart.split('-').map(Number);
+  const [hour, minute, second] = timePart.split(':').map(Number);
+  const calendar = new Date(Date.UTC(year, month - 1, day, hour, minute, second));
+  if (calendar.getUTCFullYear() !== year || calendar.getUTCMonth() !== month - 1 ||
+      calendar.getUTCDate() !== day || hour > 23 || minute > 59 || second > 59) {
+    throw new TypeError(field + ' must be a valid timestamp');
+  }
+  const offset = value.slice(19);
+  if (offset && offset !== 'Z') {
+    const match = /^([+-])(\d{2}):(\d{2})$/.exec(offset);
+    if (!match || Number(match[2]) > 14 || Number(match[3]) > 59 ||
+        (Number(match[2]) === 14 && Number(match[3]) !== 0)) {
+      throw new TypeError(field + ' must have a valid timezone offset');
+    }
+  }
   return timestamp;
 }
 
