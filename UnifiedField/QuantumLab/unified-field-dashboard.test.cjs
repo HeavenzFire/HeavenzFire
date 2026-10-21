@@ -24,6 +24,10 @@ test('dashboard server is loopback-only and exposes a fixed worker action', () =
 });
 
 test('dashboard exposes model batch control and renders status from overview', () => {
+  assert.match(server, /\/api\/forge\/validate/);
+  assert.match(server, /\/api\/forge\/plan/);
+  assert.match(server, /buildEvaluationMatrix\(FORGE_AXES/);
+  assert.match(server, /Cross-origin request denied/);
   assert.match(dashboard, /id="runModelWorker"/);
   assert.match(dashboard, /fetch\('\/api\/worker\/run'/);
   assert.match(dashboard, /renderModelWorker\(x\)/);
@@ -32,6 +36,12 @@ test('dashboard exposes model batch control and renders status from overview', (
   assert.match(dashboard, /heavenzfire:latest/);
   assert.match(dashboard, /llama3\.2:1b/);
   assert.match(dashboard, /Generated code is not executed automatically/);
+  assert.match(dashboard, /id="workerBlueprint"/);
+  assert.match(dashboard, /id="validateWorkerBlueprint"/);
+  assert.match(dashboard, /id="buildWorkerEvalPlan"/);
+  assert.match(dashboard, /validateForgeBlueprint/);
+  assert.match(dashboard, /buildWorkerEvalPlan/);
+  assert.match(dashboard, /does not fine-tune model weights/);
 });
 
 test('worker artifacts publish metadata-only review tasks with idempotency and bounded local API', () => {
