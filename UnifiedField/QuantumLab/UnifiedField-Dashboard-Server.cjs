@@ -8,7 +8,7 @@ const GUARDIAN=path.join(ROOT,'144A','guardian-state.json');
 const LOCALAI=path.join(ROOT,'UnifiedField','QuantumLab','LocalAI');
 const WORKER_SCRIPT=path.join(ROOT,'UnifiedField','QuantumLab','Invoke-LocalModelWorkerBatch.ps1');
 let workerRun={running:false,pid:null,startedAt:null,finishedAt:null,exitCode:null,error:null};
-function latestWorkerResults(){try{const files=fs.readdirSync(LOCALAI).filter(n=>/^worker-smoke-.*\\.json$/i.test(n)).map(n=>({name:n,mtime:fs.statSync(path.join(LOCALAI,n)).mtimeMs})).sort((a,b)=>b.mtime-a.mtime);if(!files.length)return null;return {file:files[0].name,results:readJson(path.join(LOCALAI,files[0].name))}}catch{return null}}
+function latestWorkerResults(){try{const files=fs.readdirSync(LOCALAI).filter(n=>n.toLowerCase().startsWith('worker-smoke-')&&n.toLowerCase().endsWith('.json')).map(n=>({name:n,mtime:fs.statSync(path.join(LOCALAI,n)).mtimeMs})).sort((a,b)=>b.mtime-a.mtime);if(!files.length)return null;return {file:files[0].name,results:readJson(path.join(LOCALAI,files[0].name))}}catch{return null}}
 const endpoints=[
  {id:'browserbridge',name:'144A BrowserBridge',url:'http://127.0.0.1:18795/health'},
  {id:'ollama',name:'Local model runtime',url:'http://127.0.0.1:11434/api/tags'},
@@ -41,7 +41,7 @@ const server=http.createServer(async(req,res)=>{
  res.setHeader('Cache-Control','no-store');
  if(req.method==='POST'&&req.url==='/api/worker/run'){
   const origin=req.headers.origin||'';
-  if(origin&&!/^http:\\/\\/(127\\.0\\.0\\.1|localhost):8800$/.test(origin)){res.writeHead(403,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'Cross-origin request denied'}));}
+  if(origin&&origin!=='http://127.0.0.1:8800'&&origin!=='http://localhost:8800'){res.writeHead(403,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'Cross-origin request denied'}));}
   if(workerRun.running){res.writeHead(409,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'Worker run already active',workerRun}));}
   if(!fs.existsSync(WORKER_SCRIPT)){res.writeHead(500,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'Worker script missing'}));}
   const child=cp.spawn('powershell.exe',['-NoProfile','-ExecutionPolicy','Bypass','-File',WORKER_SCRIPT],{windowsHide:true,stdio:'ignore'});
