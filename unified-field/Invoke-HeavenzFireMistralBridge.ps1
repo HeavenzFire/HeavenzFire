@@ -26,6 +26,11 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+function Write-HfMistralTrace([string]$Message) {
+    if ($env:HF_MISTRAL_BRIDGE_TRACE -eq '1') {
+        [Console]::Error.WriteLine('HF_MISTRAL_TRACE: ' + $Message)
+    }
+}
 $MaxTaskChars = 20000
 $MaxResponseBytes = 1048576
 
@@ -174,7 +179,10 @@ if ($Mode -eq 'Call') {
         repository_changes = @()
     }
     $resultPath = Join-Path $OutputDirectory ("review-{0}-{1}.json" -f $resolvedTaskId, $stamp)
-    $result | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $resultPath -Encoding UTF8
+    $json = $result | ConvertTo-Json -Depth 10
+    Write-HfMistralTrace ('import:serialized-chars=' + $json.Length)
+    Set-Content -LiteralPath $resultPath -Value $json -Encoding UTF8
+    Write-HfMistralTrace 'import:written'
     [pscustomobject]@{
         status = 'API_RESPONSE_SAVED'
         task_id = $resolvedTaskId
@@ -187,7 +195,9 @@ if ($Mode -eq 'Call') {
 }
 
 if ($Mode -eq 'Import') {
+    Write-HfMistralTrace 'import:before-read'
     $text = Get-Content -LiteralPath $ResponsePath -Raw -Encoding UTF8
+    Write-HfMistralTrace ('import:read-chars=' + $text.Length)
     $result = [ordered]@{
         schema = 'heavenzfire.model-review.v1'
         task_id = $resolvedTaskId
