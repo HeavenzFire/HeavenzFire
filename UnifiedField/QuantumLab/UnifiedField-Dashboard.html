@@ -42,7 +42,7 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:11px;color:var(--muted
 <div><label for="forgeRole" class="detail" style="display:block;margin-bottom:5px">Child worker role</label><input id="forgeRole" value="artifact verifier" maxlength="80" style="width:100%;background:#080f18;color:#e9f0f7;border:1px solid #34516a;border-radius:9px;padding:9px"/></div>
 <div style="grid-column:1/-1"><label for="forgeObjective" class="detail" style="display:block;margin-bottom:5px">Bounded objective (20–500 characters)</label><textarea id="forgeObjective" maxlength="500" style="width:100%;min-height:65px;background:#080f18;color:#e9f0f7;border:1px solid #34516a;border-radius:9px;padding:9px">Verify scoped local artifacts, challenge unsupported claims, and return reproducible findings with evidence references.</textarea></div>
 </div>
-<div class="actions" style="margin:12px 0"><button id="generateChildBlueprint">Generate child blueprint</button><button id="validateWorkerBlueprint">Validate worker blueprint</button><button id="runAdversarialSmoke">Run 10-profile adversarial smoke (20 calls)</button><button id="registerWorkerCandidate">Register candidate</button>Validate worker blueprint</button><button id="buildWorkerEvalPlan">Build adversarial tensor</button><span class="pill" id="forgeStatus">FORGE READY · NOT YET RUN</span></div>
+<div class="actions" style="margin:12px 0"><button id="generateChildBlueprint">Generate child blueprint</button><button id="validateWorkerBlueprint">Validate worker blueprint</button><button id="runAdversarialSmoke">Run 10-profile adversarial smoke (20 calls)</button><button id="registerWorkerCandidate">Register candidate</button><button id="buildWorkerEvalPlan">Build adversarial tensor</button><span class="pill" id="forgeStatus">FORGE READY · NOT YET RUN</span></div>
 <label for="workerBlueprint" class="detail" style="display:block;margin:10px 0 6px">Candidate blueprint JSON</label>
 <textarea id="workerBlueprint" spellcheck="false" style="width:100%;min-height:205px;background:#080f18;color:#e9f0f7;border:1px solid #34516a;border-radius:9px;padding:12px;font:12px/1.5 Consolas,monospace">{
   "id": "hf-child-worker-template",
@@ -86,6 +86,7 @@ function pill(state){const s=String(state||'unknown').toLowerCase();const cls=/h
 function serviceRow(s){return '<div class="service"><div><strong>'+esc(s.name)+'</strong><small>'+esc(s.url||s.id||'')+(s.latencyMs!=null?' · '+s.latencyMs+' ms':'')+'</small></div>'+pill(s.state||s.status|| (s.ok?'healthy':'unknown'))+'</div>'}
 function renderModelWorker(x){
  const pool=x.modelWorker||{},run=pool.run||{},latest=pool.latest,service=(x.services||[]).find(s=>s.id==='localruntime'),available=service&&service.state==='healthy'?[{name:'heavenzfire-qwen-0.5b',size:'local runtime'}]:[];
+ const expected=['heavenzfire-qwen-0.5b'];
  const results=latest&&Array.isArray(latest.results)?latest.results:[];
  const generated=results.filter(r=>r.ok).length,validated=results.filter(r=>r.validation&&r.validation.passed).length;
  const failedModels=results.filter(r=>!r.ok||!(r.validation&&r.validation.passed)).map(r=>r.model);
