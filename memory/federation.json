@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Declarative registry of intended AI federation participants; presence here does not prove connectivity or availability.",
+  "updatedAt": "2026-10-21",
+  "defaultPolicy": {
+    "mode": "plan-only",
+    "externalDataTransfer": "deny-unless-explicitly-approved",
+    "automaticFallback": false,
+    "autoMerge": false
+  },
+  "federation": [
+    {
+      "id": "openai-gpt",
+      "platform": "openai",
+      "model": "GPT (configured model)",
+      "instance": "gpt-instance",
+      "role": "architect/reviewer",
+      "strengths": [
+        "planning",
+        "reasoning"
+      ],
+      "status": "configured-unverified",
+      "scope": "external-approval-required"
+    },
+    {
+      "id": "mistral",
+      "platform": "mistral",
+      "model": "Mistral (configured model)",
+      "instance": "mistral-instance",
+      "role": "implementation",
+      "strengths": [
+        "code-generation"
+      ],
+      "status": "configured-unverified",
+      "scope": "external-approval-required"
+    },
+    {
+      "id": "meta-ai",
+      "platform": "meta",
+      "model": "Meta AI (configured model)",
+      "instance": "meta-instance",
+      "role": "android-ui-review",
+      "strengths": [
+        "android-ui-review"
+      ],
+      "status": "unverified",
+      "scope": "external-approval-required"
+    },
+    {
+      "id": "xai-grok",
+      "platform": "xai",
+      "model": "Grok (configured model)",
+      "instance": "research-instance",
+      "role": "research",
+      "strengths": [
+        "current-events-research"
+      ],
+      "status": "unverified",
+      "scope": "external-approval-required"
+    },
+    {
+      "id": "ollama-local",
+      "platform": "ollama",
+      "model": "llama3.2:1b",
+      "instance": "local-ollama",
+      "role": "local-inference",
+      "strengths": [
+        "local-inference"
+      ],
+      "status": "adapter-tested-mock-only",
+      "scope": "local-only"
+    }
+  ],
+  "statusDefinitions": {
+    "unverified": "No live connectivity evidence has been collected.",
+    "configured-unverified": "Declared as a desired participant; credentials and reachability have not been verified.",
+    "adapter-tested-mock-only": "Adapter contract has mocked tests; a real local model call has not been established by this registry.",
+    "verified-live": "May only be assigned after a timestamped, auditable real connectivity check."
+  }
+}
