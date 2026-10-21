@@ -348,7 +348,7 @@ async function route(req, res) {
     let test=null;if(typeof b.testFile==='string'&&b.testFile.trim()){try{test=resolveScoped(b.testFile);if(!/\.test\.(cjs|js)$/i.test(test.path))throw new Error('Test must end in .test.cjs or .test.js.');}catch(e){return send(res,400,{ok:false,error:'Test rejected: '+String(e.message||e).slice(0,180)});}}
     const backupDir=path.join(HOME,'UnifiedField','backups','144a-scoped-writes');fs.mkdirSync(backupDir,{recursive:true});
     const backup=path.join(backupDir,new Date().toISOString().replace(/[:.]/g,'-')+'-'+path.basename(t.path)+'.bak');fs.writeFileSync(backup,before,{flag:'wx'});
-    const temp=t.path+'.hf144a-'+crypto.randomBytes(6).toString('hex')+'.tmp';
+    const temp=path.join(path.dirname(t.path),'.hf144a-'+crypto.randomBytes(6).toString('hex')+path.extname(t.path));
     try{
       fs.writeFileSync(temp,b.content,{flag:'wx',encoding:'utf8'});
       if(/\.json$/i.test(t.path))JSON.parse(fs.readFileSync(temp,'utf8'));
