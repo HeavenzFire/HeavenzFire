@@ -278,7 +278,7 @@
       "sourcePath": "UnifiedField/FieldCore/task-inbox-server.cjs",
       "kind": "local-control-plane",
       "integration": "in-repository",
-      "status": "implemented; Windows lifecycle smoke test passes in CI; no deployment on the user's machine is claimed; proposals remain pending",
+      "status": "implemented; Windows lifecycle smoke test passes in CI; bounded read-only pending-task listing available; no deployment on the user's machine is claimed; proposals remain pending",
       "dependencies": [
         "fieldcore"
       ],
@@ -286,7 +286,8 @@
         "pending-task-persistence",
         "idempotent-delivery",
         "task-lookup",
-        "launcher-managed-start-stop"
+        "launcher-managed-start-stop",
+        "bounded-pending-task-listing"
       ],
       "activation": "operator-local",
       "launcherPath": "UnifiedField/FieldCore/Invoke-TaskInbox.ps1",
