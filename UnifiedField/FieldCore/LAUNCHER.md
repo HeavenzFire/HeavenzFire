@@ -1,33 +1,33 @@
-# Unified Field Task Inbox Launcher
+# Unified Field Task Inbox Control
 
-The root `Enter-UnifiedField.ps1` remains the diagnostic entrypoint. `Invoke-TaskInbox.ps1` independently manages only the local loopback task inbox.
+Use the root `Enter-UnifiedField.ps1` for diagnostics. Use the one-command wrapper below to manage the local task inbox without mixing it with the older HeavenzFire state directory.
 
 ## Commands
 
 ```powershell
-# Start the local task inbox
-.\UnifiedField\FieldCore\Invoke-TaskInbox.ps1 -Action Start
+# Start the local loopback task inbox
+.\UnifiedField\Invoke-UnifiedFieldTaskInbox.ps1 -Action Start
 
 # Check status
-.\UnifiedField\FieldCore\Invoke-TaskInbox.ps1 -Action Status
+.\UnifiedField\Invoke-UnifiedFieldTaskInbox.ps1 -Action Status
 
-# List pending proposals (read-only; no approval or execution)
-.\UnifiedField\FieldCore\Review-TaskInbox.ps1
+# Review pending proposals (read-only)
+.\UnifiedField\Invoke-UnifiedFieldTaskInbox.ps1 -Action Review
 
-# Get machine-readable review data
-.\UnifiedField\FieldCore\Review-TaskInbox.ps1 -AsJson
+# Machine-readable review data
+.\UnifiedField\Invoke-UnifiedFieldTaskInbox.ps1 -Action Review -AsJson
 
 # Stop only a process owned by the launcher
-.\UnifiedField\FieldCore\Invoke-TaskInbox.ps1 -Action Stop
+.\UnifiedField\Invoke-UnifiedFieldTaskInbox.ps1 -Action Stop
 
-# Use a non-default port for testing
-.\UnifiedField\FieldCore\Invoke-TaskInbox.ps1 -Action Start -Port 19876
+# Use a custom isolated data directory or non-default port
+.\UnifiedField\Invoke-UnifiedFieldTaskInbox.ps1 -Action Start -StateRoot 'C:\\Users\\YourUser\\AppData\\Local\\HeavenzFire\\UnifiedFieldRuntime\\state' -Port 19876
 ```
 
-The manager requires Node.js 18+, binds the service to `127.0.0.1`, stores task records and logs under `%LOCALAPPDATA%\HeavenzFire\UnifiedField`, and writes a PID file for lifecycle management. Set `HF_UNIFIED_FIELD_STATE_ROOT` to an absolute path to isolate this service's data from an existing HeavenzFire state directory; without it, the default path is retained. It refuses to stop a process unless the recorded PID's command line matches the expected task inbox server.
+The wrapper requires Node.js 18+, binds to `127.0.0.1`, and defaults to `%LOCALAPPDATA%\HeavenzFire\UnifiedFieldRuntime\state`, separate from the older `%LOCALAPPDATA%\HeavenzFire\UnifiedField` directory. It stores task records, logs, and PID files locally and refuses to stop a process unless the recorded PID's command line matches the expected task inbox server.
 
 ## Scope and safety
 
-This starts **only the task inbox**. It does not start model workers, execute queued tasks, enable unattended agent actions, or claim that all Unified Field components are operational. Proposals remain `proposed` / `pending` until a separate approval workflow is implemented and exercised. The JSONL inbox is preserved when the service stops.
+This starts **only the task inbox**. It does not start model workers, execute queued tasks, enable unattended agent actions, install browser extensions, or claim that all Unified Field components are operational. Proposals remain `proposed` / `pending` until a separate approval workflow is implemented and exercised. The JSONL inbox is preserved when the service stops.
 
-The Windows CI smoke test starts the service on a temporary loopback port, posts one synthetic pending task, verifies idempotent start and status, stops the owned process, and checks that the pending record remains on disk.
+The Windows CI smoke test starts the service on a temporary loopback port, posts one synthetic pending task, verifies idempotent start, status and read-only review, stops the owned process, and checks that the pending record remains on disk.
