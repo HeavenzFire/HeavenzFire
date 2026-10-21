@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "HeavenzFire Attention Guard",
+  "version": "0.1.0",
+  "description": "User-controlled, local-only focus sessions that block only domains the user selects.",
+  "minimum_chrome_version": "120",
+  "permissions": ["storage", "alarms", "declarativeNetRequest"],
+  "background": {
+    "service_worker": "service-worker.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "Attention Guard",
+    "default_popup": "popup.html"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
+}

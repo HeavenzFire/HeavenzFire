@@ -1,0 +1,33 @@
+name: Unified Field Attention Guard
+
+on:
+  push:
+    branches: ["main", "unified-field/**"]
+    paths:
+      - "UnifiedField/AttentionGuard/**"
+      - ".github/workflows/unified-field-attention-guard.yml"
+  pull_request:
+    paths:
+      - "UnifiedField/AttentionGuard/**"
+      - ".github/workflows/unified-field-attention-guard.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  attention-guard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Test attention policy
+        run: node --test UnifiedField/AttentionGuard/attention-policy.test.mjs
+      - name: Check extension JavaScript syntax
+        run: |
+          node --check UnifiedField/AttentionGuard/service-worker.js
+          node --check UnifiedField/AttentionGuard/popup.js
+      - name: Validate manifest and popup entrypoint
+        run: node -e "const fs=require('node:fs'); const m=JSON.parse(fs.readFileSync('UnifiedField/AttentionGuard/manifest.json','utf8')); if(m.manifest_version!==3 || m.background?.type!=='module' || !m.permissions.includes('declarativeNetRequest')) process.exit(1); for(const f of ['UnifiedField/AttentionGuard/popup.html','UnifiedField/AttentionGuard/service-worker.js','UnifiedField/AttentionGuard/attention-policy.mjs']) if(!fs.existsSync(f)) process.exit(1); console.log('Manifest and extension entrypoints valid')"

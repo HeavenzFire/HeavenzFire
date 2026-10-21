@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Attention Guard</title>
+  <link rel="stylesheet" href="popup.css">
+  <script type="module" src="popup.js"></script>
+</head>
+<body>
+  <main>
+    <header>
+      <p class="eyebrow">HEAVENZFIRE · LOCAL FIRST</p>
+      <h1>Attention Guard</h1>
+      <p class="subhead">You choose what to block. Nothing is reported or sent anywhere.</p>
+    </header>
+
+    <section aria-labelledby="focus-heading" class="panel">
+      <h2 id="focus-heading">Focus session</h2>
+      <p id="focus-status" role="status">Focus mode is off.</p>
+      <div class="duration-row">
+        <label for="focus-minutes">Duration</label>
+        <select id="focus-minutes">
+          <option value="15">15 minutes</option>
+          <option value="25" selected>25 minutes</option>
+          <option value="45">45 minutes</option>
+          <option value="60">60 minutes</option>
+          <option value="90">90 minutes</option>
+          <option value="120">120 minutes</option>
+          <option value="180">180 minutes</option>
+        </select>
+      </div>
+      <div class="actions">
+        <button id="start-focus" type="button">Start focus</button>
+        <button id="stop-focus" class="secondary" type="button">Stop now</button>
+      </div>
+    </section>
+
+    <section aria-labelledby="domains-heading" class="panel">
+      <h2 id="domains-heading">Your blocklist</h2>
+      <p class="hint">Add exact domains such as <code>social.example</code>. Subdomains are included. No wildcard rules.</p>
+      <form id="add-domain-form">
+        <label for="domain-input">Domain</label>
+        <div class="input-row">
+          <input id="domain-input" name="domain" type="text" inputmode="url" autocomplete="off" placeholder="example.com" maxlength="253" required>
+          <button type="submit">Add</button>
+        </div>
+      </form>
+      <p id="domain-error" class="error" role="status" aria-live="polite"></p>
+      <ul id="domain-list" aria-label="Blocked domains"></ul>
+      <p id="empty-list" class="hint">No domains added yet.</p>
+    </section>
+
+    <footer>Focus mode is optional and can always be stopped early. Settings stay in this browser profile.</footer>
+  </main>
+</body>
+</html>
