@@ -74,6 +74,8 @@ test('worker script never executes generated code or accepts arbitrary task comm
   assert.doesNotMatch(worker, /Start-Process|cmd\.exe|powershell\.exe\s+-Command/i);
   assert.match(worker, /Do not add fields or claim tests were executed/);
   assert.match(worker, /MaxRepairAttempts = 1/);
+  assert.ok(worker.includes('[string[]]$Models = @(\'qwen2.5:0.5b\''));
+  assert.match(worker, /foreach \(\$model in \$Models\)/);
   assert.match(worker, /repair_attempted = \$true/);
   assert.match(worker, /repair_validation = Test-WorkerResponse/);
   assert.match(worker, /attempt_count = 2/);
