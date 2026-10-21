@@ -45,6 +45,9 @@ The proposed protocol and role architecture are documented in:
 - `uf-bridge-journal.test.cjs`: tests persistence, deduplication, replay conflict detection, state transitions, corruption reporting, and executable-payload rejection.
 - `uf-topology.cjs`: deterministic, plan-only clustered topology proposal with bounded inter-cluster fanout; it does not create connections or replicate data.
 - `uf-topology.test.cjs`: tests determinism, bounded links, known-node edges, and invalid configurations.
+- `uf-topology-cli.cjs`: CLI to produce a topology proposal from a JSON node manifest; no network calls or replication.
+- `uf-topology-cli.test.cjs`: CLI input/output and error-path tests.
+- `topology-nodes.example.json`: illustrative node manifest; names are examples, not live discovered nodes.
 - `.github/workflows/uf-tcp-policy.yml`: CI workflow for policy, council registry, bridge-journal, and topology-planner tests; check GitHub Actions before claiming a green run.
 
 From this directory, run the policy tests with a recent Node.js runtime:
@@ -54,3 +57,13 @@ node --test .\uf-tcp-policy.test.cjs
 ```
 
 The dashboard remains read-only and does not yet execute the policy engine, run council seats, dispatch cross-examination tasks, or operate the offline journal as a worker. The journal is the first queue primitive, not a complete online/offline runtime; no local daemon or browser adapter is claimed as operational. A green service-health indicator means an endpoint responded; it is not proof that the 144-role council or end-to-end workflow is operational. Do not represent role records as independent live models unless that independence is separately demonstrated.
+
+## Generate a topology proposal
+
+From PowerShell 5.1 in this directory:
+
+```powershell
+node .\uf-topology-cli.cjs --input .\topology-nodes.example.json --replication-factor 2
+```
+
+The CLI writes a JSON `PLAN_ONLY` proposal to standard output. It does not establish network connections, discover devices, replicate data, or prove that any listed node is online. Replace the illustrative manifest with an explicitly reviewed inventory before using the output for deployment planning.
