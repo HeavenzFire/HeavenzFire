@@ -63,6 +63,16 @@ test('matching target only becomes eligible for revalidation, never execution', 
   assert.equal(out.action, 'ELIGIBLE_FOR_REVALIDATION');
   assert.equal(out.executionAuthorized, false);
 });
+test('running and unknown-state tasks are held to prevent duplicate replay', () => {
+  assert.equal(planReplay([{ task_id: 'running', status: 'RUNNING' }], 'sha', 'ONLINE')[0].action, 'HOLD');
+  assert.equal(planReplay([{ task_id: 'running', status: 'RUNNING' }], 'sha', 'ONLINE')[0].reason, 'UNSUPPORTED_TASK_STATE');
+  assert.equal(planReplay([{ task_id: 'unknown', status: 'MYSTERY' }], 'sha', 'ONLINE')[0].reason, 'UNSUPPORTED_TASK_STATE');
+});
+test('missing current revision cannot produce replay eligibility', () => {
+  const out = planReplay([{ task_id: 'a', status: 'QUEUED' }], null, 'ONLINE')[0];
+  assert.equal(out.action, 'HOLD');
+  assert.equal(out.reason, 'CURRENT_REVISION_UNAVAILABLE');
+});
 test('completed tasks are never replayed', () => {
   assert.equal(planReplay([{ task_id: 'a', status: 'DONE' }], 'sha', 'ONLINE')[0].action, 'SKIP_ALREADY_DONE');
 });
