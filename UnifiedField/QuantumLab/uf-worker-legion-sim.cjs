@@ -56,26 +56,29 @@ function createSimulation(options = {}) {
     const ready = tasks.filter(task => task.state === 'QUEUED').slice(0, concurrency);
     const results = [];
     for (const task of ready) {
-      const workerIndex = (task.sequence - 1 + seed) % workers.length;
-      const worker = workers[workerIndex];
-      task.state = 'RUNNING';
-      worker.status = 'SIMULATED_RUNNING';
-      worker.currentTaskId = task.taskId;
+      const candidates = workers.filter(worker => worker.role === task.role);
+      const worker = candidates.length ? candidates[(task.sequence - 1 + seed) % candidates.length] : null;
       const capabilityBlock = task.requiredCapabilities.length > 0;
-      const state = capabilityBlock ? 'BLOCKED' : 'SUCCEEDED';
+      const state = (!worker || capabilityBlock) ? 'BLOCKED' : 'SUCCEEDED';
+      if (worker) {
+        worker.status = 'SIMULATED_RUNNING';
+        worker.currentTaskId = task.taskId;
+      }
       const result = {
         taskId: task.taskId,
-        workerId: worker.id,
-        workerRole: worker.role,
+        workerId: worker ? worker.id : null,
+        workerRole: task.role,
         state,
-        reason: capabilityBlock ? 'SIMULATION_HAS_NO_GRANTED_CAPABILITIES' : 'SIMULATION_ONLY_NO_SIDE_EFFECTS',
+        reason: !worker ? 'NO_SIMULATED_WORKER_FOR_ROLE' : capabilityBlock ? 'SIMULATION_HAS_NO_GRANTED_CAPABILITIES' : 'SIMULATION_ONLY_NO_SIDE_EFFECTS',
         inputDigest: task.inputDigest
       };
       task.state = state;
       task.result = result;
-      worker.status = 'SIMULATED_IDLE';
-      worker.currentTaskId = null;
-      worker.completed += 1;
+      if (worker) {
+        worker.status = 'SIMULATED_IDLE';
+        worker.currentTaskId = null;
+        worker.completed += 1;
+      }
       results.push(result);
     }
     return results;
