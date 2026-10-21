@@ -1,0 +1,43 @@
+name: AI Federation Local Adapter
+
+on:
+  pull_request:
+    paths:
+      - "UnifiedField/ai-providers.json"
+      - "unified-field/ai-federation.mjs"
+      - "unified-field/ai-federation.test.mjs"
+      - "unified-field/ollama-adapter.mjs"
+      - "unified-field/ollama-adapter.test.mjs"
+      - ".github/workflows/ai-local-adapter.yml"
+  push:
+    branches: [main]
+    paths:
+      - "UnifiedField/ai-providers.json"
+      - "unified-field/ai-federation.mjs"
+      - "unified-field/ai-federation.test.mjs"
+      - "unified-field/ollama-adapter.mjs"
+      - "unified-field/ollama-adapter.test.mjs"
+      - ".github/workflows/ai-local-adapter.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  local-adapter-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Validate provider registry
+        run: node unified-field/ai-federation.mjs validate
+      - name: Test registry and plan-only routing
+        run: node --test unified-field/ai-federation.test.mjs
+      - name: Test local Ollama adapter with mocked transport
+        run: node --test unified-field/ollama-adapter.test.mjs
+      - name: Confirm default local route is plan-only
+        run: node unified-field/ai-federation.mjs plan reasoning --scope local
