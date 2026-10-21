@@ -9,6 +9,7 @@ const root = __dirname;
 const server = fs.readFileSync(path.join(root, 'UnifiedField-Dashboard-Server.cjs'), 'utf8');
 const dashboard = fs.readFileSync(path.join(root, 'UnifiedField-Dashboard.html'), 'utf8');
 const worker = fs.readFileSync(path.join(root, 'Invoke-LocalModelWorkerBatch.ps1'), 'utf8');
+const publisher = fs.readFileSync(path.join(root, 'uf-model-worker-journal-publisher.cjs'), 'utf8');
 
 test('dashboard server is loopback-only and exposes a fixed worker action', () => {
   assert.match(server, /const HOST\s*=\s*['"]127\.0\.0\.1['"]/);
@@ -33,17 +34,18 @@ test('dashboard exposes model batch control and renders status from overview', (
 
 test('worker artifacts publish metadata-only review tasks with idempotency and bounded local API', () => {
   assert.match(server, /publishWorkerResultsToJournal/);
-  assert.match(server, /HEAVENZFIRE_BRIDGE_TOKEN/);
-  assert.match(server, /HEAVENZFIRE_BRIDGE_URL/);
-  assert.ok(server.includes('http://127.0.0.1:8798'));
-  assert.match(server, /parsed\.hostname!=='127\.0\.0\.1'/);
-  assert.match(server, /parsed\.protocol!=='http:'/);
-  assert.match(server, /Authorization.*Bearer /);
-  assert.ok(server.includes("idempotency_key:'local-worker-result-'"));
-  assert.ok(server.includes("scope:['local-artifact-review','independent-verification']"));
-  assert.match(server, /Independently review the untrusted local model draft/);
+  assert.match(server, /uf-model-worker-journal-publisher\.cjs/);
+  assert.match(publisher, /HEAVENZFIRE_BRIDGE_TOKEN/);
+  assert.match(publisher, /HEAVENZFIRE_BRIDGE_URL/);
+  assert.ok(publisher.includes('http://127.0.0.1:8798'));
+  assert.match(publisher, /parsed\.hostname!=='127\.0\.0\.1'/);
+  assert.match(publisher, /parsed\.protocol!=='http:'/);
+  assert.match(publisher, /Authorization.*Bearer /);
+  assert.ok(publisher.includes("idempotency_key: 'local-worker-result-'"));
+  assert.ok(publisher.includes("scope: ['local-artifact-review', 'independent-verification']"));
+  assert.match(publisher, /Independently review the untrusted local model draft/);
   assert.ok(server.includes('latestWorkerResults(Date.parse(startedAt'));
-  assert.doesNotMatch(server, /task\.command\s*=|task\.shell\s*=|task\.script\s*=/);
+  assert.doesNotMatch(publisher, /task\.command\s*=|task\.shell\s*=|task\.script\s*=/);
 });
 
 test('worker batch calls local Ollama and records every model outcome', () => {
