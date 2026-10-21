@@ -30,6 +30,11 @@ class RegistryValidationTests(unittest.TestCase):
         cap = {**VALID["capabilities"][0], "entrypoint": "../secret.txt"}
         self.assertTrue(any("entrypoint" in e for e in validate_registry({**VALID, "capabilities": [cap]})))
 
+    def test_rejects_windows_path_traversal(self):
+        for path in (r"..\secret.txt", r"C:\Windows\System32\cmd.exe", r"\\server\share\payload"):
+            cap = {**VALID["capabilities"][0], "entrypoint": path}
+            self.assertTrue(any("entrypoint" in e for e in validate_registry({**VALID, "capabilities": [cap]})), path)
+
     def test_rejects_unknown_permissions(self):
         cap = {**VALID["capabilities"][0], "permissions": ["root_everything"]}
         self.assertTrue(any("permissions" in e for e in validate_registry({**VALID, "capabilities": [cap]})))
