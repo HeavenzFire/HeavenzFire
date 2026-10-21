@@ -70,7 +70,7 @@ def authorize(policy: Any, request: Any) -> dict[str, Any]:
             return {"allowed": False, "reason": "invalid_request", "details": [f"{field} must be a non-empty string without wildcards"]}
     requested_classes = request.get("data_classes")
     if (not isinstance(requested_classes, list) or not requested_classes
-            or any(not isinstance(value, str) or not value.strip() for value in requested_classes)
+            or any(not isinstance(value, str) or not value.strip() or "*" in value for value in requested_classes)
             or len(requested_classes) != len(set(requested_classes) if isinstance(requested_classes, list) else [])):
         return {"allowed": False, "reason": "invalid_request", "details": ["data_classes must be a non-empty array of unique non-empty strings"]}
 
