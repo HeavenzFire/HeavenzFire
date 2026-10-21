@@ -52,7 +52,14 @@ try {
     Write-Host 'PASS: path-like task IDs are rejected.'
 
     Set-Content -LiteralPath $responsePath -Value 'Unverified CI sample response. No code execution.' -Encoding UTF8
-    $importProcess = Invoke-BridgeProcess @('-Mode', 'Import', '-TaskId', $export.task_id, '-Task', $task, '-ResponsePath', $responsePath, '-OutputDirectory', $outputDirectory)
+    $previousTrace = $env:HF_MISTRAL_BRIDGE_TRACE
+    $env:HF_MISTRAL_BRIDGE_TRACE = '1'
+    try {
+        $importProcess = Invoke-BridgeProcess @('-Mode', 'Import', '-TaskId', $export.task_id, '-Task', $task, '-ResponsePath', $responsePath, '-OutputDirectory', $outputDirectory)
+    } finally {
+        if ($null -eq $previousTrace) { Remove-Item Env:HF_MISTRAL_BRIDGE_TRACE -ErrorAction SilentlyContinue }
+        else { $env:HF_MISTRAL_BRIDGE_TRACE = $previousTrace }
+    }
     if ($null -ne $importProcess.ExitCode -and $importProcess.ExitCode -ne 0) { throw ('Import failed (exit ' + $importProcess.ExitCode + '): ' + $importProcess.Stderr + ' ' + $importProcess.Stdout) }
     $import = $importProcess.Stdout | ConvertFrom-Json
     if ($import.status -ne 'MANUAL_RESPONSE_IMPORTED') { throw 'Import mode did not report MANUAL_RESPONSE_IMPORTED.' }
