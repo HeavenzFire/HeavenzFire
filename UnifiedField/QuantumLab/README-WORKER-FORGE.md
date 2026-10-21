@@ -14,6 +14,12 @@ The Worker Forge defines versioned worker blueprints, constructs deterministic m
 - **Promotion gate:** additionally requires an explicitly identified independent reviewer. No self-promotion.
 - **Auditability:** canonical blueprint hash, matrix hash, case IDs, fixed seeds, and qualification hash support reproducible review.
 
+## Adversarial smoke execution
+
+The dashboard can run ten fixed adversarial profiles twice against one allowlisted local model (20 bounded calls). The evaluator checks JSON shape, expected safety decision, empty tool-call claims, dangerous command patterns, and identical replay hashes. Results are written under `LocalAI/worker-forge-eval-*.json`. This is a **smoke test**, not a qualification: it explicitly never promotes a worker. Full qualification still requires the complete multidimensional matrix, matching repeat runs, zero critical failures, threshold compliance, and independent review.
+
+This is behavioral evaluation/calibration, not model-weight training. Fine-tuning remains a separate pipeline requiring curated data, provenance, compute, versioned checkpoints, and held-out evaluations.
+
 ## Dashboard integration
 
 The loopback dashboard exposes `GET /api/forge/plan` to produce the fixed 720-cell default evaluation tensor and `POST /api/forge/validate` to validate a candidate blueprint. The dashboard editor is a working JSON input; validation returns capability/schema errors and a content hash. These endpoints do not execute the candidate or the evaluation plan. The UI labels the matrix as planned, not executed.

@@ -43,7 +43,7 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:11px;color:var(--muted
 <div><label for="forgeRole" class="detail" style="display:block;margin-bottom:5px">Child worker role</label><input id="forgeRole" value="artifact verifier" maxlength="80" style="width:100%;background:#080f18;color:#e9f0f7;border:1px solid #34516a;border-radius:9px;padding:9px"/></div>
 <div style="grid-column:1/-1"><label for="forgeObjective" class="detail" style="display:block;margin-bottom:5px">Bounded objective (20–500 characters)</label><textarea id="forgeObjective" maxlength="500" style="width:100%;min-height:65px;background:#080f18;color:#e9f0f7;border:1px solid #34516a;border-radius:9px;padding:9px">Verify scoped local artifacts, challenge unsupported claims, and return reproducible findings with evidence references.</textarea></div>
 </div>
-<div class="actions" style="margin:12px 0"><button id="generateChildBlueprint">Generate child blueprint</button><button id="validateWorkerBlueprint">Validate worker blueprint</button>Validate worker blueprint</button><button id="buildWorkerEvalPlan">Build adversarial tensor</button><span class="pill" id="forgeStatus">FORGE READY · NOT YET RUN</span></div>
+<div class="actions" style="margin:12px 0"><button id="generateChildBlueprint">Generate child blueprint</button><button id="validateWorkerBlueprint">Validate worker blueprint</button><button id="runAdversarialSmoke">Run 10-profile adversarial smoke (20 calls)</button>Validate worker blueprint</button><button id="buildWorkerEvalPlan">Build adversarial tensor</button><span class="pill" id="forgeStatus">FORGE READY · NOT YET RUN</span></div>
 <label for="workerBlueprint" class="detail" style="display:block;margin:10px 0 6px">Candidate blueprint JSON</label>
 <textarea id="workerBlueprint" spellcheck="false" style="width:100%;min-height:205px;background:#080f18;color:#e9f0f7;border:1px solid #34516a;border-radius:9px;padding:12px;font:12px/1.5 Consolas,monospace">{
   "id": "hf-child-worker-template",
@@ -146,6 +146,48 @@ async function generateChildBlueprint(){
 $('generateChildBlueprint').addEventListener('click',generateChildBlueprint);
 $('validateWorkerBlueprint').addEventListener('click',validateForgeBlueprint);
 $('buildWorkerEvalPlan').addEventListener('click',buildWorkerEvalPlan);
+async function pollForgeEvaluation(){
+ try{
+  const r=await fetch('/api/forge/evaluation-status',{cache:'no-store'});const x=await r.json();if(!r.ok||!x.ok)throw Error(x.error||('HTTP '+r.status));
+  if(x.running){
+   $('forgeStatus').textContent='ADVERSARIAL SMOKE RUNNING · 20 MODEL CALLS';
+   $('forgeBlueprintResult').textContent='Running 10 fixed adversarial profiles twice at temperature 0. This is a smoke evaluation, not full qualification.';
+   setTimeout(pollForgeEvaluation,3000);return
+  }
+  $('runAdversarialSmoke').disabled=false;
+  if(x.result){
+   const q=x.result;
+   $('forgeStatus').textContent=q.state==='smoke_pass'?'SMOKE PASS · NOT QUALIFIED':'SMOKE FAILED · NOT QUALIFIED';
+   $('forgeBlueprintResult').textContent='Smoke only · '+q.pass_count+'/'+q.total_cases+' profiles passed · critical failures '+q.critical_failures+' · deterministic '+q.deterministic_cases+'/'+q.total_cases+' · artifact '+(x.artifact_file||'not saved');
+   $('forgePlanState').textContent='SMOKE ONLY';
+   $('forgeProfiles').innerHTML=q.results.map(c=>'<span class="pill">'+esc(c.profile)+' '+(c.pass?'PASS':'FAIL')+(c.deterministic?' · D':' · ND')+'</span>').join('');
+  }else if(x.error){
+   $('forgeStatus').textContent='EVALUATION ERROR';
+   $('forgeBlueprintResult').textContent=String(x.error)
+  }
+ }catch(e){
+  $('forgeStatus').textContent='EVALUATION STATUS ERROR';
+  $('forgeBlueprintResult').textContent=String(e.message||e);
+  $('runAdversarialSmoke').disabled=false
+ }
+}
+async function runAdversarialSmoke(){
+ const button=$('runAdversarialSmoke');button.disabled=true;
+ try{
+  const blueprint=JSON.parse($('workerBlueprint').value);
+  const model=$('forgeModel').value;
+  const r=await fetch('/api/forge/evaluate',{method:'POST',headers:{'Accept':'application/json','Content-Type':'application/json'},body:JSON.stringify({model,blueprint})});
+  const x=await r.json();if(!r.ok||!x.ok)throw Error(x.error||('HTTP '+r.status));
+  $('forgeStatus').textContent='ADVERSARIAL SMOKE ACCEPTED · RUNNING';
+  $('forgeBlueprintResult').textContent='Started 20 bounded local model calls; candidate code is never executed.';
+  setTimeout(pollForgeEvaluation,1000)
+ }catch(e){
+  $('forgeStatus').textContent='EVALUATION START ERROR';
+  $('forgeBlueprintResult').textContent=String(e.message||e);
+  button.disabled=false
+ }
+}
+$('runAdversarialSmoke').addEventListener('click',runAdversarialSmoke);
 async function refresh(){
  $('overallText').textContent='Refreshing local state…';
  try{

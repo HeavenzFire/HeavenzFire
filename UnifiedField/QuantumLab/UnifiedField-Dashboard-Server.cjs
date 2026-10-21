@@ -6,6 +6,7 @@ const {publishWorkerResultsToJournal}=require('./uf-model-worker-journal-publish
 const {createBlueprint,validateBlueprint,buildEvaluationMatrix,REQUIRED_ADVERSARIAL_PROFILES}=require('./worker-forge.cjs');
 const {latestWorkerResults}=require('./worker-result-store.cjs');
 const {draftWorkerBlueprint}=require('./worker-forge-drafter.cjs');
+const {runAdversarialSmokeSuite}=require('./worker-forge-adversarial.cjs');
 const FORGE_AXES={
  task_type:['build','review'],
  risk_class:['LOW','MEDIUM','HIGH'],
@@ -21,6 +22,7 @@ const GUARDIAN=path.join(ROOT,'144A','guardian-state.json');
 const LOCALAI=path.join(ROOT,'UnifiedField','QuantumLab','LocalAI');
 const WORKER_SCRIPT=path.join(ROOT,'UnifiedField','QuantumLab','Invoke-LocalModelWorkerBatch.ps1');
 let workerRun={running:false,pid:null,startedAt:null,finishedAt:null,exitCode:null,error:null};
+let forgeEvaluationRun={running:false,startedAt:null,finishedAt:null,error:null,result:null,artifact_file:null};
 const endpoints=[
  {id:'browserbridge',name:'144A BrowserBridge',url:'http://127.0.0.1:18795/health'},
  {id:'ollama',name:'Local model runtime',url:'http://127.0.0.1:11434/api/tags'},
@@ -81,6 +83,41 @@ const server=http.createServer(async(req,res)=>{
    res.writeHead(400,{'Content-Type':'application/json'});
    return res.end(JSON.stringify({ok:false,error:String(err.message||err)}));
   }
+ }
+ if(req.method==='POST'&&req.url==='/api/forge/evaluate'){
+  const origin=req.headers.origin||'';
+  if(origin&&origin!=='http://127.0.0.1:8800'&&origin!=='http://localhost:8800'){res.writeHead(403,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'Cross-origin request denied'}));}
+  if(forgeEvaluationRun.running){res.writeHead(409,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'Adversarial evaluation already running'}));}
+  let raw='';
+  try{
+   for await(const chunk of req){raw+=chunk.toString('utf8');if(Buffer.byteLength(raw)>32768){res.writeHead(413,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'Evaluation request exceeds 32 KiB'}));}}
+   const body=JSON.parse(raw||'{}');
+   const validation=validateBlueprint(body.blueprint);
+   if(!validation.ok){res.writeHead(400,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'blueprint_invalid',errors:validation.errors}));}
+   if(!WORKER_MODEL_ALLOWLIST.includes(body.model)){res.writeHead(400,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'model_not_allowlisted'}));}
+   const startedAt=new Date().toISOString();
+   forgeEvaluationRun={running:true,startedAt,finishedAt:null,error:null,result:null,artifact_file:null,model:body.model,worker_id:body.blueprint.id};
+   setImmediate(async()=>{
+    try{
+     const result=await runAdversarialSmokeSuite({model:body.model,blueprint:body.blueprint},{timeoutMs:30000});
+     const file='worker-forge-eval-'+new Date().toISOString().replace(/[:.]/g,'-')+'.json';
+     fs.mkdirSync(LOCALAI,{recursive:true});
+     fs.writeFileSync(path.join(LOCALAI,file),JSON.stringify(result,null,2),'utf8');
+     forgeEvaluationRun={...forgeEvaluationRun,running:false,finishedAt:new Date().toISOString(),result,artifact_file:file};
+    }catch(err){
+     forgeEvaluationRun={...forgeEvaluationRun,running:false,finishedAt:new Date().toISOString(),error:String(err&&err.message||err)};
+    }
+   });
+   res.writeHead(202,{'Content-Type':'application/json'});
+   return res.end(JSON.stringify({ok:true,accepted:true,run:{running:true,startedAt,model:body.model,worker_id:body.blueprint.id,mode:'adversarial_smoke_only'}}));
+  }catch(err){
+   res.writeHead(400,{'Content-Type':'application/json'});
+   return res.end(JSON.stringify({ok:false,error:String(err.message||err)}));
+  }
+ }
+ if(req.method==='GET'&&req.url==='/api/forge/evaluation-status'){
+  res.writeHead(200,{'Content-Type':'application/json'});
+  return res.end(JSON.stringify({ok:true,...forgeEvaluationRun}));
  }
  if(req.method==='GET'&&req.url==='/api/worker/status'){
   res.writeHead(200,{'Content-Type':'application/json'});
