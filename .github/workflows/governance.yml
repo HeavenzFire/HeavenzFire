@@ -1,0 +1,49 @@
+name: Governance Contract
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "AGENTS.md"
+      - ".github/workflows/governance.yml"
+      - "README.md"
+  pull_request:
+    paths:
+      - "AGENTS.md"
+      - ".github/workflows/governance.yml"
+      - "README.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: governance-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract:
+    name: Validate governance baseline
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Validate required contract sections
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s AGENTS.md
+          grep -Fq "## 1. Mission and operating rules" AGENTS.md
+          grep -Fq "## 2. Authority and precedence" AGENTS.md
+          grep -Fq "## 3. Change safety" AGENTS.md
+          grep -Fq "## 4. Engineering requirements" AGENTS.md
+          grep -Fq "## 5. Evidence and audit trail" AGENTS.md
+          grep -Fq "## 7. Definition of done" AGENTS.md
+          test -s README.md
+          echo "Governance contract structure: PASS"
+      - name: Check whitespace errors
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
