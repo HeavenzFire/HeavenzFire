@@ -40,6 +40,8 @@ def validate_policy(policy: Any) -> list[str]:
             value = grant.get(field)
             if not isinstance(value, str) or not value.strip():
                 errors.append(f"{prefix}.{field} must be a non-empty string")
+            elif "*" in value:
+                errors.append(f"{prefix}.{field} must not contain wildcard characters")
         grant_id = grant.get("id")
         if isinstance(grant_id, str):
             if grant_id in seen:
@@ -47,7 +49,7 @@ def validate_policy(policy: Any) -> list[str]:
             seen.add(grant_id)
         classes = grant.get("data_classes")
         if (not isinstance(classes, list) or not classes
-                or any(not isinstance(value, str) or not value.strip() for value in classes)
+                or any(not isinstance(value, str) or not value.strip() or "*" in value for value in classes)
                 or len(classes) != len(set(classes) if isinstance(classes, list) else [])):
             errors.append(f"{prefix}.data_classes must be a non-empty array of unique non-empty strings")
         status = grant.get("status")
@@ -64,8 +66,8 @@ def authorize(policy: Any, request: Any) -> dict[str, Any]:
     if not isinstance(request, dict) or set(request) != REQUEST_KEYS:
         return {"allowed": False, "reason": "invalid_request", "details": ["request must contain exactly subject, action, data_classes, destination, purpose"]}
     for field in ("subject", "action", "destination", "purpose"):
-        if not isinstance(request.get(field), str) or not request[field].strip():
-            return {"allowed": False, "reason": "invalid_request", "details": [f"{field} must be a non-empty string"]}
+        if not isinstance(request.get(field), str) or not request[field].strip() or "*" in request[field]:
+            return {"allowed": False, "reason": "invalid_request", "details": [f"{field} must be a non-empty string without wildcards"]}
     requested_classes = request.get("data_classes")
     if (not isinstance(requested_classes, list) or not requested_classes
             or any(not isinstance(value, str) or not value.strip() for value in requested_classes)
