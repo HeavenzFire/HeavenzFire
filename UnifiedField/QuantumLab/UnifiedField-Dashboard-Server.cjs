@@ -1,6 +1,7 @@
 'use strict';
 const http=require('http'),fs=require('fs'),path=require('path'),cp=require('child_process');
 const HOST='127.0.0.1',PORT=8800;
+const WORKER_MODEL_ALLOWLIST=Object.freeze(['qwen2.5:0.5b','heavenzfire-runtime:latest','heavenzfire:latest','llama3.2:1b']);
 const {publishWorkerResultsToJournal}=require('./uf-model-worker-journal-publisher.cjs');
 const {createBlueprint,validateBlueprint,buildEvaluationMatrix,REQUIRED_ADVERSARIAL_PROFILES}=require('./worker-forge.cjs');
 const FORGE_AXES={
@@ -74,15 +75,36 @@ const server=http.createServer(async(req,res)=>{
   res.writeHead(200,{'Content-Type':'application/json'});
   return res.end(JSON.stringify({ok:true,state:'plan_ready_not_executed',axis_order:plan.axis_order,shape:plan.shape,cell_count:plan.cell_count,matrix_hash:plan.matrix_hash,adversarial_profiles:REQUIRED_ADVERSARIAL_PROFILES,axes:FORGE_AXES,note:'Plan only. No model weights trained and no candidate code executed.'}));
  }
- if(req.method==='POST'&&req.url==='/api/worker/run'){
+ if(req.method==='POST'&&(req.url==='/api/worker/run'||req.url==='/api/worker/retry')){
   const origin=req.headers.origin||'';
   if(origin&&origin!=='http://127.0.0.1:8800'&&origin!=='http://localhost:8800'){res.writeHead(403,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'Cross-origin request denied'}));}
+  const isRetry=req.url==='/api/worker/retry';
+  let requestedModels=WORKER_MODEL_ALLOWLIST.slice();
+  if(isRetry){
+   let raw='';
+   try{
+    for await(const chunk of req){raw+=chunk.toString('utf8');if(Buffer.byteLength(raw)>4096){res.writeHead(413,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'Retry request exceeds 4 KiB'}));}}
+    const body=JSON.parse(raw||'{}');
+    if(!Array.isArray(body.models)||body.models.length<1||body.models.length>WORKER_MODEL_ALLOWLIST.length||
+       body.models.some(model=>typeof model!=='string'||!WORKER_MODEL_ALLOWLIST.includes(model))||
+       new Set(body.models).size!==body.models.length){
+      res.writeHead(400,{'Content-Type':'application/json'});
+      return res.end(JSON.stringify({ok:false,error:'Retry requires a unique, non-empty list of allowlisted model tags'}));
+    }
+    requestedModels=body.models;
+   }catch(err){
+    res.writeHead(400,{'Content-Type':'application/json'});
+    return res.end(JSON.stringify({ok:false,error:'Invalid retry JSON: '+String(err.message||err)}));
+   }
+  }
   if(workerRun.running){res.writeHead(409,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'Worker run already active',workerRun}));}
   if(!fs.existsSync(WORKER_SCRIPT)){res.writeHead(500,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'Worker script missing'}));}
   const powershell=path.join(process.env.SystemRoot||'C:\\Windows','System32','WindowsPowerShell','v1.0','powershell.exe');
   let workerStdout='',workerStderr='',spawnError=null;
-  const child=cp.spawn(powershell,['-NoLogo','-NoProfile','-ExecutionPolicy','Bypass','-File',WORKER_SCRIPT,'-OutputDirectory',LOCALAI],{windowsHide:true,cwd:path.dirname(WORKER_SCRIPT),env:process.env,stdio:['ignore','pipe','pipe']});
-  workerRun={running:true,phase:'generating',pid:child.pid||null,startedAt:new Date().toISOString(),finishedAt:null,exitCode:null,error:null,stdout:'',stderr:'',journalPublish:null};
+  const args=['-NoLogo','-NoProfile','-ExecutionPolicy','Bypass','-File',WORKER_SCRIPT,'-OutputDirectory',LOCALAI];
+  if(isRetry)args.push('-Models',...requestedModels);
+  const child=cp.spawn(powershell,args,{windowsHide:true,cwd:path.dirname(WORKER_SCRIPT),env:process.env,stdio:['ignore','pipe','pipe']});
+  workerRun={running:true,phase:'generating',pid:child.pid||null,startedAt:new Date().toISOString(),finishedAt:null,exitCode:null,error:null,stdout:'',stderr:'',journalPublish:null,requestedModels,runType:isRetry?'retry':'full'};
   child.stdout.on('data',chunk=>{workerStdout=(workerStdout+chunk.toString()).slice(-8000);});
   child.stderr.on('data',chunk=>{workerStderr=(workerStderr+chunk.toString()).slice(-8000);});
   child.on('error',e=>{spawnError=String(e.message||e);});

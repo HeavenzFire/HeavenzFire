@@ -15,7 +15,8 @@ const validatorTests = fs.readFileSync(path.join(root, 'Test-LocalModelWorkerRes
 
 test('dashboard server is loopback-only and exposes a fixed worker action', () => {
   assert.match(server, /const HOST\s*=\s*['"]127\.0\.0\.1['"]/);
-  assert.match(server, /req\.method===['"]POST['"]&&req\.url===['"]\/api\/worker\/run['"]/);
+  assert.match(server, /req\.method===['"]POST['"]&&req\.url===['"]\/api\/forge\/validate['"]/);
+  assert.match(server, /req\.method===['"]POST['"]&&\(req\.url===['"]\/api\/worker\/run['"]\|\|req\.url===['"]\/api\/worker\/retry['"]\)\)/);
   assert.match(server, /if\(workerRun\.running\)/);
   assert.match(server, /powershell\.exe/);
   assert.match(server, /Cross-origin request denied/);
@@ -27,10 +28,17 @@ test('dashboard exposes model batch control and renders status from overview', (
   assert.match(server, /\/api\/forge\/validate/);
   assert.match(server, /\/api\/forge\/plan/);
   assert.match(server, /\/api\/worker\/status/);
+  assert.match(server, /\/api\/worker\/retry/);
+  assert.match(server, /WORKER_MODEL_ALLOWLIST\.includes\(model\)/);
+  assert.match(server, /Retry requires a unique, non-empty list of allowlisted model tags/);
+  assert.match(server, /args\.push\('-Models',\.\.\.requestedModels\)/);
   assert.match(server, /buildEvaluationMatrix\(FORGE_AXES/);
   assert.ok(server.indexOf("require('./worker-forge.cjs')") < server.indexOf('const FORGE_AXES='), 'Worker Forge must load before its constants are referenced');
   assert.match(server, /Cross-origin request denied/);
   assert.match(dashboard, /id="runModelWorker"/);
+  assert.match(dashboard, /id="retryFailedModels"/);
+  assert.match(dashboard, /fetch\('\/api\/worker\/retry'/);
+  assert.match(dashboard, /Retry failed models/);
   assert.match(dashboard, /fetch\('\/api\/worker\/run'/);
   assert.match(dashboard, /renderModelWorker\(x\)/);
   assert.match(dashboard, /qwen2\.5:0\.5b/);
