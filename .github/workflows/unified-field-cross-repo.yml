@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - feat/shared-task-contract-v1
+      - 'unified-field/**'
       - 'worker/**'
   pull_request:
     branches:
