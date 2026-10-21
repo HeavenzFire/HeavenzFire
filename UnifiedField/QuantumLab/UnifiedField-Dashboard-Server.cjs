@@ -23,7 +23,7 @@ const DASH=path.join(ROOT,'UnifiedField','QuantumLab','UnifiedField-Dashboard.ht
 const BUILD_MODEL=path.join(ROOT,'UnifiedField','QuantumLab','UnifiedField-BuildModel.json');
 const TASKDIR=path.join(ROOT,'144A','tasks');
 const BUILD_JOURNAL=new OfflineTaskJournal(path.join(ROOT,'UnifiedField','QuantumLab','data','bridge-tasks.jsonl'));
-const BUILD_TARGETS=Object.freeze(['UnifiedField-Dashboard-Server.cjs','UnifiedField-Dashboard.html','heavenzfire-mesh-bridge.cjs','uf-local-worker.cjs','uf-bridge-journal.cjs','worker-forge.cjs','worker-forge-drafter.cjs','worker-forge-adversarial.cjs','worker-forge-remediation.cjs','worker-registry.cjs','worker-result-store.cjs','uf-model-worker-journal-publisher.cjs','UnifiedField-Dashboard.test.cjs','heavenzfire-ai-gateway.test.cjs','uf-local-worker.test.cjs','uf-bridge-journal.test.cjs','worker-forge.test.cjs','worker-forge-drafter.test.cjs','worker-forge-adversarial.test.cjs','worker-forge-remediation.test.cjs','worker-registry.test.cjs','worker-result-store.test.cjs','uf-model-worker-journal-publisher.test.cjs']);
+const BUILD_TARGETS=Object.freeze(['UnifiedField-Dashboard-Server.cjs','UnifiedField-Dashboard.html','heavenzfire-mesh-bridge.cjs','uf-local-worker.cjs','uf-bridge-journal.cjs','worker-forge.cjs','worker-forge-drafter.cjs','worker-forge-adversarial.cjs','worker-forge-remediation.cjs','worker-registry.cjs','worker-result-store.cjs','uf-model-worker-journal-publisher.cjs','UnifiedField-Dashboard.test.cjs','HeavenzFire-DigitalBrain-Server.cjs','HeavenzFire-DigitalBrain.html','embodied-avatar.integration.test.cjs','../AvatarBody/avatar-body-server.cjs','../AvatarBody/avatar-body.cjs','../AvatarBody/avatar-body.test.cjs','heavenzfire-ai-gateway.test.cjs','uf-local-worker.test.cjs','uf-bridge-journal.test.cjs','worker-forge.test.cjs','worker-forge-drafter.test.cjs','worker-forge-adversarial.test.cjs','worker-forge-remediation.test.cjs','worker-registry.test.cjs','worker-result-store.test.cjs','uf-model-worker-journal-publisher.test.cjs']);
 const GUARDIAN=path.join(ROOT,'144A','guardian-state.json');
 const LOCALAI=path.join(ROOT,'UnifiedField','QuantumLab','LocalAI');
 const workerRegistry=createWorkerRegistry(path.join(LOCALAI,'worker-registry.json'));
@@ -81,6 +81,8 @@ function buildTargetStatus(){
  return BUILD_TARGETS.map(name=>{const file=path.join(ROOT,'UnifiedField','QuantumLab',name);try{const st=fs.lstatSync(file);return {name,exists:st.isFile()&&!st.isSymbolicLink(),bytes:st.size,sha256:crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex')}}catch{return {name,exists:false,bytes:0,sha256:null}}});
 }
 function buildTestTargets(name){
+ if(['HeavenzFire-DigitalBrain-Server.cjs','HeavenzFire-DigitalBrain.html'].includes(name))return ['embodied-avatar.integration.test.cjs'];
+ if(name.startsWith('../AvatarBody/'))return ['../AvatarBody/avatar-body.test.cjs','embodied-avatar.integration.test.cjs'];
  if(['UnifiedField-Dashboard-Server.cjs','UnifiedField-Dashboard.html','UnifiedField-Dashboard.test.cjs'].includes(name))return ['UnifiedField-Dashboard.test.cjs','heavenzfire-ai-gateway.test.cjs'];
  if(name==='heavenzfire-mesh-bridge.cjs')return ['Test-HeavenzFireMeshAdversarial.ps1'];
  if(['uf-local-worker.cjs','uf-local-worker.test.cjs'].includes(name))return ['uf-local-worker.test.cjs','uf-bridge-journal.test.cjs'];
