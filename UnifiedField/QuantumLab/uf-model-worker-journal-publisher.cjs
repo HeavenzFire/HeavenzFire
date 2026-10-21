@@ -3,7 +3,7 @@
 const crypto = require('node:crypto');
 
 function blocked(reason) {
-  return { state: 'blocked', reason, published: 0, failed: 0, errors: [] };
+  return { state: 'blocked', reason, published: 0, duplicate: 0, failed: 0, errors: [] };
 }
 
 async function publishWorkerResultsToJournal(artifact, options = {}) {
@@ -32,6 +32,7 @@ async function publishWorkerResultsToJournal(artifact, options = {}) {
   }
 
   let published = 0;
+  let duplicate = 0;
   let failed = 0;
   const errors = [];
 
@@ -65,14 +66,15 @@ async function publishWorkerResultsToJournal(artifact, options = {}) {
       if (!response.ok || !data || data.ok !== true) {
         throw new Error((data && data.error) || ('HTTP ' + response.status));
       }
-      published++;
+      if (data.duplicate === true) duplicate++;
+      else published++;
     } catch (err) {
       failed++;
       errors.push({ model, error: String(err && err.message || err) });
     }
   }
 
-  return { state: failed ? 'partial' : 'published', published, failed, errors };
+  return { state: failed ? 'partial' : 'published', published, duplicate, failed, errors };
 }
 
 module.exports = { publishWorkerResultsToJournal };
