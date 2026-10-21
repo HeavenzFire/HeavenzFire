@@ -1,0 +1,46 @@
+name: Governance Baseline
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - "feat/unified-field-governance-baseline"
+
+permissions:
+  contents: read
+
+jobs:
+  governance:
+    name: Governance document and secret-hygiene checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Require portable governance contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s AGENTS.md
+          grep -q "Evidence and truthful status" AGENTS.md
+          grep -q "Security boundaries" AGENTS.md
+          grep -q "Required completion report" AGENTS.md
+      - name: Validate shared task contract references
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d UnifiedField
+          grep -R -q "heavenzfire.shared-task.v1" UnifiedField
+      - name: Reject obvious committed credential assignments in changed governance files
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=(AGENTS.md .github/workflows/governance-baseline.yml UnifiedField/GOVERNANCE-IMPLEMENTATION-STATUS.md)
+          for file in "${files[@]}"; do
+            test -s "$file"
+            if grep -nE '(gh[pousr]_[A-Za-z0-9]{20,}|AIza[0-9A-Za-z_-]{30,}|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----)' "$file"; then
+              echo "Possible credential material found in $file" >&2
+              exit 1
+            fi
+          done
+          echo "Governance baseline checks passed."
