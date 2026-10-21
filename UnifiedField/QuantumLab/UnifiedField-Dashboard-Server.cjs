@@ -45,10 +45,22 @@ const server=http.createServer(async(req,res)=>{
   if(origin&&origin!=='http://127.0.0.1:8800'&&origin!=='http://localhost:8800'){res.writeHead(403,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'Cross-origin request denied'}));}
   if(workerRun.running){res.writeHead(409,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'Worker run already active',workerRun}));}
   if(!fs.existsSync(WORKER_SCRIPT)){res.writeHead(500,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'Worker script missing'}));}
-  const child=cp.spawn('powershell.exe',['-NoProfile','-ExecutionPolicy','Bypass','-File',WORKER_SCRIPT],{windowsHide:true,stdio:'ignore'});
-  workerRun={running:true,pid:child.pid||null,startedAt:new Date().toISOString(),finishedAt:null,exitCode:null,error:null};
-  child.on('error',e=>{workerRun={...workerRun,running:false,finishedAt:new Date().toISOString(),error:String(e.message||e)}});
-  child.on('close',async code=>{const startedAt=workerRun.startedAt;workerRun={...workerRun,running:false,finishedAt:new Date().toISOString(),exitCode:code};const artifact=latestWorkerResults(Date.parse(startedAt||'')||Date.now());if(artifact){const journalPublish=await publishWorkerResultsToJournal(artifact);workerRun={...workerRun,journalPublish};}});
+  const powershell=path.join(process.env.SystemRoot||'C:\\Windows','System32','WindowsPowerShell','v1.0','powershell.exe');
+  let workerStdout='',workerStderr='',spawnError=null;
+  const child=cp.spawn(powershell,['-NoLogo','-NoProfile','-ExecutionPolicy','Bypass','-File',WORKER_SCRIPT,'-OutputDirectory',LOCALAI],{windowsHide:true,cwd:path.dirname(WORKER_SCRIPT),env:process.env,stdio:['ignore','pipe','pipe']});
+  workerRun={running:true,phase:'generating',pid:child.pid||null,startedAt:new Date().toISOString(),finishedAt:null,exitCode:null,error:null,stdout:'',stderr:'',journalPublish:null};
+  child.stdout.on('data',chunk=>{workerStdout=(workerStdout+chunk.toString()).slice(-8000);});
+  child.stderr.on('data',chunk=>{workerStderr=(workerStderr+chunk.toString()).slice(-8000);});
+  child.on('error',e=>{spawnError=String(e.message||e);});
+  child.on('close',async code=>{
+   const startedAt=workerRun.startedAt;
+   workerRun={...workerRun,phase:'publishing',exitCode:code,error:spawnError||(code!==0?(workerStderr.trim()||'Worker batch exited with code '+code):null),stdout:workerStdout,stderr:workerStderr};
+   const artifact=latestWorkerResults(Date.parse(startedAt||'')||Date.now());
+   let journalPublish;
+   if(artifact)journalPublish=await publishWorkerResultsToJournal(artifact);
+   else journalPublish={state:'blocked',reason:'No result artifact was written during this batch',published:0,duplicate:0,failed:0,errors:[]};
+   workerRun={...workerRun,running:false,phase:'finished',finishedAt:new Date().toISOString(),journalPublish};
+  });
   res.writeHead(202,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:true,accepted:true,workerRun}));
  }
  if(req.method!=='GET'){res.writeHead(405,{'Content-Type':'text/plain'});return res.end('GET only');}
