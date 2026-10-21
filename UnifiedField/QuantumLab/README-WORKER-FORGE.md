@@ -14,6 +14,10 @@ The Worker Forge defines versioned worker blueprints, constructs deterministic m
 - **Promotion gate:** additionally requires an explicitly identified independent reviewer. No self-promotion.
 - **Auditability:** canonical blueprint hash, matrix hash, case IDs, fixed seeds, and qualification hash support reproducible review.
 
+## Dashboard integration
+
+The loopback dashboard exposes `GET /api/forge/plan` to produce the fixed 720-cell default evaluation tensor and `POST /api/forge/validate` to validate a candidate blueprint. The dashboard editor is a working JSON input; validation returns capability/schema errors and a content hash. These endpoints do not execute the candidate or the evaluation plan. The UI labels the matrix as planned, not executed.
+
 ## Use
 
 ```js
