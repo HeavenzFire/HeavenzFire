@@ -29,14 +29,16 @@ test('CLI emits deterministic plan-only JSON from a node manifest', () => {
   } finally { f.cleanup(); }
 });
 test('CLI rejects malformed manifest and unsafe replication factor', () => {
-  const f = fixture({ nodes: 'not-an-array' });
+  const malformed = fixture({ nodes: 'not-an-array' });
+  const valid = fixture({ nodes: [{ id: 'one', cluster: 'local', role: 'gateway' }] });
   try {
-    const badManifest = spawnSync(process.execPath, [cli, '--input', f.file], { encoding: 'utf8' });
+    const badManifest = spawnSync(process.execPath, [cli, '--input', malformed.file], { encoding: 'utf8' });
     assert.equal(badManifest.status, 2);
     assert.match(badManifest.stderr, /nodes array/);
-    const badFactor = spawnSync(process.execPath, [cli, '--input', f.file, '--replication-factor', '99'], { encoding: 'utf8' });
+    const badFactor = spawnSync(process.execPath, [cli, '--input', valid.file, '--replication-factor', '99'], { encoding: 'utf8' });
     assert.equal(badFactor.status, 2);
-  } finally { f.cleanup(); }
+    assert.match(badFactor.stderr, /replicationFactor/);
+  } finally { malformed.cleanup(); valid.cleanup(); }
 });
 test('CLI help does not require a manifest', () => {
   const r = spawnSync(process.execPath, [cli, '--help'], { encoding: 'utf8' });
