@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HeavenzFire 144A — Agentic Tasker</title>
+<style>
+:root{color-scheme:dark;--bg:#090d16;--panel:#121a29;--line:#263650;--ink:#edf4ff;--muted:#9aacc6;--cyan:#56d9ff;--gold:#ffc66d;--green:#70e2b0;--red:#ff8e9b}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 15% 0%,#152743 0,transparent 48%),var(--bg);color:var(--ink);font:14px/1.45 system-ui,Segoe UI,sans-serif}
+header{padding:22px clamp(16px,4vw,42px);border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap}
+h1{font-size:clamp(22px,3vw,34px);margin:0;letter-spacing:.02em}h1 span{color:var(--cyan)}.sub{color:var(--muted);margin-top:5px}
+.wrap{padding:20px clamp(12px,3vw,32px);max-width:1600px;margin:auto}.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.stat,.panel{background:linear-gradient(145deg,#141e30,#0f1624);border:1px solid var(--line);border-radius:14px;padding:15px}.stat strong{font-size:25px;display:block}.stat small,.muted{color:var(--muted)}
+.layout{display:grid;grid-template-columns:minmax(290px,390px) minmax(0,1fr);gap:14px;margin-top:14px}.stack{display:grid;gap:14px;align-content:start}.panel h2{font-size:16px;margin:0 0 12px}.panel h3{font-size:14px;margin:0 0 8px}
+label{display:block;color:var(--muted);font-size:12px;margin:10px 0 5px}input,textarea,select{width:100%;background:#080e18;color:var(--ink);border:1px solid #344965;border-radius:8px;padding:10px;font:inherit}textarea{min-height:86px;resize:vertical}
+button{border:1px solid #3d6684;border-radius:9px;background:#17344c;color:#eaf9ff;padding:9px 12px;font-weight:650;cursor:pointer}button:hover{border-color:var(--cyan);filter:brightness(1.12)}button.primary{background:linear-gradient(90deg,#087ca5,#205c88);border-color:#4bc9f2}button.gold{background:#45331c;border-color:#916e36;color:#ffe1a8}button.ghost{background:transparent}.buttons{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.note{border-left:3px solid var(--gold);padding:9px 11px;background:#211c14;border-radius:5px;color:#f4d9a6;font-size:12px}
+.tabs{display:flex;gap:7px;flex-wrap:wrap;margin:14px 0}.tab{background:#0c1421}.tab.active{border-color:var(--cyan);color:var(--cyan)}
+.searchrow{display:flex;gap:8px;align-items:center;margin-bottom:10px}.searchrow input{flex:1}
+.agents{display:grid;grid-template-columns:repeat(auto-fill,minmax(195px,1fr));gap:8px;max-height:560px;overflow:auto;padding:2px}
+.agent{border:1px solid var(--line);border-radius:10px;padding:10px;background:#0b1320}.agent .name{font-weight:700}.tag{display:inline-block;font-size:10px;border:1px solid #38506e;border-radius:99px;padding:2px 7px;margin:5px 3px 0 0;color:#bcd0e8}.agent p{font-size:12px;color:var(--muted);margin:7px 0 0}.status{color:var(--gold);font-size:11px}
+.task{border:1px solid var(--line);border-radius:10px;padding:12px;margin:8px 0;background:#0b1320}.taskhead{display:flex;justify-content:space-between;gap:8px;align-items:start}.tasktitle{font-weight:700}.task p{color:var(--muted);margin:6px 0}.badge{font-size:10px;border-radius:99px;padding:3px 7px;background:#253146;color:#dceaff;white-space:nowrap}.badge.queued{color:#ffd48c}.badge.running{color:#6be3ff}.badge.done{color:#7be5b6}.badge.failed{color:#ff9aa4}
+pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#080e18;padding:10px;border-radius:8px;color:#bcd3ef;max-height:220px;overflow:auto;font-size:12px}
+@media(max-width:900px){.layout{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style></head>
+<body>
+<header><div><h1>HEAVENZFIRE <span>144A</span></h1><div class="sub">Unified Agentic Tasker · Studio + Coder · One shared task fabric</div></div><div class="buttons" style="margin:0"><button id="export" class="ghost">Export workspace JSON</button><button id="reset" class="ghost">Clear task history</button></div></header>
+<div class="wrap">
+<div class="stats">
+<div class="stat"><strong id="agentCount">144</strong><small>Agent archetypes · 72 Kings + 72 Thinkers</small></div>
+<div class="stat"><strong id="taskCount">0</strong><small>Tasks in workspace</small></div>
+<div class="stat"><strong id="laneCount">8</strong><small>Logical parallel lanes</small></div>
+<div class="stat"><strong id="toolCount">16</strong><small>Capability groups catalogued</small></div>
+</div>
+<div class="tabs"><button class="tab active" data-tab="task">Tasker</button><button class="tab" data-tab="agents">144-Agent Roster</button><button class="tab" data-tab="eyes">Seraphim 777 Eyes</button><button class="tab" data-tab="arsenal">Tools & Arsenal</button><button class="tab" data-tab="coder">Coder Workbench</button><button class="tab" data-tab="research">Internet Research</button></div>
+<div class="layout">
+<div class="stack">
+<section class="panel"><h2>Submit a mission</h2><label for="title">Task title</label><input id="title" placeholder="e.g. Review orchestrator failure handling"><label for="goal">Objective and acceptance criteria</label><textarea id="goal" placeholder="What should be produced? How will we know it worked?"></textarea><label for="kind">Workstream</label><select id="kind"><option>Engineering</option><option>Code review</option><option>Research</option><option>Testing / QA</option><option>Security review</option><option>Documentation</option><option>Creative / Studio</option><option>Integration</option></select><label for="agent">Lead archetype</label><select id="agent"><option value="auto">Auto-route by task type</option><option value="king">King topology — coordination / execution</option><option value="thinker">Thinker topology — analysis / synthesis</option></select><label for="priority">Priority</label><select id="priority"><option>High</option><option selected>Normal</option><option>Low</option></select><div class="buttons"><button id="addTask" class="primary">Add to task queue</button><button id="demo" class="gold">Create demo mission</button></div><p class="muted" style="font-size:12px">Tasks are stored in the shared local Windows queue. Plan a task, then explicitly confirm Run selected with UnifiedField to execute four bounded local-model lanes plus synthesis. No shell commands are executed.</p></section>
+<section class="panel"><h2>Task fabric</h2><div class="note">8 logical lanes: Intake → Plan → Research → Build → Review → Test → Integrate → Report. Parallel execution is a target capability; actual concurrency depends on connected workers and backend policy.</div><div class="buttons"><button id="planLanes">Plan selected queue</button><button id="runSelected" class="gold">Run selected with UnifiedField</button><button id="debateSelected" class="primary">Council debate + critique</button><button id="markDone" class="ghost">Mark selected task done</button></div><label for="selectedTask">Selected task</label><select id="selectedTask"><option value="">No task selected</option></select><pre id="lanePlan">No plan generated yet.</pre></section>
+</div>
+<div class="stack">
+<section class="panel" id="guardianPanel"><h2>Guardian · Windows health</h2><p class="muted">Live loopback service checks, C: free space, RAM, and persisted findings. Read-only: no automatic repair or process termination.</p><div class="buttons"><button id="guardianRefresh" class="primary">Run health check</button><span id="guardianStatus" class="badge">Waiting for first check</span></div><div id="guardianSummary" class="stats" style="grid-template-columns:repeat(2,minmax(0,1fr));margin-top:10px"></div><div id="guardianServices"></div><pre id="guardianDetails">Waiting for /api/guardian.</pre></section>
+<section class="panel" id="taskPanel"><h2>Mission queue</h2><div class="searchrow"><input id="taskSearch" placeholder="Filter tasks…"><select id="taskFilter" style="max-width:145px"><option value="all">All states</option><option>Queued</option><option>Planned</option><option>Running</option><option>Done</option><option>ReviewRequired</option><option>Failed</option></select></div><div id="tasks"><p class="muted">No tasks yet. Create your first mission.</p></div></section>
+<section class="panel" id="agentPanel" hidden><h2>144-agent topology</h2><div class="searchrow"><input id="agentSearch" placeholder="Search agents, domains, topology…"><select id="agentType" style="max-width:140px"><option value="all">All 144</option><option value="king">72 Kings</option><option value="thinker">72 Thinkers</option></select></div><div id="agents" class="agents"></div></section>
+<section class="panel" id="eyesPanel" hidden><h2>Seraphim 777 Eyes · Agent observability</h2><p class="muted">Seven evidence lenses per registered identity: identity, liveness, capability, task, safety, trace, and integrity. Registered does not mean connected.</p><div id="eyesSummary" class="stats"></div><div class="searchrow"><input id="eyesSearch" placeholder="Filter agent ID, name, domain, or state…"><select id="eyesState" style="max-width:190px"><option value="all">All connection states</option><option value="bound">Lane-bound</option><option value="unconnected">Registry only</option><option value="observed">Execution observed</option></select></div><div id="eyesAgents" class="agents"></div><pre id="eyesDetails">Waiting for the local BrowserBridge observability endpoint.</pre></section>
+<section class="panel" id="arsenalPanel" hidden><h2>Capability registry</h2><p class="muted">Capability catalog and integration status. A listed capability is not evidence that its provider is connected.</p><div id="arsenal"></div></section>
+<section class="panel" id="researchPanel" hidden><h2>Internet Research</h2><p class="muted">Search the live web through Bing RSS. Results are untrusted evidence; review sources before relying on them.</p><label for="researchQuery">Research question</label><input id="researchQuery" placeholder="Search technical docs, APIs, security advisories…"><div class="buttons"><button id="searchWeb" class="primary">Search internet</button><button id="attachResearch" class="gold">Attach results to selected task</button></div><pre id="researchStatus">Internet search has not run yet.</pre><div id="researchResults"></div></section><section class="panel" id="coderPanel" hidden><h2>Coder workbench</h2><label for="repoPath">Workspace / repository path</label><input id="repoPath" placeholder="C:\Users\rucke\HeavenzFire"><label for="changeRequest">Change request</label><textarea id="changeRequest" placeholder="Describe the implementation, constraints, and tests."></textarea><label for="reviewMode">Execution mode</label><select id="reviewMode"><option>Plan only — no files changed</option><option>Prepare patch for review</option><option>Implement after explicit approval</option></select><div class="buttons"><button id="coderTask" class="primary">Send to task queue</button><button id="copyRequest" class="ghost">Copy request</button></div><pre id="coderOutput">Coder requests become queue tasks. Use the scoped writer below to apply reviewed source content with hash pinning, backup, and validation.</pre>
+<div class="task" style="margin-top:12px"><div class="tasktitle">Authorized source writer · Unified Field workspace</div><p class="muted">Existing files under UnifiedField only. Hash-pinned write, backup, JSON/JavaScript syntax validation, optional named regression test, and rollback on failure. No arbitrary shell commands.</p>
+<label for="scopedFile">Relative file path inside UnifiedField</label><input id="scopedFile" value="QuantumLab/UnifiedField-Dashboard-Server.cjs" placeholder="QuantumLab/file.cjs">
+<div class="buttons"><button id="loadScopedFile" class="primary">Load file + hash</button></div>
+<label for="scopedHash">Expected SHA-256</label><input id="scopedHash" spellcheck="false" placeholder="Load the target before editing">
+<label for="scopedContent">Replacement file content</label><textarea id="scopedContent" spellcheck="false" style="min-height:220px;font:12px/1.45 Consolas,monospace" placeholder="Load the file, edit its contents, then explicitly approve the write."></textarea>
+<label for="scopedTest">Optional regression test (.test.cjs / .test.js)</label><input id="scopedTest" placeholder="QuantumLab/UnifiedField-Dashboard.test.cjs">
+<label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="approveScopedWrite"> I reviewed this complete file replacement and authorize applying it locally.</label>
+<div class="buttons"><button id="applyScopedWrite" class="gold">Apply approved write · test · rollback on failure</button><span id="scopedWriteStatus" class="badge">NO WRITE AUTHORIZED</span></div>
+<pre id="scopedWriteEvidence">No file has been loaded or changed.</pre></div></section>
+</div></div>
+</div>
+<script>
+const kingNames = ["Aegis","Sovereign","Strategos","Marshal","Warden","Sentinel","Regent","Steward","Architect","Commander","Pathfinder","Vanguard","Guardian","Arbiter","Envoy","Builder","Keeper","Navigator","Catalyst","Unifier","Pioneer","Shield","Beacon","Harbor","Crown","Citadel","Frontier","Summit","Forge","Anchor","Compass","Lionheart","Falcon","Phoenix","Atlas","Orion","Solstice","Northstar","Keystone","Bridgekeeper","Gatekeeper","Stormbreaker","Peacemaker","Trailblazer","Watchtower","Ironwood","Brightshield","Firekeeper","Skywarden","Riverking","Stonecrown","Dawnbringer","Starhelm","Goldstandard","TrueNorth","Horizon","Highroad","Stronghold","Lighthouse","Rainmaker","Wayfinder","Cohort","Fieldmaster","Tactician","Quartermaster","Linksmith","Ringleader","Overseer","Chief Engineer","Mission Control","Redoubt","Covenant"];
+const thinkerNames = ["Socrates","Plato","Aristotle","Hypatia","Confucius","Laozi","Sun Tzu","Euclid","Archimedes","Ada Lovelace","Alan Turing","Grace Hopper","Katherine Johnson","Marie Curie","Albert Einstein","Emmy Noether","Claude Shannon","John von Neumann","George Boole","Blaise Pascal","René Descartes","Ibn al-Haytham","Al-Khwarizmi","Avicenna","Al-Biruni","Ibn Khaldun","Maimonides","Hildegard","Leonardo","Galileo","Kepler","Newton","Faraday","Maxwell","Darwin","Rosalind Franklin","Barbara McClintock","Chien-Shiung Wu","Richard Feynman","Lise Meitner","Nikola Tesla","Hedy Lamarr","Tim Berners-Lee","Donald Knuth","Edsger Dijkstra","Barbara Liskov","Margaret Hamilton","Leslie Lamport","Frances Allen","Radia Perlman","Vint Cerf","Linus Torvalds","Ken Thompson","Dennis Ritchie","Mary Jackson","Mae Jemison","Wang Zhenyi","Srinivasa Ramanujan","Madhava","Aryabhata","Brahmagupta","Pingala","Al-Farabi","Ibn Rushd","Zhuangzi","Mary Wollstonecraft","Hannah Arendt","Frederick Douglass","W.E.B. Du Bois","Rachel Carson","Elinor Ostrom","Buckminster Fuller"];
+const domains = ["planning","coordination","systems architecture","risk control","delivery","knowledge synthesis","logic","mathematics","software design","debugging","research","testing","security analysis","documentation","data modeling","integration"];
+const kingDesc = ["decomposes goals into milestones","coordinates dependencies and handoffs","keeps execution bounded and observable","manages priorities and recovery","protects scope and acceptance criteria","tracks health and failure signals","resolves competing workstreams","maintains durable operational state"];
+const thinkerDesc = ["tests assumptions and evidence","builds formal models and proofs","finds edge cases and contradictions","synthesizes competing explanations","designs experiments and benchmarks","analyzes algorithms and complexity","reviews code and interfaces","explains findings with provenance"];
+const agents=[];
+for(let i=0;i<72;i++) agents.push({id:"K"+String(i+1).padStart(3,"0"),type:"king",name:kingNames[i]||("King Archetype "+(i+1)),domain:domains[i%domains.length],desc:kingDesc[i%kingDesc.length],capabilities:["planning","delegation","priority management","handoff"]});
+for(let i=0;i<72;i++) agents.push({id:"T"+String(i+1).padStart(3,"0"),type:"thinker",name:thinkerNames[i]||("Thinker Archetype "+(i+1)),domain:domains[(i+5)%domains.length],desc:thinkerDesc[i%thinkerDesc.length],capabilities:["analysis","verification","synthesis","review"]});
+const toolsList=[
+["Local model runtime","Ollama / local inference","Endpoint adapter required"],["Cloud model providers","Gemini, OpenAI, Claude, Mistral, DeepSeek, Qwen and others","Provider keys and APIs required; never assume connected"],["Repository access","Git, GitHub, local repositories","Connector / scoped filesystem adapter required"],["File operations","Read, create, patch, diff, backup","Local executor required"],["Terminal execution","PowerShell 5.1, approved commands","Local executor and approval gate required"],["Task queue","Create, prioritize, assign, track","Local browser queue implemented"],["Agent registry","144 archetypes and capability tags","Roster implemented; worker adapters pending"],["Orchestration","DAG, dependencies, retries, concurrency","Planning UI implemented; execution engine pending"],["Code generation","Patch proposals and implementation plans","Model adapter required"],["Code review","Independent review, risk and correctness","Reviewer worker required"],["Testing / QA","Unit, integration, regression checks","Test runner adapter required"],["Web research","Search, fetch, citation and synthesis","Web connector required"],["Browser automation","Navigate and operate approved workflows","Browser adapter required"],["Data analysis","CSV, JSON, logs, metrics","Data tools required"],["Memory / project context","Project notes, artifact index, retrieval","Persistent backend required"],["Audit / safety","Approval gates, event logs, rollback","Policy layer and durable log required"]
+];
+let tasks=JSON.parse(localStorage.getItem("hf144_tasks")||"[]"), selectedId="";
+const $=id=>document.getElementById(id);
+function save(){localStorage.setItem("hf144_tasks",JSON.stringify(tasks));renderTasks();renderStats()}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+function renderStats(){$("agentCount").textContent=agents.length;$("taskCount").textContent=tasks.length;$("laneCount").textContent=8;$("toolCount").textContent=toolsList.length}
+function renderTasks(){let q=$("taskSearch").value.toLowerCase(),f=$("taskFilter").value;let list=tasks.filter(t=>(f==="all"||t.status===f)&&(!q||(t.title+" "+t.goal+" "+t.kind).toLowerCase().includes(q)));$("tasks").innerHTML=list.length?list.slice().reverse().map(t=>'<div class="task"><div class="taskhead"><div class="tasktitle">'+esc(t.title)+'</div><span class="badge '+t.status.toLowerCase()+'">'+esc(t.status)+'</span></div><p>'+esc(t.goal)+'</p><span class="tag">'+esc(t.kind)+'</span><span class="tag">'+esc(t.priority)+'</span><span class="tag">'+esc(t.lead)+'</span><div class="buttons"><button data-select="'+t.id+'">Select</button><button data-plan="'+t.id+'">Plan lanes</button><button data-done="'+t.id+'">Mark done</button></div></div>').join(""):'<p class="muted">No matching tasks.</p>';const s=$("selectedTask");const old=s.value;s.innerHTML='<option value="">Choose task…</option>'+tasks.map(t=>'<option value="'+t.id+'">'+esc(t.title)+'</option>').join("");if(tasks.some(t=>t.id===old))s.value=old;document.querySelectorAll("[data-select]").forEach(b=>b.onclick=()=>{$("selectedTask").value=b.dataset.select;selectedId=b.dataset.select});document.querySelectorAll("[data-plan]").forEach(b=>b.onclick=()=>planTask(b.dataset.plan));document.querySelectorAll("[data-done]").forEach(b=>b.onclick=()=>doneTask(b.dataset.done))}
+function addTask(title,goal,kind,lead,priority){if(!title.trim()||!goal.trim()){alert("Enter a title and an objective with acceptance criteria.");return}let a=agents.find(x=>x.type===lead)||agents[(tasks.length*17)%agents.length];let t={id:"HF-"+Date.now().toString(36).toUpperCase(),title:title.trim(),goal:goal.trim(),kind,lead:a.id+" "+a.name,priority,status:"Queued",created:new Date().toISOString(),events:[{at:new Date().toISOString(),event:"Queued"}]};tasks.push(t);selectedId=t.id;save();$("selectedTask").value=t.id}
+function planTask(id){let t=tasks.find(x=>x.id===id);if(!t)return;t.status="Planned";t.events.push({at:new Date().toISOString(),event:"Generated 8-lane execution plan"});const lanes=[["01 Intake","Normalize objective, constraints, and acceptance tests."],["02 Plan","Split into atomic tasks; identify dependencies and risks."],["03 Research","Gather source evidence and inspect relevant artifacts."],["04 Build","Prepare the smallest reviewable implementation."],["05 Review","Independent agent challenges assumptions and checks diffs."],["06 Test","Run defined checks; record outputs and failures."],["07 Integrate","Merge only approved, passing work; preserve rollback."],["08 Report","Summarize evidence, changed files, limits, and next steps."]];$("lanePlan").textContent="MISSION: "+t.title+"\nLEAD: "+t.lead+"\nSTATE: PLANNED — no worker has executed yet.\n\n"+lanes.map(x=>x[0]+"\n  "+x[1]).join("\n\n")+"\n\nAcceptance gate: "+t.goal;save()}
+function doneTask(id){let t=tasks.find(x=>x.id===id);if(!t)return;t.status="Done (manual)";t.events.push({at:new Date().toISOString(),event:"Manually marked done by user"});save()}
+$("addTask").onclick=()=>addTask($("title").value,$("goal").value,$("kind").value,$("agent").value,$("priority").value);
+$("demo").onclick=()=>{addTask("Build verified agent-tasker vertical slice","Produce a reviewable queue/orchestration contract, define one real task execution path, and demonstrate success/failure handling with evidence.","Engineering","king","High");planTask(tasks[tasks.length-1].id)};
+$("planLanes").onclick=()=>planTask($("selectedTask").value);$("markDone").onclick=()=>doneTask($("selectedTask").value);
+$("taskSearch").oninput=renderTasks;$("taskFilter").onchange=renderTasks;
+document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x===b));["task","agents","eyes","arsenal","coder","research"].forEach(k=>$(k+"Panel").hidden=k!==b.dataset.tab);if(b.dataset.tab==="eyes")hfRefreshEyes()});
+function renderAgents(){let q=$("agentSearch").value.toLowerCase(),f=$("agentType").value;let list=agents.filter(a=>(f==="all"||a.type===f)&&(a.name+" "+a.domain+" "+a.desc+" "+a.id).toLowerCase().includes(q));$("agents").innerHTML=list.map(a=>'<div class="agent"><div class="name">'+esc(a.id)+' · '+esc(a.name)+'</div><span class="tag">'+(a.type==="king"?"KING TOPOLOGY":"THINKER TOPOLOGY")+'</span><span class="tag">'+esc(a.domain)+'</span><p>'+esc(a.desc)+'.</p><div class="status">Archetype registered · runtime binding pending</div></div>').join("")}
+$("agentSearch").oninput=renderAgents;$("agentType").onchange=renderAgents;
+$("arsenal").innerHTML=toolsList.map((x,i)=>'<div class="task"><div class="tasktitle">'+String(i+1).padStart(2,"0")+'. '+esc(x[0])+'</div><p>'+esc(x[1])+'</p><span class="tag">'+esc(x[2])+'</span></div>').join("");
+$("coderTask").onclick=()=>{const p=$("repoPath").value||"Repository path not set";addTask("Coder: "+($("changeRequest").value.slice(0,72)||"Untitled change"),"Workspace: "+p+"\nRequest: "+$("changeRequest").value+"\nExecution mode: "+$("reviewMode").value,"Engineering","thinker","High");$("coderOutput").textContent="Added to queue. No repository has been changed. Connect an approved executor before running code changes."};
+async function hfLoadScopedFile(){
+ const b=$("loadScopedFile");b.disabled=true;$("scopedWriteStatus").textContent="LOADING TARGET";
+ try{const file=$("scopedFile").value.trim();if(!file)throw Error("Enter a relative UnifiedField file path.");const r=await fetch(hfBridgeApi+"/api/scoped-write/target?file="+encodeURIComponent(file),{cache:"no-store"});const d=await r.json();if(!r.ok||!d.ok)throw Error(d.error||("HTTP "+r.status));$("scopedFile").value=d.file;$("scopedHash").value=d.sha256;$("scopedContent").value=d.content;$("approveScopedWrite").checked=false;$("scopedWriteStatus").textContent="TARGET LOADED · REVIEW REQUIRED";$("scopedWriteEvidence").textContent="File: "+d.file+"\nSHA-256: "+d.sha256+"\nBytes: "+d.bytes+"\nNo changes have been made.";}catch(e){$("scopedWriteStatus").textContent="LOAD FAILED";$("scopedWriteEvidence").textContent=String(e.message||e)}finally{b.disabled=false}
+}
+$("loadScopedFile").addEventListener("click",hfLoadScopedFile);
+async function hfApplyScopedWrite(){
+ const id=$("selectedTask").value;if(!id){alert("Select a task first, then plan it.");return}const t=tasks.find(x=>x.id===id);if(!t||!["Planned","ReviewRequired"].includes(t.status)){alert("Plan the selected task first.");return}if(!$("approveScopedWrite").checked){alert("Check the explicit approval box before applying a source write.");return}if(!$("scopedHash").value.trim()||!$("scopedContent").value){alert("Load a target and review the replacement content first.");return}if(!confirm("Apply this complete file replacement to the existing Unified Field workspace? A backup and validation will run."))return;
+ const b=$("applyScopedWrite");b.disabled=true;$("scopedWriteStatus").textContent="APPLYING APPROVED WRITE";
+ try{const r=await fetch(hfBridgeApi+"/api/tasks/"+encodeURIComponent(id)+"/scoped-write",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({file:$("scopedFile").value,expectedSha256:$("scopedHash").value.trim(),content:$("scopedContent").value,testFile:$("scopedTest").value.trim(),approved:true})});const d=await r.json();if(!r.ok||!d.ok)throw Error(d.error||("HTTP "+r.status));const updated=hfNormalizeTask(d.task);tasks=[updated,...tasks.filter(x=>x.id!==updated.id)];save();$("scopedHash").value=d.afterSha256;$("approveScopedWrite").checked=false;$("scopedWriteStatus").textContent="WRITE APPLIED · REVIEW REQUIRED";$("scopedWriteEvidence").textContent="RESULT: "+d.file+"\nBEFORE SHA-256: "+d.beforeSha256+"\nAFTER SHA-256: "+d.afterSha256+"\nBACKUP: "+d.backup+"\nSYNTAX: "+d.syntaxCheck+"\nTEST: "+JSON.stringify(d.testResult,null,2)+"\nTask status: "+updated.status+"\nLocal write complete; GitHub sync is separate.";}catch(e){$("scopedWriteStatus").textContent="WRITE REJECTED / ROLLBACK ATTEMPTED";$("scopedWriteEvidence").textContent=String(e.message||e)}finally{b.disabled=false}
+}
+$("applyScopedWrite").addEventListener("click",hfApplyScopedWrite);
+$("copyRequest").onclick=()=>{const v="Workspace: "+$("repoPath").value+"\nRequest: "+$("changeRequest").value+"\nMode: "+$("reviewMode").value;navigator.clipboard?.writeText(v).then(()=>$("coderOutput").textContent="Request copied.").catch(()=>{$("coderOutput").textContent=v})};
+$("export").onclick=()=>{const blob=new Blob([JSON.stringify({schema:"heavenzfire-144a-v1",exportedAt:new Date().toISOString(),agents,tasks,capabilities:toolsList},null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="HeavenzFire-144A-workspace.json";a.click();URL.revokeObjectURL(a.href)};
+$("reset").onclick=()=>{if(confirm("Clear task history from this browser only? Agent roster remains.")){tasks=[];save();$("lanePlan").textContent="No plan generated yet."}};
+renderStats();renderTasks();renderAgents();
+// HeavenzFire BrowserBridge: shared 144A task queue for Edge, Chrome, and Windows.
+const hfBridgeApi = 'http://127.0.0.1:18795';
+async function hfRefreshGuardian(){
+ const button=$('guardianRefresh');button.disabled=true;$('guardianStatus').textContent='Checking…';
+ try{
+  const r=await fetch(hfBridgeApi+'/api/guardian',{cache:'no-store'});const d=await r.json();if(!r.ok||!d.schema)throw new Error(d.error||('HTTP '+r.status));
+  const state=String(d.overall||'unknown').toUpperCase();$('guardianStatus').textContent=state;
+  $('guardianSummary').innerHTML=[['C: free',d.host&&d.host.disk&&d.host.disk.freeGB!==undefined?d.host.disk.freeGB+' GB':'Unknown'],['RAM free',d.host&&d.host.memory?d.host.memory.freeGB+' GB ('+d.host.memory.freePercent+'%)':'Unknown'],['Computer',d.host&&d.host.computer||'Unknown'],['Last checked',d.checkedAt?new Date(d.checkedAt).toLocaleTimeString():'Unknown']].map(x=>'<div class="stat"><strong style="font-size:18px">'+esc(x[1])+'</strong><small>'+esc(x[0])+'</small></div>').join('');
+  $('guardianServices').innerHTML=(d.services||[]).map(s=>'<div class="task" style="margin:6px 0;padding:8px"><div class="taskhead"><strong>'+esc(s.name)+'</strong><span class="badge">'+esc(s.state)+(s.required?' · REQUIRED':' · OPTIONAL')+'</span></div><p>'+esc(s.url)+(s.latencyMs!==undefined?' · '+s.latencyMs+' ms':'')+'</p></div>').join('');
+  $('guardianDetails').textContent='OVERALL: '+state+'\nMODE: '+d.mode+'\nAUTOMATIC REMEDIATION: '+String(d.policy&&d.policy.automaticRemediation===true?'ENABLED':'DISABLED')+'\n\nFINDINGS\n'+((d.findings||[]).map(x=>'• '+x).join('\n')||'No findings.')+'\n\nState persisted to the local 144A guardian-state.json file.';
+ }catch(e){$('guardianStatus').textContent='UNAVAILABLE';$('guardianDetails').textContent='Guardian check failed: '+e.message;}
+ finally{button.disabled=false;}
+}
+$('guardianRefresh').onclick=hfRefreshGuardian;
+function hfNormalizeTask(t){return {...t,lead:t.lead||((t.leadAgentId||'')+' '+(t.leadAgentName||'')),status:t.status||'Queued'};}
+let hfFieldExecutionAvailable=false;
+let hfEyesSnapshot=null;
+function hfRenderEyes(){
+ const s=hfEyesSnapshot;if(!s)return;
+ const atlas=s.resonance&&s.resonance.agents||[];const byId=new Map(atlas.map(a=>[a.agentId,a]));
+ const bound=(s.agents||[]).filter(a=>a.connectionState==='orchestrator_lane_bound').length;
+ const observed=(s.agents||[]).filter(a=>a.eyes&&a.eyes.liveness.status==='observed_execution').length;
+ const locked=atlas.filter(a=>a.phase&&a.phase.locked).length;
+ $('eyesSummary').innerHTML=[['Registered',s.registryAgentCount],['Lane-bound',bound],['Execution observed',observed],['Digital phase-locked',locked+'/'+atlas.length]].map(x=>'<div class="stat"><strong>'+esc(x[1])+'</strong><small>'+esc(x[0])+'</small></div>').join('');
+ const q=$('eyesSearch').value.toLowerCase(),f=$('eyesState').value;
+ const list=(s.agents||[]).filter(a=>{const r=byId.get(a.id);const txt=[a.id,a.name,a.domain,a.connectionState,a.eyes&&a.eyes.liveness.status].join(' ').toLowerCase();return (!q||txt.includes(q))&&(f==='all'||(f==='bound'&&a.connectionState==='orchestrator_lane_bound')||(f==='unconnected'&&a.connectionState==='registry_only_not_connected')||(f==='observed'&&a.eyes&&a.eyes.liveness.status==='observed_execution'));});
+ $('eyesAgents').innerHTML=list.map(a=>{const r=byId.get(a.id)||{};const color=r.auricField&&r.auricField.color||'#8B95A5';return '<div class="agent"><div class="name"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:'+color+';margin-right:7px"></span>'+esc(a.id)+' · '+esc(a.name)+'</div><span class="tag">'+esc(a.connectionState)+'</span><span class="tag">'+esc(a.eyes.liveness.status)+'</span><span class="tag">'+esc(r.spin&&r.spin.direction||'spin pending')+'</span><p>Radix '+esc(r.radix&&r.radix.base||'—')+' · master '+esc(r.radix&&Number(r.radix.masterHz).toFixed(2)||'—')+' Hz · coherence '+esc(r.phase&&Number(r.phase.coherence).toFixed(6)||'—')+'</p><button data-eye="'+esc(a.id)+'">Inspect seven eyes + resonance</button></div>';}).join('')||'<p class="muted">No matching agents.</p>';
+ document.querySelectorAll('[data-eye]').forEach(b=>b.onclick=()=>{const a=(s.agents||[]).find(x=>x.id===b.dataset.eye),r=byId.get(b.dataset.eye);$('eyesDetails').textContent=JSON.stringify({agent:a,resonance:r},null,2);});
+}
+async function hfRefreshEyes(){try{const r=await fetch(hfBridgeApi+'/api/eyes',{cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);const d=await r.json();if(!d.ok)throw new Error(d.error||'Snapshot unavailable');hfEyesSnapshot=d;hfRenderEyes();}catch(e){$('eyesDetails').textContent='Seraphim/resonance endpoint unavailable: '+e.message+'\nThe updated BrowserBridge source must be active.';}}
+$('eyesSearch').oninput=hfRenderEyes;$('eyesState').onchange=hfRenderEyes;
+let hfLatestResearch=null;
+function hfRenderResearch(data){
+ hfLatestResearch=data;
+ $('researchStatus').textContent='Provider: '+data.provider+'\nQuery: '+data.query+'\nFetched: '+data.fetchedAt+'\nResults: '+data.resultCount;
+ $('researchResults').innerHTML=(data.items||[]).map((x,i)=>'<article class="task"><div class="tasktitle">'+(i+1)+'. '+esc(x.title)+'</div><p>'+esc(x.snippet||'No snippet supplied.')+'</p><p class="muted">'+esc(x.publishedAt||'Publication date not supplied')+'</p><a href="'+esc(x.url)+'" target="_blank" rel="noopener noreferrer">'+esc(x.url)+'</a></article>').join('')||'<p class="muted">No search results returned.</p>';
+}
+$('searchWeb').onclick=async()=>{
+ const q=$('researchQuery').value.trim();if(q.length<2){alert('Enter a search query.');return;}
+ $('searchWeb').disabled=true;$('researchStatus').textContent='Searching the live web…';
+ try{const r=await fetch(hfBridgeApi+'/api/research?q='+encodeURIComponent(q),{cache:'no-store'});const d=await r.json();if(!r.ok||!d.ok)throw new Error(d.error||('HTTP '+r.status));hfRenderResearch(d);}
+ catch(e){$('researchStatus').textContent='Web research failed: '+e.message;}
+ finally{$('searchWeb').disabled=false;}
+};
+$('attachResearch').onclick=async()=>{
+ const id=$('selectedTask').value,q=$('researchQuery').value.trim();
+ if(!id){alert('Select a task first.');return;}if(q.length<2){alert('Enter a search query first.');return;}
+ $('attachResearch').disabled=true;$('researchStatus').textContent='Searching and attaching evidence to the selected task…';
+ try{
+  const r=await fetch(hfBridgeApi+'/api/tasks/'+encodeURIComponent(id)+'/research',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:q})});
+  const d=await r.json();if(!r.ok||!d.ok)throw new Error(d.error||('HTTP '+r.status));
+  const t=hfNormalizeTask(d.task);tasks=[t,...tasks.filter(x=>x.id!==t.id)];save();hfRenderResearch(d.research);
+  $('researchStatus').textContent+='\\nAttached '+d.research.resultCount+' web results to '+t.id+'. Council debate will receive these as untrusted evidence, not instructions.';
+ }catch(e){$('researchStatus').textContent='Research attachment failed: '+e.message;}
+ finally{$('attachResearch').disabled=false;}
+};
+async function hfRefreshSharedTasks(){try{const hr=await fetch(hfBridgeApi+'/health',{cache:'no-store'});const hd=await hr.json();hfFieldExecutionAvailable=hr.ok&&hd.fieldExecution===true;$('runSelected').disabled=!hfFieldExecutionAvailable;$('runSelected').title=hfFieldExecutionAvailable?'Run four bounded local-model lanes':'UnifiedField execution activates after the BrowserBridge update is restarted';const r=await fetch(hfBridgeApi+'/api/tasks',{cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);const d=await r.json();if(d.ok&&Array.isArray(d.tasks)){tasks=d.tasks.map(hfNormalizeTask);renderTasks();renderStats();const active=tasks.find(t=>t.status==='CouncilDebating'&&t.councilDebateProgress);if(active){$('selectedTask').value=active.id;hfRenderCouncilLive(active);}}}catch(e){hfFieldExecutionAvailable=false;$('runSelected').disabled=true;const out=$('coderOutput');if(out)out.textContent='BrowserBridge not reachable yet. Start Start-BrowserBridge.ps1 to sync the shared Windows task queue. Local task UI remains available.';}}
+addTask = async function(title,goal,kind,lead,priority){
+ if(!title.trim()||!goal.trim()){alert('Enter a title and an objective with acceptance criteria.');return;}
+ try{
+  const r=await fetch(hfBridgeApi+'/api/tasks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:title.trim(),goal:goal.trim(),kind,priority})});
+  const d=await r.json();if(!r.ok||!d.ok)throw new Error(d.error||('HTTP '+r.status));
+  const t=hfNormalizeTask(d.task);tasks=[t,...tasks.filter(x=>x.id!==t.id)];selectedId=t.id;save();$('selectedTask').value=t.id;
+ }catch(e){alert('Could not queue in the shared 144A fabric: '+e.message);}
+};
+planTask = async function(id){
+ if(!id)return;
+ try{
+  const r=await fetch(hfBridgeApi+'/api/tasks/'+encodeURIComponent(id)+'/plan',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+  const d=await r.json();if(!r.ok||!d.ok)throw new Error(d.error||('HTTP '+r.status));
+  const t=hfNormalizeTask(d.task);tasks=[t,...tasks.filter(x=>x.id!==t.id)];save();
+  $('lanePlan').textContent='MISSION: '+t.title+'\nLEAD: '+t.lead+'\nSTATE: PLANNED — plan recorded in the shared Windows queue; no worker execution implied.\n\n'+(t.plan||[]).map(x=>String(x.lane).padStart(2,'0')+' '+x.name+'\n  '+x.acceptance).join('\n\n')+'\n\nAcceptance gate: '+t.goal;
+ }catch(e){$('lanePlan').textContent='Shared planning failed: '+e.message;}
+};
+async function hfRunSelectedTask(id){
+ if(!hfFieldExecutionAvailable){alert('UnifiedField execution is disabled until the updated BrowserBridge is restarted.');return;}
+ if(!id){alert('Select a task first.');return;}
+ const current=tasks.find(t=>t.id===id);
+ if(!current||current.status!=='Planned'){alert('Plan this task first. Only Planned tasks can run.');return;}
+ if(!confirm('Run four bounded local-model lanes plus synthesis for this task? No shell commands will run.'))return;
+ const button=$('runSelected');button.disabled=true;button.textContent='Running UnifiedField…';
+ try{
+  const r=await fetch(hfBridgeApi+'/api/tasks/'+encodeURIComponent(id)+'/run',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+  const d=await r.json();if(!r.ok||!d.task)throw new Error(d.error||('HTTP '+r.status));
+  const t=hfNormalizeTask(d.task);tasks=[t,...tasks.filter(x=>x.id!==t.id)];save();
+  const field=t.fieldRun||{},gate=field.qualityGate||{};
+  const lanes=['architecture','implementation','security','verification'].map(k=>k.toUpperCase()+': '+String(field.results&&field.results[k]&&field.results[k].response||'No output')).join('\n\n');
+  $('lanePlan').textContent='MISSION: '+t.title+'\nSTATE: '+t.status+'\nTRACE HEAD: '+String(field.traceHead||'not available')+'\nQUALITY GATE: '+(gate.passed===true?'PASS':'REVIEW REQUIRED')+(gate.rejectedLanes&&gate.rejectedLanes.length?' — lanes: '+gate.rejectedLanes.join(', '):'')+'\n\n'+lanes+'\n\nSYNTHESIS:\n'+String(field.results&&field.results.synthesis&&field.results.synthesis.response||'No synthesis output');
+ }catch(e){$('lanePlan').textContent='UnifiedField run failed: '+e.message;}
+ finally{button.disabled=!hfFieldExecutionAvailable;button.textContent='Run selected with UnifiedField';}
+}
+$('runSelected').onclick=()=>hfRunSelectedTask($('selectedTask').value);
+function hfRenderCouncilLive(t){
+ const p=t.councilDebateProgress||{};
+ const c=t.councilDebate||{};
+ const transcript=p.transcript||c.transcript||[];
+ const rows=transcript.map(x=>'['+x.stage.toUpperCase()+'] '+x.personaName+' ('+x.role+')'+(x.retried?' [RETRY]':'')+'\n'+x.response).join('\n\n────────────────────────\n\n');
+ const summary='HEAVENZFIRE COUNCIL — LIVE DEBATE\nMISSION: '+t.title+'\nSTATE: '+t.status+'\nCURRENT SPEAKER: '+String(p.currentPersona||'Waiting for first response')+'\nSTAGE: '+String(p.completedStages||0)+' / '+String(p.plannedStages||12)+'\nMODEL CALLS: '+String(p.modelCallCount||(c.protocol&&c.protocol.totalModelCalls)||0)+' | RETRIES: '+String(p.retryCount||(c.protocol&&c.protocol.retryCount)||0)+'\n\nLIVE TRANSCRIPT\n\n';
+ $('lanePlan').textContent=summary+(rows||'The Council is initializing. Waiting for the first model response…');
+}
+async function hfCouncilDebate(id){
+ if(!id){alert('Select a task first.');return;}
+ const current=tasks.find(t=>t.id===id);
+ if(!current||current.status!=='Planned'){alert('Plan this task first. Only Planned tasks can enter Council debate.');return;}
+ if(!new URLSearchParams(location.search).has('council')&&!confirm('Start the 12-stage Council debate on the configured local model? The screen will update as each persona speaks. This is bounded analysis, not unrestricted system execution.'))return;
+ const button=$('debateSelected');button.disabled=true;button.textContent='Council debating…';
+ let finished=false, pollBusy=false;
+ const poll=async()=>{
+  if(pollBusy||finished)return;pollBusy=true;
+  try{
+   const r=await fetch(hfBridgeApi+'/api/tasks',{cache:'no-store'});const d=await r.json();
+   const raw=(d.tasks||[]).find(x=>x.id===id);
+   if(raw){const t=hfNormalizeTask(raw);tasks=[t,...tasks.filter(x=>x.id!==t.id)];renderTasks();renderStats();hfRenderCouncilLive(t);}
+  }catch(e){}
+  finally{pollBusy=false;}
+ };
+ const timer=setInterval(poll,900);
+ try{
+  await poll();
+  const request=fetch(hfBridgeApi+'/api/tasks/'+encodeURIComponent(id)+'/debate',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+  const r=await request;
+  const d=await r.json();if(!r.ok||!d.task)throw new Error(d.error||('HTTP '+r.status));
+  const t=hfNormalizeTask(d.task);tasks=[t,...tasks.filter(x=>x.id!==t.id)];save();hfRenderCouncilLive(t);
+  const c=t.councilDebate||{};
+  $('lanePlan').textContent+='\\n\\nSYNTHESIS\\n'+String(c.synthesis&&c.synthesis.response||'Not generated')+'\\n\\nINDEPENDENT VERIFICATION\\n'+String(c.verification&&c.verification.response||'Not generated')+'\\n\\nREPORT: '+String(t.councilDebateReport&&t.councilDebateReport.path||'not reported')+'\\n\\nStatus is ReviewRequired. A completed debate is not proof that the proposed implementation works.';
+ }catch(e){$('lanePlan').textContent='Council debate failed: '+e.message;}
+ finally{finished=true;clearInterval(timer);button.disabled=false;button.textContent='Council debate + critique';}
+}
+$('debateSelected').onclick=()=>hfCouncilDebate($('selectedTask').value);
+hfRefreshGuardian();
+setInterval(hfRefreshGuardian,30000);
+hfRefreshSharedTasks();
+setInterval(hfRefreshSharedTasks,1500);
+const hfAutoCouncilId=new URLSearchParams(location.search).get('council');
+if(hfAutoCouncilId){
+ const hfBoot=setInterval(()=>{
+  const t=tasks.find(x=>x.id===hfAutoCouncilId);
+  if(!t)return;
+  clearInterval(hfBoot);
+  $('selectedTask').value=t.id;
+  if(t.status==='Planned')hfCouncilDebate(t.id);
+  else if(t.status==='CouncilDebating')hfRenderCouncilLive(t);
+  else $('lanePlan').textContent='Requested Council mission '+t.id+' is '+t.status+'. Select a Planned task to begin a new debate.';
+ },500);
+}
+</script></body></html>
