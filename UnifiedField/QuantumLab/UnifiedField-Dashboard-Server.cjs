@@ -8,7 +8,7 @@ const GUARDIAN=path.join(ROOT,'144A','guardian-state.json');
 const LOCALAI=path.join(ROOT,'UnifiedField','QuantumLab','LocalAI');
 const WORKER_SCRIPT=path.join(ROOT,'UnifiedField','QuantumLab','Invoke-LocalModelWorkerBatch.ps1');
 let workerRun={running:false,pid:null,startedAt:null,finishedAt:null,exitCode:null,error:null};
-function latestWorkerResults(){try{const files=fs.readdirSync(LOCALAI).filter(n=>n.toLowerCase().startsWith('worker-smoke-')&&n.toLowerCase().endsWith('.json')).map(n=>({name:n,mtime:fs.statSync(path.join(LOCALAI,n)).mtimeMs})).sort((a,b)=>b.mtime-a.mtime);if(!files.length)return null;return {file:files[0].name,results:readJson(path.join(LOCALAI,files[0].name))}}catch{return null}}
+function latestWorkerResults(minMtime=0){try{const files=fs.readdirSync(LOCALAI).filter(n=>n.toLowerCase().startsWith('worker-smoke-')&&n.toLowerCase().endsWith('.json')).map(n=>({name:n,mtime:fs.statSync(path.join(LOCALAI,n)).mtimeMs})).filter(x=>x.mtime>=minMtime).sort((a,b)=>b.mtime-a.mtime);if(!files.length)return null;return {file:files[0].name,results:readJson(path.join(LOCALAI,files[0].name))}}catch{return null}}
 const endpoints=[
  {id:'browserbridge',name:'144A BrowserBridge',url:'http://127.0.0.1:18795/health'},
  {id:'ollama',name:'Local model runtime',url:'http://127.0.0.1:11434/api/tags'},
@@ -66,7 +66,7 @@ const server=http.createServer(async(req,res)=>{
   const child=cp.spawn('powershell.exe',['-NoProfile','-ExecutionPolicy','Bypass','-File',WORKER_SCRIPT],{windowsHide:true,stdio:'ignore'});
   workerRun={running:true,pid:child.pid||null,startedAt:new Date().toISOString(),finishedAt:null,exitCode:null,error:null};
   child.on('error',e=>{workerRun={...workerRun,running:false,finishedAt:new Date().toISOString(),error:String(e.message||e)}});
-  child.on('close',async code=>{workerRun={...workerRun,running:false,finishedAt:new Date().toISOString(),exitCode:code};const artifact=latestWorkerResults();if(artifact){const journalPublish=await publishWorkerResultsToJournal(artifact);workerRun={...workerRun,journalPublish};}});
+  child.on('close',async code=>{const startedAt=workerRun.startedAt;workerRun={...workerRun,running:false,finishedAt:new Date().toISOString(),exitCode:code};const artifact=latestWorkerResults(Date.parse(startedAt||'')||Date.now());if(artifact){const journalPublish=await publishWorkerResultsToJournal(artifact);workerRun={...workerRun,journalPublish};}});
   res.writeHead(202,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:true,accepted:true,workerRun}));
  }
  if(req.method!=='GET'){res.writeHead(405,{'Content-Type':'text/plain'});return res.end('GET only');}
