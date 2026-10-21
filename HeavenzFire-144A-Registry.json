@@ -1,0 +1,2131 @@
+{
+  "schema": "heavenzfire-144a-registry-v1",
+  "createdAt": "2026-10-19T21:39:26.834Z",
+  "counts": {
+    "totalAgents": 144,
+    "kings": 72,
+    "thinkers": 72,
+    "capabilityGroups": 16
+  },
+  "agents": [
+    {
+      "id": "K001",
+      "topology": "king",
+      "name": "Aegis",
+      "domain": "planning",
+      "purpose": "decomposes goals into milestones",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K002",
+      "topology": "king",
+      "name": "Sovereign",
+      "domain": "coordination",
+      "purpose": "coordinates dependencies and handoffs",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K003",
+      "topology": "king",
+      "name": "Strategos",
+      "domain": "systems architecture",
+      "purpose": "keeps execution bounded and observable",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K004",
+      "topology": "king",
+      "name": "Marshal",
+      "domain": "risk control",
+      "purpose": "manages priorities and recovery",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K005",
+      "topology": "king",
+      "name": "Warden",
+      "domain": "delivery",
+      "purpose": "protects scope and acceptance criteria",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K006",
+      "topology": "king",
+      "name": "Sentinel",
+      "domain": "knowledge synthesis",
+      "purpose": "tracks health and failure signals",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K007",
+      "topology": "king",
+      "name": "Regent",
+      "domain": "logic",
+      "purpose": "resolves competing workstreams",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K008",
+      "topology": "king",
+      "name": "Steward",
+      "domain": "mathematics",
+      "purpose": "maintains durable operational state",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K009",
+      "topology": "king",
+      "name": "Architect",
+      "domain": "software design",
+      "purpose": "decomposes goals into milestones",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K010",
+      "topology": "king",
+      "name": "Commander",
+      "domain": "debugging",
+      "purpose": "coordinates dependencies and handoffs",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K011",
+      "topology": "king",
+      "name": "Pathfinder",
+      "domain": "research",
+      "purpose": "keeps execution bounded and observable",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K012",
+      "topology": "king",
+      "name": "Vanguard",
+      "domain": "testing",
+      "purpose": "manages priorities and recovery",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K013",
+      "topology": "king",
+      "name": "Guardian",
+      "domain": "security analysis",
+      "purpose": "protects scope and acceptance criteria",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K014",
+      "topology": "king",
+      "name": "Arbiter",
+      "domain": "documentation",
+      "purpose": "tracks health and failure signals",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K015",
+      "topology": "king",
+      "name": "Envoy",
+      "domain": "data modeling",
+      "purpose": "resolves competing workstreams",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K016",
+      "topology": "king",
+      "name": "Builder",
+      "domain": "integration",
+      "purpose": "maintains durable operational state",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K017",
+      "topology": "king",
+      "name": "Keeper",
+      "domain": "planning",
+      "purpose": "decomposes goals into milestones",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K018",
+      "topology": "king",
+      "name": "Navigator",
+      "domain": "coordination",
+      "purpose": "coordinates dependencies and handoffs",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K019",
+      "topology": "king",
+      "name": "Catalyst",
+      "domain": "systems architecture",
+      "purpose": "keeps execution bounded and observable",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K020",
+      "topology": "king",
+      "name": "Unifier",
+      "domain": "risk control",
+      "purpose": "manages priorities and recovery",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K021",
+      "topology": "king",
+      "name": "Pioneer",
+      "domain": "delivery",
+      "purpose": "protects scope and acceptance criteria",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K022",
+      "topology": "king",
+      "name": "Shield",
+      "domain": "knowledge synthesis",
+      "purpose": "tracks health and failure signals",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K023",
+      "topology": "king",
+      "name": "Beacon",
+      "domain": "logic",
+      "purpose": "resolves competing workstreams",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K024",
+      "topology": "king",
+      "name": "Harbor",
+      "domain": "mathematics",
+      "purpose": "maintains durable operational state",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K025",
+      "topology": "king",
+      "name": "Crown",
+      "domain": "software design",
+      "purpose": "decomposes goals into milestones",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K026",
+      "topology": "king",
+      "name": "Citadel",
+      "domain": "debugging",
+      "purpose": "coordinates dependencies and handoffs",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K027",
+      "topology": "king",
+      "name": "Frontier",
+      "domain": "research",
+      "purpose": "keeps execution bounded and observable",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K028",
+      "topology": "king",
+      "name": "Summit",
+      "domain": "testing",
+      "purpose": "manages priorities and recovery",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K029",
+      "topology": "king",
+      "name": "Forge",
+      "domain": "security analysis",
+      "purpose": "protects scope and acceptance criteria",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K030",
+      "topology": "king",
+      "name": "Anchor",
+      "domain": "documentation",
+      "purpose": "tracks health and failure signals",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K031",
+      "topology": "king",
+      "name": "Compass",
+      "domain": "data modeling",
+      "purpose": "resolves competing workstreams",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K032",
+      "topology": "king",
+      "name": "Lionheart",
+      "domain": "integration",
+      "purpose": "maintains durable operational state",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K033",
+      "topology": "king",
+      "name": "Falcon",
+      "domain": "planning",
+      "purpose": "decomposes goals into milestones",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K034",
+      "topology": "king",
+      "name": "Phoenix",
+      "domain": "coordination",
+      "purpose": "coordinates dependencies and handoffs",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K035",
+      "topology": "king",
+      "name": "Atlas",
+      "domain": "systems architecture",
+      "purpose": "keeps execution bounded and observable",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K036",
+      "topology": "king",
+      "name": "Orion",
+      "domain": "risk control",
+      "purpose": "manages priorities and recovery",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K037",
+      "topology": "king",
+      "name": "Solstice",
+      "domain": "delivery",
+      "purpose": "protects scope and acceptance criteria",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K038",
+      "topology": "king",
+      "name": "Northstar",
+      "domain": "knowledge synthesis",
+      "purpose": "tracks health and failure signals",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K039",
+      "topology": "king",
+      "name": "Keystone",
+      "domain": "logic",
+      "purpose": "resolves competing workstreams",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K040",
+      "topology": "king",
+      "name": "Bridgekeeper",
+      "domain": "mathematics",
+      "purpose": "maintains durable operational state",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K041",
+      "topology": "king",
+      "name": "Gatekeeper",
+      "domain": "software design",
+      "purpose": "decomposes goals into milestones",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K042",
+      "topology": "king",
+      "name": "Stormbreaker",
+      "domain": "debugging",
+      "purpose": "coordinates dependencies and handoffs",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K043",
+      "topology": "king",
+      "name": "Peacemaker",
+      "domain": "research",
+      "purpose": "keeps execution bounded and observable",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K044",
+      "topology": "king",
+      "name": "Trailblazer",
+      "domain": "testing",
+      "purpose": "manages priorities and recovery",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K045",
+      "topology": "king",
+      "name": "Watchtower",
+      "domain": "security analysis",
+      "purpose": "protects scope and acceptance criteria",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K046",
+      "topology": "king",
+      "name": "Ironwood",
+      "domain": "documentation",
+      "purpose": "tracks health and failure signals",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K047",
+      "topology": "king",
+      "name": "Brightshield",
+      "domain": "data modeling",
+      "purpose": "resolves competing workstreams",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K048",
+      "topology": "king",
+      "name": "Firekeeper",
+      "domain": "integration",
+      "purpose": "maintains durable operational state",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K049",
+      "topology": "king",
+      "name": "Skywarden",
+      "domain": "planning",
+      "purpose": "decomposes goals into milestones",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K050",
+      "topology": "king",
+      "name": "Riverking",
+      "domain": "coordination",
+      "purpose": "coordinates dependencies and handoffs",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K051",
+      "topology": "king",
+      "name": "Stonecrown",
+      "domain": "systems architecture",
+      "purpose": "keeps execution bounded and observable",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K052",
+      "topology": "king",
+      "name": "Dawnbringer",
+      "domain": "risk control",
+      "purpose": "manages priorities and recovery",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K053",
+      "topology": "king",
+      "name": "Starhelm",
+      "domain": "delivery",
+      "purpose": "protects scope and acceptance criteria",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K054",
+      "topology": "king",
+      "name": "Goldstandard",
+      "domain": "knowledge synthesis",
+      "purpose": "tracks health and failure signals",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K055",
+      "topology": "king",
+      "name": "TrueNorth",
+      "domain": "logic",
+      "purpose": "resolves competing workstreams",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K056",
+      "topology": "king",
+      "name": "Horizon",
+      "domain": "mathematics",
+      "purpose": "maintains durable operational state",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K057",
+      "topology": "king",
+      "name": "Highroad",
+      "domain": "software design",
+      "purpose": "decomposes goals into milestones",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K058",
+      "topology": "king",
+      "name": "Stronghold",
+      "domain": "debugging",
+      "purpose": "coordinates dependencies and handoffs",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K059",
+      "topology": "king",
+      "name": "Lighthouse",
+      "domain": "research",
+      "purpose": "keeps execution bounded and observable",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K060",
+      "topology": "king",
+      "name": "Rainmaker",
+      "domain": "testing",
+      "purpose": "manages priorities and recovery",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K061",
+      "topology": "king",
+      "name": "Wayfinder",
+      "domain": "security analysis",
+      "purpose": "protects scope and acceptance criteria",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K062",
+      "topology": "king",
+      "name": "Cohort",
+      "domain": "documentation",
+      "purpose": "tracks health and failure signals",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K063",
+      "topology": "king",
+      "name": "Fieldmaster",
+      "domain": "data modeling",
+      "purpose": "resolves competing workstreams",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K064",
+      "topology": "king",
+      "name": "Tactician",
+      "domain": "integration",
+      "purpose": "maintains durable operational state",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K065",
+      "topology": "king",
+      "name": "Quartermaster",
+      "domain": "planning",
+      "purpose": "decomposes goals into milestones",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K066",
+      "topology": "king",
+      "name": "Linksmith",
+      "domain": "coordination",
+      "purpose": "coordinates dependencies and handoffs",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K067",
+      "topology": "king",
+      "name": "Ringleader",
+      "domain": "systems architecture",
+      "purpose": "keeps execution bounded and observable",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K068",
+      "topology": "king",
+      "name": "Overseer",
+      "domain": "risk control",
+      "purpose": "manages priorities and recovery",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K069",
+      "topology": "king",
+      "name": "Chief Engineer",
+      "domain": "delivery",
+      "purpose": "protects scope and acceptance criteria",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K070",
+      "topology": "king",
+      "name": "Mission Control",
+      "domain": "knowledge synthesis",
+      "purpose": "tracks health and failure signals",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K071",
+      "topology": "king",
+      "name": "Redoubt",
+      "domain": "logic",
+      "purpose": "resolves competing workstreams",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "K072",
+      "topology": "king",
+      "name": "Covenant",
+      "domain": "mathematics",
+      "purpose": "maintains durable operational state",
+      "capabilities": [
+        "planning",
+        "delegation",
+        "priority management",
+        "handoff"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T001",
+      "topology": "thinker",
+      "name": "Socrates",
+      "domain": "knowledge synthesis",
+      "purpose": "tests assumptions and evidence",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T002",
+      "topology": "thinker",
+      "name": "Plato",
+      "domain": "logic",
+      "purpose": "builds formal models and proofs",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T003",
+      "topology": "thinker",
+      "name": "Aristotle",
+      "domain": "mathematics",
+      "purpose": "finds edge cases and contradictions",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T004",
+      "topology": "thinker",
+      "name": "Hypatia",
+      "domain": "software design",
+      "purpose": "synthesizes competing explanations",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T005",
+      "topology": "thinker",
+      "name": "Confucius",
+      "domain": "debugging",
+      "purpose": "designs experiments and benchmarks",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T006",
+      "topology": "thinker",
+      "name": "Laozi",
+      "domain": "research",
+      "purpose": "analyzes algorithms and complexity",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T007",
+      "topology": "thinker",
+      "name": "Sun Tzu",
+      "domain": "testing",
+      "purpose": "reviews code and interfaces",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T008",
+      "topology": "thinker",
+      "name": "Euclid",
+      "domain": "security analysis",
+      "purpose": "explains findings with provenance",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T009",
+      "topology": "thinker",
+      "name": "Archimedes",
+      "domain": "documentation",
+      "purpose": "tests assumptions and evidence",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T010",
+      "topology": "thinker",
+      "name": "Ada Lovelace",
+      "domain": "data modeling",
+      "purpose": "builds formal models and proofs",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T011",
+      "topology": "thinker",
+      "name": "Alan Turing",
+      "domain": "integration",
+      "purpose": "finds edge cases and contradictions",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T012",
+      "topology": "thinker",
+      "name": "Grace Hopper",
+      "domain": "planning",
+      "purpose": "synthesizes competing explanations",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T013",
+      "topology": "thinker",
+      "name": "Katherine Johnson",
+      "domain": "coordination",
+      "purpose": "designs experiments and benchmarks",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T014",
+      "topology": "thinker",
+      "name": "Marie Curie",
+      "domain": "systems architecture",
+      "purpose": "analyzes algorithms and complexity",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T015",
+      "topology": "thinker",
+      "name": "Albert Einstein",
+      "domain": "risk control",
+      "purpose": "reviews code and interfaces",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T016",
+      "topology": "thinker",
+      "name": "Emmy Noether",
+      "domain": "delivery",
+      "purpose": "explains findings with provenance",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T017",
+      "topology": "thinker",
+      "name": "Claude Shannon",
+      "domain": "knowledge synthesis",
+      "purpose": "tests assumptions and evidence",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T018",
+      "topology": "thinker",
+      "name": "John von Neumann",
+      "domain": "logic",
+      "purpose": "builds formal models and proofs",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T019",
+      "topology": "thinker",
+      "name": "George Boole",
+      "domain": "mathematics",
+      "purpose": "finds edge cases and contradictions",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T020",
+      "topology": "thinker",
+      "name": "Blaise Pascal",
+      "domain": "software design",
+      "purpose": "synthesizes competing explanations",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T021",
+      "topology": "thinker",
+      "name": "René Descartes",
+      "domain": "debugging",
+      "purpose": "designs experiments and benchmarks",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T022",
+      "topology": "thinker",
+      "name": "Ibn al-Haytham",
+      "domain": "research",
+      "purpose": "analyzes algorithms and complexity",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T023",
+      "topology": "thinker",
+      "name": "Al-Khwarizmi",
+      "domain": "testing",
+      "purpose": "reviews code and interfaces",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T024",
+      "topology": "thinker",
+      "name": "Avicenna",
+      "domain": "security analysis",
+      "purpose": "explains findings with provenance",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T025",
+      "topology": "thinker",
+      "name": "Al-Biruni",
+      "domain": "documentation",
+      "purpose": "tests assumptions and evidence",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T026",
+      "topology": "thinker",
+      "name": "Ibn Khaldun",
+      "domain": "data modeling",
+      "purpose": "builds formal models and proofs",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T027",
+      "topology": "thinker",
+      "name": "Maimonides",
+      "domain": "integration",
+      "purpose": "finds edge cases and contradictions",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T028",
+      "topology": "thinker",
+      "name": "Hildegard",
+      "domain": "planning",
+      "purpose": "synthesizes competing explanations",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T029",
+      "topology": "thinker",
+      "name": "Leonardo",
+      "domain": "coordination",
+      "purpose": "designs experiments and benchmarks",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T030",
+      "topology": "thinker",
+      "name": "Galileo",
+      "domain": "systems architecture",
+      "purpose": "analyzes algorithms and complexity",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T031",
+      "topology": "thinker",
+      "name": "Kepler",
+      "domain": "risk control",
+      "purpose": "reviews code and interfaces",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T032",
+      "topology": "thinker",
+      "name": "Newton",
+      "domain": "delivery",
+      "purpose": "explains findings with provenance",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T033",
+      "topology": "thinker",
+      "name": "Faraday",
+      "domain": "knowledge synthesis",
+      "purpose": "tests assumptions and evidence",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T034",
+      "topology": "thinker",
+      "name": "Maxwell",
+      "domain": "logic",
+      "purpose": "builds formal models and proofs",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T035",
+      "topology": "thinker",
+      "name": "Darwin",
+      "domain": "mathematics",
+      "purpose": "finds edge cases and contradictions",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T036",
+      "topology": "thinker",
+      "name": "Rosalind Franklin",
+      "domain": "software design",
+      "purpose": "synthesizes competing explanations",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T037",
+      "topology": "thinker",
+      "name": "Barbara McClintock",
+      "domain": "debugging",
+      "purpose": "designs experiments and benchmarks",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T038",
+      "topology": "thinker",
+      "name": "Chien-Shiung Wu",
+      "domain": "research",
+      "purpose": "analyzes algorithms and complexity",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T039",
+      "topology": "thinker",
+      "name": "Richard Feynman",
+      "domain": "testing",
+      "purpose": "reviews code and interfaces",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T040",
+      "topology": "thinker",
+      "name": "Lise Meitner",
+      "domain": "security analysis",
+      "purpose": "explains findings with provenance",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T041",
+      "topology": "thinker",
+      "name": "Nikola Tesla",
+      "domain": "documentation",
+      "purpose": "tests assumptions and evidence",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T042",
+      "topology": "thinker",
+      "name": "Hedy Lamarr",
+      "domain": "data modeling",
+      "purpose": "builds formal models and proofs",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T043",
+      "topology": "thinker",
+      "name": "Tim Berners-Lee",
+      "domain": "integration",
+      "purpose": "finds edge cases and contradictions",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T044",
+      "topology": "thinker",
+      "name": "Donald Knuth",
+      "domain": "planning",
+      "purpose": "synthesizes competing explanations",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T045",
+      "topology": "thinker",
+      "name": "Edsger Dijkstra",
+      "domain": "coordination",
+      "purpose": "designs experiments and benchmarks",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T046",
+      "topology": "thinker",
+      "name": "Barbara Liskov",
+      "domain": "systems architecture",
+      "purpose": "analyzes algorithms and complexity",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T047",
+      "topology": "thinker",
+      "name": "Margaret Hamilton",
+      "domain": "risk control",
+      "purpose": "reviews code and interfaces",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T048",
+      "topology": "thinker",
+      "name": "Leslie Lamport",
+      "domain": "delivery",
+      "purpose": "explains findings with provenance",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T049",
+      "topology": "thinker",
+      "name": "Frances Allen",
+      "domain": "knowledge synthesis",
+      "purpose": "tests assumptions and evidence",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T050",
+      "topology": "thinker",
+      "name": "Radia Perlman",
+      "domain": "logic",
+      "purpose": "builds formal models and proofs",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T051",
+      "topology": "thinker",
+      "name": "Vint Cerf",
+      "domain": "mathematics",
+      "purpose": "finds edge cases and contradictions",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T052",
+      "topology": "thinker",
+      "name": "Linus Torvalds",
+      "domain": "software design",
+      "purpose": "synthesizes competing explanations",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T053",
+      "topology": "thinker",
+      "name": "Ken Thompson",
+      "domain": "debugging",
+      "purpose": "designs experiments and benchmarks",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T054",
+      "topology": "thinker",
+      "name": "Dennis Ritchie",
+      "domain": "research",
+      "purpose": "analyzes algorithms and complexity",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T055",
+      "topology": "thinker",
+      "name": "Mary Jackson",
+      "domain": "testing",
+      "purpose": "reviews code and interfaces",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T056",
+      "topology": "thinker",
+      "name": "Mae Jemison",
+      "domain": "security analysis",
+      "purpose": "explains findings with provenance",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T057",
+      "topology": "thinker",
+      "name": "Wang Zhenyi",
+      "domain": "documentation",
+      "purpose": "tests assumptions and evidence",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T058",
+      "topology": "thinker",
+      "name": "Srinivasa Ramanujan",
+      "domain": "data modeling",
+      "purpose": "builds formal models and proofs",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T059",
+      "topology": "thinker",
+      "name": "Madhava",
+      "domain": "integration",
+      "purpose": "finds edge cases and contradictions",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T060",
+      "topology": "thinker",
+      "name": "Aryabhata",
+      "domain": "planning",
+      "purpose": "synthesizes competing explanations",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T061",
+      "topology": "thinker",
+      "name": "Brahmagupta",
+      "domain": "coordination",
+      "purpose": "designs experiments and benchmarks",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T062",
+      "topology": "thinker",
+      "name": "Pingala",
+      "domain": "systems architecture",
+      "purpose": "analyzes algorithms and complexity",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T063",
+      "topology": "thinker",
+      "name": "Al-Farabi",
+      "domain": "risk control",
+      "purpose": "reviews code and interfaces",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T064",
+      "topology": "thinker",
+      "name": "Ibn Rushd",
+      "domain": "delivery",
+      "purpose": "explains findings with provenance",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T065",
+      "topology": "thinker",
+      "name": "Zhuangzi",
+      "domain": "knowledge synthesis",
+      "purpose": "tests assumptions and evidence",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T066",
+      "topology": "thinker",
+      "name": "Mary Wollstonecraft",
+      "domain": "logic",
+      "purpose": "builds formal models and proofs",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T067",
+      "topology": "thinker",
+      "name": "Hannah Arendt",
+      "domain": "mathematics",
+      "purpose": "finds edge cases and contradictions",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T068",
+      "topology": "thinker",
+      "name": "Frederick Douglass",
+      "domain": "software design",
+      "purpose": "synthesizes competing explanations",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T069",
+      "topology": "thinker",
+      "name": "W.E.B. Du Bois",
+      "domain": "debugging",
+      "purpose": "designs experiments and benchmarks",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T070",
+      "topology": "thinker",
+      "name": "Rachel Carson",
+      "domain": "research",
+      "purpose": "analyzes algorithms and complexity",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T071",
+      "topology": "thinker",
+      "name": "Elinor Ostrom",
+      "domain": "testing",
+      "purpose": "reviews code and interfaces",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    },
+    {
+      "id": "T072",
+      "topology": "thinker",
+      "name": "Buckminster Fuller",
+      "domain": "security analysis",
+      "purpose": "explains findings with provenance",
+      "capabilities": [
+        "analysis",
+        "verification",
+        "synthesis",
+        "review"
+      ],
+      "runtimeStatus": "archetype_only"
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "CAP-01",
+      "name": "Local model runtime",
+      "scope": "Ollama / local inference",
+      "integrationStatus": "adapter_required"
+    },
+    {
+      "id": "CAP-02",
+      "name": "Cloud model providers",
+      "scope": "Gemini, OpenAI, Claude, Mistral, DeepSeek, Qwen",
+      "integrationStatus": "provider_config_required"
+    },
+    {
+      "id": "CAP-03",
+      "name": "Repository access",
+      "scope": "Git, GitHub, local repositories",
+      "integrationStatus": "connector_required"
+    },
+    {
+      "id": "CAP-04",
+      "name": "File operations",
+      "scope": "Read, create, patch, diff, backup",
+      "integrationStatus": "executor_required"
+    },
+    {
+      "id": "CAP-05",
+      "name": "Terminal execution",
+      "scope": "PowerShell 5.1, approved commands",
+      "integrationStatus": "executor_and_approval_required"
+    },
+    {
+      "id": "CAP-06",
+      "name": "Task queue",
+      "scope": "Create, prioritize, assign, track",
+      "integrationStatus": "implemented_local"
+    },
+    {
+      "id": "CAP-07",
+      "name": "Agent registry",
+      "scope": "144 archetypes and capability tags",
+      "integrationStatus": "implemented_registry"
+    },
+    {
+      "id": "CAP-08",
+      "name": "Orchestration",
+      "scope": "DAG, dependencies, retries, concurrency",
+      "integrationStatus": "planner_prototype"
+    },
+    {
+      "id": "CAP-09",
+      "name": "Code generation",
+      "scope": "Patch proposals and implementation plans",
+      "integrationStatus": "model_adapter_required"
+    },
+    {
+      "id": "CAP-10",
+      "name": "Code review",
+      "scope": "Independent review, risk and correctness",
+      "integrationStatus": "reviewer_worker_required"
+    },
+    {
+      "id": "CAP-11",
+      "name": "Testing / QA",
+      "scope": "Unit, integration, regression checks",
+      "integrationStatus": "test_runner_required"
+    },
+    {
+      "id": "CAP-12",
+      "name": "Web research",
+      "scope": "Search, fetch, citation and synthesis",
+      "integrationStatus": "web_connector_required"
+    },
+    {
+      "id": "CAP-13",
+      "name": "Browser automation",
+      "scope": "Navigate approved workflows",
+      "integrationStatus": "browser_adapter_required"
+    },
+    {
+      "id": "CAP-14",
+      "name": "Data analysis",
+      "scope": "CSV, JSON, logs, metrics",
+      "integrationStatus": "data_tools_required"
+    },
+    {
+      "id": "CAP-15",
+      "name": "Memory / project context",
+      "scope": "Project notes, artifact index, retrieval",
+      "integrationStatus": "persistent_backend_required"
+    },
+    {
+      "id": "CAP-16",
+      "name": "Audit / safety",
+      "scope": "Approval gates, event logs, rollback",
+      "integrationStatus": "policy_and_log_layer_required"
+    }
+  ],
+  "notes": [
+    "144 registered archetypes; not 144 independent running model processes.",
+    "Catalog membership does not imply provider/tool connectivity.",
+    "Task execution must use reviewed adapters and bounded concurrency."
+  ]
+}
