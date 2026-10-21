@@ -65,7 +65,7 @@ The dashboard remains read-only and does not yet execute the policy engine, run 
 
 - `uf-bridge-contract.cjs` validates the `UF-BRIDGE/0.1` protocol version, request/response nonce echo, unique capability declarations, and requested scope grants. It does not open a socket or authenticate an adapter's real-world identity.
 - `uf-bridge-contract.test.cjs` covers valid handshakes, stale nonce, protocol mismatch, missing scopes, duplicate capability declarations, connectivity classification, offline deferral, revision conflicts, and the rule that replay eligibility is not execution authorization.
-- Replay planning is intentionally conservative: `OFFLINE` and `RECONNECTING` defer, `DEGRADED` holds, stale target revisions conflict, and matching revisions only become eligible for fresh evidence review. No task is executed by these primitives.
+- Replay planning is intentionally conservative: `OFFLINE` and `RECONNECTING` defer, `DEGRADED` holds, stale target revisions conflict, and only `QUEUED`/`BLOCKED` tasks with a known current revision can become eligible for fresh evidence review. `RUNNING`, unknown-state, and revisionless requests are held. No task is executed by these primitives.
 - The CI workflow now includes this contract test file. Check the Actions run for the resulting commit before treating the change as verified.
 
 ## Generate a topology proposal
