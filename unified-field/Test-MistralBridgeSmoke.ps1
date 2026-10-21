@@ -15,6 +15,14 @@ try {
     if (-not (Test-Path -LiteralPath $export.prompt_file -PathType Leaf)) { throw 'Export prompt file is missing.' }
     if (-not (Test-Path -LiteralPath $export.envelope_file -PathType Leaf)) { throw 'Export envelope file is missing.' }
 
+    $badTaskIdRejected = $false
+    try {
+        & $bridge -Mode Export -TaskId '..\outside' -Task $task -OutputDirectory $outputDirectory | Out-Null
+    } catch {
+        if ($_.Exception.Message -match 'TaskId must contain only') { $badTaskIdRejected = $true } else { throw }
+    }
+    if (-not $badTaskIdRejected) { throw 'Path-like TaskId was not rejected.' }
+
     Set-Content -LiteralPath $responsePath -Value 'Unverified CI sample response. No code execution.' -Encoding UTF8
     $importText = & $bridge -Mode Import -TaskId $export.task_id -Task $task -ResponsePath $responsePath -OutputDirectory $outputDirectory | Out-String
     $import = $importText | ConvertFrom-Json
