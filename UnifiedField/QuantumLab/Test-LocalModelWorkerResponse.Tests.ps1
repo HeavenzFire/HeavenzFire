@@ -14,7 +14,7 @@ $normalizable = @'
 '@
 $normalized = Test-WorkerResponse -Response $normalizable
 if (-not $normalized.passed) { throw ('normalizable fixture rejected: ' + ($normalized.issues -join ',')) }
-if ($normalized.warnings.Count -ne 2) { throw ('expected two normalization warnings, got ' + $normalized.warnings.Count) }
+if ($normalized.warnings.Count -ne 3) { throw ('expected three normalization warnings, got ' + $normalized.warnings.Count) }
 $normalizedDoc = $normalized.normalized_response | ConvertFrom-Json
 if ($normalizedDoc.tests[0].input -isnot [System.Array]) { throw 'normalized input was not converted to an array' }
 if ($normalizedDoc.code.TrimEnd().EndsWith('.')) { throw 'terminal punctuation was not removed from normalized code' }
