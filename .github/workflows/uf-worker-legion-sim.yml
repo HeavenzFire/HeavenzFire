@@ -5,6 +5,8 @@ on:
     paths:
       - 'UnifiedField/QuantumLab/uf-worker-legion-sim.cjs'
       - 'UnifiedField/QuantumLab/uf-worker-legion-sim.test.cjs'
+      - 'UnifiedField/QuantumLab/uf-core-contract.test.cjs'
+      - 'UnifiedField/QuantumLab/uf-bridge-journal.cjs'
       - 'UnifiedField/QuantumLab/UF-WORKER-LEGION-SIMULATION.md'
       - 'UnifiedField/QuantumLab/UF-MULTISCALE-GYROID-WORKER-FABRIC.md'
       - '.github/workflows/uf-worker-legion-sim.yml'
@@ -25,4 +27,4 @@ jobs:
         with:
           node-version: '22'
       - name: Run deterministic simulation tests
-        run: node --test UnifiedField/QuantumLab/uf-worker-legion-sim.test.cjs
+        run: node --test UnifiedField/QuantumLab/uf-worker-legion-sim.test.cjs UnifiedField/QuantumLab/uf-core-contract.test.cjs
