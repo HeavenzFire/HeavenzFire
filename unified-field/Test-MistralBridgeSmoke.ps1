@@ -21,7 +21,9 @@ function Invoke-BridgeProcess([string[]]$BridgeArguments, [int]$TimeoutMilliseco
     if (-not $process.WaitForExit($TimeoutMilliseconds)) {
         $process.Kill()
         $process.WaitForExit()
-        throw 'Mistral bridge process exceeded the 30-second smoke-test timeout.'
+        $partialOut = if (Test-Path -LiteralPath $stdoutPath) { Get-Content -LiteralPath $stdoutPath -Raw -Encoding UTF8 } else { '' }
+        $partialErr = if (Test-Path -LiteralPath $stderrPath) { Get-Content -LiteralPath $stderrPath -Raw -Encoding UTF8 } else { '' }
+        throw ('Mistral bridge process exceeded the 30-second smoke-test timeout. stdout=' + $partialOut + ' stderr=' + $partialErr)
     }
     $process.Refresh()
     $stdout = if (Test-Path -LiteralPath $stdoutPath) { Get-Content -LiteralPath $stdoutPath -Raw -Encoding UTF8 } else { '' }
