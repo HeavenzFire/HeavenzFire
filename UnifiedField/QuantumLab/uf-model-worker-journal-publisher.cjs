@@ -40,11 +40,15 @@ async function publishWorkerResultsToJournal(artifact, options = {}) {
     const model = String((item && item.model) || 'unknown').slice(0, 100);
     const identity = artifact.file + '|' + model;
     const digest = crypto.createHash('sha256').update(identity).digest('hex');
+    const generated = Boolean(item && item.ok === true);
     const task = {
       task_id: 'local-worker-' + digest.slice(0, 24),
-      objective: 'Independently review the untrusted local model draft from ' + model +
-        '; do not execute generated code. Artifact: ' + artifact.file,
-      scope: ['local-artifact-review', 'independent-verification'],
+      objective: generated
+        ? 'Independently review the untrusted local model draft from ' + model + '; do not execute generated code. Artifact: ' + artifact.file
+        : 'Investigate the recorded local model generation failure for ' + model + '; do not retry automatically or execute generated code. Artifact: ' + artifact.file,
+      scope: generated
+        ? ['local-artifact-review', 'independent-verification']
+        : ['local-model-failure-triage', 'independent-verification'],
       risk_class: 'LOW',
       idempotency_key: 'local-worker-result-' + digest,
       evidence_refs: [artifact.file],
