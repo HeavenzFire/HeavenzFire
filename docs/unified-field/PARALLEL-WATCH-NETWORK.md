@@ -22,13 +22,13 @@ Dashboard 8800, gateway 8787, orchestrator 8788, agent 8790, Ollama 11434, sense
 
 ## Last verified test evidence
 - Python syntax check and four one-shot plane/role combinations passed.
-- Test reported 8/9 configured endpoints reachable; mesh coordinator on 127.0.0.1:8080 was unreachable.
+- Before mesh recovery, a test reported 8/9 configured endpoints reachable; mesh coordinator on 127.0.0.1:8080 was unreachable. After correcting the mesh launcher health-count gate, the coordinator, bridge, and three authenticated workers returned healthy on ports 8080, 8081, 18101, 18102, and 18103.
 - Resource snapshot during testing showed about 0.99 GB available RAM and 8.73 GB free on C:, below the configured 1 GB RAM / 15 GB disk warning thresholds.
 - Start launched four background observers; the subsequent Status invocation reported all four PIDs as running.
-- A later desktop command failed before script execution because Windows PowerShell could not load its managed runtime (error 800705af). Current process liveness and current resource values therefore need rechecking.
+- A later desktop command failed before script execution because Windows PowerShell could not load its managed runtime (error 800705af); using a fresh CMD-launched PowerShell process recovered command execution. Latest post-mesh-recovery snapshot: approximately 1.29 GB available RAM and 8.45 GB free on C:.
 
 ## Operational limits
-The observers detect and record faults; they do not guarantee crash prevention and do not restart the mesh coordinator. Four processes on one host share the same RAM, disk, OS, and power domain. Hash-chain continuity alone does not provide an independent backup.
+The observers detect and record faults; they do not guarantee crash prevention and do not restart the mesh coordinator. The coordinator is now running under the mesh launcher, which must remain active; reboot persistence has not been configured. Four processes on one host share the same RAM, disk, OS, and power domain. Hash-chain continuity alone does not provide an independent backup.
 
 ## Next gates
 1. Restore a working desktop command session and recheck current observer processes, RAM, and disk.
