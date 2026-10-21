@@ -52,6 +52,8 @@ function scheduleSync() {
 
 async function startFocus(value) {
   const minutes = validateFocusMinutes(value);
+  const state = await readState();
+  if (state.domains.length === 0) throw new Error("Add at least one domain before starting a focus session");
   const focus = { active: true, endsAt: Date.now() + minutes * 60_000 };
   await chrome.storage.local.set({ focus });
   chrome.alarms.create("attention-guard-focus-expiry", { when: focus.endsAt });
