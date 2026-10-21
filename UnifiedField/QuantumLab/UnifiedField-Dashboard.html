@@ -167,6 +167,7 @@ async function pollForgeEvaluation(){
    $('forgeStatus').textContent='EVALUATION ERROR';
    $('forgeBlueprintResult').textContent=String(x.error)
   }
+  await loadWorkerRegistry();
  }catch(e){
   $('forgeStatus').textContent='EVALUATION STATUS ERROR';
   $('forgeBlueprintResult').textContent=String(e.message||e);
