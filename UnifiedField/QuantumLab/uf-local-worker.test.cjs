@@ -38,7 +38,10 @@ test('task list is readable but enqueue requires bearer authentication', async (
     assert.equal(accepted.status, 201);
     const duplicate = await fetch(base + '/api/tasks', { method: 'POST', headers: { authorization: 'Bearer test-token', 'content-type': 'application/json' }, body: JSON.stringify({ task }) });
     assert.equal(duplicate.status, 200);
-    assert.equal((await (await fetch(base + '/api/tasks')).json()).tasks.length, 1);
+    const readDenied = await fetch(base + '/api/tasks');
+    assert.equal(readDenied.status, 401);
+    const readAllowed = await fetch(base + '/api/tasks', { headers: { authorization: 'Bearer test-token' } });
+    assert.equal((await readAllowed.json()).tasks.length, 1);
   });
 });
 test('without configured token, writes are disabled', async () => {
