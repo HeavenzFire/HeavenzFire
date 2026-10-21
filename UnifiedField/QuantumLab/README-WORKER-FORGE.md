@@ -15,6 +15,8 @@ The Worker Forge defines versioned worker blueprints, constructs deterministic m
 - **Auditability:** canonical blueprint hash, matrix hash, case IDs, fixed seeds, and qualification hash support reproducible review.
 
 ## Persistent candidate registry
+The dashboard also supports attaching an existing `worker-forge-eval-*.json` artifact to a registered candidate after a service restart. The server accepts only a local basename matching that artifact family, parses it from the LocalAI directory, verifies smoke-only/non-qualified fields, and matches the embedded blueprint hash to the registry. This supports recovery without rerunning expensive model calls.
+
 
 The loopback dashboard can register a validated blueprint in `LocalAI/worker-registry.json`. Registry writes are atomic, registration is idempotent by blueprint hash, corrupt registries fail closed, and every new entry starts as `candidate` with qualification state `not_qualified`. Adversarial smoke results are attached as evidence, but even a perfect smoke result cannot change the candidate to qualified.
 
