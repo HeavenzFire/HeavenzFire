@@ -1,0 +1,28 @@
+name: Unified Field Worker Legion Simulation
+
+on:
+  pull_request:
+    paths:
+      - 'UnifiedField/QuantumLab/uf-worker-legion-sim.cjs'
+      - 'UnifiedField/QuantumLab/uf-worker-legion-sim.test.cjs'
+      - 'UnifiedField/QuantumLab/UF-WORKER-LEGION-SIMULATION.md'
+      - 'UnifiedField/QuantumLab/UF-MULTISCALE-GYROID-WORKER-FABRIC.md'
+      - '.github/workflows/uf-worker-legion-sim.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-simulation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run deterministic simulation tests
+        run: node --test UnifiedField/QuantumLab/uf-worker-legion-sim.test.cjs
