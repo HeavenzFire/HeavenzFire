@@ -73,6 +73,9 @@ test('worker script never executes generated code or accepts arbitrary task comm
   assert.doesNotMatch(worker, /Start-Process|cmd\.exe|powershell\.exe\s+-Command/i);
   assert.match(worker, /Do not claim tests were run/);
   assert.match(worker, /num_predict\s*=\s*220/);
+  assert.match(worker, /Return ONLY valid JSON/);
+  assert.match(worker, /expected_output/);
+  assert.match(worker, /Do not add fields/);
 });
 
 test('dashboard embedded JavaScript parses successfully', () => {
