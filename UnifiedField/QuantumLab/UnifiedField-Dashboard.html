@@ -80,7 +80,7 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:11px;color:var(--muted
 <section class="card span12"><h2>Evidence and limits</h2><div class="detail">This dashboard polls loopback services, reads local task/guardian state, and can launch one fixed local model batch. Generated code is not executed automatically. Model availability or text generation does not prove code correctness; outputs require independent tests. Workflow lanes are not separate model instances. The hub binds only to 127.0.0.1.</div><div class="foot"><span>HeavenzFire · A Light In The Dark</span><span id="version">Dashboard build: local model-worker panel v2</span><span>Refresh interval: 8 seconds</span></div></section>
 </div></main>
 <script>
-const $=id=>document.getElementById(id);let lastOverview=null,graphData=null,lastBlueprintSource='manual';
+const $=id=>document.getElementById(id);const expected=Object.freeze(['heavenzfire-qwen-0.5b']);let lastOverview=null,graphData=null,lastBlueprintSource='manual';
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function pill(state){const s=String(state||'unknown').toLowerCase();const cls=/healthy|ok|active|completed|success/.test(s)?'ok':/critical|failed|offline|unreachable|error/.test(s)?'bad':'warn';return '<span class="pill '+cls+'">'+esc(state||'unknown')+'</span>'}
 function serviceRow(s){return '<div class="service"><div><strong>'+esc(s.name)+'</strong><small>'+esc(s.url||s.id||'')+(s.latencyMs!=null?' · '+s.latencyMs+' ms':'')+'</small></div>'+pill(s.state||s.status|| (s.ok?'healthy':'unknown'))+'</div>'}
