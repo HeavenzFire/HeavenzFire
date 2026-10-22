@@ -5,8 +5,11 @@
 const http = require('node:http');
 const crypto = require('node:crypto');
 const { OfflineTaskJournal, MODES } = require('./uf-bridge-journal.cjs');
+const { createScopedExecutor } = require('./uf-scoped-executor.cjs');
 
 const MAX_BODY_BYTES = 16 * 1024;
+const MAX_EXECUTE_BODY_BYTES = 272 * 1024;
+const REMOTE_EXECUTION_ACTIONS = new Set(['workspace.read_file', 'git.status']);
 function safeEqual(a, b) {
   const aa = Buffer.from(String(a));
   const bb = Buffer.from(String(b));
@@ -22,14 +25,14 @@ function send(res, status, payload) {
   });
   res.end(body);
 }
-function readJson(req) {
+function readJson(req, maxBytes = MAX_BODY_BYTES) {
   return new Promise((resolve, reject) => {
     let body = '', size = 0, settled = false;
     req.on('data', chunk => {
       size += chunk.length;
-      if (size > MAX_BODY_BYTES) {
+      if (size > maxBytes) {
         settled = true;
-        reject(Object.assign(new Error('request body exceeds 16 KiB'), { statusCode: 413 }));
+        reject(Object.assign(new Error('request body exceeds ' + maxBytes + ' bytes'), { statusCode: 413 }));
         req.destroy();
         return;
       }
@@ -47,6 +50,7 @@ function createWorkerServer(options = {}) {
   const journal = options.journal || new OfflineTaskJournal(options.journalPath);
   const token = options.token || process.env.HEAVENZFIRE_BRIDGE_TOKEN || '';
   let mode = 'OFFLINE';
+  const executor = options.executor || createScopedExecutor({ workspaceRoot: options.workspaceRoot || process.env.HEAVENZFIRE_WORKSPACE_ROOT });
   const server = http.createServer(async (req, res) => {
     try {
       if (req.headers.host && !/^127\.0\.0\.1(?::\d+)?$/.test(req.headers.host)) {
@@ -64,8 +68,25 @@ function createWorkerServer(options = {}) {
           writable: Boolean(token) && snapshot.corruptLines.length === 0,
           journal: { tasks: snapshot.tasks.length, corruptLines: snapshot.corruptLines.length, eventCount: snapshot.eventCount },
           capabilities: ['task-metadata-journal', 'idempotency', 'replay-eligibility-check'],
-          limitations: ['no-shell-execution', 'no-network-sync', 'no-automatic-replay', 'no-live-mesh']
+          limitations: ['no-shell-execution', 'no-arbitrary-shell', 'no-network-sync', 'no-automatic-replay', 'no-live-mesh'],
+          execution: {
+            ...executor.capabilities(),
+            actions: executor.capabilities().actions.filter(action => REMOTE_EXECUTION_ACTIONS.has(action)),
+            requires_approval: false,
+            write_actions_enabled_over_http: false
+          }
         });
+      }
+      if (req.method === 'POST' && url.pathname === '/api/execute') {
+        if (!token) return send(res, 503, { ok: false, error: 'execution_token_not_configured' });
+        const authorization = req.headers.authorization || '';
+        if (!authorization.startsWith('Bearer ') || !safeEqual(authorization.slice(7), token)) return send(res, 401, { ok: false, error: 'unauthorized' });
+        const body = await readJson(req, MAX_EXECUTE_BODY_BYTES);
+        if (!REMOTE_EXECUTION_ACTIONS.has(body.action)) return send(res, 403, { ok: false, error: 'execution_action_not_enabled_over_http' });
+        const requestId = typeof body.request_id === 'string' && /^[A-Za-z0-9._:-]{8,100}$/.test(body.request_id) ? body.request_id : '';
+        if (!requestId) return send(res, 400, { ok: false, error: 'valid_request_id_required' });
+        const result = await executor.execute(body.action, body.input || {});
+        return send(res, result.ok ? 200 : 400, { ok: result.ok, request_id: requestId, action: body.action, result });
       }
       if (req.method === 'GET' && url.pathname === '/api/tasks') {
         if (!token) return send(res, 503, { ok: false, error: 'read_token_not_configured' });
@@ -144,4 +165,4 @@ if (require.main === module) {
     });
   }
 }
-module.exports = { createWorkerServer, MAX_BODY_BYTES };
+module.exports = { createWorkerServer, MAX_BODY_BYTES, MAX_EXECUTE_BODY_BYTES };
