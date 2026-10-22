@@ -1,0 +1,17 @@
+{
+  "runner": "ChatGPT Python execution environment",
+  "python_version": "3.13.5",
+  "timestamp": "2026-10-21T00:00:00Z",
+  "checks": [
+    {"test_id": "test_registry_entry_json_parses", "passed": true, "output": "PASS", "detail": ""},
+    {"test_id": "test_export_json_parses", "passed": true, "output": "PASS", "detail": ""},
+    {"test_id": "test_no_claimed_meta_artifact_access", "passed": true, "output": "PASS", "detail": ""},
+    {"test_id": "test_share_url_not_treated_as_api", "passed": true, "output": "PASS", "detail": ""},
+    {"test_id": "test_hash_matches_entry_bytes", "passed": true, "output": "PASS", "detail": "df85c9bafe588d2e9315a31a6d64cea4c2b545a2b734287be6324999ea788f42"}
+  ],
+  "summary": {"passed": 5, "failed": 0, "total": 5},
+  "limitations": [
+    "Meta AI's original JSON Schema and test_interchange.py were not provided to this session.",
+    "These checks validate the newly authored ChatGPT registry/export files, not the original Meta AI artifacts."
+  ]
+}
