@@ -10,6 +10,7 @@ on:
       - "UnifiedField/QuantumLab/historical-profile-runtime.test.cjs"
       - "UnifiedField/QuantumLab/HeavenzFire-Unified-Intelligence-Server.cjs"
       - "UnifiedField/QuantumLab/HeavenzFire-Unified-Intelligence-Server.test.cjs"
+      - "UnifiedField/QuantumLab/Start-HeavenzFireUnifiedIntelligence.ps1"
       - ".github/workflows/unified-intelligence-tests.yml"
   pull_request:
     paths:
