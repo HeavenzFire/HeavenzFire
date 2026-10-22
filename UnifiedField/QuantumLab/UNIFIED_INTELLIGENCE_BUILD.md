@@ -13,14 +13,14 @@ Historical profiles are prompts applied to one model. They are not independent n
 - Local inference gateway: `http://127.0.0.1:11800/v1`
 - Documented model: `heavenzfire-qwen-0.5b`
 - Existing Micro Mind Sandbox UI: `http://127.0.0.1:11811/`
-- New unified runtime API: planned as a separate loopback service; it must not take over an existing port until verified.
+- Unified runtime API and integrated UI: `http://127.0.0.1:11812/` (serves the new UI and API from one loopback origin).\n- Existing Micro Mind Sandbox UI: `http://127.0.0.1:11811/` (preserved; this branch does not overwrite its source).
 
 ## What is in this branch
 
 - `historical-profile-runtime.cjs`: single-model adapter with deterministic request parameters, role prompts, memory isolation, reset, bounded inputs, loopback URL validation, and structured upstream errors.
 - `historical-profile-runtime.test.cjs`: unit tests for profile registration, model routing, memory isolation/reset, and failure handling.
 - `.github/workflows/unified-intelligence-tests.yml`: Node 22 CI test gate.
-- `UNIFIED_INTELLIGENCE_CONSOLIDATION.md`: acceptance criteria, voice contract, resource policy, and rollout plan.
+- `micro-mind-unified-client.cjs` and its tests: bounded GET retries, no automatic chat POST retries, explicit error propagation, profile/sandbox scoping, and memory reset.\n- `MicroMind-Unified-Intelligence.html`: integrated text/voice UI served at the unified API origin.\n- `UNIFIED_INTELLIGENCE_CONSOLIDATION.md`: acceptance criteria, voice contract, resource policy, and rollout plan.
 
 ## Local verification and launch (PowerShell 5.1)
 
@@ -51,7 +51,7 @@ Invoke-RestMethod http://127.0.0.1:11812/api/health
 Invoke-RestMethod http://127.0.0.1:11812/api/profiles
 ```
 
-The API binds to loopback only, keeps memory session-only and bounded to 64 in-process sandboxes, and returns structured errors when inference fails. It does not connect the existing UI yet; UI wiring is a separate step after the real gateway canary and voice checks pass.
+The service binds to loopback only, serves the integrated UI at `http://127.0.0.1:11812/`, keeps memory session-only and bounded to 64 in-process sandboxes, and returns structured errors when inference fails. The original `:11811` UI remains untouched. Use the integrated UI on `:11812` for the first verified end-to-end rollout; merge its behavior back into the original page only after the original page source is identified and its current voice behavior is regression-tested.
 
 ## Required end-to-end proof before switching the UI
 
@@ -61,6 +61,6 @@ The API binds to loopback only, keeps memory session-only and bounded to 64 in-p
 4. Verify profile switching keeps the same model and separates memory scopes.
 5. Inject an upstream HTTP 500 and verify the UI shows a failure—not a fabricated answer.
 6. Verify voice off/on behavior and browser playback separately from text generation.
-7. Only then route the existing UI through the unified runtime.
+7. Verify the integrated UI at `http://127.0.0.1:11812/` and keep the existing `:11811` page as a rollback path.\n8. The local Desktop Commander channel is currently usage-limited, so the Windows canary and actual browser speech test still need to run on the authorized host.
 
 No local service has been launched by this commit. A passing GitHub workflow proves tested code paths on the runner, not that the Windows services are healthy.
