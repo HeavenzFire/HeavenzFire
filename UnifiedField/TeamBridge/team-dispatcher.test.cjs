@@ -173,3 +173,45 @@ test('policy provider failures fail closed before inference', async () => {
     assert.equal(f.store.snapshot().messages[0].delivery_status, 'rejected');
   } finally { fs.rmSync(f.rootDir, { recursive: true, force: true }); }
 });
+
+
+test('task payload cannot override the adapter-owned policy action', async () => {
+  const f = fixture();
+  try {
+    const message = f.store.queueMessage({
+      source: 'test', target: 'local-ollama', type: 'task',
+      payload: { action: 'repo.delete', prompt: 'Return safe marker.', model: 'qwen2.5:0.5b' }
+    }).message;
+    const dispatcher = createLocalOllamaDispatcher({
+      store: f.store,
+      fetchImpl: async () => ({ ok: true, status: 200, json: async () => ({
+        model: 'qwen2.5:0.5b', message: { content: 'SAFE' }
+      }) })
+    });
+    const result = await dispatcher.dispatchOne(message.message_id);
+    assert.equal(result.ok, true);
+    assert.equal(result.result.policy_decision.action, 'inference.local');
+    assert.equal(result.result.policy_decision.label, 'allow');
+  } finally { fs.rmSync(f.rootDir, { recursive: true, force: true }); }
+});
+
+test('a valid task-and-action-scoped approval allows policy requiring approval', async () => {
+  const f = fixture();
+  try {
+    const message = f.store.queueMessage({
+      source: 'test', target: 'local-ollama', type: 'task',
+      payload: { prompt: 'Return approved marker.', model: 'qwen2.5:0.5b' }
+    }).message;
+    const dispatcher = createLocalOllamaDispatcher({
+      store: f.store,
+      policy: { allowActions: ['inference.local'], denyActions: [], requireApproval: true },
+      approvalForMessage: async ({ taskId, action }) => ({ status: 'approved', action, taskId }),
+      fetchImpl: async () => ({ ok: true, status: 200, json: async () => ({
+        model: 'qwen2.5:0.5b', message: { content: 'APPROVED' }
+      }) })
+    });
+    const result = await dispatcher.dispatchOne(message.message_id);
+    assert.equal(result.ok, true);
+    assert.equal(result.result.policy_decision.decision, 1);
+  } finally { fs.rmSync(f.rootDir, { recursive: true, force: true }); }
+});
