@@ -133,3 +133,19 @@ test('corrupt journal fails closed: health flags it and enqueue is rejected', as
     f.cleanup();
   }
 });
+
+test('HTTP execution rejects write and arbitrary Node test actions even when caller claims approval', async () => {
+  await withWorker({ token: 'execute-token' }, async base => {
+    const request = action => fetch(base + '/api/execute', {
+      method: 'POST',
+      headers: { authorization: 'Bearer execute-token', 'content-type': 'application/json' },
+      body: JSON.stringify({ request_id: 'request-1234', approved: true, action, input: { path: 'created.test.cjs', content: 'process.exit(99)' } })
+    });
+    const write = await request('workspace.write_file');
+    assert.equal(write.status, 403);
+    assert.equal((await write.json()).error, 'execution_action_not_enabled_over_http');
+    const nodeTest = await request('node.test');
+    assert.equal(nodeTest.status, 403);
+    assert.equal((await nodeTest.json()).error, 'execution_action_not_enabled_over_http');
+  });
+});
