@@ -2,49 +2,42 @@
   "platform_id": "chatgpt",
   "platform_name": "ChatGPT",
   "registry_version": "0.1.0",
-  "verified_at": "2026-10-21",
+  "verified_at": "2026-10-22",
   "capabilities": {
-    "file_based_json_import_export": {
-      "status": "supported",
-      "evidence": "Can process user-provided JSON/text and create downloadable artifacts in the current conversation."
+    "file_write": {
+      "status": "supported_with_scope",
+      "evidence": "Can write or update files through available authorized GitHub connector operations and create user-facing artifacts; writes are limited to accessible targets and granted permissions."
     },
-    "code_execution": {
+    "code_exec": {
       "status": "supported_with_constraints",
-      "evidence": "A Python execution environment is available for bounded code and tests; it is isolated from the user's Windows machine and does not have direct internet access."
+      "evidence": "A Python execution environment is available for bounded code and tests. It is isolated from the user's Windows machine; arbitrary outbound network access from that Python environment is not assumed."
+    },
+    "browsing": {
+      "status": "supported_separately",
+      "evidence": "A dedicated web browsing/search tool is available. Its availability does not imply network access from the code-execution environment."
+    },
+    "network": {
+      "status": "restricted_by_tool",
+      "evidence": "No general-purpose outbound network access is available from the Python execution environment. Specific web browsing and authorized connector actions are separate, scoped capabilities."
+    },
+    "share_url_fetch": {
+      "status": "not_verified_as_supported",
+      "evidence": "No private share URL contents are fetched or treated as an API unless a supported authorized fetch mechanism is explicitly available."
+    },
+    "github_operations": {
+      "status": "supported_when_authorized",
+      "evidence": "Connected GitHub tools can read, create, and update repository files and branches when the repository is accessible and the requested operation is authorized."
     },
     "local_file_access": {
       "status": "scoped",
-      "evidence": "Can process files explicitly attached or surfaced through supported file tools; cannot assume access to another platform's /mnt/data paths."
-    },
-    "web_research": {
-      "status": "supported_separately",
-      "evidence": "Web search is available through a separate tool; this does not imply network access from the Python execution environment."
-    },
-    "github_operations": {
-      "status": "available_when_authorized_connector_is_available",
-      "evidence": "Connected GitHub tools can perform scoped repository operations when the relevant repository and permissions are available."
-    },
-    "direct_api_calls_to_other_ai_platforms_from_python_sandbox": {
-      "status": "unsupported",
-      "evidence": "No direct network access from the Python execution environment; no API access inferred from share URLs."
-    },
-    "private_share_url_fetch": {
-      "status": "not_verified_as_supported",
-      "evidence": "No claim of retrieving private contents from another platform's share URL."
-    },
-    "browser_automation_of_other_ai_uis": {
-      "status": "not_guaranteed",
-      "evidence": "No general capability claim; only supported connected-browser workflows may be used when explicitly available."
-    },
-    "cross_ai_state_sync": {
-      "status": "file_based_only_by_default",
-      "evidence": "Portable JSON interchange can transfer explicit state; no implicit cross-platform memory or session synchronization."
+      "evidence": "Can process attached/surfaced files and tool-accessible files; cannot assume access to another platform's filesystem or the user's laptop without a connected authorized tool."
     }
   },
   "security_constraints": {
-    "allow_network_from_python_sandbox": false,
+    "allow_general_network_from_code_sandbox": false,
     "sensitive_actions_require_explicit_authorization": true,
     "never_infer_access_from_share_url": true,
-    "do_not_claim_unverified_execution": true
+    "do_not_claim_unverified_execution": true,
+    "preserve_source_repositories_during_consolidation": true
   }
 }
