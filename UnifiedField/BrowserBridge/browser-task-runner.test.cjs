@@ -9,13 +9,13 @@ const http = require('node:http');
 const { validateTask, runTask } = require('./browser-task-runner.cjs');
 
 testRunner('rejects query strings, wildcard hosts, and unlisted initial hosts before launching a browser', () => {
-  const base = { id: 'validate-1', url: 'http://127.0.0.1:18896/fixture', allowedHosts: ['127.0.0.1'], actions: [], assertions: [] };
+  const base = { id: 'validate-1', url: 'http://127.0.0.1:18896/fixture', allowedOrigins: ['http://127.0.0.1:18896'], actions: [], assertions: [] };
   assert.throws(() => validateTask({ ...base, url: base.url + '?token=secret' }), /without credentials, query strings, or fragments/);
-  assert.throws(() => validateTask({ ...base, allowedHosts: ['*'] }), /exact hostnames/);
-  assert.throws(() => validateTask({ ...base, allowedHosts: ['localhost'] }), /initial URL host/);
+  assert.throws(() => validateTask({ ...base, allowedOrigins: ['*'] }), /allowedOrigins entries/);
+  assert.throws(() => validateTask({ ...base, allowedOrigins: ['http://localhost:18896'] }), /initial URL origin/);
 });
 
-testRunner('runs a local browser task and blocks a page resource outside the exact host allowlist', { timeout: 30000 }, async () => {
+testRunner('runs a local browser task and blocks a page resource outside the exact origin allowlist', { timeout: 30000 }, async () => {
   const server = http.createServer((req, res) => {
     if (req.url === '/fixture') {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
@@ -35,7 +35,7 @@ testRunner('runs a local browser task and blocks a page resource outside the exa
     const result = await runTask({
       id: 'local-smoke-001',
       url: 'http://127.0.0.1:' + port + '/fixture',
-      allowedHosts: ['127.0.0.1'],
+      allowedOrigins: ['http://127.0.0.1:' + port],
       timeoutMs: 10000,
       actions: [{ type: 'click', selector: '#go' }],
       assertions: [
@@ -46,7 +46,7 @@ testRunner('runs a local browser task and blocks a page resource outside the exa
     });
     assert.equal(result.status, 'PASS', JSON.stringify(result));
     assert.equal(result.externalCallsAllowed, false);
-    assert.ok(result.blockedHosts.includes('example.invalid'), JSON.stringify(result.blockedHosts));
+    assert.ok(result.blockedOrigins.includes('https://example.invalid'), JSON.stringify(result.blockedOrigins));
     assert.equal(result.assertionResults.length, 3);
     assert.equal(fs.existsSync(evidence), true);
     const record = JSON.parse(fs.readFileSync(evidence, 'utf8').trim());
