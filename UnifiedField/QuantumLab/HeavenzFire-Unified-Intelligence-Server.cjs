@@ -1,6 +1,8 @@
 'use strict';
 
 const http = require('node:http');
+const fs = require('node:fs');
+const path = require('node:path');
 const { randomUUID } = require('node:crypto');
 const { createHistoricalRuntime, PROFILES } = require('./historical-profile-runtime.cjs');
 
@@ -97,6 +99,35 @@ const server = http.createServer(async (req, res) => {
   }
 
   const url = new URL(req.url, 'http://' + HOST + ':' + PORT);
+  // Fixed-path static UI routes. No arbitrary file paths are accepted.
+  if (req.method === 'GET' && (url.pathname === '/' || url.pathname === '/index.html')) {
+    try {
+      const html = fs.readFileSync(path.join(__dirname, 'MicroMind-Unified-Intelligence.html'));
+      res.writeHead(200, {
+        'Content-Type': 'text/html; charset=utf-8',
+        'Cache-Control': 'no-store',
+        'X-Content-Type-Options': 'nosniff',
+        'Content-Security-Policy': "default-src 'self'; connect-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'",
+      });
+      return res.end(html);
+    } catch (error) {
+      return send(res, 503, { ok: false, error: { code: 'UI_ASSET_UNAVAILABLE', message: 'Unified UI asset is missing or unreadable.' } }, origin);
+    }
+  }
+  if (req.method === 'GET' && url.pathname === '/micro-mind-unified-client.js') {
+    try {
+      const script = fs.readFileSync(path.join(__dirname, 'micro-mind-unified-client.cjs'));
+      res.writeHead(200, {
+        'Content-Type': 'application/javascript; charset=utf-8',
+        'Cache-Control': 'no-store',
+        'X-Content-Type-Options': 'nosniff',
+        'Content-Security-Policy': "default-src 'none'; script-src 'self'",
+      });
+      return res.end(script);
+    } catch (error) {
+      return send(res, 503, { ok: false, error: { code: 'CLIENT_ASSET_UNAVAILABLE', message: 'Unified client asset is missing or unreadable.' } }, origin);
+    }
+  }
   if (req.method === 'GET' && url.pathname === '/api/health') {
     return send(res, 200, {
       ok: true,
