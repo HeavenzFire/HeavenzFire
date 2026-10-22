@@ -1,10 +1,19 @@
 #requires -Version 5.1
 [CmdletBinding()]
 param(
-    [string]$RegistryPath = (Join-Path $PSScriptRoot 'team-registry.json'),
+    [string]$RegistryPath = '',
     [ValidateRange(1,10)][int]$TimeoutSeconds = 2
 )
 $ErrorActionPreference = 'Stop'
+
+if ([string]::IsNullOrWhiteSpace($RegistryPath)) {
+    $scriptPath = $MyInvocation.MyCommand.Path
+    if ([string]::IsNullOrWhiteSpace($scriptPath)) { $scriptPath = $PSCommandPath }
+    if ([string]::IsNullOrWhiteSpace($scriptPath)) {
+        throw 'Cannot resolve provider-probe script path; pass -RegistryPath explicitly.'
+    }
+    $RegistryPath = Join-Path (Split-Path -Parent $scriptPath) 'team-registry.json'
+}
 
 $registry = Get-Content -LiteralPath $RegistryPath -Raw | ConvertFrom-Json
 $cliNames = @{
