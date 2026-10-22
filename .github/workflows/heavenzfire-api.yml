@@ -42,17 +42,17 @@ jobs:
           node-version: '22'
 
       - name: Check server syntax
-        working-directory: "${{ runner.temp }}\hf-api-ci\services\heavenzfire-api"
+        working-directory: '${{ runner.temp }}/hf-api-ci/services/heavenzfire-api'
         run: node --check server.cjs
         shell: powershell
 
       - name: Run API regression tests
-        working-directory: "${{ runner.temp }}\hf-api-ci\services\heavenzfire-api"
+        working-directory: '${{ runner.temp }}/hf-api-ci/services/heavenzfire-api'
         run: npm test
         shell: powershell
 
       - name: Parse PowerShell launcher without executing it
-        working-directory: "${{ runner.temp }}\hf-api-ci\services\heavenzfire-api"
+        working-directory: '${{ runner.temp }}/hf-api-ci/services/heavenzfire-api'
         shell: powershell
         run: |
           $tokens = $null
