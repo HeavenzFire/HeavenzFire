@@ -1,0 +1,57 @@
+name: HeavenzFire API
+
+on:
+  pull_request:
+    paths:
+      - 'services/heavenzfire-api/**'
+      - '.github/workflows/heavenzfire-api.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'services/heavenzfire-api/**'
+      - '.github/workflows/heavenzfire-api.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test-api:
+    runs-on: windows-latest
+    steps:
+      - name: Check out source without persisted credentials
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Check server syntax
+        working-directory: services/heavenzfire-api
+        run: node --check server.cjs
+        shell: powershell
+
+      - name: Run API regression tests
+        working-directory: services/heavenzfire-api
+        run: npm test
+        shell: powershell
+
+      - name: Parse PowerShell launcher without executing it
+        working-directory: services/heavenzfire-api
+        shell: powershell
+        run: |
+          $tokens = $null
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Join-Path (Get-Location).Path 'Start-HeavenzFire-GPT.ps1'),
+            [ref]$tokens,
+            [ref]$errors
+          ) | Out-Null
+          if ($errors.Count -gt 0) {
+            $errors | ForEach-Object { Write-Error $_.Message }
+            exit 1
+          }
+          Write-Host 'PowerShell launcher parsed successfully; it was not executed.'
