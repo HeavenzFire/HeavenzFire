@@ -8,7 +8,6 @@ const { createEnvelope, validateEnvelope } = require('../PropagationFabric/fabri
 const APPROVAL_REQUIRED = new Set([
   'HIGH', 'PRIVILEGED', 'DESTRUCTIVE', 'CREDENTIAL', 'NETWORK_CHANGE', 'INSTALL', 'EXTERNAL'
 ]);
-const KNOWN_RISK_CLASSES = new Set(['LOW', 'MEDIUM', ...APPROVAL_REQUIRED]);
 const TASK_STATUSES = new Set([
   'proposed', 'awaiting_approval', 'approved', 'queued', 'running',
   'succeeded', 'failed', 'blocked', 'cancelled'
@@ -118,6 +117,7 @@ function createTeamStore(options = {}) {
           message.acknowledged_at = event.occurred_at;
           message.acknowledged_by = p.acknowledged_by;
           message.ack_detail = p.detail || '';
+          if (p.result !== undefined) message.result = p.result;
         }
       }
       if (event.event_type === 'provider.probe') latestProviderProbe.set(p.provider_id, { ...p, occurred_at: event.occurred_at });
@@ -145,10 +145,8 @@ function createTeamStore(options = {}) {
     if (!input || typeof input !== 'object' || Array.isArray(input)) throw new TypeError('task_object_required');
     const title = requireText(input.title, 'task_title', 200);
     const owner = requireText(input.owner || 'team-coordinator', 'task_owner', 100);
-    const riskInput = input.risk_class === undefined ? 'LOW' : input.risk_class;
-    if (typeof riskInput !== 'string' || !riskInput.trim()) throw new TypeError('task_risk_class_invalid');
-    const riskClass = riskInput.trim().toUpperCase();
-    if (!KNOWN_RISK_CLASSES.has(riskClass)) throw new TypeError('task_risk_class_unsupported');
+    const riskClass = String(input.risk_class || 'LOW').toUpperCase();
+    if (!/^[A-Z_]{2,32}$/.test(riskClass)) throw new TypeError('task_risk_class_invalid');
     const idempotencyKey = input.idempotency_key === undefined ? null : requireText(input.idempotency_key, 'idempotency_key', 128);
     const payload = input.payload === undefined ? {} : input.payload;
     if (!payload || typeof payload !== 'object' || Array.isArray(payload)) throw new TypeError('task_payload_object_required');
@@ -278,7 +276,11 @@ function createTeamStore(options = {}) {
     if (!MESSAGE_ACKS.has(status)) return { ok: false, error: 'message_ack_status_invalid' };
     const acknowledgedBy = requireText(acknowledgement.acknowledged_by, 'message_ack_actor', 100);
     const detail = acknowledgement.detail === undefined ? '' : String(acknowledgement.detail).slice(0, 500);
-    appendEvent('message.acknowledged', { message_id: id, delivery_status: status, acknowledged_by: acknowledgedBy, detail });
+    const result = acknowledgement.result;
+    if (result !== undefined && (!result || typeof result !== 'object' || Array.isArray(result) || byteLength(result) > MAX_TASK_BYTES)) {
+      return { ok: false, error: 'message_result_invalid_or_too_large' };
+    }
+    appendEvent('message.acknowledged', { message_id: id, delivery_status: status, acknowledged_by: acknowledgedBy, detail, ...(result === undefined ? {} : { result }) });
     return { ok: true, message: snapshot().messages.find((message) => message.message_id === id) };
   }
 
