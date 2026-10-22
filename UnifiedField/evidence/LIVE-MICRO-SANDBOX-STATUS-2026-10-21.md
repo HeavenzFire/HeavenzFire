@@ -84,3 +84,61 @@ This follow-up supersedes the earlier coordinator-blocked snapshot for the speci
 - [x] Final coordinator health probe returned ok=true and queue_len=0; unauthenticated GET /stats again returned HTTP 401.
 - [ ] GitHub Actions dashboard/local-worker job remains a separate code-quality blocker on the previously observed run: 42/43 tests passed; the failing test expected the literal pattern max_tokens=160 in a worker script, while the script uses a different model-generation contract. This is a test/implementation contract mismatch to review, not a failed live mesh hash task. Do not call CI green until a fresh run passes.
 - Safety note: the existing independence_test.py intentionally terminates worker 18102, enqueues batches, and restarts a worker. It was not run during this verification because the non-disruptive authenticated round-trip and ledger verification were sufficient for the current gate.
+
+
+## Live follow-up — 2026-10-22T04:10:24Z
+
+This follow-up records fresh live probes and test runs from the connected Windows workspace. It supplements, rather than rewrites, the earlier dated evidence. Local source folders are not a Git checkout of the repository, so local-suite results must not be attributed to a remote PR commit unless that exact source was separately fetched and tested below.
+
+### Live endpoint and inference checks
+
+| Check | Result | Evidence boundary |
+|---|---|---|
+| Ollama inventory `:11434/api/tags` | PASS — HTTP 200 | Returned model inventory including `qwen2.5:0.5b`; inventory is not itself inference evidence. |
+| Ollama generation `:11434/api/generate` | PASS | `qwen2.5:0.5b` returned exact sentinel `LOCAL_MODEL_SMOKE_PASS`, with `done=true`. |
+| Agent `:8790/health` | PASS — HTTP 200 | Reports agent service healthy, Ollama available, tool service available, and maximum three tool calls per request. |
+| Agent `:8790/ask` | PASS — one bounded request | One permitted `health_check` tool trace was present and returned successful structured evidence. No shell command or file modification was requested. |
+| Gateway `:8787/health` | PASS — HTTP 200 | Reports the configured model available. |
+| Gateway `:8787/generate` | PASS | Returned exact sentinel `HEAVENZFIRE_SMOKE_PASS` from `heavenzfire-qwen-0.5b`. |
+| Orchestrator `:8788/health` | PASS — HTTP 200 | Circuit remained closed; no active tasks after the smoke request. |
+| Orchestrator `:8788/task` | PASS — one bounded model task | Returned exact sentinel `HF_SINGLE_ORCHESTRATOR_SMOKE_OK`. Completed count increased from 98 to 99; failed count remained 1. This proves one successful task through the shared local model/orchestrator, not four independent agents. |
+| Legacy coordinator `:8080/health` | PASS — HTTP 200 | Queue length 0; 116 recorded tasks, 114 completed and 2 failed. Health does not itself prove a new authenticated queue round-trip. |
+| Mesh bridge `:8081/health` | PASS — HTTP 200 | Reports loopback binding and bounded queue mode. This follow-up did not enqueue a new task through this bridge. |
+| Probe `:8083/health` | NOT A DEFINED HEALTH CONTRACT | Returned HTTP 404. Do not treat this route as a service failure until an expected route is identified. |
+| C: free space | OBSERVED — 7.23 GiB | Capacity remains constrained; no cleanup or file deletion was performed. |
+
+### Regression test results
+
+Tests were run in the local workspace with Node.js v22.14.0 and Windows PowerShell 5.1. These are local working-tree results, not a clean-clone or full-ecosystem certification.
+
+| Suite | Result |
+|---|---:|
+| BrowserBridge task-runner tests | 2/2 passed |
+| TaskAdapterVerify transport/inbox/approval tests | 24/24 passed |
+| Unified Field FieldCore tests | 31/31 passed |
+| EvidenceLedgerVerify tests | 8/8 passed |
+| QuantumLab local worker, gateway, adversarial forge, and dashboard-worker tests | 23/23 passed |
+| Python agent-worker runtime tests | 3/3 passed |
+
+The local copy did not contain `uf-scoped-executor.test.cjs`; that file was not counted or claimed as tested in the local run.
+
+### Exact GitHub-source snapshot tests
+
+To avoid confusing local working-tree results with remote branch contents, selected PR files were fetched by branch and tested in an isolated temporary workspace:
+
+- PR #65 adversarial worker-forge test: **4/4 passed** after fixing an undeclared `calls` counter in the test's injected-fetch stub. The prior failure (five critical failures instead of one) was caused by the test stub throwing before grading the intended prompt-injection case; it was not evidence that the production grader should weaken its critical-failure rule.
+- PR #81 dashboard-worker safety contract: **8/8 passed** against the fetched branch test and its referenced worker/dashboard files.
+- PR #80 interchange contract: **5/5 passed** against the fetched schema, example, export, capability registry, and test file.
+
+The dashboard-worker token-budget test initially required 160 tokens while the worker uses 220. A first test edit used a double-escaped regex; the isolated test caught that mistake. The regex was corrected to match the actual `max_tokens\s*=\s*220` source pattern, and the fetched PR #81 dashboard-worker suite then passed 8/8. The identical test-file blob is now present on PR branches #78–#81. This correction was committed to those branches; **GitHub Actions results for the newest commits are still unconfirmed**, so these isolated tests must not be described as fresh CI passes.
+
+### Methodology corrections and remaining blockers
+
+1. Test the edited source in an isolated workspace before committing a test change. A passing textual replacement or a successful GitHub Contents API write is not a test result.
+2. Separate local-machine evidence, exact fetched-branch test evidence, and GitHub Actions status in every report.
+3. Keep security invariants intact: generated code is not executed; unsafe tool claims remain critical failures; the 1-GiB model admission guard is not bypassed.
+4. The `planetary-mesh-global` submodule cleanup error remains unresolved. No valid origin URL has been established, so the submodule was not deleted and no URL was invented.
+5. New commits made through the repository connector have no associated fresh workflow runs visible for their exact head SHAs yet. CI is therefore pending, not passed.
+6. PR #78 still reports mergeability conflicts; passing its isolated test suite does not make it mergeable.
+
+No processes were stopped or restarted, no firewall or credential settings were changed, no files were deleted, and no source repository was merged as part of this follow-up.
