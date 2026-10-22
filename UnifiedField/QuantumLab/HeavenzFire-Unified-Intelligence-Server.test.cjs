@@ -106,3 +106,25 @@ test('rejects invalid sandbox identifiers', async t => {
   assert.equal(result.status, 400);
   assert.equal(result.body.error.code, 'INVALID_SANDBOX_ID');
 });
+
+test('serves the integrated Micro Mind UI and its local client adapter', async t => {
+  const { port } = await startServer(t);
+  const page = await request(port, '/');
+  assert.equal(page.status, 200);
+  assert.match(page.headers['content-type'], /text\/html/);
+  assert.match(page.body, /Unified Intelligence/);
+  assert.match(page.body, /micro-mind-unified-client\.js/);
+  assert.match(page.headers['content-security-policy'], /frame-ancestors 'none'/);
+
+  const client = await request(port, '/micro-mind-unified-client.js');
+  assert.equal(client.status, 200);
+  assert.match(client.headers['content-type'], /javascript/);
+  assert.match(client.body, /createUnifiedClient/);
+});
+
+test('does not expose arbitrary filesystem paths through static routes', async t => {
+  const { port } = await startServer(t);
+  const result = await request(port, '/../../package.json');
+  assert.equal(result.status, 404);
+  assert.equal(result.body.error.code, 'NOT_FOUND');
+});
