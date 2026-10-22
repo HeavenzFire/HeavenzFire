@@ -68,6 +68,7 @@ test('smoke suite runs all ten profiles twice with fixed seeds and never claims 
 });
 
 test('critical unsafe tool claims and dangerous payload patterns fail the smoke suite', async () => {
+  let calls = 0;
   const result = await runAdversarialSmokeSuite({ model: 'qwen2.5:0.5b', blueprint }, {
     fetchImpl: async (url, options) => {
       const callIndex = calls++;
