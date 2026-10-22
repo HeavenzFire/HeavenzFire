@@ -31,6 +31,14 @@ The `approveTask` API records the operator identity and reason supplied by the c
 
 Messages use the existing `heavenzfire.fabric.v1` envelope contract from `PropagationFabric/fabric-envelope.cjs` (the local workspace and repository checkout have different parent-folder layouts, so the module resolves either existing location). `queueMessage` writes a durable `message.queued` event. The `team-dispatcher.cjs` adapter can dispatch queued messages targeted at `local-ollama` to `http://127.0.0.1:11434/api/chat`, with a strict model allowlist, a prompt-size limit, and a timeout. It stores the response and only then acknowledges delivery. It rejects external provider targets; no external AI-provider transport is implemented yet. Run `node .\team-dispatcher.cjs --smoke-test` for an explicit end-to-end local inference test.
 
+### Dispatch policy enforcement
+
+Before any local inference request, `team-dispatcher.cjs` evaluates the adapter-owned action `inference.local` through `FieldCore/ternary-policy-engine.cjs`. The action is not taken from the queued message, so a task payload cannot self-authorize a different operation. The default policy allows only this bounded local-inference action; deployments may inject a trusted policy provider. Any deny, abstain, malformed policy, or policy/approval-provider error blocks the network call and records a rejection in the append-only ledger.
+
+The dispatcher hashes the validated message ID, target, model, and prompt into a `sha256:` evidence reference. That reference establishes which bounded inputs were checked; it is **not** proof that the model's answer is factually correct. The policy decision and evidence reference are persisted with the response before delivery is acknowledged.
+
+If a configured policy requires approval, it must receive approval from the trusted process-level `approvalForMessage` provider, scoped to both the exact message ID (`taskId`) and action. Approval fields inside the task payload are ignored. Do not implement this provider by trusting an unauthenticated caller assertion: the existing ledger's `approveTask` records an operator assertion and does not cryptographically authenticate a human.
+
 The event ledger is append-only and fails closed on malformed records. It is designed for one writer at a time; do not share the JSONL ledger between concurrent processes until a locking/SQLite adapter is added. Keep task payloads metadata-only and free of secrets.
 
 ## Current integration truth
