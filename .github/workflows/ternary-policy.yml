@@ -1,0 +1,32 @@
+name: Unified Field Ternary Policy
+
+on:
+  pull_request:
+    paths:
+      - "UnifiedField/FieldCore/ternary-policy-engine.cjs"
+      - "UnifiedField/FieldCore/ternary-policy-engine.test.cjs"
+      - ".github/workflows/ternary-policy.yml"
+  push:
+    branches: [main]
+    paths:
+      - "UnifiedField/FieldCore/ternary-policy-engine.cjs"
+      - "UnifiedField/FieldCore/ternary-policy-engine.test.cjs"
+      - ".github/workflows/ternary-policy.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ternary-policy-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Syntax-check policy engine
+        run: node --check UnifiedField/FieldCore/ternary-policy-engine.cjs
+      - name: Run ternary policy acceptance tests
+        run: node --test UnifiedField/FieldCore/ternary-policy-engine.test.cjs
