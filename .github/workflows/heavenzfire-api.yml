@@ -19,10 +19,22 @@ jobs:
   test-api:
     runs-on: windows-latest
     steps:
-      - name: Check out source without persisted credentials
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: false
+      # This repository currently has a malformed submodule entry that makes
+      # actions/checkout fail during its submodule cleanup, even with submodules disabled.
+      # Download only the reviewed public API test inputs at this event's exact SHA.
+      - name: Fetch API source snapshot without recursive checkout
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $root = Join-Path $env:RUNNER_TEMP 'hf-api-ci'
+          $api = Join-Path $root 'services\heavenzfire-api'
+          $files = @('package.json', 'server.cjs', 'test/api.test.cjs', 'Start-HeavenzFire-GPT.ps1')
+          foreach ($relative in $files) {
+            $target = Join-Path $api ($relative -replace '/', '\')
+            New-Item -ItemType Directory -Path (Split-Path $target -Parent) -Force | Out-Null
+            $uri = 'https://raw.githubusercontent.com/' + $env:GITHUB_REPOSITORY + '/' + $env:GITHUB_SHA + '/services/heavenzfire-api/' + $relative
+            Invoke-WebRequest -UseBasicParsing -Uri $uri -OutFile $target
+          }
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -30,17 +42,17 @@ jobs:
           node-version: '22'
 
       - name: Check server syntax
-        working-directory: services/heavenzfire-api
+        working-directory: "${{ runner.temp }}\hf-api-ci\services\heavenzfire-api"
         run: node --check server.cjs
         shell: powershell
 
       - name: Run API regression tests
-        working-directory: services/heavenzfire-api
+        working-directory: "${{ runner.temp }}\hf-api-ci\services\heavenzfire-api"
         run: npm test
         shell: powershell
 
       - name: Parse PowerShell launcher without executing it
-        working-directory: services/heavenzfire-api
+        working-directory: "${{ runner.temp }}\hf-api-ci\services\heavenzfire-api"
         shell: powershell
         run: |
           $tokens = $null
