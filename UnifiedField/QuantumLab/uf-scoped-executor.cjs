@@ -9,57 +9,139 @@ const execFileAsync = promisify(execFile);
 const MAX_FILE_BYTES = 256 * 1024;
 
 function createScopedExecutor(options = {}) {
-  const root = path.resolve(options.workspaceRoot || process.cwd());
+  const requestedRoot = typeof options.workspaceRoot === 'string' && options.workspaceRoot.trim()
+    ? options.workspaceRoot.trim()
+    : (typeof process.env.HEAVENZFIRE_WORKSPACE_ROOT === 'string' && process.env.HEAVENZFIRE_WORKSPACE_ROOT.trim()
+      ? process.env.HEAVENZFIRE_WORKSPACE_ROOT.trim()
+      : '');
+  let root = null;
+  let rootError = 'workspace_root_not_configured';
+  if (requestedRoot) {
+    try {
+      const candidate = path.resolve(requestedRoot);
+      const stat = fs.lstatSync(candidate);
+      if (stat.isSymbolicLink() || !stat.isDirectory()) throw new Error('workspace root must be an existing, non-symlink directory');
+      root = fs.realpathSync(candidate);
+      rootError = '';
+    } catch (error) {
+      rootError = String(error.message || error).slice(0, 300);
+    }
+  }
+
+  function isWithinRoot(target) {
+    const relative = path.relative(root, target);
+    return relative === '' || (!path.isAbsolute(relative) && relative !== '..' && !relative.startsWith('..' + path.sep));
+  }
+
+  // Reject symlinks at every existing path component. This is intentionally stricter
+  // than following an in-workspace symlink: the workspace boundary remains unambiguous.
+  function assertNoSymlinkComponents(target) {
+    if (!root) throw new Error(rootError || 'workspace_root_not_configured');
+    if (!isWithinRoot(target)) throw new Error('path escapes workspace root');
+    let cursor = root;
+    const rootStat = fs.lstatSync(root);
+    if (rootStat.isSymbolicLink() || !rootStat.isDirectory()) throw new Error('workspace root is not a safe directory');
+    const relative = path.relative(root, target);
+    for (const component of relative.split(path.sep).filter(Boolean)) {
+      cursor = path.join(cursor, component);
+      try {
+        const stat = fs.lstatSync(cursor);
+        if (stat.isSymbolicLink()) throw new Error('symbolic links are not allowed in workspace paths');
+      } catch (error) {
+        if (error.code === 'ENOENT') break;
+        throw error;
+      }
+    }
+  }
+
   function resolvePath(relativePath) {
+    if (!root) throw new Error(rootError || 'workspace_root_not_configured');
     if (typeof relativePath !== 'string' || !relativePath.trim() || path.isAbsolute(relativePath)) {
       throw new Error('relative workspace path required');
     }
     const target = path.resolve(root, relativePath);
-    if (target !== root && !target.startsWith(root + path.sep)) throw new Error('path escapes workspace root');
+    assertNoSymlinkComponents(target);
     return target;
   }
+
+  function ensureSafeParentDirectories(target) {
+    const parent = path.dirname(target);
+    const relative = path.relative(root, parent);
+    let cursor = root;
+    for (const component of relative.split(path.sep).filter(Boolean)) {
+      cursor = path.join(cursor, component);
+      try {
+        const stat = fs.lstatSync(cursor);
+        if (stat.isSymbolicLink() || !stat.isDirectory()) throw new Error('workspace parent must be a non-symlink directory');
+      } catch (error) {
+        if (error.code !== 'ENOENT') throw error;
+        fs.mkdirSync(cursor);
+        const stat = fs.lstatSync(cursor);
+        if (stat.isSymbolicLink() || !stat.isDirectory()) throw new Error('created workspace parent is not a safe directory');
+      }
+    }
+    assertNoSymlinkComponents(target);
+  }
+
   function capabilities() {
     return {
-      workspace_root_configured: Boolean(options.workspaceRoot || process.env.HEAVENZFIRE_WORKSPACE_ROOT),
-      actions: ['workspace.read_file', 'workspace.write_file', 'git.status', 'node.test'],
+      workspace_root_configured: Boolean(root),
+      actions: root ? ['workspace.read_file', 'workspace.write_file', 'git.status', 'node.test'] : [],
+      configuration_error: root ? null : rootError,
       requires_approval: true,
       arbitrary_shell: false,
       admin_actions: false,
       max_file_bytes: MAX_FILE_BYTES
     };
   }
+
   async function execute(action, input) {
     try {
+      if (!root) throw new Error(rootError || 'workspace_root_not_configured');
       if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('input must be an object');
       if (action === 'workspace.read_file') {
         const target = resolvePath(input.path);
-        const stat = fs.statSync(target);
-        if (!stat.isFile() || stat.size > MAX_FILE_BYTES) throw new Error('file missing, not regular, or exceeds 256 KiB');
+        const stat = fs.lstatSync(target);
+        if (stat.isSymbolicLink() || !stat.isFile() || stat.size > MAX_FILE_BYTES) throw new Error('file missing, unsafe, not regular, or exceeds 256 KiB');
+        assertNoSymlinkComponents(target);
         return { ok: true, path: input.path, content: fs.readFileSync(target, 'utf8') };
       }
       if (action === 'workspace.write_file') {
         const target = resolvePath(input.path);
         if (typeof input.content !== 'string' || Buffer.byteLength(input.content, 'utf8') > MAX_FILE_BYTES) throw new Error('content must be a string no larger than 256 KiB');
-        if (input.overwrite !== true && fs.existsSync(target)) throw new Error('target exists; set overwrite=true for an approved replacement');
-        fs.mkdirSync(path.dirname(target), { recursive: true });
-        const temp = target + '.hf-tmp-' + process.pid;
-        try {
-          fs.writeFileSync(temp, input.content, { encoding: 'utf8', flag: 'wx' });
-          fs.renameSync(temp, target);
-        } finally {
-          try { if (fs.existsSync(temp)) fs.unlinkSync(temp); } catch {}
+        ensureSafeParentDirectories(target);
+        if (input.overwrite === true) {
+          const temp = target + '.hf-tmp-' + process.pid + '-' + require('node:crypto').randomBytes(6).toString('hex');
+          try {
+            fs.writeFileSync(temp, input.content, { encoding: 'utf8', flag: 'wx' });
+            assertNoSymlinkComponents(target);
+            fs.renameSync(temp, target);
+          } finally {
+            try { if (fs.existsSync(temp)) fs.unlinkSync(temp); } catch {}
+          }
+        } else {
+          // O_EXCL ('wx') makes no-overwrite creation atomic against competing writers.
+          const fd = fs.openSync(target, 'wx');
+          try { fs.writeFileSync(fd, input.content, { encoding: 'utf8' }); }
+          catch (error) { try { fs.unlinkSync(target); } catch {} throw error; }
+          finally { fs.closeSync(fd); }
         }
         return { ok: true, path: input.path, bytes_written: Buffer.byteLength(input.content, 'utf8') };
       }
       if (action === 'git.status') {
         const cwd = resolvePath(input.path || '.');
+        const discovered = await execFileAsync('git', ['rev-parse', '--show-toplevel'], { cwd, timeout: 5000, windowsHide: true, maxBuffer: 16 * 1024 });
+        const gitRoot = fs.realpathSync(discovered.stdout.trim());
+        if (gitRoot !== root) throw new Error('git worktree root must exactly match the configured workspace root');
         const result = await execFileAsync('git', ['status', '--short', '--branch'], { cwd, timeout: 5000, windowsHide: true, maxBuffer: 64 * 1024 });
         return { ok: true, cwd, stdout: result.stdout.slice(0, 16000), stderr: result.stderr.slice(0, 2000) };
       }
       if (action === 'node.test') {
         const testPath = resolvePath(input.path);
         if (!testPath.endsWith('.test.cjs') && !testPath.endsWith('.test.js')) throw new Error('only explicitly named .test.cjs or .test.js files may run');
-        if (!fs.statSync(testPath).isFile()) throw new Error('test file does not exist');
+        const stat = fs.lstatSync(testPath);
+        if (stat.isSymbolicLink() || !stat.isFile()) throw new Error('test file does not exist or is unsafe');
+        assertNoSymlinkComponents(testPath);
         const result = await execFileAsync(process.execPath, ['--test', testPath], { cwd: root, timeout: 20000, windowsHide: true, maxBuffer: 128 * 1024 });
         return { ok: true, exit_code: 0, stdout: result.stdout.slice(0, 24000), stderr: result.stderr.slice(0, 4000) };
       }
