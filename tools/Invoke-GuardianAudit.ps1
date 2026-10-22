@@ -21,7 +21,7 @@ if (-not $gh) { throw 'GitHub CLI (gh) is not installed or not on PATH. Install 
 if ($LASTEXITCODE -ne 0) { throw 'GitHub CLI is not authenticated. Run gh auth login and gh auth status.' }
 
 Write-Host 'Fetching repositories visible to the authenticated GitHub account...'
-$repoLines = & gh api '/user/repos?per_page=100&sort=pushed' --paginate --jq '.[] | {full_name: .full_name, default_branch: .default_branch, pushed_at: .pushed_at, updated_at: .updated_at, archived: .archived, visibility: .visibility} | @json'
+$repoLines = & gh api '/user/repos?per_page=100&sort=pushed' --paginate --jq '.[] | {full_name: .full_name, default_branch: .default_branch, pushed_at: .pushed_at, updated_at: .updated_at, archived: .archived, visibility: .visibility}'
 if ($LASTEXITCODE -ne 0) { throw 'Could not enumerate repositories. Check authentication and API permissions.' }
 $repos = @()
 foreach ($line in $repoLines) {
