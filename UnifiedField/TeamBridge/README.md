@@ -4,7 +4,7 @@ A local-first, hybrid coordination foundation that reuses Unified Field's Propag
 
 ## What exists
 
-- `team-registry.json`: explicit provider inventory with evidence-qualified initial states.
+- `team-registry.json`: operational team/runtime availability roster. It is not the provider capability/routing catalog; the separate AI Federation proposal in PR #75 defines that contract and needs reconciliation before both proposals are merged.
 - `team-ledger.cjs`: append-only, fsync-backed JSONL event ledger; task lifecycle; idempotency; approval records; durable message outbox; provider probe history; persisted results.
 - `team-dispatcher.cjs`: bounded local Ollama adapter for queued messages, loopback-only and model-allowlisted.
 - `team-ledger.test.cjs` and `team-dispatcher.test.cjs`: restart, idempotency, approval-gate, state-machine, message, adapter, and corruption tests.
@@ -38,6 +38,7 @@ The event ledger is append-only and fails closed on malformed records. It is des
 - Local Ollama, HeavenzFire agent, gateway, and orchestrator returned HTTP 200 during the 2026-10-21 local-time inspection.
 - The TeamBridge queue-to-local-model end-to-end smoke test returned `E2E_OK`, persisted the response in `team-events.jsonl`, and acknowledged delivery. The first longer-marker attempt was rejected by the test assertion and not counted as a pass.
 - GitHub repository reading works in the current ChatGPT session; this does not create a local GitHub CLI credential.
+- Existing AI Federation PR #75 already proposes the provider capability catalog (`UnifiedField/ai-providers.json`), plan-only router (`unified-field/ai-federation.mjs`), and local Ollama adapter contract. TeamBridge is scoped to durable runtime/task/message state; consolidate the provider status/capability views before merging both PRs.
 - Google Antigravity CLI `agy.exe` exists, but authentication and actual model inference are not yet verified.
 - Claude was reported as account-only; no `claude` executable was found on PATH.
 - Copilot, Codex CLI, and Qwen Code CLI executables were not found on PATH during inspection.
