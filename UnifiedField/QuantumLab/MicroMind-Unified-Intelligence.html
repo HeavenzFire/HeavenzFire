@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>HeavenzFire · Unified Intelligence</title>
+<style>
+:root{color-scheme:dark;--bg:#080d17;--panel:#111c2c;--line:#2a3e57;--ink:#edf5ff;--muted:#9aacc5;--cyan:#70eee2;--amber:#f4c879;--red:#ff8d9a}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -20%,#1a3451,var(--bg) 70%);color:var(--ink);font:15px system-ui,Segoe UI,sans-serif}
+header{padding:22px max(18px,calc((100vw - 1000px)/2));border-bottom:1px solid var(--line);display:flex;gap:18px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+h1{margin:0;font-size:clamp(23px,4vw,34px)}p{line-height:1.5}.muted{color:var(--muted)}main{max-width:1000px;margin:auto;padding:18px;display:grid;gap:14px}.panel{background:linear-gradient(155deg,#111e31,#0b1220);border:1px solid var(--line);border-radius:14px;padding:16px;min-width:0}
+.row{display:flex;gap:9px;align-items:center;flex-wrap:wrap}.row>*{flex:1}.row .fixed{flex:0 0 auto}.pill{border:1px solid var(--line);border-radius:99px;padding:6px 10px;font-size:12px;color:var(--muted)}.pill.ok{color:var(--cyan);border-color:#397b78}.pill.bad{color:var(--red);border-color:#81424e}
+label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}select,input,textarea{width:100%;background:#070d18;border:1px solid var(--line);border-radius:8px;color:var(--ink);padding:11px;font:inherit}textarea{min-height:94px;resize:vertical}
+button{background:#16333b;border:1px solid #397b78;border-radius:8px;color:#eaffff;padding:10px 13px;cursor:pointer;font:inherit}button:disabled{opacity:.5;cursor:wait}.secondary{background:#172235;border-color:#43536d}.danger{border-color:#81424e;background:#301923}
+.messages{display:grid;gap:10px;margin:14px 0}.message{white-space:pre-wrap;overflow-wrap:anywhere;border:1px solid var(--line);border-radius:10px;padding:12px;line-height:1.55}.message.user{background:#10272b;border-color:#3e6b71}.message.assistant{background:#141d30}.message.error{border-color:#81424e;background:#24141b;color:#ffdce1}.meta{font-size:11px;color:var(--muted);margin-top:8px}.status{white-space:pre-wrap;font:12px/1.6 ui-monospace,Consolas,monospace;color:var(--muted)}.controls{display:flex;gap:8px;flex-wrap:wrap}.controls label{display:flex;gap:7px;align-items:center;margin:0;font-size:13px}.controls input{width:auto}.foot{font-size:12px;color:var(--muted)}@media(max-width:600px){main{padding:9px}.panel{padding:12px}}
+</style>
+</head>
+<body>
+<header>
+ <div><div class="muted">HEAVENZFIRE / LOCAL-FIRST / UNIFIED FIELD</div><h1>Unified Intelligence</h1><div class="muted">One local model · switchable reasoning profiles · isolated session memory</div></div>
+ <span id="health" class="pill">CHECKING API</span>
+</header>
+<main>
+ <section class="panel">
+  <div class="row">
+   <div><label for="profile">Reasoning profile</label><select id="profile" disabled></select></div>
+   <div><label for="sandbox">Sandbox scope</label><input id="sandbox" value="micro-mind" maxlength="80" pattern="[A-Za-z0-9._-]+" /></div>
+  </div>
+  <p id="profileLens" class="muted">Loading profile registry…</p>
+  <div class="controls">
+   <label><input id="speak" type="checkbox"> Speak replies</label>
+   <button id="testVoice" class="secondary">Test voice</button>
+   <button id="talk" class="secondary">Talk to the mind</button>
+   <button id="reset" class="danger">Reset this profile's memory</button>
+  </div>
+ </section>
+ <section class="panel">
+  <div class="row"><div><strong>Conversation</strong><div id="model" class="meta">Model not yet verified</div></div><span id="turns" class="pill fixed">0 turns</span></div>
+  <div id="messages" class="messages" aria-live="polite"><div class="message assistant">Unified Intelligence UI is loaded. Checking local API health and available profiles…</div></div>
+  <label for="prompt">Message</label><textarea id="prompt" maxlength="4000" placeholder="Ask a concrete question or give a bounded task…"></textarea>
+  <div class="controls" style="margin-top:9px"><button id="send">Send</button><button id="brief" class="secondary">Let the minds brief me</button><button id="clear" class="secondary">Clear visible conversation</button></div>
+  <div id="status" class="status" style="margin-top:10px">No inference request has been made.</div>
+ </section>
+ <section class="panel">
+  <strong>Reliability contract</strong>
+  <p class="foot">This page uses the unified loopback API. It never fabricates an answer when inference fails. Health/profile reads retry briefly; chat requests are not automatically retried because a timeout can happen after the model has already answered. Voice output is browser-local speech synthesis; voice input depends on browser support and may use platform speech services.</p>
+  <div id="diagnostics" class="status">Diagnostics pending.</div>
+ </section>
+</main>
+<script src="/micro-mind-unified-client.js"></script>
+<script>
+(function(){
+ 'use strict';
+ const $=id=>document.getElementById(id);
+ const state={client:null,profiles:[],busy:false,turns:0,recognition:null};
+ const byId=id=>state.profiles.find(p=>p.id===id);
+ function add(role,text,meta){
+  const el=document.createElement('div');el.className='message '+role;el.textContent=text;
+  if(meta){const m=document.createElement('div');m.className='meta';m.textContent=meta;el.appendChild(m)}
+  $('messages').appendChild(el);$('messages').scrollTop=$('messages').scrollHeight;
+ }
+ function selected(){return $('profile').value}
+ function speak(text){if(!$('speak').checked||!('speechSynthesis'in window))return;speechSynthesis.cancel();speechSynthesis.speak(new SpeechSynthesisUtterance(text))}
+ function status(text){$('status').textContent=text;$('diagnostics').textContent=JSON.stringify(state.client?state.client.getDiagnostics():{},null,2)}
+ async function loadProfiles(){
+  state.profiles=await state.client.profiles();$('profile').replaceChildren();
+  for(const p of state.profiles){const o=document.createElement('option');o.value=p.id;o.textContent=p.name;$('profile').appendChild(o)}
+  $('profile').disabled=false;updateProfile();$('model').textContent='Shared model: '+(await state.client.health()).model;
+ }
+ function updateProfile(){const p=byId(selected());$('profileLens').textContent=p?p.dates+' · '+p.lens:'';$('turns').textContent=state.turns+' turns'}
+ async function refreshHealth(){
+  try{const h=await state.client.health();$('health').textContent='API HEALTHY · '+h.port;$('health').className='pill ok';$('model').textContent='Shared model: '+h.model+' · inference target '+h.inferenceBaseUrl;status('API health verified at '+new Date().toLocaleTimeString())}
+  catch(e){$('health').textContent='API UNAVAILABLE';$('health').className='pill bad';status(e.code+': '+e.message)}
+ }
+ async function send(messageOverride){
+  if(state.busy)return;const message=String(messageOverride===undefined?$('prompt').value:messageOverride).trim();if(!message)return;
+  const sandbox=$('sandbox').value.trim();if(!/^[A-Za-z0-9._-]{1,80}$/.test(sandbox)){add('error','Sandbox ID must be 1–80 letters, numbers, dots, underscores, or hyphens.');return}
+  if(sandbox!==state.client.sandboxId){state.client=window.HeavenzFireUnifiedClient.createUnifiedClient({sandboxId:sandbox})}
+  state.busy=true;$('send').disabled=true;$('brief').disabled=true;add('user',message);if(messageOverride===undefined)$('prompt').value='';
+  status('Inference request sent. Waiting for the actual local model response…');
+  try{const result=await state.client.chat({profileId:selected(),message});state.turns=result.turns||state.turns+1;add('assistant',result.answer,'profile='+selected()+' · model='+result.model+' · request='+result.requestId);speak(result.answer);status('INFERENCE SUCCESS · '+result.requestId+' · memory scope='+result.memoryScope);updateProfile()}
+  catch(e){add('error','Inference failed: '+e.message,'code='+e.code+(e.requestId?' · request='+e.requestId:''));status('INFERENCE FAILURE · '+e.code+' · no fallback answer was generated')}
+  finally{state.busy=false;$('send').disabled=false;$('brief').disabled=false;refreshHealth()}
+ }
+ $('send').addEventListener('click',()=>send());
+ $('prompt').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}});
+ $('profile').addEventListener('change',()=>{state.turns=0;updateProfile();add('assistant','Switched to '+byId(selected()).name+'. Memory is isolated by profile within this sandbox.')});
+ $('reset').addEventListener('click',async()=>{if(!state.client||!selected())return;try{const r=await state.client.resetMemory(selected());state.turns=0;updateProfile();add('assistant','Memory reset confirmed for '+selected()+'.','reset='+r.reset+' · turns='+r.turns);status('MEMORY RESET CONFIRMED')}catch(e){add('error','Memory reset failed: '+e.message);status('RESET FAILURE · '+e.code)}});
+ $('clear').addEventListener('click',()=>$('messages').replaceChildren());
+ $('testVoice').addEventListener('click',()=>{if(!('speechSynthesis'in window)){status('Speech synthesis is not supported by this browser.');return}speechSynthesis.speak(new SpeechSynthesisUtterance('HeavenzFire Unified Intelligence voice output is available.'))});
+ $('talk').addEventListener('click',()=>{const Recognition=window.SpeechRecognition||window.webkitSpeechRecognition;if(!Recognition){status('Speech recognition is not supported here. Use the text composer.');return}if(state.recognition){state.recognition.stop();state.recognition=null;$('talk').textContent='Talk to the mind';return}const rec=new Recognition();state.recognition=rec;rec.lang='en-US';rec.interimResults=false;rec.onstart=()=>$('talk').textContent='Listening…';rec.onresult=e=>send(e.results[0][0].transcript);rec.onerror=e=>status('VOICE INPUT ERROR · '+e.error);rec.onend=()=>{$('talk').textContent='Talk to the mind';state.recognition=null};rec.start()});
+ $('brief').addEventListener('click',async()=>{const p=state.profiles;if(!p.length)return;for(const item of p){$('profile').value=item.id;updateProfile();await send('Provide a concise engineering brief from the '+item.name+' reasoning lens: identify one concrete next step for making HeavenzFire Unified Field more reliable. Distinguish facts from assumptions.');if(state.busy)break}});
+ async function init(){
+  try{state.client=window.HeavenzFireUnifiedClient.createUnifiedClient({sandboxId:$('sandbox').value});await loadProfiles();$('messages').replaceChildren();add('assistant','Connected to the unified API. Choose a profile and send a message.');await refreshHealth()}
+  catch(e){$('health').textContent='API UNAVAILABLE';$('health').className='pill bad';add('error','Startup failed: '+e.message);status((e.code||'STARTUP_ERROR')+': '+e.message)}
+ }
+ init();setInterval(refreshHealth,15000);
+})();
+</script>
+</body>
+</html>
