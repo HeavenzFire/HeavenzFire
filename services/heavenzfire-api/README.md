@@ -1,6 +1,6 @@
 # HeavenzFire API (initial foundation)
 
-A local-first API layer owned by HeavenzFire. It presents one authenticated interface over Gemini and local Ollama models. Gemini's API remains a provider; this service, its auth contract, routing and local integration are ours.
+A local-first API layer owned by HeavenzFire. It presents one authenticated interface over Gemini, local Ollama, OpenAI, Anthropic Claude, Mistral, Qwen, Groq, OpenRouter, and an optional custom OpenAI-compatible endpoint. Gemini's API remains a provider; this service, its auth contract, routing and local integration are ours.
 
 ## Routes
 
@@ -30,7 +30,7 @@ $body = @{ model = 'gemini-2.5-flash'; messages = @(@{ role = 'user'; content = 
 Invoke-RestMethod http://127.0.0.1:18796/v1/chat/completions -Method Post -Headers $headers -ContentType 'application/json' -Body $body
 ```
 
-Use `provider = 'ollama'` or a local model ID such as `llama3.2:1b` to route to Ollama. The server defaults to loopback and refuses non-loopback binding unless `HF_ALLOW_REMOTE_BIND=true` is explicitly set. Do not set that flag on a public host without a TLS reverse proxy, authentication, network controls, and an operational secret manager.
+Choose `provider` explicitly in the request: `gemini`, `ollama`, `openai`, `anthropic`, `mistral`, `qwen`, `groq`, `openrouter`, or `custom`. For example, set `provider = 'ollama'` to route locally. Mistral, Groq, and OpenRouter use OpenAI-compatible chat-completions requests; Qwen uses the same protocol but requires the correct region/workspace-specific `QWEN_BASE_URL`. Claude uses Anthropic's native Messages API. Provider credentials are independent and must be configured in the server environment. The server defaults to loopback and refuses non-loopback binding unless `HF_ALLOW_REMOTE_BIND=true` is explicitly set. Do not set that flag on a public host without a TLS reverse proxy, authentication, network controls, and an operational secret manager.
 
 ## Development and tests
 
@@ -48,5 +48,6 @@ Tests exercise health redaction, authentication, model listing and request valid
 - This is an initial single-process service, not yet production-deployed.
 - API tokens are provided through the process environment; use a secret store or OS-protected configuration for persistent deployments.
 - Rate limiting, per-client quotas, durable audit logging, OAuth, GitHub App JWT/installation-token flows, TLS hosting and cloud deployment are not implemented in this first slice.
+- Muse and Monica are not enabled as named adapters: their service-specific API endpoints, authentication methods and permitted integration methods must be verified first. If they provide a compatible endpoint, the optional `custom` adapter may be usable after testing.
 - Do not expose the API publicly until those controls and provider error handling have been reviewed.
 - Never put Gemini keys, GitHub private keys, OAuth client secrets, or API bearer tokens in frontend code or repository files.
