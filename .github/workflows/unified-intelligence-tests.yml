@@ -12,6 +12,7 @@ on:
       - "UnifiedField/QuantumLab/HeavenzFire-Unified-Intelligence-Server.test.cjs"
       - "UnifiedField/QuantumLab/micro-mind-unified-client.cjs"
       - "UnifiedField/QuantumLab/micro-mind-unified-client.test.cjs"
+      - "UnifiedField/QuantumLab/MicroMind-Unified-Intelligence.html"
       - "UnifiedField/QuantumLab/Start-HeavenzFireUnifiedIntelligence.ps1"
       - ".github/workflows/unified-intelligence-tests.yml"
   pull_request:
