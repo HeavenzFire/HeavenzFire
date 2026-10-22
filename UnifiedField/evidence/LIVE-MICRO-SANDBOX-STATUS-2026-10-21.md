@@ -139,7 +139,7 @@ The dashboard-worker token-budget test initially required 160 tokens while the w
 3. Keep security invariants intact: generated code is not executed; unsafe tool claims remain critical failures; the 1-GiB model admission guard is not bypassed.
 4. The `planetary-mesh-global` submodule cleanup error remains unresolved. No valid origin URL has been established, so the submodule was not deleted and no URL was invented.
 5. New commits made through the repository connector have no associated fresh workflow runs visible for their exact head SHAs yet. CI is therefore pending, not passed.
-6. At the latest metadata check (2026-10-22T04:10Z), PR #78 reported mergeable=true, while PR #65 reported mergeable=false. This is only GitHub's mergeability calculation, not approval to merge; fresh CI for the newest heads remains unconfirmed.
+6. At the latest metadata check (2026-10-22T04:14Z), PRs #65, #78, #79, #80, and #81 reported mergeable=false; PRs #69 and #82 reported mergeable=true. GitHub's mergeability flag is transient and is not approval to merge. The exact-head workflow results are listed below.
 
 No processes were stopped or restarted, no firewall or credential settings were changed, no files were deleted, and no source repository was merged as part of this follow-up.
 
@@ -185,3 +185,10 @@ The exact-head workflow refresh changed the status from pending for several bran
 PR #65 moved again while this review was running. Its latest observed head was `b66aa30b1bd53fb7879825f4165ffba12f18aa1f`; no workflow runs for that exact head were visible at the last check. Its fetched-branch adversarial test passed 4/4 and dashboard-worker contract test passed 7/7 in isolated Windows runs, but CI for the latest head remains pending.
 
 The earlier `planetary-mesh-global` checkout-cleanup error was present in historical run logs but was not reproduced in the latest successful runs listed above. The historical gitlink is documented, and its current origin/mapping is still not conclusively established; retain this as a latent repository-integrity check rather than claiming a fresh CI failure.
+
+
+### Mergeability refresh — 2026-10-22T04:14Z
+
+After the successful workflow runs listed above, GitHub's current mergeability calculation changed: PR #78 and draft PRs #79–#81 now report `mergeable=false`, as does PR #65. PR #69 and PR #82 report `mergeable=true`. No PR was merged. Treat the false flags as merge-blocking until the specific conflict/out-of-date state is inspected and resolved; passing CI does not override mergeability or review requirements.
+
+The evidence-record branch itself was updated again after the successful #82 workflow run. Its newest documentation-only commit therefore needs its own workflow result; the earlier successful #82 runs apply to the immediately preceding commit, not automatically to the newest SHA.
