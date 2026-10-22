@@ -1,0 +1,126 @@
+{
+  "schema_version": 1,
+  "project": "HeavenzFire Unified Field",
+  "updated_at": "2026-10-21",
+  "policy": {
+    "mode": "hybrid_local_first",
+    "execution_default": "proposal_and_audit_only",
+    "require_explicit_approval_for": [
+      "HIGH",
+      "PRIVILEGED",
+      "DESTRUCTIVE",
+      "CREDENTIAL",
+      "NETWORK_CHANGE",
+      "INSTALL",
+      "EXTERNAL"
+    ],
+    "never_store_credentials": true,
+    "never_claim_connection_without_evidence": true,
+    "local_services_bind_to_loopback_only": true
+  },
+  "providers": [
+    {
+      "id": "local-ollama",
+      "name": "HeavenzFire local Ollama runtime",
+      "kind": "local_model_runtime",
+      "initial_status": "verified",
+      "evidence": "Read-only probe on 2026-10-21: GET http://127.0.0.1:11434/api/tags returned HTTP 200; qwen2.5:0.5b and HeavenzFire/Llama model tags were returned.",
+      "endpoint": "http://127.0.0.1:11434",
+      "capabilities": ["local_inference"],
+      "execution_mode": "local"
+    },
+    {
+      "id": "local-heavenzfire-agent",
+      "name": "HeavenzFire agent service",
+      "kind": "local_agent_service",
+      "initial_status": "verified",
+      "evidence": "Read-only probe on 2026-10-21: GET http://127.0.0.1:8790/health returned HTTP 200 and reported Ollama available.",
+      "endpoint": "http://127.0.0.1:8790/health",
+      "capabilities": ["local_agent_health"],
+      "execution_mode": "local"
+    },
+    {
+      "id": "local-heavenzfire-gateway",
+      "name": "HeavenzFire gateway",
+      "kind": "local_gateway",
+      "initial_status": "verified",
+      "evidence": "Read-only probe on 2026-10-21: GET http://127.0.0.1:8787/health returned HTTP 200.",
+      "endpoint": "http://127.0.0.1:8787/health",
+      "capabilities": ["local_inference_gateway"],
+      "execution_mode": "local"
+    },
+    {
+      "id": "local-heavenzfire-orchestrator",
+      "name": "HeavenzFire orchestrator",
+      "kind": "local_orchestrator",
+      "initial_status": "verified",
+      "evidence": "Read-only probe on 2026-10-21: GET http://127.0.0.1:8788/health returned HTTP 200 and reported circuit closed.",
+      "endpoint": "http://127.0.0.1:8788/health",
+      "capabilities": ["local_task_orchestration"],
+      "execution_mode": "local"
+    },
+    {
+      "id": "github-chatgpt-session",
+      "name": "GitHub connector available in current ChatGPT session",
+      "kind": "session_connector",
+      "initial_status": "session_only",
+      "evidence": "Repository search and file retrieval succeeded in this ChatGPT session. This is not a local GitHub CLI login or permanent API credential.",
+      "capabilities": ["repository_read", "file_retrieval"],
+      "execution_mode": "current_session_only"
+    },
+    {
+      "id": "gemini-antigravity-cli",
+      "name": "Google Antigravity CLI (agy)",
+      "kind": "external_cli",
+      "initial_status": "auth_unverified",
+      "evidence": "agy.exe is present on PATH-equivalent location and local help was readable; authentication and live model inference have not been verified. The CLI presence does not prove Gemini API access.",
+      "capabilities": ["pending_authentication_test"],
+      "execution_mode": "external_cli"
+    },
+    {
+      "id": "gemini-github-app",
+      "name": "HeavenzFire Gemini Bridge GitHub App installation",
+      "kind": "github_app_installation",
+      "initial_status": "installation_incomplete",
+      "evidence": "The inspected GitHub installation page states that at least one repository must be selected. No repository was selected or permission change performed during this inspection.",
+      "capabilities": ["pending_installation"],
+      "execution_mode": "github_app"
+    },
+    {
+      "id": "claude",
+      "name": "Claude / Claude Code",
+      "kind": "external_provider",
+      "initial_status": "account_only_cli_missing",
+      "evidence": "User reported account-only access. No claude executable was found on PATH during read-only inspection; authentication and API access are unverified.",
+      "capabilities": ["pending_cli_or_api_setup"],
+      "execution_mode": "external"
+    },
+    {
+      "id": "github-copilot",
+      "name": "GitHub Copilot",
+      "kind": "external_provider",
+      "initial_status": "unknown_cli_missing",
+      "evidence": "No copilot executable was found on PATH during read-only inspection. Account entitlement and authentication are unverified.",
+      "capabilities": ["pending_authentication_test"],
+      "execution_mode": "external"
+    },
+    {
+      "id": "openai-codex-cli",
+      "name": "OpenAI Codex CLI",
+      "kind": "external_provider",
+      "initial_status": "unknown_cli_missing",
+      "evidence": "No codex executable was found on PATH during read-only inspection. A local .codex directory exists, but it is not proof of CLI availability or authentication.",
+      "capabilities": ["pending_authentication_test"],
+      "execution_mode": "external"
+    },
+    {
+      "id": "qwen-cli",
+      "name": "Qwen Code CLI",
+      "kind": "external_provider",
+      "initial_status": "unknown_cli_missing",
+      "evidence": "No qwen executable was found on PATH during read-only inspection. A Qwen model is available through local Ollama; that does not establish Qwen cloud access.",
+      "capabilities": ["pending_authentication_test"],
+      "execution_mode": "external"
+    }
+  ]
+}
