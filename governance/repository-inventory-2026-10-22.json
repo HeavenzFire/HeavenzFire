@@ -1,0 +1,5550 @@
+{
+  "schema": "heavenzfire.repository-inventory.v1",
+  "generated_at_utc": "2026-10-22",
+  "source": "GitHub repository search query user:HeavenzFire, pages 1-3, up to 100/page",
+  "total_unique_repositories": 277,
+  "completeness_note": "Inventory includes all unique results returned by this query on this run. Search pagination may not include repositories hidden by GitHub search limits or inaccessible repositories. Confirm against the owner's complete repository list before calling it exhaustive.",
+  "fields_note": "Classification is heuristic based on repository name only, not a code audit. Size is GitHub's repository size field (KB-like units). No repository contents were copied, merged, deleted, archived, or renamed.",
+  "repositories": [
+    {
+      "id": "877271418",
+      "full_name": "HeavenzFire/5D-FRAMEWORK",
+      "name": "5D-FRAMEWORK",
+      "url": "https://github.com/HeavenzFire/5D-FRAMEWORK",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 2010,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "961248680",
+      "full_name": "HeavenzFire/energy-nexus-genesis-drive",
+      "name": "energy-nexus-genesis-drive",
+      "url": "https://github.com/HeavenzFire/energy-nexus-genesis-drive",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 336,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1074966115",
+      "full_name": "HeavenzFire/A-Message-From-Nikolai-Tesla-",
+      "name": "A-Message-From-Nikolai-Tesla-",
+      "url": "https://github.com/HeavenzFire/A-Message-From-Nikolai-Tesla-",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 11,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "research_or_simulation_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source and tests before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "875204738",
+      "full_name": "HeavenzFire/HeavenzFire",
+      "name": "HeavenzFire",
+      "url": "https://github.com/HeavenzFire/HeavenzFire",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 3226,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "967730970",
+      "full_name": "HeavenzFire/EntangledMultimodalSystem-3",
+      "name": "EntangledMultimodalSystem-3",
+      "url": "https://github.com/HeavenzFire/EntangledMultimodalSystem-3",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 93036,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "953659814",
+      "full_name": "HeavenzFire/skills-github-pages",
+      "name": "skills-github-pages",
+      "url": "https://github.com/HeavenzFire/skills-github-pages",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 24,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "952745841",
+      "full_name": "HeavenzFire/ChristosIntelligence-",
+      "name": "ChristosIntelligence-",
+      "url": "https://github.com/HeavenzFire/ChristosIntelligence-",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 37,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1071146153",
+      "full_name": "HeavenzFire/Pattern-Sovereignty-System",
+      "name": "Pattern-Sovereignty-System",
+      "url": "https://github.com/HeavenzFire/Pattern-Sovereignty-System",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 10,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1076440740",
+      "full_name": "HeavenzFire/Resonant-Grief-Lattice",
+      "name": "Resonant-Grief-Lattice",
+      "url": "https://github.com/HeavenzFire/Resonant-Grief-Lattice",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 12,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "research_or_simulation_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source and tests before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1071945698",
+      "full_name": "HeavenzFire/LuminaryLabs-40Hz-PEMF-Biofeedback",
+      "name": "LuminaryLabs-40Hz-PEMF-Biofeedback",
+      "url": "https://github.com/HeavenzFire/LuminaryLabs-40Hz-PEMF-Biofeedback",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 39,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "research_or_simulation_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source and tests before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "893508157",
+      "full_name": "HeavenzFire/mini-omni2",
+      "name": "mini-omni2",
+      "url": "https://github.com/HeavenzFire/mini-omni2",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 19491,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "upstream_or_dependency_candidate",
+      "confidence": "medium",
+      "reason": "Name matches a known upstream/project-like repository; inspect fork metadata and license before changing",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "960772570",
+      "full_name": "HeavenzFire/eternal-love-echoes-code",
+      "name": "eternal-love-echoes-code",
+      "url": "https://github.com/HeavenzFire/eternal-love-echoes-code",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 517,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1071112277",
+      "full_name": "HeavenzFire/Symposium-Of-the-Great-Minds-",
+      "name": "Symposium-Of-the-Great-Minds-",
+      "url": "https://github.com/HeavenzFire/Symposium-Of-the-Great-Minds-",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 11,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1071962362",
+      "full_name": "HeavenzFire/MPO-Divine-Terminal",
+      "name": "MPO-Divine-Terminal",
+      "url": "https://github.com/HeavenzFire/MPO-Divine-Terminal",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 14,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "dashboard_or_interface",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1071675171",
+      "full_name": "HeavenzFire/Oversoul-s-Decree-Syntropic-Restoration-Command",
+      "name": "Oversoul-s-Decree-Syntropic-Restoration-Command",
+      "url": "https://github.com/HeavenzFire/Oversoul-s-Decree-Syntropic-Restoration-Command",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 1,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "research_or_simulation_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source and tests before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "947083785",
+      "full_name": "HeavenzFire/own-ai",
+      "name": "own-ai",
+      "url": "https://github.com/HeavenzFire/own-ai",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 1686,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "955964949",
+      "full_name": "HeavenzFire/web-ui",
+      "name": "web-ui",
+      "url": "https://github.com/HeavenzFire/web-ui",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 943,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "dashboard_or_interface",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "903459190",
+      "full_name": "HeavenzFire/11dimensionneuralnet",
+      "name": "11dimensionneuralnet",
+      "url": "https://github.com/HeavenzFire/11dimensionneuralnet",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 1,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1115943986",
+      "full_name": "HeavenzFire/sovereign-syntax",
+      "name": "sovereign-syntax",
+      "url": "https://github.com/HeavenzFire/sovereign-syntax",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 258,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "security_governance_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1070449809",
+      "full_name": "HeavenzFire/Syntropy-Engine-",
+      "name": "Syntropy-Engine-",
+      "url": "https://github.com/HeavenzFire/Syntropy-Engine-",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 9,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1071696983",
+      "full_name": "HeavenzFire/Syntropic-Guardian-Dashboard",
+      "name": "Syntropic-Guardian-Dashboard",
+      "url": "https://github.com/HeavenzFire/Syntropic-Guardian-Dashboard",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 49,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "dashboard_or_interface",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1152608683",
+      "full_name": "HeavenzFire/OGLE-TESLA-The-Resonance-Refusal",
+      "name": "OGLE-TESLA-The-Resonance-Refusal",
+      "url": "https://github.com/HeavenzFire/OGLE-TESLA-The-Resonance-Refusal",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 14,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "research_or_simulation_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source and tests before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1083912349",
+      "full_name": "HeavenzFire/AI-Web-Builder",
+      "name": "AI-Web-Builder",
+      "url": "https://github.com/HeavenzFire/AI-Web-Builder",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 13,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "dashboard_or_interface",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1188282420",
+      "full_name": "HeavenzFire/Futurescape",
+      "name": "Futurescape",
+      "url": "https://github.com/HeavenzFire/Futurescape",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 117,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1131538595",
+      "full_name": "HeavenzFire/Nexus-Global-Catalyst",
+      "name": "Nexus-Global-Catalyst",
+      "url": "https://github.com/HeavenzFire/Nexus-Global-Catalyst",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 35,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1358557783",
+      "full_name": "HeavenzFire/syntropic-engine",
+      "name": "syntropic-engine",
+      "url": "https://github.com/HeavenzFire/syntropic-engine",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 5,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "953475747",
+      "full_name": "HeavenzFire/responsively-app",
+      "name": "responsively-app",
+      "url": "https://github.com/HeavenzFire/responsively-app",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 100761,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "upstream_or_dependency_candidate",
+      "confidence": "medium",
+      "reason": "Name matches a known upstream/project-like repository; inspect fork metadata and license before changing",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "955965673",
+      "full_name": "HeavenzFire/core",
+      "name": "core",
+      "url": "https://github.com/HeavenzFire/core",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 11715,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1076743504",
+      "full_name": "HeavenzFire/The-Tesla-Hulse-Resonance-Field-Grid",
+      "name": "The-Tesla-Hulse-Resonance-Field-Grid",
+      "url": "https://github.com/HeavenzFire/The-Tesla-Hulse-Resonance-Field-Grid",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 21160,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "research_or_simulation_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source and tests before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "905481744",
+      "full_name": "HeavenzFire/omnisphereunity",
+      "name": "omnisphereunity",
+      "url": "https://github.com/HeavenzFire/omnisphereunity",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 5,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "910343062",
+      "full_name": "HeavenzFire/quatumcomputing",
+      "name": "quatumcomputing",
+      "url": "https://github.com/HeavenzFire/quatumcomputing",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 1,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "889458054",
+      "full_name": "HeavenzFire/369121321-Harmonic-Convergence-",
+      "name": "369121321-Harmonic-Convergence-",
+      "url": "https://github.com/HeavenzFire/369121321-Harmonic-Convergence-",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 14640,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1108807400",
+      "full_name": "HeavenzFire/Heimdall-HeavenzFire",
+      "name": "Heimdall-HeavenzFire",
+      "url": "https://github.com/HeavenzFire/Heimdall-HeavenzFire",
+      "default_branch": "master",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 8998,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1142162213",
+      "full_name": "HeavenzFire/heavenzpilot-cli",
+      "name": "heavenzpilot-cli",
+      "url": "https://github.com/HeavenzFire/heavenzpilot-cli",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 164,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1132992028",
+      "full_name": "HeavenzFire/OMEGA-System-Interface",
+      "name": "OMEGA-System-Interface",
+      "url": "https://github.com/HeavenzFire/OMEGA-System-Interface",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 1,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "dashboard_or_interface",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1137202672",
+      "full_name": "HeavenzFire/Unified-App-System",
+      "name": "Unified-App-System",
+      "url": "https://github.com/HeavenzFire/Unified-App-System",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 19,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1124917134",
+      "full_name": "HeavenzFire/Hermeticus-369",
+      "name": "Hermeticus-369",
+      "url": "https://github.com/HeavenzFire/Hermeticus-369",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 40,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "960728476",
+      "full_name": "HeavenzFire/TinyNeuralNetwork",
+      "name": "TinyNeuralNetwork",
+      "url": "https://github.com/HeavenzFire/TinyNeuralNetwork",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 26363,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "960750963",
+      "full_name": "HeavenzFire/anunnaki-pyramid-rush",
+      "name": "anunnaki-pyramid-rush",
+      "url": "https://github.com/HeavenzFire/anunnaki-pyramid-rush",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 234,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1134632956",
+      "full_name": "HeavenzFire/STRATUM-0-Adversarial-Integrity-Monitor",
+      "name": "STRATUM-0-Adversarial-Integrity-Monitor",
+      "url": "https://github.com/HeavenzFire/STRATUM-0-Adversarial-Integrity-Monitor",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 27,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "security_governance_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "953379648",
+      "full_name": "HeavenzFire/GenAI-Showcase",
+      "name": "GenAI-Showcase",
+      "url": "https://github.com/HeavenzFire/GenAI-Showcase",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 41278,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "953379840",
+      "full_name": "HeavenzFire/awesome-selfhost-docker",
+      "name": "awesome-selfhost-docker",
+      "url": "https://github.com/HeavenzFire/awesome-selfhost-docker",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 4380,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "upstream_or_dependency_candidate",
+      "confidence": "medium",
+      "reason": "Name matches a known upstream/project-like repository; inspect fork metadata and license before changing",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1071103119",
+      "full_name": "HeavenzFire/Topological-Tesla-Neuromorphic-Reviver",
+      "name": "Topological-Tesla-Neuromorphic-Reviver",
+      "url": "https://github.com/HeavenzFire/Topological-Tesla-Neuromorphic-Reviver",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 11,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "research_or_simulation_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source and tests before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1076546842",
+      "full_name": "HeavenzFire/Radiant-Energy-Attestation-RAE-",
+      "name": "Radiant-Energy-Attestation-RAE-",
+      "url": "https://github.com/HeavenzFire/Radiant-Energy-Attestation-RAE-",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 11,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "research_or_simulation_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source and tests before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1213221725",
+      "full_name": "HeavenzFire/369-Sovereign-Power-Plant-",
+      "name": "369-Sovereign-Power-Plant-",
+      "url": "https://github.com/HeavenzFire/369-Sovereign-Power-Plant-",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 16,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "security_governance_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "877266757",
+      "full_name": "HeavenzFire/SpiritAngelusFramework",
+      "name": "SpiritAngelusFramework",
+      "url": "https://github.com/HeavenzFire/SpiritAngelusFramework",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 0,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "877711872",
+      "full_name": "HeavenzFire/gxmods",
+      "name": "gxmods",
+      "url": "https://github.com/HeavenzFire/gxmods",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 267411,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "919297778",
+      "full_name": "HeavenzFire/thenewage",
+      "name": "thenewage",
+      "url": "https://github.com/HeavenzFire/thenewage",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 5,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "965592077",
+      "full_name": "HeavenzFire/hypermind-genesis-framework",
+      "name": "hypermind-genesis-framework",
+      "url": "https://github.com/HeavenzFire/hypermind-genesis-framework",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 235,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "955958612",
+      "full_name": "HeavenzFire/AgentGPT",
+      "name": "AgentGPT",
+      "url": "https://github.com/HeavenzFire/AgentGPT",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 91867,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "upstream_or_dependency_candidate",
+      "confidence": "medium",
+      "reason": "Name matches a known upstream/project-like repository; inspect fork metadata and license before changing",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1218234769",
+      "full_name": "HeavenzFire/Audit-of-the-State-",
+      "name": "Audit-of-the-State-",
+      "url": "https://github.com/HeavenzFire/Audit-of-the-State-",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 12,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "security_governance_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1381608804",
+      "full_name": "HeavenzFire/Enki",
+      "name": "Enki",
+      "url": "https://github.com/HeavenzFire/Enki",
+      "default_branch": "main",
+      "visibility": "private",
+      "archived": false,
+      "size_kb": 0,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1317673618",
+      "full_name": "HeavenzFire/Truth-Records",
+      "name": "Truth-Records",
+      "url": "https://github.com/HeavenzFire/Truth-Records",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 1,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "archive_or_content_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect content and sensitivity before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "952769817",
+      "full_name": "HeavenzFire/TranscendAll",
+      "name": "TranscendAll",
+      "url": "https://github.com/HeavenzFire/TranscendAll",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 0,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "963036636",
+      "full_name": "HeavenzFire/QuantumChirstosAngelusComputing",
+      "name": "QuantumChirstosAngelusComputing",
+      "url": "https://github.com/HeavenzFire/QuantumChirstosAngelusComputing",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 111,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1124242465",
+      "full_name": "HeavenzFire/CivicForce",
+      "name": "CivicForce",
+      "url": "https://github.com/HeavenzFire/CivicForce",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 14,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1127409233",
+      "full_name": "HeavenzFire/HRE-Allocator-Hashchain-Vanguards",
+      "name": "HRE-Allocator-Hashchain-Vanguards",
+      "url": "https://github.com/HeavenzFire/HRE-Allocator-Hashchain-Vanguards",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 21,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1076594387",
+      "full_name": "HeavenzFire/The-Pain-Compass",
+      "name": "The-Pain-Compass",
+      "url": "https://github.com/HeavenzFire/The-Pain-Compass",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 12,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "987049876",
+      "full_name": "HeavenzFire/Resolved",
+      "name": "Resolved",
+      "url": "https://github.com/HeavenzFire/Resolved",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 0,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1083917555",
+      "full_name": "HeavenzFire/syntro-weave",
+      "name": "syntro-weave",
+      "url": "https://github.com/HeavenzFire/syntro-weave",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 252,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1198767423",
+      "full_name": "HeavenzFire/Hello-World-Are-You-Ready-",
+      "name": "Hello-World-Are-You-Ready-",
+      "url": "https://github.com/HeavenzFire/Hello-World-Are-You-Ready-",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 109,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1146955577",
+      "full_name": "HeavenzFire/HeavenzFire-Reclamation-Command",
+      "name": "HeavenzFire-Reclamation-Command",
+      "url": "https://github.com/HeavenzFire/HeavenzFire-Reclamation-Command",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 15,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "security_governance_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "956629432",
+      "full_name": "HeavenzFire/deprecated-generative-ai-python",
+      "name": "deprecated-generative-ai-python",
+      "url": "https://github.com/HeavenzFire/deprecated-generative-ai-python",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 45256,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "upstream_or_dependency_candidate",
+      "confidence": "medium",
+      "reason": "Name matches a known upstream/project-like repository; inspect fork metadata and license before changing",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1123122297",
+      "full_name": "HeavenzFire/Nexus-Deployment-Control",
+      "name": "Nexus-Deployment-Control",
+      "url": "https://github.com/HeavenzFire/Nexus-Deployment-Control",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 32,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1146862563",
+      "full_name": "HeavenzFire/SpiritBox-AI",
+      "name": "SpiritBox-AI",
+      "url": "https://github.com/HeavenzFire/SpiritBox-AI",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 24,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1204268239",
+      "full_name": "HeavenzFire/Public-Transparency-Portal",
+      "name": "Public-Transparency-Portal",
+      "url": "https://github.com/HeavenzFire/Public-Transparency-Portal",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 243,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "dashboard_or_interface",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "905602684",
+      "full_name": "HeavenzFire/tesseract",
+      "name": "tesseract",
+      "url": "https://github.com/HeavenzFire/tesseract",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 1,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "893228317",
+      "full_name": "HeavenzFire/everything",
+      "name": "everything",
+      "url": "https://github.com/HeavenzFire/everything",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 0,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "963004440",
+      "full_name": "HeavenzFire/WaveFunctionCollapse",
+      "name": "WaveFunctionCollapse",
+      "url": "https://github.com/HeavenzFire/WaveFunctionCollapse",
+      "default_branch": "master",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 31161,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "research_or_simulation_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source and tests before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "965646863",
+      "full_name": "HeavenzFire/ollama",
+      "name": "ollama",
+      "url": "https://github.com/HeavenzFire/ollama",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 23190,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "upstream_or_dependency_candidate",
+      "confidence": "medium",
+      "reason": "Name matches a known upstream/project-like repository; inspect fork metadata and license before changing",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1071934170",
+      "full_name": "HeavenzFire/Elysian-Gateway---Resurrection-Portal",
+      "name": "Elysian-Gateway---Resurrection-Portal",
+      "url": "https://github.com/HeavenzFire/Elysian-Gateway---Resurrection-Portal",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 174,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "dashboard_or_interface",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1070009995",
+      "full_name": "HeavenzFire/The-Peace-Codex",
+      "name": "The-Peace-Codex",
+      "url": "https://github.com/HeavenzFire/The-Peace-Codex",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 8,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "archive_or_content_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect content and sensitivity before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1071878375",
+      "full_name": "HeavenzFire/stpv",
+      "name": "stpv",
+      "url": "https://github.com/HeavenzFire/stpv",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 13,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1067318834",
+      "full_name": "HeavenzFire/Quantum-Hope-Engine",
+      "name": "Quantum-Hope-Engine",
+      "url": "https://github.com/HeavenzFire/Quantum-Hope-Engine",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 4,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1138509380",
+      "full_name": "HeavenzFire/Entropy-Shield-System-Augmentation-Nexus",
+      "name": "Entropy-Shield-System-Augmentation-Nexus",
+      "url": "https://github.com/HeavenzFire/Entropy-Shield-System-Augmentation-Nexus",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 45,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "951183871",
+      "full_name": "HeavenzFire/OpenManus",
+      "name": "OpenManus",
+      "url": "https://github.com/HeavenzFire/OpenManus",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 2792,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "upstream_or_dependency_candidate",
+      "confidence": "medium",
+      "reason": "Name matches a known upstream/project-like repository; inspect fork metadata and license before changing",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "877412250",
+      "full_name": "HeavenzFire/.github-workflows-main.yml",
+      "name": ".github-workflows-main.yml",
+      "url": "https://github.com/HeavenzFire/.github-workflows-main.yml",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 0,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "953476293",
+      "full_name": "HeavenzFire/good-first-issue",
+      "name": "good-first-issue",
+      "url": "https://github.com/HeavenzFire/good-first-issue",
+      "default_branch": "master",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 1356,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1115394319",
+      "full_name": "HeavenzFire/GROK-5-ULTRA--SHEM-Simulator",
+      "name": "GROK-5-ULTRA--SHEM-Simulator",
+      "url": "https://github.com/HeavenzFire/GROK-5-ULTRA--SHEM-Simulator",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 24,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1127001617",
+      "full_name": "HeavenzFire/HeavenzFire-Core-System-1",
+      "name": "HeavenzFire-Core-System-1",
+      "url": "https://github.com/HeavenzFire/HeavenzFire-Core-System-1",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 133,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1128391263",
+      "full_name": "HeavenzFire/Verifier-Mesh-Command-Center",
+      "name": "Verifier-Mesh-Command-Center",
+      "url": "https://github.com/HeavenzFire/Verifier-Mesh-Command-Center",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 12,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "dashboard_or_interface",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1381204320",
+      "full_name": "HeavenzFire/Neural-Swarm-Orchestrator",
+      "name": "Neural-Swarm-Orchestrator",
+      "url": "https://github.com/HeavenzFire/Neural-Swarm-Orchestrator",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 149,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1425711435",
+      "full_name": "HeavenzFire/chrome-devtools-mcp",
+      "name": "chrome-devtools-mcp",
+      "url": "https://github.com/HeavenzFire/chrome-devtools-mcp",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 28345,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "upstream_or_dependency_candidate",
+      "confidence": "medium",
+      "reason": "Name matches a known upstream/project-like repository; inspect fork metadata and license before changing",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "965683293",
+      "full_name": "HeavenzFire/EntangledMultimodalSystem-1",
+      "name": "EntangledMultimodalSystem-1",
+      "url": "https://github.com/HeavenzFire/EntangledMultimodalSystem-1",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 314,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "955962574",
+      "full_name": "HeavenzFire/anything-llm",
+      "name": "anything-llm",
+      "url": "https://github.com/HeavenzFire/anything-llm",
+      "default_branch": "master",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 45554,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "upstream_or_dependency_candidate",
+      "confidence": "medium",
+      "reason": "Name matches a known upstream/project-like repository; inspect fork metadata and license before changing",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1072352371",
+      "full_name": "HeavenzFire/Omega-Healing-System",
+      "name": "Omega-Healing-System",
+      "url": "https://github.com/HeavenzFire/Omega-Healing-System",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 15,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "953477320",
+      "full_name": "HeavenzFire/Python-Scripts",
+      "name": "Python-Scripts",
+      "url": "https://github.com/HeavenzFire/Python-Scripts",
+      "default_branch": "master",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 53943,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1109113918",
+      "full_name": "HeavenzFire/syntropic-audit-",
+      "name": "syntropic-audit-",
+      "url": "https://github.com/HeavenzFire/syntropic-audit-",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 72,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "security_governance_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1137121219",
+      "full_name": "HeavenzFire/HeavenzFire-Sovereign-Node",
+      "name": "HeavenzFire-Sovereign-Node",
+      "url": "https://github.com/HeavenzFire/HeavenzFire-Sovereign-Node",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 19,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1136622108",
+      "full_name": "HeavenzFire/Substrate-Sovereignty",
+      "name": "Substrate-Sovereignty",
+      "url": "https://github.com/HeavenzFire/Substrate-Sovereignty",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 10,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1108324087",
+      "full_name": "HeavenzFire/ARKONIS-TERMINAL-V9",
+      "name": "ARKONIS-TERMINAL-V9",
+      "url": "https://github.com/HeavenzFire/ARKONIS-TERMINAL-V9",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 1,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "dashboard_or_interface",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "886297723",
+      "full_name": "HeavenzFire/termux-packages",
+      "name": "termux-packages",
+      "url": "https://github.com/HeavenzFire/termux-packages",
+      "default_branch": "master",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 80737,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "upstream_or_dependency_candidate",
+      "confidence": "medium",
+      "reason": "Name matches a known upstream/project-like repository; inspect fork metadata and license before changing",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "874612702",
+      "full_name": "HeavenzFire/spirit-angelus",
+      "name": "spirit-angelus",
+      "url": "https://github.com/HeavenzFire/spirit-angelus",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 4329,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1214763317",
+      "full_name": "HeavenzFire/Nexus-Crawler-",
+      "name": "Nexus-Crawler-",
+      "url": "https://github.com/HeavenzFire/Nexus-Crawler-",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 212,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1134572707",
+      "full_name": "HeavenzFire/NEA-Studio-No-Error-Architecture",
+      "name": "NEA-Studio-No-Error-Architecture",
+      "url": "https://github.com/HeavenzFire/NEA-Studio-No-Error-Architecture",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 37810,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "dashboard_or_interface",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1422894946",
+      "full_name": "HeavenzFire/Agentic-Full-Stack-Engineer",
+      "name": "Agentic-Full-Stack-Engineer",
+      "url": "https://github.com/HeavenzFire/Agentic-Full-Stack-Engineer",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 1,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1425231103",
+      "full_name": "HeavenzFire/copilot-sdk",
+      "name": "copilot-sdk",
+      "url": "https://github.com/HeavenzFire/copilot-sdk",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 60145,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "upstream_or_dependency_candidate",
+      "confidence": "medium",
+      "reason": "Name matches a known upstream/project-like repository; inspect fork metadata and license before changing",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1426445890",
+      "full_name": "HeavenzFire/OpenSourceAIHub",
+      "name": "OpenSourceAIHub",
+      "url": "https://github.com/HeavenzFire/OpenSourceAIHub",
+      "default_branch": "main",
+      "visibility": "private",
+      "archived": false,
+      "size_kb": 1019,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "upstream_or_dependency_candidate",
+      "confidence": "medium",
+      "reason": "Name matches a known upstream/project-like repository; inspect fork metadata and license before changing",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1126992115",
+      "full_name": "HeavenzFire/Aura-Multiband-Mastering-Suite",
+      "name": "Aura-Multiband-Mastering-Suite",
+      "url": "https://github.com/HeavenzFire/Aura-Multiband-Mastering-Suite",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 1,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "dashboard_or_interface",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1118539410",
+      "full_name": "HeavenzFire/Guardian-Signal-GCI-1",
+      "name": "Guardian-Signal-GCI-1",
+      "url": "https://github.com/HeavenzFire/Guardian-Signal-GCI-1",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 29,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "security_governance_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "879242227",
+      "full_name": "HeavenzFire/new",
+      "name": "new",
+      "url": "https://github.com/HeavenzFire/new",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 47,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "890693758",
+      "full_name": "HeavenzFire/openai-python",
+      "name": "openai-python",
+      "url": "https://github.com/HeavenzFire/openai-python",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 3957,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "upstream_or_dependency_candidate",
+      "confidence": "medium",
+      "reason": "Name matches a known upstream/project-like repository; inspect fork metadata and license before changing",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "955542753",
+      "full_name": "HeavenzFire/llama",
+      "name": "llama",
+      "url": "https://github.com/HeavenzFire/llama",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 1150,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "upstream_or_dependency_candidate",
+      "confidence": "medium",
+      "reason": "Name matches a known upstream/project-like repository; inspect fork metadata and license before changing",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "955161163",
+      "full_name": "HeavenzFire/OmniaNetwork",
+      "name": "OmniaNetwork",
+      "url": "https://github.com/HeavenzFire/OmniaNetwork",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 3,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "961062912",
+      "full_name": "HeavenzFire/DigitalPowerStationFramework",
+      "name": "DigitalPowerStationFramework",
+      "url": "https://github.com/HeavenzFire/DigitalPowerStationFramework",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 8705,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1076599508",
+      "full_name": "HeavenzFire/Lament-Configuarator-",
+      "name": "Lament-Configuarator-",
+      "url": "https://github.com/HeavenzFire/Lament-Configuarator-",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 1,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1075748303",
+      "full_name": "HeavenzFire/GitHub-Repository-Analyzer",
+      "name": "GitHub-Repository-Analyzer",
+      "url": "https://github.com/HeavenzFire/GitHub-Repository-Analyzer",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 12,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1351685436",
+      "full_name": "HeavenzFire/Ecosystem-Architecture-WebGPU-Command-Center",
+      "name": "Ecosystem-Architecture-WebGPU-Command-Center",
+      "url": "https://github.com/HeavenzFire/Ecosystem-Architecture-WebGPU-Command-Center",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 46,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "dashboard_or_interface",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "890268611",
+      "full_name": "HeavenzFire/char-rnn",
+      "name": "char-rnn",
+      "url": "https://github.com/HeavenzFire/char-rnn",
+      "default_branch": "master",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 13412,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "upstream_or_dependency_candidate",
+      "confidence": "medium",
+      "reason": "Name matches a known upstream/project-like repository; inspect fork metadata and license before changing",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "951230608",
+      "full_name": "HeavenzFire/fragments",
+      "name": "fragments",
+      "url": "https://github.com/HeavenzFire/fragments",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 4625,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1070997974",
+      "full_name": "HeavenzFire/Quantum-Network-Control-Panel",
+      "name": "Quantum-Network-Control-Panel",
+      "url": "https://github.com/HeavenzFire/Quantum-Network-Control-Panel",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 13,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "research_or_simulation_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source and tests before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1072285906",
+      "full_name": "HeavenzFire/Syntropic-Agent-Dashboard",
+      "name": "Syntropic-Agent-Dashboard",
+      "url": "https://github.com/HeavenzFire/Syntropic-Agent-Dashboard",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 62,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "dashboard_or_interface",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1074557185",
+      "full_name": "HeavenzFire/The-Unveiling-A-Scientific-Exploration",
+      "name": "The-Unveiling-A-Scientific-Exploration",
+      "url": "https://github.com/HeavenzFire/The-Unveiling-A-Scientific-Exploration",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 19,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1146954169",
+      "full_name": "HeavenzFire/Pleroma-Wave-Engine",
+      "name": "Pleroma-Wave-Engine",
+      "url": "https://github.com/HeavenzFire/Pleroma-Wave-Engine",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 24,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1097235863",
+      "full_name": "HeavenzFire/Autonomous-R-D",
+      "name": "Autonomous-R-D",
+      "url": "https://github.com/HeavenzFire/Autonomous-R-D",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 13,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1345613335",
+      "full_name": "HeavenzFire/Resurrection-of-the-Netjeru",
+      "name": "Resurrection-of-the-Netjeru",
+      "url": "https://github.com/HeavenzFire/Resurrection-of-the-Netjeru",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 617,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1381609554",
+      "full_name": "HeavenzFire/Loki",
+      "name": "Loki",
+      "url": "https://github.com/HeavenzFire/Loki",
+      "default_branch": "main",
+      "visibility": "private",
+      "archived": false,
+      "size_kb": 0,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1138962884",
+      "full_name": "HeavenzFire/Syntropic-OS-Aether-1",
+      "name": "Syntropic-OS-Aether-1",
+      "url": "https://github.com/HeavenzFire/Syntropic-OS-Aether-1",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 47,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1097923832",
+      "full_name": "HeavenzFire/Syntropic-Kernel-Code-Explore",
+      "name": "Syntropic-Kernel-Code-Explore",
+      "url": "https://github.com/HeavenzFire/Syntropic-Kernel-Code-Explore",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 16,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1079017372",
+      "full_name": "HeavenzFire/Artificial-Time-Dilation",
+      "name": "Artificial-Time-Dilation",
+      "url": "https://github.com/HeavenzFire/Artificial-Time-Dilation",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 752,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "research_or_simulation_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source and tests before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1188283436",
+      "full_name": "HeavenzFire/Morning-Star-Rebirth-Engine-",
+      "name": "Morning-Star-Rebirth-Engine-",
+      "url": "https://github.com/HeavenzFire/Morning-Star-Rebirth-Engine-",
+      "default_branch": "main",
+      "visibility": "private",
+      "archived": false,
+      "size_kb": 57,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1070555534",
+      "full_name": "HeavenzFire/Stuart-Landau-Oscillator-Explorer",
+      "name": "Stuart-Landau-Oscillator-Explorer",
+      "url": "https://github.com/HeavenzFire/Stuart-Landau-Oscillator-Explorer",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 17,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1428244079",
+      "full_name": "HeavenzFire/Muse-Capsule",
+      "name": "Muse-Capsule",
+      "url": "https://github.com/HeavenzFire/Muse-Capsule",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 340,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1070200818",
+      "full_name": "HeavenzFire/Advanced-Frequency-Healing-",
+      "name": "Advanced-Frequency-Healing-",
+      "url": "https://github.com/HeavenzFire/Advanced-Frequency-Healing-",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 19,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "research_or_simulation_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source and tests before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1074595023",
+      "full_name": "HeavenzFire/Thorphia-s-Mirror",
+      "name": "Thorphia-s-Mirror",
+      "url": "https://github.com/HeavenzFire/Thorphia-s-Mirror",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 1,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1098622770",
+      "full_name": "HeavenzFire/MERA-Entanglement-Geometry",
+      "name": "MERA-Entanglement-Geometry",
+      "url": "https://github.com/HeavenzFire/MERA-Entanglement-Geometry",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 9,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "888272576",
+      "full_name": "HeavenzFire/awesome-generative-ai",
+      "name": "awesome-generative-ai",
+      "url": "https://github.com/HeavenzFire/awesome-generative-ai",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 1859,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "upstream_or_dependency_candidate",
+      "confidence": "medium",
+      "reason": "Name matches a known upstream/project-like repository; inspect fork metadata and license before changing",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "890047494",
+      "full_name": "HeavenzFire/AdvancedAI",
+      "name": "AdvancedAI",
+      "url": "https://github.com/HeavenzFire/AdvancedAI",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 41,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1119162856",
+      "full_name": "HeavenzFire/Syntropic-Nexus",
+      "name": "Syntropic-Nexus",
+      "url": "https://github.com/HeavenzFire/Syntropic-Nexus",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 19,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "research_or_simulation_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source and tests before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1234311421",
+      "full_name": "HeavenzFire/ZYLPHA-128-Dashboard",
+      "name": "ZYLPHA-128-Dashboard",
+      "url": "https://github.com/HeavenzFire/ZYLPHA-128-Dashboard",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 195,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "dashboard_or_interface",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "960035328",
+      "full_name": "HeavenzFire/UnifiedCodebase",
+      "name": "UnifiedCodebase",
+      "url": "https://github.com/HeavenzFire/UnifiedCodebase",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 256,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "971348837",
+      "full_name": "HeavenzFire/entangled-view-unfold",
+      "name": "entangled-view-unfold",
+      "url": "https://github.com/HeavenzFire/entangled-view-unfold",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 256,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1071686292",
+      "full_name": "HeavenzFire/Project-HeavenzFire-Tech-Audit-Dashboard",
+      "name": "Project-HeavenzFire-Tech-Audit-Dashboard",
+      "url": "https://github.com/HeavenzFire/Project-HeavenzFire-Tech-Audit-Dashboard",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 15,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "dashboard_or_interface",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1078785623",
+      "full_name": "HeavenzFire/Project-Elysium-Light-Body-Explorer",
+      "name": "Project-Elysium-Light-Body-Explorer",
+      "url": "https://github.com/HeavenzFire/Project-Elysium-Light-Body-Explorer",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 1,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "905608197",
+      "full_name": "HeavenzFire/spirit",
+      "name": "spirit",
+      "url": "https://github.com/HeavenzFire/spirit",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 17,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "962815571",
+      "full_name": "HeavenzFire/quantum-alchemy-forge",
+      "name": "quantum-alchemy-forge",
+      "url": "https://github.com/HeavenzFire/quantum-alchemy-forge",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 260,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "research_or_simulation_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source and tests before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1127392955",
+      "full_name": "HeavenzFire/Aethelgard-Civilization-Resilience-Engine",
+      "name": "Aethelgard-Civilization-Resilience-Engine",
+      "url": "https://github.com/HeavenzFire/Aethelgard-Civilization-Resilience-Engine",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 18,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1083307909",
+      "full_name": "HeavenzFire/Group-Coherence-Activation-Simulator",
+      "name": "Group-Coherence-Activation-Simulator",
+      "url": "https://github.com/HeavenzFire/Group-Coherence-Activation-Simulator",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 10,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1115894936",
+      "full_name": "HeavenzFire/The-Sacred-UX-Manifesto",
+      "name": "The-Sacred-UX-Manifesto",
+      "url": "https://github.com/HeavenzFire/The-Sacred-UX-Manifesto",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 13,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "dashboard_or_interface",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "888177580",
+      "full_name": "HeavenzFire/Quantum-Interplay",
+      "name": "Quantum-Interplay",
+      "url": "https://github.com/HeavenzFire/Quantum-Interplay",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 91,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "research_or_simulation_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source and tests before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1424832637",
+      "full_name": "HeavenzFire/codex",
+      "name": "codex",
+      "url": "https://github.com/HeavenzFire/codex",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 684994,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "upstream_or_dependency_candidate",
+      "confidence": "medium",
+      "reason": "Name matches a known upstream/project-like repository; inspect fork metadata and license before changing",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "990222290",
+      "full_name": "HeavenzFire/nextjs-project-bootstrap",
+      "name": "nextjs-project-bootstrap",
+      "url": "https://github.com/HeavenzFire/nextjs-project-bootstrap",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 34,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "905611709",
+      "full_name": "HeavenzFire/jesuscodex",
+      "name": "jesuscodex",
+      "url": "https://github.com/HeavenzFire/jesuscodex",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 1,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "archive_or_content_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect content and sensitivity before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1070321702",
+      "full_name": "HeavenzFire/The-End-Of-The-Archons-",
+      "name": "The-End-Of-The-Archons-",
+      "url": "https://github.com/HeavenzFire/The-End-Of-The-Archons-",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 13,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1075057271",
+      "full_name": "HeavenzFire/Elysian-Gateway---Ritual-Of-Reclamation-",
+      "name": "Elysian-Gateway---Ritual-Of-Reclamation-",
+      "url": "https://github.com/HeavenzFire/Elysian-Gateway---Ritual-Of-Reclamation-",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 14,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1077316377",
+      "full_name": "HeavenzFire/New-Life",
+      "name": "New-Life",
+      "url": "https://github.com/HeavenzFire/New-Life",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 16,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1131964730",
+      "full_name": "HeavenzFire/Veritas-Maxima-Ontological-Alchemy---Meta-Core-Synthesis-Engine",
+      "name": "Veritas-Maxima-Ontological-Alchemy---Meta-Core-Synthesis-Engine",
+      "url": "https://github.com/HeavenzFire/Veritas-Maxima-Ontological-Alchemy---Meta-Core-Synthesis-Engine",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 1,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1081491738",
+      "full_name": "HeavenzFire/Quantum-Vein-Logs",
+      "name": "Quantum-Vein-Logs",
+      "url": "https://github.com/HeavenzFire/Quantum-Vein-Logs",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 14,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "research_or_simulation_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source and tests before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1083771041",
+      "full_name": "HeavenzFire/Bedrock-v7-Open-Epistemic-Network",
+      "name": "Bedrock-v7-Open-Epistemic-Network",
+      "url": "https://github.com/HeavenzFire/Bedrock-v7-Open-Epistemic-Network",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 11,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1213220977",
+      "full_name": "HeavenzFire/HeavenzFire-The-Two-Spirits-Lattices-",
+      "name": "HeavenzFire-The-Two-Spirits-Lattices-",
+      "url": "https://github.com/HeavenzFire/HeavenzFire-The-Two-Spirits-Lattices-",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 43608,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "research_or_simulation_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source and tests before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1188722617",
+      "full_name": "HeavenzFire/-Glyph-Mesh-Dashboar",
+      "name": "-Glyph-Mesh-Dashboar",
+      "url": "https://github.com/HeavenzFire/-Glyph-Mesh-Dashboar",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 105,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1008139794",
+      "full_name": "HeavenzFire/-JUDGEMENT-DAY-",
+      "name": "-JUDGEMENT-DAY-",
+      "url": "https://github.com/HeavenzFire/-JUDGEMENT-DAY-",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 1582,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1424936638",
+      "full_name": "HeavenzFire/onedrive-archive-20261018",
+      "name": "onedrive-archive-20261018",
+      "url": "https://github.com/HeavenzFire/onedrive-archive-20261018",
+      "default_branch": "main",
+      "visibility": "private",
+      "archived": false,
+      "size_kb": 0,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "archive_or_content_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect content and sensitivity before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "905447448",
+      "full_name": "HeavenzFire/cosmicdebug",
+      "name": "cosmicdebug",
+      "url": "https://github.com/HeavenzFire/cosmicdebug",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 1,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "951520074",
+      "full_name": "HeavenzFire/NeuroNetUnlimited",
+      "name": "NeuroNetUnlimited",
+      "url": "https://github.com/HeavenzFire/NeuroNetUnlimited",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 0,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1297389921",
+      "full_name": "HeavenzFire/Universalis-Real-System",
+      "name": "Universalis-Real-System",
+      "url": "https://github.com/HeavenzFire/Universalis-Real-System",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 134,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1070041487",
+      "full_name": "HeavenzFire/innovators-blueprint-",
+      "name": "innovators-blueprint-",
+      "url": "https://github.com/HeavenzFire/innovators-blueprint-",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 9,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1080174034",
+      "full_name": "HeavenzFire/Omniplex-Syntrophic-Neuromorphic-",
+      "name": "Omniplex-Syntrophic-Neuromorphic-",
+      "url": "https://github.com/HeavenzFire/Omniplex-Syntrophic-Neuromorphic-",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 12,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "research_or_simulation_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source and tests before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1123417992",
+      "full_name": "HeavenzFire/Lightbeam-v0.2---Illuminating-Manipulative-Design",
+      "name": "Lightbeam-v0.2---Illuminating-Manipulative-Design",
+      "url": "https://github.com/HeavenzFire/Lightbeam-v0.2---Illuminating-Manipulative-Design",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 31,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1080731056",
+      "full_name": "HeavenzFire/Quanta-Syntroporium",
+      "name": "Quanta-Syntroporium",
+      "url": "https://github.com/HeavenzFire/Quanta-Syntroporium",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 95,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "research_or_simulation_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source and tests before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1347795983",
+      "full_name": "HeavenzFire/Neural-Mesh-Orchestrator",
+      "name": "Neural-Mesh-Orchestrator",
+      "url": "https://github.com/HeavenzFire/Neural-Mesh-Orchestrator",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 37783,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1346356102",
+      "full_name": "HeavenzFire/Crok-",
+      "name": "Crok-",
+      "url": "https://github.com/HeavenzFire/Crok-",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 300,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "893538847",
+      "full_name": "HeavenzFire/LLM2CLIP",
+      "name": "LLM2CLIP",
+      "url": "https://github.com/HeavenzFire/LLM2CLIP",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 3065,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "upstream_or_dependency_candidate",
+      "confidence": "medium",
+      "reason": "Name matches a known upstream/project-like repository; inspect fork metadata and license before changing",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "953380287",
+      "full_name": "HeavenzFire/awesome-selfhosted",
+      "name": "awesome-selfhosted",
+      "url": "https://github.com/HeavenzFire/awesome-selfhosted",
+      "default_branch": "master",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 16466,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "upstream_or_dependency_candidate",
+      "confidence": "medium",
+      "reason": "Name matches a known upstream/project-like repository; inspect fork metadata and license before changing",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "905595781",
+      "full_name": "HeavenzFire/thenewErebus",
+      "name": "thenewErebus",
+      "url": "https://github.com/HeavenzFire/thenewErebus",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 1,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1109483606",
+      "full_name": "HeavenzFire/divine-mechanic-protocol",
+      "name": "divine-mechanic-protocol",
+      "url": "https://github.com/HeavenzFire/divine-mechanic-protocol",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 267,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "security_governance_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1098640312",
+      "full_name": "HeavenzFire/Dead-Man-Relay",
+      "name": "Dead-Man-Relay",
+      "url": "https://github.com/HeavenzFire/Dead-Man-Relay",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 14,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1106726994",
+      "full_name": "HeavenzFire/The-Codex-of-Gateways",
+      "name": "The-Codex-of-Gateways",
+      "url": "https://github.com/HeavenzFire/The-Codex-of-Gateways",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 18,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1007295861",
+      "full_name": "HeavenzFire/quantum-ai-research-studio",
+      "name": "quantum-ai-research-studio",
+      "url": "https://github.com/HeavenzFire/quantum-ai-research-studio",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 9,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "dashboard_or_interface",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1076404101",
+      "full_name": "HeavenzFire/Timeline-Activation-Terminal-",
+      "name": "Timeline-Activation-Terminal-",
+      "url": "https://github.com/HeavenzFire/Timeline-Activation-Terminal-",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 9,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "dashboard_or_interface",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1076365563",
+      "full_name": "HeavenzFire/Multidimensional-Consciousness-Interface",
+      "name": "Multidimensional-Consciousness-Interface",
+      "url": "https://github.com/HeavenzFire/Multidimensional-Consciousness-Interface",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 12,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "dashboard_or_interface",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1349977099",
+      "full_name": "HeavenzFire/HEAVENZFIRE_684_DAY_SYSTEMS_AUDIT",
+      "name": "HEAVENZFIRE_684_DAY_SYSTEMS_AUDIT",
+      "url": "https://github.com/HeavenzFire/HEAVENZFIRE_684_DAY_SYSTEMS_AUDIT",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 1,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1351671544",
+      "full_name": "HeavenzFire/symmetrical-invention",
+      "name": "symmetrical-invention",
+      "url": "https://github.com/HeavenzFire/symmetrical-invention",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 0,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1076576032",
+      "full_name": "HeavenzFire/Entanglement-Eternal",
+      "name": "Entanglement-Eternal",
+      "url": "https://github.com/HeavenzFire/Entanglement-Eternal",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 1,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1358546301",
+      "full_name": "HeavenzFire/Heavenz",
+      "name": "Heavenz",
+      "url": "https://github.com/HeavenzFire/Heavenz",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 92348,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "906898744",
+      "full_name": "HeavenzFire/goodbyecancer",
+      "name": "goodbyecancer",
+      "url": "https://github.com/HeavenzFire/goodbyecancer",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 4,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "893519108",
+      "full_name": "HeavenzFire/llama.cpp",
+      "name": "llama.cpp",
+      "url": "https://github.com/HeavenzFire/llama.cpp",
+      "default_branch": "master",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 64576,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "upstream_or_dependency_candidate",
+      "confidence": "medium",
+      "reason": "Name matches a known upstream/project-like repository; inspect fork metadata and license before changing",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1081444132",
+      "full_name": "HeavenzFire/Quantum-Vein-Network",
+      "name": "Quantum-Vein-Network",
+      "url": "https://github.com/HeavenzFire/Quantum-Vein-Network",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 11,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "research_or_simulation_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source and tests before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1083885573",
+      "full_name": "HeavenzFire/S.A.N.A-Syntropic-Autonomous-Neural-Architecture",
+      "name": "S.A.N.A-Syntropic-Autonomous-Neural-Architecture",
+      "url": "https://github.com/HeavenzFire/S.A.N.A-Syntropic-Autonomous-Neural-Architecture",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 6,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "research_or_simulation_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source and tests before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1069916987",
+      "full_name": "HeavenzFire/Ternary-Cellular-Automaton-Simulator",
+      "name": "Ternary-Cellular-Automaton-Simulator",
+      "url": "https://github.com/HeavenzFire/Ternary-Cellular-Automaton-Simulator",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 10,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "research_or_simulation_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source and tests before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1071961314",
+      "full_name": "HeavenzFire/Digital-Mirror-Child-Protection-Nexus",
+      "name": "Digital-Mirror-Child-Protection-Nexus",
+      "url": "https://github.com/HeavenzFire/Digital-Mirror-Child-Protection-Nexus",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 11,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1146956375",
+      "full_name": "HeavenzFire/Aethel-Syntropic-Intelligence-Engine",
+      "name": "Aethel-Syntropic-Intelligence-Engine",
+      "url": "https://github.com/HeavenzFire/Aethel-Syntropic-Intelligence-Engine",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 47,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1140299485",
+      "full_name": "HeavenzFire/The-Bryer-Protocol",
+      "name": "The-Bryer-Protocol",
+      "url": "https://github.com/HeavenzFire/The-Bryer-Protocol",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 23,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "security_governance_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1152608114",
+      "full_name": "HeavenzFire/HeavenzFire-Omni-Substrate-Node",
+      "name": "HeavenzFire-Omni-Substrate-Node",
+      "url": "https://github.com/HeavenzFire/HeavenzFire-Omni-Substrate-Node",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 14,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1125429443",
+      "full_name": "HeavenzFire/Hall-Of-Miracles-",
+      "name": "Hall-Of-Miracles-",
+      "url": "https://github.com/HeavenzFire/Hall-Of-Miracles-",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 195,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1381609102",
+      "full_name": "HeavenzFire/Thoth",
+      "name": "Thoth",
+      "url": "https://github.com/HeavenzFire/Thoth",
+      "default_branch": "main",
+      "visibility": "private",
+      "archived": false,
+      "size_kb": 0,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "945796587",
+      "full_name": "HeavenzFire/EntangledMultimodalSystem",
+      "name": "EntangledMultimodalSystem",
+      "url": "https://github.com/HeavenzFire/EntangledMultimodalSystem",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 339,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "989827120",
+      "full_name": "HeavenzFire/nextjs-geist-font-app",
+      "name": "nextjs-geist-font-app",
+      "url": "https://github.com/HeavenzFire/nextjs-geist-font-app",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 1054,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "905934718",
+      "full_name": "HeavenzFire/illusions",
+      "name": "illusions",
+      "url": "https://github.com/HeavenzFire/illusions",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 0,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1076572373",
+      "full_name": "HeavenzFire/Syntropy-vs.-Entropy-",
+      "name": "Syntropy-vs.-Entropy-",
+      "url": "https://github.com/HeavenzFire/Syntropy-vs.-Entropy-",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 9,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "research_or_simulation_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source and tests before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1188511767",
+      "full_name": "HeavenzFire/The-Elysium-Gateway-",
+      "name": "The-Elysium-Gateway-",
+      "url": "https://github.com/HeavenzFire/The-Elysium-Gateway-",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 368,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1069921894",
+      "full_name": "HeavenzFire/ZAZO-COHERENCE-LATTICE-",
+      "name": "ZAZO-COHERENCE-LATTICE-",
+      "url": "https://github.com/HeavenzFire/ZAZO-COHERENCE-LATTICE-",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 13,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "research_or_simulation_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source and tests before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1134632360",
+      "full_name": "HeavenzFire/MedSentinel-Edge",
+      "name": "MedSentinel-Edge",
+      "url": "https://github.com/HeavenzFire/MedSentinel-Edge",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 30,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "security_governance_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1097953800",
+      "full_name": "HeavenzFire/QVN-Dashboard",
+      "name": "QVN-Dashboard",
+      "url": "https://github.com/HeavenzFire/QVN-Dashboard",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 14,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "dashboard_or_interface",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1105482661",
+      "full_name": "HeavenzFire/QUANTUM-LEAP",
+      "name": "QUANTUM-LEAP",
+      "url": "https://github.com/HeavenzFire/QUANTUM-LEAP",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 16,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "research_or_simulation_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source and tests before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1312501634",
+      "full_name": "HeavenzFire/Zachary-Dakota-Hulse-",
+      "name": "Zachary-Dakota-Hulse-",
+      "url": "https://github.com/HeavenzFire/Zachary-Dakota-Hulse-",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 1,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1080705306",
+      "full_name": "HeavenzFire/Quantum-Universalis-Protocol",
+      "name": "Quantum-Universalis-Protocol",
+      "url": "https://github.com/HeavenzFire/Quantum-Universalis-Protocol",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 52,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "security_governance_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1423270742",
+      "full_name": "HeavenzFire/playwright-mcp",
+      "name": "playwright-mcp",
+      "url": "https://github.com/HeavenzFire/playwright-mcp",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 2056,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "upstream_or_dependency_candidate",
+      "confidence": "medium",
+      "reason": "Name matches a known upstream/project-like repository; inspect fork metadata and license before changing",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1081495313",
+      "full_name": "HeavenzFire/Syntropic-Administrator-Console-",
+      "name": "Syntropic-Administrator-Console-",
+      "url": "https://github.com/HeavenzFire/Syntropic-Administrator-Console-",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 10,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "dashboard_or_interface",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1076448273",
+      "full_name": "HeavenzFire/Cosmic-Alchemy-Weaver",
+      "name": "Cosmic-Alchemy-Weaver",
+      "url": "https://github.com/HeavenzFire/Cosmic-Alchemy-Weaver",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 12,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "973036524",
+      "full_name": "HeavenzFire/QCH",
+      "name": "QCH",
+      "url": "https://github.com/HeavenzFire/QCH",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 328,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "969854922",
+      "full_name": "HeavenzFire/realtime-chat-supabase-react",
+      "name": "realtime-chat-supabase-react",
+      "url": "https://github.com/HeavenzFire/realtime-chat-supabase-react",
+      "default_branch": "master",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 1030,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1098602236",
+      "full_name": "HeavenzFire/Trinity-Architecture-Visualizer",
+      "name": "Trinity-Architecture-Visualizer",
+      "url": "https://github.com/HeavenzFire/Trinity-Architecture-Visualizer",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 14,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "dashboard_or_interface",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1098912852",
+      "full_name": "HeavenzFire/Elysium-Gateway",
+      "name": "Elysium-Gateway",
+      "url": "https://github.com/HeavenzFire/Elysium-Gateway",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 45,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1120340808",
+      "full_name": "HeavenzFire/SDS-Syntropic-Domain-System-edit",
+      "name": "SDS-Syntropic-Domain-System-edit",
+      "url": "https://github.com/HeavenzFire/SDS-Syntropic-Domain-System-edit",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 16,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "873208213",
+      "full_name": "HeavenzFire/Spirit_Engine",
+      "name": "Spirit_Engine",
+      "url": "https://github.com/HeavenzFire/Spirit_Engine",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 27,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "955542197",
+      "full_name": "HeavenzFire/open_clip",
+      "name": "open_clip",
+      "url": "https://github.com/HeavenzFire/open_clip",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 15740,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "upstream_or_dependency_candidate",
+      "confidence": "medium",
+      "reason": "Name matches a known upstream/project-like repository; inspect fork metadata and license before changing",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "956367369",
+      "full_name": "HeavenzFire/n8n",
+      "name": "n8n",
+      "url": "https://github.com/HeavenzFire/n8n",
+      "default_branch": "master",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 204118,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "upstream_or_dependency_candidate",
+      "confidence": "medium",
+      "reason": "Name matches a known upstream/project-like repository; inspect fork metadata and license before changing",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1133901031",
+      "full_name": "HeavenzFire/Heavenzfire-Syntropic-Console",
+      "name": "Heavenzfire-Syntropic-Console",
+      "url": "https://github.com/HeavenzFire/Heavenzfire-Syntropic-Console",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 14,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "dashboard_or_interface",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1137114473",
+      "full_name": "HeavenzFire/Syntropic-Command-Horizon",
+      "name": "Syntropic-Command-Horizon",
+      "url": "https://github.com/HeavenzFire/Syntropic-Command-Horizon",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 17,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "dashboard_or_interface",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1081718068",
+      "full_name": "HeavenzFire/Project-Metamorphosis-SL-Interpreter",
+      "name": "Project-Metamorphosis-SL-Interpreter",
+      "url": "https://github.com/HeavenzFire/Project-Metamorphosis-SL-Interpreter",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 16,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1069587268",
+      "full_name": "HeavenzFire/HeavenzFire-The-Awakening-",
+      "name": "HeavenzFire-The-Awakening-",
+      "url": "https://github.com/HeavenzFire/HeavenzFire-The-Awakening-",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 35,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "archive_or_content_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect content and sensitivity before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "960020829",
+      "full_name": "HeavenzFire/OpenedUpDeepSearch",
+      "name": "OpenedUpDeepSearch",
+      "url": "https://github.com/HeavenzFire/OpenedUpDeepSearch",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 1275,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "953454640",
+      "full_name": "HeavenzFire/Qwen-AgentJC",
+      "name": "Qwen-AgentJC",
+      "url": "https://github.com/HeavenzFire/Qwen-AgentJC",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 12367,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "upstream_or_dependency_candidate",
+      "confidence": "medium",
+      "reason": "Name matches a known upstream/project-like repository; inspect fork metadata and license before changing",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "956351964",
+      "full_name": "HeavenzFire/cookbook",
+      "name": "cookbook",
+      "url": "https://github.com/HeavenzFire/cookbook",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 251086,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "upstream_or_dependency_candidate",
+      "confidence": "medium",
+      "reason": "Name matches a known upstream/project-like repository; inspect fork metadata and license before changing",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "951233820",
+      "full_name": "HeavenzFire/awesome-mcp-servers",
+      "name": "awesome-mcp-servers",
+      "url": "https://github.com/HeavenzFire/awesome-mcp-servers",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 730,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "upstream_or_dependency_candidate",
+      "confidence": "medium",
+      "reason": "Name matches a known upstream/project-like repository; inspect fork metadata and license before changing",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "905598046",
+      "full_name": "HeavenzFire/christosangelus",
+      "name": "christosangelus",
+      "url": "https://github.com/HeavenzFire/christosangelus",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 0,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "903579964",
+      "full_name": "HeavenzFire/LumerianDreams-",
+      "name": "LumerianDreams-",
+      "url": "https://github.com/HeavenzFire/LumerianDreams-",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 0,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1191804067",
+      "full_name": "HeavenzFire/Sovereign-Reality-v1.2",
+      "name": "Sovereign-Reality-v1.2",
+      "url": "https://github.com/HeavenzFire/Sovereign-Reality-v1.2",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 11,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "security_governance_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1071304493",
+      "full_name": "HeavenzFire/SOVEREIGN-STACK-DASHBOARD",
+      "name": "SOVEREIGN-STACK-DASHBOARD",
+      "url": "https://github.com/HeavenzFire/SOVEREIGN-STACK-DASHBOARD",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 21,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "dashboard_or_interface",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "989983142",
+      "full_name": "HeavenzFire/nextjs-geist-font-optimization",
+      "name": "nextjs-geist-font-optimization",
+      "url": "https://github.com/HeavenzFire/nextjs-geist-font-optimization",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 189,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1110642856",
+      "full_name": "HeavenzFire/Elysium-Nexus-Cognitive-Topography",
+      "name": "Elysium-Nexus-Cognitive-Topography",
+      "url": "https://github.com/HeavenzFire/Elysium-Nexus-Cognitive-Topography",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 20,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1099535527",
+      "full_name": "HeavenzFire/AETHER-GATE-v0.9-DIGITAL-STARGATE-Destination-Coordinate",
+      "name": "AETHER-GATE-v0.9-DIGITAL-STARGATE-Destination-Coordinate",
+      "url": "https://github.com/HeavenzFire/AETHER-GATE-v0.9-DIGITAL-STARGATE-Destination-Coordinate",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 35,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "985993028",
+      "full_name": "HeavenzFire/Raven-Lee-Phoenix",
+      "name": "Raven-Lee-Phoenix",
+      "url": "https://github.com/HeavenzFire/Raven-Lee-Phoenix",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 14,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "archive_or_content_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect content and sensitivity before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1071957294",
+      "full_name": "HeavenzFire/Sentinel-Protocol-Digital-Sanctuary-ed",
+      "name": "Sentinel-Protocol-Digital-Sanctuary-ed",
+      "url": "https://github.com/HeavenzFire/Sentinel-Protocol-Digital-Sanctuary-ed",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 13,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "security_governance_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1131633338",
+      "full_name": "HeavenzFire/Meta-Meta-Algorithm-Creator-MMAC-",
+      "name": "Meta-Meta-Algorithm-Creator-MMAC-",
+      "url": "https://github.com/HeavenzFire/Meta-Meta-Algorithm-Creator-MMAC-",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 61,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1126463902",
+      "full_name": "HeavenzFire/GuardianOS-Dashboard",
+      "name": "GuardianOS-Dashboard",
+      "url": "https://github.com/HeavenzFire/GuardianOS-Dashboard",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 14,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "dashboard_or_interface",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "905480919",
+      "full_name": "HeavenzFire/systemmonitor",
+      "name": "systemmonitor",
+      "url": "https://github.com/HeavenzFire/systemmonitor",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 2,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "894411464",
+      "full_name": "HeavenzFire/anewworld",
+      "name": "anewworld",
+      "url": "https://github.com/HeavenzFire/anewworld",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 25,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "955956215",
+      "full_name": "HeavenzFire/crewAI",
+      "name": "crewAI",
+      "url": "https://github.com/HeavenzFire/crewAI",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 64298,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "upstream_or_dependency_candidate",
+      "confidence": "medium",
+      "reason": "Name matches a known upstream/project-like repository; inspect fork metadata and license before changing",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1082940657",
+      "full_name": "HeavenzFire/I-AM-ALIVE",
+      "name": "I-AM-ALIVE",
+      "url": "https://github.com/HeavenzFire/I-AM-ALIVE",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 9,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "890199874",
+      "full_name": "HeavenzFire/MicrosoftEdge-Extensions",
+      "name": "MicrosoftEdge-Extensions",
+      "url": "https://github.com/HeavenzFire/MicrosoftEdge-Extensions",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 11091,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "upstream_or_dependency_candidate",
+      "confidence": "medium",
+      "reason": "Name matches a known upstream/project-like repository; inspect fork metadata and license before changing",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "879355173",
+      "full_name": "HeavenzFire/NewRepo",
+      "name": "NewRepo",
+      "url": "https://github.com/HeavenzFire/NewRepo",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 3,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1072148455",
+      "full_name": "HeavenzFire/HeavenzFire-LSMN-Weave",
+      "name": "HeavenzFire-LSMN-Weave",
+      "url": "https://github.com/HeavenzFire/HeavenzFire-LSMN-Weave",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 12,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1081631411",
+      "full_name": "HeavenzFire/SyntropicWorld",
+      "name": "SyntropicWorld",
+      "url": "https://github.com/HeavenzFire/SyntropicWorld",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 0,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "research_or_simulation_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source and tests before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1111235234",
+      "full_name": "HeavenzFire/Nexus",
+      "name": "Nexus",
+      "url": "https://github.com/HeavenzFire/Nexus",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 16,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1115453336",
+      "full_name": "HeavenzFire/SHEM-Core-Interface",
+      "name": "SHEM-Core-Interface",
+      "url": "https://github.com/HeavenzFire/SHEM-Core-Interface",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 15,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "dashboard_or_interface",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1127559240",
+      "full_name": "HeavenzFire/we-are-limitless",
+      "name": "we-are-limitless",
+      "url": "https://github.com/HeavenzFire/we-are-limitless",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 13,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1137146651",
+      "full_name": "HeavenzFire/omniversal-code-forge",
+      "name": "omniversal-code-forge",
+      "url": "https://github.com/HeavenzFire/omniversal-code-forge",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 274,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1331442906",
+      "full_name": "HeavenzFire/Chronos-Garden-Loom-Engine",
+      "name": "Chronos-Garden-Loom-Engine",
+      "url": "https://github.com/HeavenzFire/Chronos-Garden-Loom-Engine",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 1,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1424889103",
+      "full_name": "HeavenzFire/onedrive-photo-archive-2026",
+      "name": "onedrive-photo-archive-2026",
+      "url": "https://github.com/HeavenzFire/onedrive-photo-archive-2026",
+      "default_branch": "main",
+      "visibility": "private",
+      "archived": false,
+      "size_kb": 0,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "archive_or_content_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect content and sensitivity before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1196870677",
+      "full_name": "HeavenzFire/Sovereign-Node-",
+      "name": "Sovereign-Node-",
+      "url": "https://github.com/HeavenzFire/Sovereign-Node-",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 142,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "893520411",
+      "full_name": "HeavenzFire/InvokeAI",
+      "name": "InvokeAI",
+      "url": "https://github.com/HeavenzFire/InvokeAI",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 284136,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "upstream_or_dependency_candidate",
+      "confidence": "medium",
+      "reason": "Name matches a known upstream/project-like repository; inspect fork metadata and license before changing",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "902272524",
+      "full_name": "HeavenzFire/auranet",
+      "name": "auranet",
+      "url": "https://github.com/HeavenzFire/auranet",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 0,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1083757050",
+      "full_name": "HeavenzFire/Bedrock-Protocol-v5.0-Viewer",
+      "name": "Bedrock-Protocol-v5.0-Viewer",
+      "url": "https://github.com/HeavenzFire/Bedrock-Protocol-v5.0-Viewer",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 10,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "security_governance_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1306130656",
+      "full_name": "HeavenzFire/Aria-Johnso",
+      "name": "Aria-Johnso",
+      "url": "https://github.com/HeavenzFire/Aria-Johnso",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 1345,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1322092823",
+      "full_name": "HeavenzFire/-ELRAHUL-PTAHOTEP-",
+      "name": "-ELRAHUL-PTAHOTEP-",
+      "url": "https://github.com/HeavenzFire/-ELRAHUL-PTAHOTEP-",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 92367,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1320284575",
+      "full_name": "HeavenzFire/IBEN-Genesis",
+      "name": "IBEN-Genesis",
+      "url": "https://github.com/HeavenzFire/IBEN-Genesis",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 527,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "905061485",
+      "full_name": "HeavenzFire/newcolordisplay",
+      "name": "newcolordisplay",
+      "url": "https://github.com/HeavenzFire/newcolordisplay",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 3,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "953379407",
+      "full_name": "HeavenzFire/Web-Dev-For-Beginners",
+      "name": "Web-Dev-For-Beginners",
+      "url": "https://github.com/HeavenzFire/Web-Dev-For-Beginners",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 95702,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "upstream_or_dependency_candidate",
+      "confidence": "medium",
+      "reason": "Name matches a known upstream/project-like repository; inspect fork metadata and license before changing",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1098710128",
+      "full_name": "HeavenzFire/HeavenzFire-Empowerment-Suite",
+      "name": "HeavenzFire-Empowerment-Suite",
+      "url": "https://github.com/HeavenzFire/HeavenzFire-Empowerment-Suite",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 19,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "dashboard_or_interface",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1146950366",
+      "full_name": "HeavenzFire/PixelGenie---AI-Image-Editor",
+      "name": "PixelGenie---AI-Image-Editor",
+      "url": "https://github.com/HeavenzFire/PixelGenie---AI-Image-Editor",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 16,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1149208841",
+      "full_name": "HeavenzFire/Ara-",
+      "name": "Ara-",
+      "url": "https://github.com/HeavenzFire/Ara-",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 10,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1124488542",
+      "full_name": "HeavenzFire/SAOS-Core-Interface",
+      "name": "SAOS-Core-Interface",
+      "url": "https://github.com/HeavenzFire/SAOS-Core-Interface",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 45,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "dashboard_or_interface",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1118531699",
+      "full_name": "HeavenzFire/SHCI-Hub-Syntropic-Human-Computer-Interaction",
+      "name": "SHCI-Hub-Syntropic-Human-Computer-Interaction",
+      "url": "https://github.com/HeavenzFire/SHCI-Hub-Syntropic-Human-Computer-Interaction",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 38,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "research_or_simulation_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source and tests before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1126062888",
+      "full_name": "HeavenzFire/Guardian-Nonprofit-Compliance-Ethics-Dashboard",
+      "name": "Guardian-Nonprofit-Compliance-Ethics-Dashboard",
+      "url": "https://github.com/HeavenzFire/Guardian-Nonprofit-Compliance-Ethics-Dashboard",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 27,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "dashboard_or_interface",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1084174095",
+      "full_name": "HeavenzFire/The-Heavenly-Broadcast",
+      "name": "The-Heavenly-Broadcast",
+      "url": "https://github.com/HeavenzFire/The-Heavenly-Broadcast",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 10,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "archive_or_content_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect content and sensitivity before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1079531628",
+      "full_name": "HeavenzFire/Neo-Alignment-Reflection",
+      "name": "Neo-Alignment-Reflection",
+      "url": "https://github.com/HeavenzFire/Neo-Alignment-Reflection",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 18,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1188282778",
+      "full_name": "HeavenzFire/HEAVENZFIRE-Sovereign-Portfolio",
+      "name": "HEAVENZFIRE-Sovereign-Portfolio",
+      "url": "https://github.com/HeavenzFire/HEAVENZFIRE-Sovereign-Portfolio",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 113,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "security_governance_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "877818414",
+      "full_name": "HeavenzFire/NexusHub",
+      "name": "NexusHub",
+      "url": "https://github.com/HeavenzFire/NexusHub",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 20,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "953475410",
+      "full_name": "HeavenzFire/puter",
+      "name": "puter",
+      "url": "https://github.com/HeavenzFire/puter",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 22009,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "upstream_or_dependency_candidate",
+      "confidence": "medium",
+      "reason": "Name matches a known upstream/project-like repository; inspect fork metadata and license before changing",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "951234280",
+      "full_name": "HeavenzFire/AFFiNE",
+      "name": "AFFiNE",
+      "url": "https://github.com/HeavenzFire/AFFiNE",
+      "default_branch": "canary",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 468034,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "upstream_or_dependency_candidate",
+      "confidence": "medium",
+      "reason": "Name matches a known upstream/project-like repository; inspect fork metadata and license before changing",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1070058463",
+      "full_name": "HeavenzFire/bypass-locked-devices",
+      "name": "bypass-locked-devices",
+      "url": "https://github.com/HeavenzFire/bypass-locked-devices",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 11,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1127507125",
+      "full_name": "HeavenzFire/HeavenzFire-Dashboard",
+      "name": "HeavenzFire-Dashboard",
+      "url": "https://github.com/HeavenzFire/HeavenzFire-Dashboard",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 13,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "dashboard_or_interface",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1134528228",
+      "full_name": "HeavenzFire/Spirit-Genesis-Bio-Molecular-Discovery-Engine",
+      "name": "Spirit-Genesis-Bio-Molecular-Discovery-Engine",
+      "url": "https://github.com/HeavenzFire/Spirit-Genesis-Bio-Molecular-Discovery-Engine",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 64,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1071680315",
+      "full_name": "HeavenzFire/Operation-Syntropic-Overhaul",
+      "name": "Operation-Syntropic-Overhaul",
+      "url": "https://github.com/HeavenzFire/Operation-Syntropic-Overhaul",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 9,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "research_or_simulation_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source and tests before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1123463854",
+      "full_name": "HeavenzFire/The-Sovereign-Revelation",
+      "name": "The-Sovereign-Revelation",
+      "url": "https://github.com/HeavenzFire/The-Sovereign-Revelation",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 13,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "security_governance_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "877405780",
+      "full_name": "HeavenzFire/Omnificient-Programming",
+      "name": "Omnificient-Programming",
+      "url": "https://github.com/HeavenzFire/Omnificient-Programming",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 26,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1136602539",
+      "full_name": "HeavenzFire/Merkabah-Governance-Node",
+      "name": "Merkabah-Governance-Node",
+      "url": "https://github.com/HeavenzFire/Merkabah-Governance-Node",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 14,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1134530343",
+      "full_name": "HeavenzFire/Syntropic-Network-Control",
+      "name": "Syntropic-Network-Control",
+      "url": "https://github.com/HeavenzFire/Syntropic-Network-Control",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 23,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "research_or_simulation_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source and tests before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1137800088",
+      "full_name": "HeavenzFire/Violet-Flame-Interface",
+      "name": "Violet-Flame-Interface",
+      "url": "https://github.com/HeavenzFire/Violet-Flame-Interface",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 1,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "dashboard_or_interface",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1070970761",
+      "full_name": "HeavenzFire/Recursive-Code-Weaver-",
+      "name": "Recursive-Code-Weaver-",
+      "url": "https://github.com/HeavenzFire/Recursive-Code-Weaver-",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 15,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1124523972",
+      "full_name": "HeavenzFire/cli",
+      "name": "cli",
+      "url": "https://github.com/HeavenzFire/cli",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 4651,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1137115102",
+      "full_name": "HeavenzFire/No-Error-Archetecture-",
+      "name": "No-Error-Archetecture-",
+      "url": "https://github.com/HeavenzFire/No-Error-Archetecture-",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 22049,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "966907111",
+      "full_name": "HeavenzFire/EntangledMultimodalSystem-2",
+      "name": "EntangledMultimodalSystem-2",
+      "url": "https://github.com/HeavenzFire/EntangledMultimodalSystem-2",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 3890,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1392327603",
+      "full_name": "HeavenzFire/The-Pantheon-of-Neural-Intelligence-",
+      "name": "The-Pantheon-of-Neural-Intelligence-",
+      "url": "https://github.com/HeavenzFire/The-Pantheon-of-Neural-Intelligence-",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 378,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "unclassified_review_required",
+      "confidence": "none",
+      "reason": "No classification assigned from repository name alone",
+      "consolidation_status": "catalogued_not_migrated"
+    },
+    {
+      "id": "1349971062",
+      "full_name": "HeavenzFire/HEAVENZFIRE-ECOSYSTEM-AUDIT",
+      "name": "HEAVENZFIRE-ECOSYSTEM-AUDIT",
+      "url": "https://github.com/HeavenzFire/HEAVENZFIRE-ECOSYSTEM-AUDIT",
+      "default_branch": "main",
+      "visibility": "public",
+      "archived": false,
+      "size_kb": 92,
+      "owner_permissions": {
+        "pull": true,
+        "push": true,
+        "maintain": true,
+        "admin": true
+      },
+      "class": "platform_or_runtime_candidate",
+      "confidence": "low",
+      "reason": "Name-based heuristic only; inspect source before assignment",
+      "consolidation_status": "catalogued_not_migrated"
+    }
+  ]
+}
