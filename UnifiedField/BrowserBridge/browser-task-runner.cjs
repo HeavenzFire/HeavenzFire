@@ -1,0 +1,199 @@
+'use strict';
+
+const fs = require('node:fs');
+const os = require('node:os');
+const net = require('node:net');
+const path = require('node:path');
+const puppeteer = require('puppeteer-core');
+
+const ROOT = __dirname;
+const EDGE_CANDIDATES = [
+  process.env.HF_BROWSER_EXECUTABLE,
+  path.join(process.env['ProgramFiles(x86)'] || 'C:\\Program Files (x86)', 'Microsoft', 'Edge', 'Application', 'msedge.exe'),
+  path.join(process.env.ProgramFiles || 'C:\\Program Files', 'Microsoft', 'Edge', 'Application', 'msedge.exe')
+].filter(Boolean);
+
+function isValidHostname(hostname) {
+  const unwrapped = hostname.startsWith('[') && hostname.endsWith(']') ? hostname.slice(1, -1) : hostname;
+  if (net.isIP(unwrapped)) return true;
+  if (hostname.length > 253) return false;
+  return hostname.split('.').every(function (label) {
+    return /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(label);
+  });
+}
+
+function validateTask(task) {
+  if (!task || typeof task !== 'object' || Array.isArray(task)) throw new Error('Task must be a JSON object.');
+  if (typeof task.id !== 'string' || !/^[A-Za-z0-9_-]{1,64}$/.test(task.id)) throw new Error('Task id must be 1-64 safe characters.');
+  if (typeof task.url !== 'string' || task.url.length > 2048) throw new Error('Task url is required and must be <= 2048 characters.');
+  const url = new URL(task.url);
+  if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password || url.search || url.hash) {
+    throw new Error('Only HTTP(S) URLs without credentials, query strings, or fragments are permitted.');
+  }
+  if (!Array.isArray(task.allowedOrigins) || task.allowedOrigins.length < 1 || task.allowedOrigins.length > 20) throw new Error('allowedOrigins must contain 1-20 exact origins.');
+  const origins = task.allowedOrigins.map(function (origin) {
+    if (typeof origin !== 'string' || origin !== origin.toLowerCase()) throw new Error('allowedOrigins entries must be lowercase exact HTTP(S) origins.');
+    let parsed;
+    try { parsed = new URL(origin); } catch { throw new Error('allowedOrigins entries must be valid HTTP(S) origins.'); }
+    if (!['http:', 'https:'].includes(parsed.protocol) || parsed.origin !== origin || parsed.username || parsed.password || !isValidHostname(parsed.hostname)) throw new Error('allowedOrigins entries must be canonical origins with valid hostnames and no path, query, or credentials.');
+    return origin;
+  });
+  if (new Set(origins).size !== origins.length || !origins.includes(url.origin)) throw new Error('The initial URL origin must appear exactly once in allowedOrigins.');
+  if (!Array.isArray(task.actions) || task.actions.length > 30) throw new Error('actions must be an array with at most 30 entries.');
+  if (!Array.isArray(task.assertions) || task.assertions.length > 30) throw new Error('assertions must be an array with at most 30 entries.');
+  const timeoutMs = Number(task.timeoutMs || 10000);
+  if (!Number.isInteger(timeoutMs) || timeoutMs < 1000 || timeoutMs > 20000) throw new Error('timeoutMs must be an integer from 1000 to 20000.');
+  for (const a of task.actions) {
+    if (!a || !['click', 'fill', 'waitForText'].includes(a.type) || typeof a.selector !== 'string' || a.selector.length > 300) throw new Error('Each action must be click, fill, or waitForText with a selector <= 300 characters.');
+    if (a.type === 'fill' && (typeof a.value !== 'string' || a.value.length > 2000)) throw new Error('fill value must be a string <= 2000 characters.');
+    if (a.type === 'waitForText' && (typeof a.text !== 'string' || a.text.length > 1000)) throw new Error('waitForText text must be a string <= 1000 characters.');
+  }
+  for (const a of task.assertions) {
+    if (!a || !['textEquals', 'titleEquals', 'pathEquals'].includes(a.type)) throw new Error('Assertions must be textEquals, titleEquals, or pathEquals.');
+    if (a.type === 'textEquals' && (typeof a.selector !== 'string' || typeof a.expected !== 'string')) throw new Error('textEquals requires selector and expected strings.');
+    if (a.type === 'titleEquals' && typeof a.expected !== 'string') throw new Error('titleEquals requires expected string.');
+    if (a.type === 'pathEquals' && (typeof a.expected !== 'string' || !a.expected.startsWith('/') || a.expected.length > 500)) throw new Error('pathEquals requires a path beginning with /.');
+  }
+  return { task: task, url: url, origins: origins, timeoutMs: timeoutMs };
+}
+
+function findEdge() {
+  const edge = EDGE_CANDIDATES.find(function (p) { return p && fs.existsSync(p); });
+  if (!edge) throw new Error('Microsoft Edge executable not found. Set HF_BROWSER_EXECUTABLE to its full path.');
+  return edge;
+}
+
+async function runTask(taskInput) {
+  const checked = validateTask(taskInput);
+  const task = checked.task;
+  const started = Date.now();
+  const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'hf-browser-task-'));
+  const evidencePath = process.env.HF_BROWSER_EVIDENCE_PATH || path.join(ROOT, 'browser-runner-evidence.jsonl');
+  const blockedOrigins = new Set();
+  let browser;
+  try {
+    browser = await puppeteer.launch({
+      executablePath: findEdge(),
+      headless: true,
+      userDataDir: profile,
+      timeout: 10000,
+      protocolTimeout: checked.timeoutMs + 5000,
+      args: [
+        '--disable-background-networking', '--disable-component-update', '--disable-sync',
+        '--disable-extensions', '--no-first-run', '--no-default-browser-check', '--no-proxy-server'
+      ]
+    });
+    const page = await browser.newPage();
+    page.setDefaultTimeout(checked.timeoutMs);
+    page.setDefaultNavigationTimeout(checked.timeoutMs);
+    await page.setRequestInterception(true);
+    page.on('request', function (request) {
+      let origin = '';
+      try { origin = new URL(request.url()).origin; } catch {}
+      if (checked.origins.includes(origin)) request.continue().catch(function () {});
+      else {
+        blockedOrigins.add(origin || 'invalid-url');
+        request.abort('blockedbyclient').catch(function () {});
+      }
+    });
+    const mainTarget = page.target();
+    browser.on('targetcreated', function (target) {
+      if (target === mainTarget || target.type() !== 'page') return;
+      target.page().then(function (popup) { return popup && popup.close(); }).catch(function () {});
+    });
+    page.on('popup', function (popup) { popup.close().catch(function () {}); });
+    await page.evaluateOnNewDocument(function () {
+      // Block script-created windows before page scripts execute; targetcreated is a second guard.
+      window.open = function () { return null; };
+    });
+    await page.goto(task.url, { waitUntil: 'domcontentloaded', timeout: checked.timeoutMs });
+
+    const actionResults = [];
+    for (const action of task.actions) {
+      if (action.type === 'click') await page.click(action.selector);
+      else if (action.type === 'fill') {
+        await page.$eval(action.selector, function (element, value) {
+          element.focus();
+          element.value = value;
+          element.dispatchEvent(new Event('input', { bubbles: true }));
+          element.dispatchEvent(new Event('change', { bubbles: true }));
+        }, action.value);
+      } else {
+        await page.waitForFunction(function (selector, text) {
+          const element = document.querySelector(selector);
+          return !!element && (element.innerText || element.textContent || '').includes(text);
+        }, { timeout: checked.timeoutMs }, action.selector, action.text);
+      }
+      actionResults.push({ type: action.type, ok: true });
+    }
+
+    const assertionResults = [];
+    for (const assertion of task.assertions) {
+      let ok = false;
+      if (assertion.type === 'titleEquals') ok = (await page.title()) === assertion.expected;
+      else if (assertion.type === 'pathEquals') ok = (new URL(page.url())).pathname === assertion.expected;
+      else {
+        const actual = await page.$eval(assertion.selector, function (element) {
+          return (element.innerText || element.textContent || '').trim();
+        }).catch(function () { return null; });
+        ok = actual === assertion.expected;
+      }
+      assertionResults.push({ type: assertion.type, ok: ok });
+      if (!ok) throw new Error('Assertion failed: ' + assertion.type + (assertion.selector ? ' on selector ' + assertion.selector : ''));
+    }
+
+    const result = {
+      schema: 'heavenzfire.browser-task-result.v1',
+      taskId: task.id,
+      status: 'PASS',
+      browser: 'Microsoft Edge headless, isolated temporary profile',
+      durationMs: Date.now() - started,
+      actionResults: actionResults,
+      assertionResults: assertionResults,
+      blockedOrigins: Array.from(blockedOrigins).sort(),
+      outboundPolicy: 'Page requests are intercepted; only exact allowedOrigins are continued.',
+      externalCallsAllowed: false
+    };
+    fs.appendFileSync(evidencePath, JSON.stringify({ at: new Date().toISOString(), taskId: task.id, status: result.status, durationMs: result.durationMs, blockedOrigins: result.blockedOrigins }) + os.EOL, 'utf8');
+    return result;
+  } catch (error) {
+    const result = {
+      schema: 'heavenzfire.browser-task-result.v1',
+      taskId: task.id,
+      status: 'FAIL',
+      durationMs: Date.now() - started,
+      error: String(error && error.message || error).slice(0, 300),
+      blockedOrigins: Array.from(blockedOrigins).sort(),
+      externalCallsAllowed: false
+    };
+    try { fs.appendFileSync(evidencePath, JSON.stringify({ at: new Date().toISOString(), taskId: task.id, status: result.status, durationMs: result.durationMs, error: result.error, blockedOrigins: result.blockedOrigins }) + os.EOL, 'utf8'); } catch {}
+    return result;
+  } finally {
+    if (browser) { try { await browser.close(); } catch {} }
+    try { fs.rmSync(profile, { recursive: true, force: true }); } catch {}
+  }
+}
+
+if (require.main === module) {
+  const arg = process.argv[2];
+  if (!arg) {
+    process.stderr.write('Usage: node browser-task-runner.cjs <task.json>\n');
+    process.exitCode = 2;
+  } else {
+    try {
+      const task = JSON.parse(fs.readFileSync(path.resolve(arg), 'utf8'));
+      runTask(task).then(function (result) {
+        process.stdout.write(JSON.stringify(result, null, 2) + '\n');
+        if (result.status !== 'PASS') process.exitCode = 1;
+      }).catch(function (error) {
+        process.stderr.write(String(error && error.message || error) + '\n');
+        process.exitCode = 1;
+      });
+    } catch (error) {
+      process.stderr.write(String(error && error.message || error) + '\n');
+      process.exitCode = 1;
+    }
+  }
+}
+
+module.exports = { validateTask: validateTask, runTask: runTask };
