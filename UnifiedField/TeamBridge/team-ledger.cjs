@@ -8,6 +8,7 @@ const { createEnvelope, validateEnvelope } = require('../PropagationFabric/fabri
 const APPROVAL_REQUIRED = new Set([
   'HIGH', 'PRIVILEGED', 'DESTRUCTIVE', 'CREDENTIAL', 'NETWORK_CHANGE', 'INSTALL', 'EXTERNAL'
 ]);
+const KNOWN_RISK_CLASSES = new Set(['LOW', 'MEDIUM', ...APPROVAL_REQUIRED]);
 const TASK_STATUSES = new Set([
   'proposed', 'awaiting_approval', 'approved', 'queued', 'running',
   'succeeded', 'failed', 'blocked', 'cancelled'
@@ -144,8 +145,10 @@ function createTeamStore(options = {}) {
     if (!input || typeof input !== 'object' || Array.isArray(input)) throw new TypeError('task_object_required');
     const title = requireText(input.title, 'task_title', 200);
     const owner = requireText(input.owner || 'team-coordinator', 'task_owner', 100);
-    const riskClass = String(input.risk_class || 'LOW').toUpperCase();
-    if (!/^[A-Z_]{2,32}$/.test(riskClass)) throw new TypeError('task_risk_class_invalid');
+    const riskInput = input.risk_class === undefined ? 'LOW' : input.risk_class;
+    if (typeof riskInput !== 'string' || !riskInput.trim()) throw new TypeError('task_risk_class_invalid');
+    const riskClass = riskInput.trim().toUpperCase();
+    if (!KNOWN_RISK_CLASSES.has(riskClass)) throw new TypeError('task_risk_class_unsupported');
     const idempotencyKey = input.idempotency_key === undefined ? null : requireText(input.idempotency_key, 'idempotency_key', 128);
     const payload = input.payload === undefined ? {} : input.payload;
     if (!payload || typeof payload !== 'object' || Array.isArray(payload)) throw new TypeError('task_payload_object_required');
