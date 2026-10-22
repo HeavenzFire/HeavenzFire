@@ -36,14 +36,22 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           if ($env:RUNNER_OS -ne 'Windows') { throw "Expected Windows; got $env:RUNNER_OS" }
-          Write-Output "HF_DESKTOP_BRIDGE=CONNECTED"
+          $nodeCommand = Get-Command node -ErrorAction SilentlyContinue
+          if (-not $nodeCommand) { throw 'Required tool missing: node' }
+          $gitCommand = Get-Command git -ErrorAction SilentlyContinue
+          if (-not $gitCommand) { throw 'Required tool missing: git' }
+          $nodeVersion = (& node --version 2>&1 | Select-Object -First 1) -join ' '
+          if ($LASTEXITCODE -ne 0 -or $nodeVersion -notmatch '^v\d+\.\d+') { throw 'Node.js version probe failed' }
+          $gitVersion = (& git --version 2>&1 | Select-Object -First 1) -join ' '
+          if ($LASTEXITCODE -ne 0 -or $gitVersion -notmatch '^git version ') { throw 'Git version probe failed' }
+          Write-Output 'HF_DESKTOP_BRIDGE=CONNECTED'
           Write-Output ("RUNNER_OS=" + $env:RUNNER_OS)
           Write-Output ("RUNNER_ARCH=" + $env:RUNNER_ARCH)
-          Write-Output ("NODE=" + ((node --version 2>&1 | Select-Object -First 1) -join ' '))
-          Write-Output ("GIT=" + ((git --version 2>&1 | Select-Object -First 1) -join ' '))
+          Write-Output ("NODE=" + $nodeVersion)
+          Write-Output ("GIT=" + $gitVersion)
           Write-Output ("REPOSITORY=" + $env:GITHUB_REPOSITORY)
           Write-Output ("REVISION=" + $env:GITHUB_SHA)
-          Write-Output "No credentials, environment dumps, usernames, or filesystem inventories are emitted."
+          Write-Output 'No credentials, environment dumps, usernames, or filesystem inventories are emitted.'
 
       - name: Probe local HeavenzFire runtime endpoints
         if: inputs.operation == 'local_runtime_health'
