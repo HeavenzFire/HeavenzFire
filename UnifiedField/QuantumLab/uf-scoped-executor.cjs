@@ -64,23 +64,34 @@ function createScopedExecutor(options = {}) {
     return target;
   }
 
+  function canonicalizeTarget(target) {
+    const parent = fs.realpathSync(path.dirname(target));
+    if (!isWithinRoot(parent)) throw new Error('resolved parent escapes workspace root');
+    const canonicalTarget = path.join(parent, path.basename(target));
+    // Use the resolved parent for subsequent I/O so a later symlink swap on the
+    // original lexical path cannot redirect the operation outside the workspace.
+    assertNoSymlinkComponents(canonicalTarget);
+    return canonicalTarget;
+  }
+
   function ensureSafeParentDirectories(target) {
     const parent = path.dirname(target);
     const relative = path.relative(root, parent);
     let cursor = root;
     for (const component of relative.split(path.sep).filter(Boolean)) {
-      cursor = path.join(cursor, component);
+      const candidate = path.join(cursor, component);
       try {
-        const stat = fs.lstatSync(cursor);
+        const stat = fs.lstatSync(candidate);
         if (stat.isSymbolicLink() || !stat.isDirectory()) throw new Error('workspace parent must be a non-symlink directory');
       } catch (error) {
         if (error.code !== 'ENOENT') throw error;
-        fs.mkdirSync(cursor);
-        const stat = fs.lstatSync(cursor);
-        if (stat.isSymbolicLink() || !stat.isDirectory()) throw new Error('created workspace parent is not a safe directory');
+        fs.mkdirSync(candidate);
       }
+      const resolved = fs.realpathSync(candidate);
+      if (!isWithinRoot(resolved) || resolved !== candidate) throw new Error('workspace parent resolved outside the canonical workspace path');
+      cursor = resolved;
     }
-    assertNoSymlinkComponents(target);
+    assertNoSymlinkComponents(path.join(cursor, path.basename(target)));
   }
 
   function capabilities() {
@@ -100,16 +111,19 @@ function createScopedExecutor(options = {}) {
       if (!root) throw new Error(rootError || 'workspace_root_not_configured');
       if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('input must be an object');
       if (action === 'workspace.read_file') {
-        const target = resolvePath(input.path);
-        const stat = fs.lstatSync(target);
-        if (stat.isSymbolicLink() || !stat.isFile() || stat.size > MAX_FILE_BYTES) throw new Error('file missing, unsafe, not regular, or exceeds 256 KiB');
-        assertNoSymlinkComponents(target);
-        return { ok: true, path: input.path, content: fs.readFileSync(target, 'utf8') };
+        const target = canonicalizeTarget(resolvePath(input.path));
+        const fd = fs.openSync(target, fs.constants.O_RDONLY | (fs.constants.O_NOFOLLOW || 0));
+        try {
+          const stat = fs.fstatSync(fd);
+          if (!stat.isFile() || stat.size > MAX_FILE_BYTES) throw new Error('file missing, unsafe, not regular, or exceeds 256 KiB');
+          return { ok: true, path: input.path, content: fs.readFileSync(fd, 'utf8') };
+        } finally { fs.closeSync(fd); }
       }
       if (action === 'workspace.write_file') {
-        const target = resolvePath(input.path);
+        let target = resolvePath(input.path);
         if (typeof input.content !== 'string' || Buffer.byteLength(input.content, 'utf8') > MAX_FILE_BYTES) throw new Error('content must be a string no larger than 256 KiB');
         ensureSafeParentDirectories(target);
+        target = canonicalizeTarget(target);
         if (input.overwrite === true) {
           const temp = target + '.hf-tmp-' + process.pid + '-' + require('node:crypto').randomBytes(6).toString('hex');
           try {
@@ -129,7 +143,9 @@ function createScopedExecutor(options = {}) {
         return { ok: true, path: input.path, bytes_written: Buffer.byteLength(input.content, 'utf8') };
       }
       if (action === 'git.status') {
-        const cwd = resolvePath(input.path || '.');
+        const requestedCwd = resolvePath(input.path || '.');
+        const cwd = fs.realpathSync(requestedCwd);
+        if (!isWithinRoot(cwd)) throw new Error('Git working directory escapes workspace root');
         const discovered = await execFileAsync('git', ['rev-parse', '--show-toplevel'], { cwd, timeout: 5000, windowsHide: true, maxBuffer: 16 * 1024 });
         const gitRoot = fs.realpathSync(discovered.stdout.trim());
         if (gitRoot !== root) throw new Error('git worktree root must exactly match the configured workspace root');
