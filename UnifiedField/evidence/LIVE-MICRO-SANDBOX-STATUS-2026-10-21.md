@@ -139,6 +139,19 @@ The dashboard-worker token-budget test initially required 160 tokens while the w
 3. Keep security invariants intact: generated code is not executed; unsafe tool claims remain critical failures; the 1-GiB model admission guard is not bypassed.
 4. The `planetary-mesh-global` submodule cleanup error remains unresolved. No valid origin URL has been established, so the submodule was not deleted and no URL was invented.
 5. New commits made through the repository connector have no associated fresh workflow runs visible for their exact head SHAs yet. CI is therefore pending, not passed.
-6. PR #78 still reports mergeability conflicts; passing its isolated test suite does not make it mergeable.
+6. At the latest metadata check (2026-10-22T04:10Z), PR #78 reported mergeable=true, while PR #65 reported mergeable=false. This is only GitHub's mergeability calculation, not approval to merge; fresh CI for the newest heads remains unconfirmed.
 
 No processes were stopped or restarted, no firewall or credential settings were changed, no files were deleted, and no source repository was merged as part of this follow-up.
+
+
+### Cross-document inventory sanity check — 2026-10-22T04:10Z
+
+The PR #79 repository inventory JSON was fetched and parsed independently after its documentation update:
+
+- Declared total: 277 repositories; actual JSON entries: 277.
+- All 277 entries had a repository name/full name and default branch.
+- No duplicate full repository names were found.
+- This validates the catalog's internal shape and uniqueness, not that GitHub search was exhaustive. The consolidation plan correctly retains its explicit completeness caveat.
+- The PR #81 component map also explicitly distinguishes draft integration work from operational runtime capability and leaves GitHub Actions status unconfirmed.
+
+The newest API-created commits on PRs #65 and #78–#81 do not yet have fresh workflow runs visible for their exact head SHAs. The isolated Windows tests above are evidence for the fetched files only; remote CI remains pending.
