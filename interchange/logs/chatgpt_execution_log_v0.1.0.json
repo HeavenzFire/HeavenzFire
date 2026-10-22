@@ -1,17 +1,57 @@
 {
-  "runner": "ChatGPT Python execution environment",
-  "python_version": "3.13.5",
-  "timestamp": "2026-10-21T00:00:00Z",
+  "runner": "ChatGPT conversation tools and JSON structural validation",
+  "timestamp": "2026-10-22T00:00:00Z",
   "checks": [
-    {"test_id": "test_registry_entry_json_parses", "passed": true, "output": "PASS", "detail": ""},
-    {"test_id": "test_export_json_parses", "passed": true, "output": "PASS", "detail": ""},
-    {"test_id": "test_no_claimed_meta_artifact_access", "passed": true, "output": "PASS", "detail": ""},
-    {"test_id": "test_share_url_not_treated_as_api", "passed": true, "output": "PASS", "detail": ""},
-    {"test_id": "test_hash_matches_entry_bytes", "passed": true, "output": "PASS", "detail": "df85c9bafe588d2e9315a31a6d64cea4c2b545a2b734287be6324999ea788f42"}
+    {
+      "test_id": "test_registry_entry_json_parses",
+      "passed": true,
+      "output": "PASS"
+    },
+    {
+      "test_id": "test_export_json_parses",
+      "passed": true,
+      "output": "PASS"
+    },
+    {
+      "test_id": "test_capability_dimensions_are_separate",
+      "passed": true,
+      "output": "PASS"
+    },
+    {
+      "test_id": "test_share_url_not_treated_as_api",
+      "passed": true,
+      "output": "PASS"
+    },
+    {
+      "test_id": "test_sensitive_actions_require_authorization",
+      "passed": true,
+      "output": "PASS"
+    },
+    {
+      "test_id": "test_original_schema_validation",
+      "passed": false,
+      "output": "BLOCKED: exact interchange_schema_v0.1.0.json unavailable"
+    },
+    {
+      "test_id": "test_original_test_interchange_py",
+      "passed": false,
+      "output": "BLOCKED: original test suite unavailable"
+    }
   ],
-  "summary": {"passed": 5, "failed": 0, "total": 5},
+  "summary": {
+    "passed": 5,
+    "failed": 0,
+    "blocked": 2,
+    "total": 7
+  },
+  "artifacts": {
+    "registry_sha256": "223f987d82e806f6d42caadc2c0d93f75817002d7f69117008f1ef8c927421de",
+    "export_git_blob_sha": "f4a622f10a90dae12f4989a7830fa0527f0b84c3"
+  },
   "limitations": [
-    "Meta AI's original JSON Schema and test_interchange.py were not provided to this session.",
-    "These checks validate the newly authored ChatGPT registry/export files, not the original Meta AI artifacts."
+    "These are self-authored structural/policy checks, not the missing original five-test suite.",
+    "The exact interchange_schema_v0.1.0.json was not found in the inspected repository paths.",
+    "No claim is made that the original interchange schema validates this export.",
+    "Dedicated web browsing is reported separately from arbitrary network access in the code sandbox."
   ]
 }
