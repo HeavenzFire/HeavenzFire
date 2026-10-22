@@ -3,7 +3,13 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
-const { createEnvelope, validateEnvelope } = require('../PropagationFabric/fabric-envelope.cjs');
+const fabricCandidates = [
+  path.join(__dirname, '../PropagationFabric/fabric-envelope.cjs'),
+  path.join(__dirname, '../../PropagationFabric/fabric-envelope.cjs')
+];
+const fabricPath = fabricCandidates.find((candidate) => fs.existsSync(candidate));
+if (!fabricPath) throw new Error('propagation_fabric_envelope_not_found');
+const { createEnvelope, validateEnvelope } = require(fabricPath);
 
 const APPROVAL_REQUIRED = new Set([
   'HIGH', 'PRIVILEGED', 'DESTRUCTIVE', 'CREDENTIAL', 'NETWORK_CHANGE', 'INSTALL', 'EXTERNAL'
