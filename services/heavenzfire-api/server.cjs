@@ -106,6 +106,73 @@ async function callOllama(model, messages) {
   }
 }
 
+async function callOpenAICompatible(provider, model, messages) {
+  const configs = {
+    openai: { key: process.env.OPENAI_API_KEY, base: process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1', model: process.env.OPENAI_MODEL || 'gpt-4.1-mini' },
+    mistral: { key: process.env.MISTRAL_API_KEY, base: process.env.MISTRAL_BASE_URL || 'https://api.mistral.ai/v1', model: process.env.MISTRAL_MODEL || 'mistral-small-latest' },
+    qwen: { key: process.env.QWEN_API_KEY, base: process.env.QWEN_BASE_URL, model: process.env.QWEN_MODEL || 'qwen-plus' },
+    groq: { key: process.env.GROQ_API_KEY, base: process.env.GROQ_BASE_URL || 'https://api.groq.com/openai/v1', model: process.env.GROQ_MODEL || 'llama-3.3-70b-versatile' },
+    openrouter: { key: process.env.OPENROUTER_API_KEY, base: process.env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1', model: process.env.OPENROUTER_MODEL || 'openai/gpt-4.1-mini' },
+    custom: { key: process.env.HF_CUSTOM_API_KEY, base: process.env.HF_CUSTOM_API_BASE_URL, model: process.env.HF_CUSTOM_MODEL }
+  };
+  const cfg = configs[provider];
+  if (!cfg || !cfg.key || !cfg.base) throw Object.assign(new Error(provider + ' provider is not configured'), { status: 503, code: 'provider_not_configured' });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    const response = await fetch(cfg.base.replace(/\\/$/, '') + '/chat/completions', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: 'Bearer ' + cfg.key },
+      body: JSON.stringify({ model: model || cfg.model, messages, stream: false }),
+      signal: controller.signal
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw Object.assign(new Error(provider + ' provider request failed'), { status: response.status === 429 ? 429 : 502, code: 'provider_error' });
+    return data.choices?.[0]?.message?.content || '';
+  } finally { clearTimeout(timer); }
+}
+
+async function callAnthropic(model, messages) {
+  const key = process.env.ANTHROPIC_API_KEY;
+  if (!key) throw Object.assign(new Error('Anthropic provider is not configured'), { status: 503, code: 'provider_not_configured' });
+  const system = messages.filter(m => m.role === 'system').map(m => m.content).join('\\n');
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({
+        model: model || process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-5',
+        max_tokens: Number(process.env.ANTHROPIC_MAX_TOKENS || 1024),
+        ...(system ? { system } : {}),
+        messages: messages.filter(m => m.role !== 'system').map(m => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.content }))
+      }),
+      signal: controller.signal
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw Object.assign(new Error('Anthropic provider request failed'), { status: response.status === 429 ? 429 : 502, code: 'provider_error' });
+    return (data.content || []).filter(p => p.type === 'text').map(p => p.text).join('\\n');
+  } finally { clearTimeout(timer); }
+}
+
+function configuredProviders() {
+  const list = [];
+  if (process.env.GEMINI_API_KEY) list.push({ id: process.env.HF_DEFAULT_MODEL || DEFAULT_MODEL, provider: 'gemini' });
+  list.push({ id: process.env.HF_LOCAL_MODEL || 'llama3.2:1b', provider: 'ollama' });
+  const candidates = [
+    ['openai', process.env.OPENAI_API_KEY, process.env.OPENAI_MODEL || 'gpt-4.1-mini'],
+    ['anthropic', process.env.ANTHROPIC_API_KEY, process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-5'],
+    ['mistral', process.env.MISTRAL_API_KEY, process.env.MISTRAL_MODEL || 'mistral-small-latest'],
+    ['qwen', process.env.QWEN_API_KEY && process.env.QWEN_BASE_URL, process.env.QWEN_MODEL || 'qwen-plus'],
+    ['groq', process.env.GROQ_API_KEY, process.env.GROQ_MODEL || 'llama-3.3-70b-versatile'],
+    ['openrouter', process.env.OPENROUTER_API_KEY, process.env.OPENROUTER_MODEL || 'openai/gpt-4.1-mini'],
+    ['custom', process.env.HF_CUSTOM_API_KEY && process.env.HF_CUSTOM_API_BASE_URL && process.env.HF_CUSTOM_MODEL, process.env.HF_CUSTOM_MODEL]
+  ];
+  for (const [provider, enabled, model] of candidates) if (enabled) list.push({ id: model, provider });
+  return list;
+}
+
 function createServer() {
   return http.createServer(async (req, res) => {
     const url = new URL(req.url, 'http://127.0.0.1');
@@ -117,16 +184,20 @@ function createServer() {
         authConfigured: (process.env.HF_API_KEYS || '').split(',').some(s => s.trim()),
         providers: {
           geminiConfigured: Boolean(process.env.GEMINI_API_KEY),
+          openaiConfigured: Boolean(process.env.OPENAI_API_KEY),
+          anthropicConfigured: Boolean(process.env.ANTHROPIC_API_KEY),
+          mistralConfigured: Boolean(process.env.MISTRAL_API_KEY),
+          qwenConfigured: Boolean(process.env.QWEN_API_KEY && process.env.QWEN_BASE_URL),
+          groqConfigured: Boolean(process.env.GROQ_API_KEY),
+          openrouterConfigured: Boolean(process.env.OPENROUTER_API_KEY),
+          customOpenAICompatibleConfigured: Boolean(process.env.HF_CUSTOM_API_KEY && process.env.HF_CUSTOM_API_BASE_URL && process.env.HF_CUSTOM_MODEL),
           ollamaConfigured: Boolean(process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434')
         }
       });
     }
     if (req.method === 'GET' && url.pathname === '/v1/models') {
       if (!authorized(req)) return json(res, 401, { error: { code: 'unauthorized', message: 'A valid Bearer API key is required.' } });
-      const models = [];
-      if (process.env.GEMINI_API_KEY) models.push({ id: DEFAULT_MODEL, provider: 'gemini' });
-      models.push({ id: process.env.HF_LOCAL_MODEL || 'llama3.2:1b', provider: 'ollama' });
-      return json(res, 200, { object: 'list', data: models.map(m => ({ id: m.id, object: 'model', owned_by: m.provider })) });
+      return json(res, 200, { object: 'list', data: configuredProviders().map(m => ({ id: m.id, object: 'model', owned_by: m.provider })) });
     }
     if (req.method !== 'POST' || !['/v1/chat/completions', '/v1/generate'].includes(url.pathname)) {
       return json(res, 404, { error: { code: 'not_found', message: 'Route not found.' } });
@@ -142,9 +213,19 @@ function createServer() {
       if (messages.reduce((n, m) => n + m.content.length, 0) > 100000) {
         return json(res, 413, { error: { code: 'input_too_large', message: 'Combined message text exceeds 100000 characters.' } });
       }
-      const provider = input.provider === 'ollama' || String(input.model || '').startsWith('llama') ? 'ollama' : 'gemini';
-      const model = String(input.model || (provider === 'ollama' ? (process.env.HF_LOCAL_MODEL || 'llama3.2:1b') : DEFAULT_MODEL));
-      const output = provider === 'ollama' ? await callOllama(model, messages) : await callGemini(model, messages);
+      const knownProviders = ['gemini', 'ollama', 'openai', 'anthropic', 'mistral', 'qwen', 'groq', 'openrouter', 'custom'];
+      let provider = knownProviders.includes(input.provider) ? input.provider : '';
+      if (!provider) {
+        const requestedModel = String(input.model || '');
+        provider = requestedModel.startsWith('llama') ? 'ollama' : requestedModel.startsWith('claude') ? 'anthropic' : requestedModel.startsWith('mistral') ? 'mistral' : requestedModel.startsWith('qwen') ? 'qwen' : requestedModel.startsWith('gpt-') ? 'openai' : 'gemini';
+      }
+      const defaults = { gemini: DEFAULT_MODEL, ollama: process.env.HF_LOCAL_MODEL || 'llama3.2:1b', openai: process.env.OPENAI_MODEL || 'gpt-4.1-mini', anthropic: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-5', mistral: process.env.MISTRAL_MODEL || 'mistral-small-latest', qwen: process.env.QWEN_MODEL || 'qwen-plus', groq: process.env.GROQ_MODEL || 'llama-3.3-70b-versatile', openrouter: process.env.OPENROUTER_MODEL || 'openai/gpt-4.1-mini', custom: process.env.HF_CUSTOM_MODEL || '' };
+      const model = String(input.model || defaults[provider]);
+      let output;
+      if (provider === 'ollama') output = await callOllama(model, messages);
+      else if (provider === 'gemini') output = await callGemini(model, messages);
+      else if (provider === 'anthropic') output = await callAnthropic(model, messages);
+      else output = await callOpenAICompatible(provider, model, messages);
       if (url.pathname === '/v1/generate') return json(res, 200, { provider, model, text: output });
       return json(res, 200, {
         id: 'hf-' + crypto.randomUUID(),
