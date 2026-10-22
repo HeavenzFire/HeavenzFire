@@ -24,7 +24,7 @@
       "name": "HeavenzFire local Ollama runtime",
       "kind": "local_model_runtime",
       "initial_status": "verified",
-      "evidence": "Read-only probe on 2026-10-21: GET http://127.0.0.1:11434/api/tags returned HTTP 200; qwen2.5:0.5b and HeavenzFire/Llama model tags were returned.",
+      "evidence": "Read-only probe returned HTTP 200 on 2026-10-21 local time; a live qwen2.5:0.5b inference and TeamBridge queue-to-model smoke test returned E2E_OK, persisted the result, and acknowledged delivery (2026-10-21 local / 2026-10-22 UTC).",
       "endpoint": "http://127.0.0.1:11434",
       "capabilities": ["local_inference"],
       "execution_mode": "local"
