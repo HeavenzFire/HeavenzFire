@@ -1,0 +1,50 @@
+{
+  "platform_id": "chatgpt",
+  "platform_name": "ChatGPT",
+  "registry_version": "0.1.0",
+  "verified_at": "2026-10-21",
+  "capabilities": {
+    "file_based_json_import_export": {
+      "status": "supported",
+      "evidence": "Can process user-provided JSON/text and create downloadable artifacts in the current conversation."
+    },
+    "code_execution": {
+      "status": "supported_with_constraints",
+      "evidence": "A Python execution environment is available for bounded code and tests; it is isolated from the user's Windows machine and does not have direct internet access."
+    },
+    "local_file_access": {
+      "status": "scoped",
+      "evidence": "Can process files explicitly attached or surfaced through supported file tools; cannot assume access to another platform's /mnt/data paths."
+    },
+    "web_research": {
+      "status": "supported_separately",
+      "evidence": "Web search is available through a separate tool; this does not imply network access from the Python execution environment."
+    },
+    "github_operations": {
+      "status": "available_when_authorized_connector_is_available",
+      "evidence": "Connected GitHub tools can perform scoped repository operations when the relevant repository and permissions are available."
+    },
+    "direct_api_calls_to_other_ai_platforms_from_python_sandbox": {
+      "status": "unsupported",
+      "evidence": "No direct network access from the Python execution environment; no API access inferred from share URLs."
+    },
+    "private_share_url_fetch": {
+      "status": "not_verified_as_supported",
+      "evidence": "No claim of retrieving private contents from another platform's share URL."
+    },
+    "browser_automation_of_other_ai_uis": {
+      "status": "not_guaranteed",
+      "evidence": "No general capability claim; only supported connected-browser workflows may be used when explicitly available."
+    },
+    "cross_ai_state_sync": {
+      "status": "file_based_only_by_default",
+      "evidence": "Portable JSON interchange can transfer explicit state; no implicit cross-platform memory or session synchronization."
+    }
+  },
+  "security_constraints": {
+    "allow_network_from_python_sandbox": false,
+    "sensitive_actions_require_explicit_authorization": true,
+    "never_infer_access_from_share_url": true,
+    "do_not_claim_unverified_execution": true
+  }
+}
