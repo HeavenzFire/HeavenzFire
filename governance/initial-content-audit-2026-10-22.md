@@ -53,3 +53,21 @@ Package manifests were also fetched for the six README-template candidates:
 | `GuardianOS-Dashboard` | `59be2d0e6b01cdfc4ea19c9a3e6771d92f71f287` | Vite build/preview; React; Google GenAI and Lucide |
 
 **Updated assessment:** the common README is a generated template reused across separate app repositories. Package manifests show meaningful differences, especially `Sovereign-Node-`, which declares an Express/WebSocket server and tests. Do not treat these six as interchangeable codebases. The next decisive step is a recursive tree and content-hash comparison, followed by source/build/test review of each app's unique code.
+
+
+## Addendum — recursive tree comparison for six starter-template candidates
+
+Fetched each repository's `main` recursive Git tree. All six responses were complete (`truncated=false`); tree SHAs and file counts:
+
+| Repository | Tree SHA | Files |
+|---|---|---:|
+| `HeavenzFire-Core-System-1` | `8c813db2960d1377f1d53a586208b9eefab33158` | 24 |
+| `Sovereign-Node-` | `6258f2d1a03bb49d40288a7659857bba2de6bbd3` | 30 |
+| `Syntropic-Kernel-Code-Explore` | `3df914d39f9811e318c53f6a9f18a1ff48af7416` | 18 |
+| `HeavenzFire-Sovereign-Node` | `d8f7274650097136521ae731b921ca2ff0749b31` | 17 |
+| `HeavenzFire-Omni-Substrate-Node` | `68b5e88fcb0c4f1a2073a86e5c01d3e7e6a84260` | 13 |
+| `GuardianOS-Dashboard` | `f7c68ae4fd8ceea57086ecb78aa619d9d9212b53` | 15 |
+
+No blob path has the same SHA in **all six** repositories. The inventories do show repeated starter conventions (Vite config, TypeScript config, entry-point shape, metadata, generated README/banner), but product source trees and package manifests differ. For example, `HeavenzFire-Core-System-1` has audio-lab, analytics, harness, journal, replication, and security views; `Syntropic-Kernel-Code-Explore` has a file/code viewer; `HeavenzFire-Sovereign-Node` and `GuardianOS-Dashboard` have different domain components; `Sovereign-Node-` has an Express/WebSocket server, tests, diagnostics, and integration/security documents.
+
+**Decision:** consolidate common tooling and shared contracts only after proving compatibility; keep these six as separate applications for now. A shared starter template or component package may reduce duplication, but a monorepo migration is not justified by the available evidence.
