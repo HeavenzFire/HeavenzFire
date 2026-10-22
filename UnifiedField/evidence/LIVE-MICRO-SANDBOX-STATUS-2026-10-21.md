@@ -139,7 +139,7 @@ The dashboard-worker token-budget test initially required 160 tokens while the w
 3. Keep security invariants intact: generated code is not executed; unsafe tool claims remain critical failures; the 1-GiB model admission guard is not bypassed.
 4. The `planetary-mesh-global` submodule cleanup error remains unresolved. No valid origin URL has been established, so the submodule was not deleted and no URL was invented.
 5. New commits made through the repository connector have no associated fresh workflow runs visible for their exact head SHAs yet. CI is therefore pending, not passed.
-6. At the latest metadata check (2026-10-22T04:14Z), PRs #65, #78, #79, #80, and #81 reported mergeable=false; PRs #69 and #82 reported mergeable=true. GitHub's mergeability flag is transient and is not approval to merge. The exact-head workflow results are listed below.
+6. Across successive polls around 2026-10-22T04:14Z, GitHub's `mergeable` field changed for several branches. The latest observed snapshot at 04:14:12Z was: PRs #65, #78, #80, #81, and #82 reported `mergeable=false`; PRs #69 and #79 reported `mergeable=true`. Treat this as a volatile platform calculation, not proof of the exact conflict cause or approval to merge. The exact-head workflow results are listed below.
 
 No processes were stopped or restarted, no firewall or credential settings were changed, no files were deleted, and no source repository was merged as part of this follow-up.
 
@@ -189,6 +189,6 @@ The earlier `planetary-mesh-global` checkout-cleanup error was present in histor
 
 ### Mergeability refresh — 2026-10-22T04:14Z
 
-After the successful workflow runs listed above, GitHub's current mergeability calculation changed: PR #78 and draft PRs #79–#81 now report `mergeable=false`, as does PR #65. PR #69 and PR #82 report `mergeable=true`. No PR was merged. Treat the false flags as merge-blocking until the specific conflict/out-of-date state is inspected and resolved; passing CI does not override mergeability or review requirements.
+After the successful workflow runs listed above, later polls continued to show changing mergeability values: PR #78, #80, #81, #82, and #65 reported `mergeable=false`, while PR #79 and #69 reported `mergeable=true` in the latest snapshot. No PR was merged. Do not infer the precise cause from the boolean alone; inspect the GitHub mergeability state and changed files before resolving anything. Passing CI does not override review requirements.
 
 The evidence-record branch itself was updated again after the successful #82 workflow run. Its newest documentation-only commit therefore needs its own workflow result; the earlier successful #82 runs apply to the immediately preceding commit, not automatically to the newest SHA.
