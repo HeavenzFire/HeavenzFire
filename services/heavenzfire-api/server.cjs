@@ -106,6 +106,40 @@ async function callOllama(model, messages) {
   }
 }
 
+async function callOpenAI(model, messages) {
+  const key = process.env.OPENAI_API_KEY;
+  if (!key) throw Object.assign(new Error('OpenAI provider is not configured'), { status: 503, code: 'provider_not_configured' });
+  const base = (process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1').replace(/\/$/, '');
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    const response = await fetch(base + '/responses', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: 'Bearer ' + key },
+      body: JSON.stringify({
+        model: model || process.env.OPENAI_MODEL || 'gpt-6',
+        input: messages.map(message => ({ role: message.role, content: message.content }))
+      }),
+      signal: controller.signal
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const providerCode = data.error && data.error.code ? String(data.error.code) : '';
+      const detail = 'OpenAI Responses API request failed (HTTP ' + response.status + (providerCode ? ', ' + providerCode : '') + '). Check model access, API billing, and request limits.';
+      throw Object.assign(new Error(detail), { status: response.status === 429 ? 429 : 502, code: 'provider_error' });
+    }
+    const output = data.output_text || (data.output || [])
+      .flatMap(item => item.content || [])
+      .filter(part => part.type === 'output_text')
+      .map(part => part.text || '')
+      .join('');
+    if (!output) throw Object.assign(new Error('OpenAI Responses API returned no text output.'), { status: 502, code: 'provider_empty_response' });
+    return output;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function callOpenAICompatible(provider, model, messages) {
   const configs = {
     openai: { key: process.env.OPENAI_API_KEY, base: process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1', model: process.env.OPENAI_MODEL || 'gpt-4.1-mini' },
@@ -225,6 +259,7 @@ function createServer() {
       if (provider === 'ollama') output = await callOllama(model, messages);
       else if (provider === 'gemini') output = await callGemini(model, messages);
       else if (provider === 'anthropic') output = await callAnthropic(model, messages);
+      else if (provider === 'openai') output = await callOpenAI(model, messages);
       else output = await callOpenAICompatible(provider, model, messages);
       if (url.pathname === '/v1/generate') return json(res, 200, { provider, model, text: output });
       return json(res, 200, {
