@@ -154,7 +154,7 @@ The PR #79 repository inventory JSON was fetched and parsed independently after 
 - This validates the catalog's internal shape and uniqueness, not that GitHub search was exhaustive. The consolidation plan correctly retains its explicit completeness caveat.
 - The PR #81 component map also explicitly distinguishes draft integration work from operational runtime capability and leaves GitHub Actions status unconfirmed.
 
-The newest API-created commits on PRs #65 and #78–#81 do not yet have fresh workflow runs visible for their exact head SHAs. The isolated Windows tests above are evidence for the fetched files only; remote CI remains pending.
+At the time of this follow-up, fresh workflow runs were not yet visible for the newest heads. A later CI refresh is recorded below; exact-head status must be checked again before merging.
 
 
 ### Additional exact-branch worker tests — 2026-10-22T04:12Z
@@ -167,3 +167,21 @@ The newest API-created commits on PRs #65 and #78–#81 do not yet have fresh wo
 ### Submodule root-cause evidence
 
 The repository's historical commit [`ade047d120665ae034325e32eabb3eef767ef56a`](https://github.com/HeavenzFire/HeavenzFire/commit/ade047d120665ae034325e32eabb3eef767ef56a) records `planetary-mesh-global` as a `Subproject commit` pointer changing from `03fcbe99b1a0e2463f52375b4922039ae11585f4` to `cff650df2f4f6c21b80f8b0d5633fc4acbc68d8b`. The queried `.gitmodules` path was not found, and repository search did not identify a matching `HeavenzFire/planetary-mesh-global` repository. This supports the diagnosis of a gitlink without a resolvable URL, but does not establish where the subproject's source lives. The link remains untouched pending source/remote identification; no substitute URL was guessed.
+
+
+### Fresh GitHub Actions refresh — 2026-10-22T04:14Z
+
+The exact-head workflow refresh changed the status from pending for several branches:
+
+| PR | Exact head checked | Workflow evidence | Result |
+|---|---|---|---|
+| #69 scoped worker | `72f660d72e11d5a0ee04ff501db12f762f44caba` | Ternary Policy Tests, task inbox, integration, dashboard/local worker checks | All 4 passed |
+| #78 browser runner | `b13eb9816763fb4ea8e023016db07656462ec43f` | Integration, task inbox, dashboard/local worker checks | All 3 passed |
+| #79 repository inventory | `0350ca947dca03f4a8bfd8b62903536ccde4a049` | Integration, task inbox, dashboard/local worker checks | All 3 passed |
+| #80 interchange registry | `a61294be69c677ecdb2cab7a230aa2b76e307a2f` | Integration, task inbox, dashboard/local worker checks | All 3 passed |
+| #81 component map | `e0fe007c8b5853e67008753b8db2afaa79b83766` | Integration, task inbox, dashboard/local worker checks | All 3 passed |
+| #82 evidence record | `2e92a6f543764b833562ea7770ad4beb4ef164be` | Dashboard/local worker checks, task inbox | Both passed |
+
+PR #65 moved again while this review was running. Its latest observed head was `b66aa30b1bd53fb7879825f4165ffba12f18aa1f`; no workflow runs for that exact head were visible at the last check. Its fetched-branch adversarial test passed 4/4 and dashboard-worker contract test passed 7/7 in isolated Windows runs, but CI for the latest head remains pending.
+
+The earlier `planetary-mesh-global` checkout-cleanup error was present in historical run logs but was not reproduced in the latest successful runs listed above. The historical gitlink is documented, and its current origin/mapping is still not conclusively established; retain this as a latent repository-integrity check rather than claiming a fresh CI failure.
