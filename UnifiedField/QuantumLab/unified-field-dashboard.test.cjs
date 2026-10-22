@@ -174,3 +174,23 @@ test('model-worker expected model list is scoped inside its renderer', () => {
   assert.match(dashboard, /function renderModelWorker\(x\)\{[\s\S]*?const expected=\['heavenzfire-qwen-0\.5b'\]/);
   assert.ok(!dashboard.includes('Register candidate</button>Validate worker blueprint</button>'));
 });
+
+test('model workloads recheck memory after body parsing and reserve evaluations before scheduling', () => {
+  const draftRoute = server.indexOf("req.url==='/api/forge/draft'");
+  const draftBody = server.indexOf("const body=JSON.parse(raw||'{}');", draftRoute);
+  const draftMemory = server.indexOf("if(!modelWorkloadAdmission())", draftBody);
+  assert.ok(draftBody >= 0 && draftMemory > draftBody, 'draft must recheck RAM after request parsing');
+
+  const evaluateRoute = server.indexOf("req.url==='/api/forge/evaluate'");
+  const evaluateBody = server.indexOf("const body=JSON.parse(raw||'{}');", evaluateRoute);
+  const evaluateBusy = server.indexOf("if(modelWorkloadBusy())", evaluateBody);
+  const evaluateMemory = server.indexOf("if(!modelWorkloadAdmission())", evaluateBody);
+  const reserve = server.indexOf("forgeEvaluationRun={running:true", evaluateBody);
+  assert.ok(evaluateBusy > evaluateBody && evaluateMemory > evaluateBody && reserve > evaluateBusy && reserve > evaluateMemory,
+    'evaluation must recheck workload and RAM before reserving the run');
+
+  const workerRoute = server.indexOf("req.url==='/api/worker/run'");
+  const workerSpawn = server.indexOf("cp.spawn(powershell,args", workerRoute);
+  const workerMemory = server.lastIndexOf("if(!modelWorkloadAdmission())", workerSpawn);
+  assert.ok(workerMemory > workerRoute && workerMemory < workerSpawn, 'worker must recheck RAM immediately before spawn');
+});
