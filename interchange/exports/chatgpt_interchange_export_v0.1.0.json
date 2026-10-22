@@ -8,12 +8,24 @@
     "retrievable": false,
     "last_verified_message": "Meta AI T-001/T-002/T-003 capability audit handoff received"
   },
-  "objective": "Continue engineering the HeavenzFire Unified Field as a real, testable, local-first AI agent framework.",
+  "objective": "Continue engineering HeavenzFire Unified Field as a real, testable, local-first agent framework with principled cross-platform interoperability, bounded micro-sandboxes, explicit capability declarations, portable evidence, and user-controlled authorization.",
   "decisions": [
     {
       "id": "D-001",
       "statement": "Use file-based JSON interchange as the primary portable cross-AI mechanism; never infer API access from a share URL.",
       "timestamp": "2026-10-21T00:00:00Z",
+      "status": "accepted"
+    },
+    {
+      "id": "D-002",
+      "statement": "Capability declarations must be evidence-backed and tool-specific; dedicated web browsing is distinct from arbitrary network access in code execution.",
+      "timestamp": "2026-10-22T00:00:00Z",
+      "status": "accepted"
+    },
+    {
+      "id": "D-003",
+      "statement": "Consolidate repositories through inventory, source comparison, explicit canonical boundaries, reversible pull requests, and preserved history; do not mass-merge by name or README similarity.",
+      "timestamp": "2026-10-22T00:00:00Z",
       "status": "accepted"
     }
   ],
@@ -43,10 +55,18 @@
     },
     {
       "task_id": "T-004",
-      "title": "Publish ChatGPT capability registry entry and re-export",
+      "title": "Publish evidence-scoped ChatGPT capability entry and refresh export",
       "status": "completed_with_limitations",
-      "evidence": "chatgpt_capability_registry_entry_v0.1.0.json sha256:df85c9bafe588d2e9315a31a6d64cea4c2b545a2b734287be6324999ea788f42",
+      "evidence": "interchange/registries/chatgpt_capability_registry_entry_v0.1.0.json sha256:223f987d82e806f6d42caadc2c0d93f75817002d7f69117008f1ef8c927421de",
       "owner": "chatgpt"
+    },
+    {
+      "task_id": "T-005",
+      "title": "Start preservation-first repository consolidation",
+      "status": "in_progress",
+      "evidence": "https://github.com/HeavenzFire/HeavenzFire/pull/79",
+      "owner": "chatgpt",
+      "note": "Draft PR inventories 277 repositories returned by GitHub search and records a bounded content audit; source migration has not yet occurred."
     }
   ],
   "artifacts": [
@@ -54,53 +74,69 @@
       "artifact_id": "A-CHATGPT-001",
       "type": "capability-registry-entry",
       "path": "interchange/registries/chatgpt_capability_registry_entry_v0.1.0.json",
-      "sha256": "df85c9bafe588d2e9315a31a6d64cea4c2b545a2b734287be6324999ea788f42"
+      "sha256": "223f987d82e806f6d42caadc2c0d93f75817002d7f69117008f1ef8c927421de"
     }
   ],
   "test_results": [
     {
       "test_id": "test_registry_entry_json_parses",
       "passed": true,
-      "output": "PASS"
+      "output": "PASS — valid JSON"
     },
     {
-      "test_id": "test_no_claimed_meta_artifact_access",
+      "test_id": "test_export_json_parses",
       "passed": true,
-      "output": "PASS"
+      "output": "PASS — valid JSON and required fields present"
     },
     {
-      "test_id": "test_python_network_capability_reported_separately_from_web_tool",
+      "test_id": "test_capability_dimensions_are_separate",
       "passed": true,
-      "output": "PASS"
+      "output": "PASS — file_write, code_exec, browsing, network, and share_url_fetch separately declared"
     },
     {
       "test_id": "test_share_url_not_treated_as_api",
       "passed": true,
-      "output": "PASS"
+      "output": "PASS — share_url is null; retrievable is false; no fetch claim"
+    },
+    {
+      "test_id": "test_sensitive_actions_require_authorization",
+      "passed": true,
+      "output": "PASS — explicit authorization constraint present"
     },
     {
       "test_id": "test_meta_interchange_schema_validation",
       "passed": false,
-      "output": "BLOCKED: original schema file unavailable in this session"
+      "output": "BLOCKED — exact interchange_schema_v0.1.0.json unavailable"
+    },
+    {
+      "test_id": "test_original_test_interchange_py",
+      "passed": false,
+      "output": "BLOCKED — original test suite unavailable"
     }
   ],
   "next_actions": [
     {
-      "action": "Upload interchange_schema_v0.1.0.json, interchange_example_v0.1.0.json, test_interchange.py, and execution_log.jsonl here; then run the original tests against the exact supplied schema and artifacts.",
+      "action": "Locate or provide the exact interchange_schema_v0.1.0.json, interchange_example_v0.1.0.json, and test_interchange.py; validate against those exact artifacts.",
       "requires_auth": false,
       "assignee": "chatgpt"
     },
     {
-      "action": "Merge the ChatGPT registry entry into the shared interchange export after validating against the original schema.",
+      "action": "Have each participating AI publish a capability registry entry with evidence, then compare results without assuming equivalent execution/network permissions.",
       "requires_auth": false,
       "assignee": "heavenzfire"
+    },
+    {
+      "action": "Continue repository source/tree/license/test audits before proposing code migration.",
+      "requires_auth": false,
+      "assignee": "chatgpt"
     }
   ],
   "permissions": {
     "allow_network": false,
     "allow_code_exec": true,
     "allow_file_write": true,
-    "sensitive_actions_require_explicit_auth": true
+    "sensitive_actions_require_explicit_auth": true,
+    "allow_github_operations_when_authorized": true
   },
-  "timestamp": "2026-10-21T00:00:00Z"
+  "timestamp": "2026-10-22T00:00:00Z"
 }
