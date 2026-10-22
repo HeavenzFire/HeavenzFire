@@ -136,3 +136,15 @@ HeavenzFire's durable cross-AI handoff records now live in this repository:
 - [Execution evidence and limitations](interchange/logs/chatgpt_execution_log_v0.1.0.json)
 
 These versioned files are the persistent interchange record; they do **not** imply that local agents, the phone bridge, or a hosted website are continuously online. Runtime availability must be measured independently.
+
+---
+
+## Codespaces Workspace and Fractal Clone
+
+- [Open a new GitHub Codespace](https://github.com/codespaces/new?repo=875204738&ref=main) — creates a cloud development environment using the committed `.devcontainer/devcontainer.json` configuration.
+- [Codespaces setup and persistence notes](.devcontainer/README.md)
+- [Fractal clone fabric](fractal/README.md)
+- [Fractal clone generator](tools/fractal_clone.py)
+- [Fractal clone tests](tests/test_fractal_clone.py)
+
+The configuration is committed; a running Codespace is not yet claimed. Codespaces can stop or be deleted under GitHub lifecycle and retention rules. The fractal generator creates bounded, non-privileged child-node scaffolds and does not automatically launch agents or recursively copy the full repository.
