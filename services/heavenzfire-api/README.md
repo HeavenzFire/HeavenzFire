@@ -32,6 +32,21 @@ Invoke-RestMethod http://127.0.0.1:18796/v1/chat/completions -Method Post -Heade
 
 Choose `provider` explicitly in the request: `gemini`, `ollama`, `openai`, `anthropic`, `mistral`, `qwen`, `groq`, `openrouter`, or `custom`. For example, set `provider = 'ollama'` to route locally. Mistral, Groq, and OpenRouter use OpenAI-compatible chat-completions requests; Qwen uses the same protocol but requires the correct region/workspace-specific `QWEN_BASE_URL`. Claude uses Anthropic's native Messages API. Provider credentials are independent and must be configured in the server environment. The server defaults to loopback and refuses non-loopback binding unless `HF_ALLOW_REMOTE_BIND=true` is explicitly set. Do not set that flag on a public host without a TLS reverse proxy, authentication, network controls, and an operational secret manager.
 
+## Launch a local GPT-6-family session on Windows
+
+From this directory in Windows PowerShell 5.1 or newer:
+
+```powershell
+Set-ExecutionPolicy -Scope Process Bypass
+.\Start-HeavenzFire-GPT.ps1
+```
+
+The launcher asks for an OpenAI API key using hidden input on first use, validates it against the OpenAI model-list endpoint, and proceeds only if that key can see at least one `gpt-6` / `gpt-6.*` / `gpt-6-*` model ID. It lets you select an exposed model. The key and local bearer token are stored using Windows DPAPI for the current Windows user, never committed to this repository, and are passed to the Node server through its process environment—not command-line arguments. The gateway binds to `127.0.0.1:18796`, and the launcher stops the gateway when you type `/exit`.
+
+The OpenAI adapter uses the Responses API and wraps the text response in the local chat-completions envelope. A successful model-list check proves key authentication and model listing, **not** that every listed model is enabled for inference; the first prompt is the actual inference test. If no GPT-6-family model is listed, the script stops rather than silently substituting Ollama or another model.
+
+**Billing:** ChatGPT subscriptions and OpenAI API usage are billed separately. The launcher does not send an inference request until you enter a prompt. Check API project billing, limits, and model access before using it. This connects a local client to a hosted API model; it does not download GPT weights or provide desktop-control tools by itself.
+
 ## Development and tests
 
 Requires Node.js 18+ (native `fetch`). No third-party runtime dependency.
