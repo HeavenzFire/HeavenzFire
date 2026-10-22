@@ -43,3 +43,36 @@ Record the observed state of the connected Windows development machine during th
 - No process was stopped, restarted, or modified as part of this evidence capture.
 - The :8080 coordinator remains blocked; its recovery and a fresh authenticated task round-trip are not claimed.
 - Results are snapshots and may change when processes or machine resources change.
+
+
+## Live follow-up — 2026-10-22T03:43:25Z
+
+This follow-up supersedes the earlier coordinator-blocked snapshot for the specific checks below. The original dated observations remain preserved as historical evidence.
+
+| Check | Result | Evidence |
+|---|---|---|
+| Coordinator :8080 health | PASS — HTTP 200 | Active listener PID 15528; /health returned ok=true, queue length 0, 110 completed and 2 failed tasks. The previously cited PID 26448 no longer existed. No process was stopped or restarted during this follow-up. |
+| Protected route without credentials | PASS — HTTP 401 | Unauthenticated GET /stats was rejected. |
+| Authenticated worker health | PASS — workers 18101, 18102, 18103 | Each worker's /health response reported authenticated=true. |
+| Authenticated queue round-trip | PASS — task completed | Task ID 3581a919-1a33-4a59-b979-6e2941af768c; worker hf-worker-18101; task type hash_task; 1,000 SHA-256 rounds. |
+| Independent digest reproduction | PASS | Coordinator result and an independent PowerShell SHA-256 computation matched: 6af6505ac26e0d64beef55bc0fb1498093e3fd3b63f6ff73637b34f723ebda1d. |
+| Resource admission | MODEL TASK NOT RUN | Free physical RAM was approximately 0.40 GiB, below the existing 1-GiB model-task threshold. No guard was bypassed. |
+
+### Reproduction metadata
+
+- Task creation timestamp: 2026-10-22T03:43:25.723Z.
+- Coordinator task database totals after completion: 110 completed, 2 failed, no queued or in-flight tasks reported by the health endpoint.
+- The existing DPAPI-protected local token was read by the test process without printing or committing its value. No credential was added to this evidence file.
+- The test was a real authenticated deterministic worker task through the legacy coordinator and SQLite-backed queue. It verifies authentication, dispatch, completion, and digest correctness; it does not prove LLM delegation or model inference.
+- The coordinator was already healthy when inspected. This follow-up did not restart it, and does not claim that this session repaired the cause of the earlier outage.
+- This evidence is a point-in-time observation from the connected Windows machine; repeat the probes before release decisions.
+
+### Updated gate status
+
+- [x] Coordinator health responds.
+- [x] Protected route rejects unauthenticated access.
+- [x] Authenticated bounded hash task reaches terminal completed state.
+- [x] Independent digest matches the worker result.
+- [ ] Recover at least 1 GiB of free RAM and re-run the model-task admission check before attempting local model delegation.
+- [ ] Run the mesh adversarial suite against this recovered coordinator/worker state and record its exit code.
+- [ ] Verify a genuine end-to-end LLM delegation cycle separately; the deterministic hash task is not evidence of that capability.
