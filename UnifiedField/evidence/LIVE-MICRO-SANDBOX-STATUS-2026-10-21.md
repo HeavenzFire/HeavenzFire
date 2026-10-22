@@ -76,3 +76,11 @@ This follow-up supersedes the earlier coordinator-blocked snapshot for the speci
 - [ ] Recover at least 1 GiB of free RAM and re-run the model-task admission check before attempting local model delegation.
 - [ ] Run the mesh adversarial suite against this recovered coordinator/worker state and record its exit code.
 - [ ] Verify a genuine end-to-end LLM delegation cycle separately; the deterministic hash task is not evidence of that capability.
+
+
+### Additional verification — 2026-10-22
+
+- [x] Capsule evidence ledger verification passed read-only with exit code 0: 1,814 events, head sequence 1,814, head hash d4626c884e4c41b22ac412c5e9783556071c9b11b3642074de679a2b6dbea2b1, schema version 1.
+- [x] Final coordinator health probe returned ok=true and queue_len=0; unauthenticated GET /stats again returned HTTP 401.
+- [ ] GitHub Actions dashboard/local-worker job remains a separate code-quality blocker on the previously observed run: 42/43 tests passed; the failing test expected the literal pattern max_tokens=160 in a worker script, while the script uses a different model-generation contract. This is a test/implementation contract mismatch to review, not a failed live mesh hash task. Do not call CI green until a fresh run passes.
+- Safety note: the existing independence_test.py intentionally terminates worker 18102, enqueues batches, and restarts a worker. It was not run during this verification because the non-disruptive authenticated round-trip and ledger verification were sufficient for the current gate.
