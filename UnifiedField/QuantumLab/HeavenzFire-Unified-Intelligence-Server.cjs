@@ -63,7 +63,7 @@ function getSandbox(id) {
       const oldest = sandboxes.keys().next().value;
       sandboxes.delete(oldest);
     }
-    sandboxes.set(id, createHistoricalRuntime());
+    sandboxes.set(id, createHistoricalRuntime({\n      baseUrl: process.env.HF_UNIFIED_BASE_URL || undefined,\n      model: process.env.HF_UNIFIED_MODEL || undefined,\n    }));
   }
   const runtime = sandboxes.get(id);
   sandboxes.delete(id);
