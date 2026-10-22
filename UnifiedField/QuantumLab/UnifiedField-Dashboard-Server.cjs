@@ -10,6 +10,7 @@ const {draftWorkerBlueprint}=require('./worker-forge-drafter.cjs');
 const {runAdversarialSmokeSuite}=require('./worker-forge-adversarial.cjs');
 const {createWorkerRegistry}=require('./worker-registry.cjs');
 const {remediateBlueprint}=require('./worker-forge-remediation.cjs');
+const {classifyWorkerHealth}=require('./uf-dashboard-health.cjs');
 const FORGE_AXES={
  task_type:['build','review'],
  risk_class:['LOW','MEDIUM','HIGH'],
@@ -48,6 +49,7 @@ const endpoints=[
  {id:'discovery',name:'Open-source model discovery',url:'http://127.0.0.1:8795/api/discover'},
  {id:'voice',name:'Research / voice service',url:'http://127.0.0.1:8796/health'},
  {id:'brain',name:'Digital Brain runtime',url:'http://127.0.0.1:8797/api/health'},
+ {id:'worker',name:'Unified Field local worker',url:'http://127.0.0.1:8798/health'},
  {id:'avatarvision',name:'Avatar local vision (OpenCV)',url:'http://127.0.0.1:11802/health'},
  {id:'meshbridge',name:'Unified Field mesh bridge',url:'http://127.0.0.1:8081/health'},
  {id:'taskinbox',name:'Unified Field proposal inbox',url:'http://127.0.0.1:18796/health'},
@@ -62,7 +64,8 @@ async function probe(e){
   let ok=r.ok;
   if(e.id==='ollama')ok=r.ok&&Array.isArray(data&&data.models);
   if(e.id==='discovery')ok=r.ok&&data&&data.ok===true;
-  return {id:e.id,name:e.name,url:e.url,state:ok?'healthy':('HTTP '+r.status),latencyMs:Date.now()-start,data};
+  const state=e.id==='worker'?classifyWorkerHealth(r.ok,r.status,data):(!ok?('HTTP '+r.status):'healthy');
+  return {id:e.id,name:e.name,url:e.url,state,latencyMs:Date.now()-start,data};
  }catch(err){return {id:e.id,name:e.name,url:e.url,state:'unreachable',latencyMs:Date.now()-start,error:String(err.message||err)}}
 }
 function readJson(p){try{return JSON.parse(fs.readFileSync(p,'utf8').replace(/^\uFEFF/,''))}catch{return null}}
