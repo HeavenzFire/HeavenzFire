@@ -20,7 +20,7 @@ Historical profiles are prompts applied to one model. They are not independent n
 - `historical-profile-runtime.cjs`: single-model adapter with deterministic request parameters, role prompts, memory isolation, reset, bounded inputs, loopback URL validation, and structured upstream errors.
 - `historical-profile-runtime.test.cjs`: unit tests for profile registration, model routing, memory isolation/reset, and failure handling.
 - `.github/workflows/unified-intelligence-tests.yml`: Node 22 CI test gate.
-- `micro-mind-unified-client.cjs` and its tests: bounded GET retries, no automatic chat POST retries, explicit error propagation, profile/sandbox scoping, and memory reset.\n- `MicroMind-Unified-Intelligence.html`: integrated text/voice UI served at the unified API origin.\n- `UNIFIED_INTELLIGENCE_CONSOLIDATION.md`: acceptance criteria, voice contract, resource policy, and rollout plan.
+- `micro-mind-unified-client.cjs` and its tests: bounded GET retries, no automatic chat POST retries, explicit error propagation, profile/sandbox scoping, and memory reset.\n- `MicroMind-Unified-Intelligence.html`: integrated text/voice UI served at the unified API origin.\n- `supervise-unified-intelligence.cjs` plus `unified-restart-policy.cjs`: optional foreground watchdog with health probes, exponential backoff, a rolling restart budget, and fail-closed behavior instead of endless crash loops.\n- `UNIFIED_INTELLIGENCE_CONSOLIDATION.md`: acceptance criteria, voice contract, resource policy, and rollout plan.
 
 ## Local verification and launch (PowerShell 5.1)
 
