@@ -11,6 +11,8 @@ $ErrorActionPreference = "Stop"
 $ServerPath = Join-Path $PSScriptRoot "HeavenzFire-Unified-Intelligence-Server.cjs"
 $RuntimeTests = Join-Path $PSScriptRoot "historical-profile-runtime.test.cjs"
 $ServerTests = Join-Path $PSScriptRoot "HeavenzFire-Unified-Intelligence-Server.test.cjs"
+$ClientTests = Join-Path $PSScriptRoot "micro-mind-unified-client.test.cjs"
+$SupervisorTests = Join-Path $PSScriptRoot "unified-restart-policy.test.cjs"
 
 if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
     throw "Node.js is not on PATH. Install Node.js 18+ and reopen PowerShell."
@@ -20,9 +22,9 @@ Write-Host "Node runtime: $NodeVersion"
 
 if (-not $SkipTests) {
     Write-Host "Running unified runtime acceptance tests..."
-    & node --test $RuntimeTests $ServerTests
+    & node --test $RuntimeTests $ServerTests $ClientTests $SupervisorTests
     if ($LASTEXITCODE -ne 0) {
-        throw "Unified runtime tests failed; service was not started."
+        throw "Unified runtime, UI client, or supervisor tests failed; service was not started."
     }
 }
 
