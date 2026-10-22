@@ -103,10 +103,12 @@ test('fabric messages are validated, durable, idempotent, and unclaimed until ac
     const reopened = createTeamStore({ rootDir: f.rootDir });
     assert.equal(reopened.snapshot().messages[0].delivery_status, 'queued');
     const ack = reopened.acknowledgeMessage(first.message.message_id, {
-      status: 'delivered', acknowledged_by: 'test-transport', detail: 'Fixture delivery only'
+      status: 'delivered', acknowledged_by: 'test-transport', detail: 'Fixture delivery only',
+      result: { provider_id: 'fixture', response: 'Fixture response' }
     });
     assert.equal(ack.ok, true);
     assert.equal(ack.message.delivery_status, 'delivered');
+    assert.equal(ack.message.result.response, 'Fixture response');
   } finally {
     fs.rmSync(f.rootDir, { recursive: true, force: true });
   }
