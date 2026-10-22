@@ -33,4 +33,14 @@ test('health is public and does not reveal credentials', async t => {
     body: JSON.stringify({ prompt: '' })
   });
   assert.equal(invalid.status, 400);
+
+  const unconfiguredProvider = await fetch(base + '/v1/generate', {
+    method: 'POST',
+    headers: { authorization: 'Bearer test-only-key', 'content-type': 'application/json' },
+    body: JSON.stringify({ provider: 'mistral', model: 'mistral-small-latest', prompt: 'test' })
+  });
+  assert.equal(unconfiguredProvider.status, 503);
+  const providerError = await unconfiguredProvider.json();
+  assert.equal(providerError.error.code, 'provider_not_configured');
+  assert.equal(JSON.stringify(providerError).includes('not-a-real-test-secret'), false);
 });
