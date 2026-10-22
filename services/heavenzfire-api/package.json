@@ -1,0 +1,14 @@
+{
+  "name": "heavenzfire-api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local-first HeavenzFire API with Gemini and Ollama adapters",
+  "main": "server.cjs",
+  "scripts": {
+    "start": "node server.cjs",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
