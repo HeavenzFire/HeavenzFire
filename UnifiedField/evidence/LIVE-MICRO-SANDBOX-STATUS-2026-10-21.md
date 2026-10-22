@@ -155,3 +155,10 @@ The PR #79 repository inventory JSON was fetched and parsed independently after 
 - The PR #81 component map also explicitly distinguishes draft integration work from operational runtime capability and leaves GitHub Actions status unconfirmed.
 
 The newest API-created commits on PRs #65 and #78–#81 do not yet have fresh workflow runs visible for their exact head SHAs. The isolated Windows tests above are evidence for the fetched files only; remote CI remains pending.
+
+
+### Additional exact-branch worker tests — 2026-10-22T04:12Z
+
+- PR #69 scoped worker and executor tests: **15/15 passed** in an isolated Windows directory using the fetched branch versions of `uf-local-worker.cjs`, `uf-local-worker.test.cjs`, `uf-scoped-executor.cjs`, `uf-scoped-executor.test.cjs`, and `uf-bridge-journal.cjs`. Coverage included bearer authentication, disabled writes without a token, idempotency, restart recovery, corrupt-journal fail-closed behavior, rooted workspace boundaries, symlink/path traversal rejection, no-overwrite semantics, and rejection of arbitrary shell-like actions.
+- PR #78 allowlisted browser runner tests: **2/2 passed** in an isolated Windows directory using the fetched branch's `browser-task-runner.cjs` and `browser-task-runner.test.cjs`. Coverage included invalid host/query rejection and a loopback fixture whose out-of-allowlist page resource was blocked.
+- These are tests of exact fetched branch source files, run locally; they are not GitHub Actions results. No browser runner or worker was promoted to a trusted execution boundary solely because these tests passed.
