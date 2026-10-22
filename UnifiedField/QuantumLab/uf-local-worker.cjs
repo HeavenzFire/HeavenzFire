@@ -66,7 +66,7 @@ function createWorkerServer(options = {}) {
           writable: Boolean(token) && snapshot.corruptLines.length === 0,
           journal: { tasks: snapshot.tasks.length, corruptLines: snapshot.corruptLines.length, eventCount: snapshot.eventCount },
           capabilities: ['task-metadata-journal', 'idempotency', 'replay-eligibility-check'],
-          limitations: ['no-arbitrary-shell', 'no-network-sync', 'no-automatic-replay', 'no-live-mesh'],
+          limitations: ['no-shell-execution', 'no-arbitrary-shell', 'no-network-sync', 'no-automatic-replay', 'no-live-mesh'],
           execution: executor.capabilities()
         });
       }
