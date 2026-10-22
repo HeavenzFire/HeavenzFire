@@ -127,7 +127,9 @@ def main():
         row=c.execute("SELECT * FROM tasks WHERE status='queued' ORDER BY created_at LIMIT 1").fetchone()
         if row:
             ready,_=ollama_ready()
-            if ready: run_cycle(c,dict(row))
+            if ready:
+                succeeded=run_cycle(c,dict(row))
+                if not succeeded and not args.once: time.sleep(max(5,args.interval))
             else:
                 event(c,"waiting_local_model","supervisor","Local Ollama/model unavailable; task remains queued.",row["id"])
                 print("["+utc()+"] waiting for local Ollama/model; queue is durable",flush=True)
