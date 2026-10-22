@@ -1,0 +1,14 @@
+{
+  "name": "heavenzfire-local-browser-runner",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local-first, allowlisted browser task runner for HeavenzFire Unified Field",
+  "license": "MIT",
+  "scripts": {
+    "test": "node --test browser-task-runner.test.cjs",
+    "run-task": "node browser-task-runner.cjs"
+  },
+  "dependencies": {
+    "puppeteer-core": "25.14.0"
+  }
+}
