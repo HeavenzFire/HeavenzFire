@@ -22,17 +22,36 @@ Historical profiles are prompts applied to one model. They are not independent n
 - `.github/workflows/unified-intelligence-tests.yml`: Node 22 CI test gate.
 - `UNIFIED_INTELLIGENCE_CONSOLIDATION.md`: acceptance criteria, voice contract, resource policy, and rollout plan.
 
-## Local verification (PowerShell 5.1)
+## Local verification and launch (PowerShell 5.1)
 
 Run from the repository root:
 
 ```powershell
 node --version
-node --test .\UnifiedField\QuantumLab\historical-profile-runtime.test.cjs
+node --test .\UnifiedField\QuantumLab\historical-profile-runtime.test.cjs .\UnifiedField\QuantumLab\HeavenzFire-Unified-Intelligence-Server.test.cjs
 if ($LASTEXITCODE -ne 0) { throw "Unified runtime tests failed." }
 ```
 
-The adapter requires a modern Node.js runtime with built-in `fetch` and `AbortSignal.timeout` (Node 18+; CI uses Node 22).
+After the repository has synced to the Windows machine, start the API with the launcher:
+
+```powershell
+.\UnifiedField\QuantumLab\Start-HeavenzFireUnifiedIntelligence.ps1
+```
+
+To require a real model-generation canary before startup:
+
+```powershell
+.\UnifiedField\QuantumLab\Start-HeavenzFireUnifiedIntelligence.ps1 -RequireInference
+```
+
+The launcher runs tests first and refuses to overwrite an existing service. It does not stop or replace the existing UI. Once started, verify from a second PowerShell window:
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:11812/api/health
+Invoke-RestMethod http://127.0.0.1:11812/api/profiles
+```
+
+The API binds to loopback only, keeps memory session-only and bounded to 64 in-process sandboxes, and returns structured errors when inference fails. It does not connect the existing UI yet; UI wiring is a separate step after the real gateway canary and voice checks pass.
 
 ## Required end-to-end proof before switching the UI
 
@@ -44,4 +63,4 @@ The adapter requires a modern Node.js runtime with built-in `fetch` and `AbortSi
 6. Verify voice off/on behavior and browser playback separately from text generation.
 7. Only then route the existing UI through the unified runtime.
 
-No local service has been launched by this commit. CI passing would prove the tested code paths on GitHub's runner, not that the Windows services are healthy.
+No local service has been launched by this commit. A passing GitHub workflow proves tested code paths on the runner, not that the Windows services are healthy.
