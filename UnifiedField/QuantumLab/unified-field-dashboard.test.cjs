@@ -146,7 +146,7 @@ test('worker script never executes generated code or accepts arbitrary task comm
   assert.match(worker, /attempt_count = 2/);
   assert.match(worker, /\$_\.ok -and \$_\.validation\.passed/);
   assert.match(worker, /-not \$_\.ok -or -not \$_\.validation\.passed/);
-  assert.match(worker, /max_tokens\s*=\s*160/);
+  assert.match(worker, /max_tokens\\s*=\\s*220/);
   assert.match(worker, /Return ONLY valid JSON/);
   assert.match(worker, /expected_output/);
   assert.match(worker, /Do not add fields/);
