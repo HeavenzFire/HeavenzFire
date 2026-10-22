@@ -37,3 +37,19 @@ The following repositories' README files contain the same generated starter text
 ## Limits
 
 No source code was copied, merged, deleted, archived, renamed, or pushed into any source project as part of this audit. README content alone is not proof of code equivalence, functional behavior, security, or test status.
+
+
+## Addendum — package manifest comparison
+
+Package manifests were also fetched for the six README-template candidates:
+
+| Repository | package.json blob SHA | Scripts / stack observed |
+|---|---|---|
+| `HeavenzFire-Core-System-1` | `5eb7bf8ebdcda25327a4ba175af7f77257df197e` | Vite build/preview; React; `@google/genai`, Recharts, Lucide |
+| `Sovereign-Node-` | `2a16f85eda145f565d207dc019637abc99a061fa` | Express + WebSocket server, `tsx` test/lint scripts, React/Vite, Google GenAI and OpenAI SDK |
+| `Syntropic-Kernel-Code-Explore` | `99c038f15a26c3f8275705c89d075ed83dc780a8` | Vite build/preview; React with minimal declared dependencies |
+| `HeavenzFire-Sovereign-Node` | `18a857fc4a888feeae39830b781fbf554bee8a05` | Vite build/preview; React; `@google/genai`, Recharts, Lucide |
+| `HeavenzFire-Omni-Substrate-Node` | `4ca15694be15d55e38a52fa2bd3bb599b6718354` | Vite build/preview; React; Google GenAI and Recharts |
+| `GuardianOS-Dashboard` | `59be2d0e6b01cdfc4ea19c9a3e6771d92f71f287` | Vite build/preview; React; Google GenAI and Lucide |
+
+**Updated assessment:** the common README is a generated template reused across separate app repositories. Package manifests show meaningful differences, especially `Sovereign-Node-`, which declares an Express/WebSocket server and tests. Do not treat these six as interchangeable codebases. The next decisive step is a recursive tree and content-hash comparison, followed by source/build/test review of each app's unique code.
