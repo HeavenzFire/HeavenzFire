@@ -1,0 +1,79 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Human-reviewed discovery of candidate public exposure on authorized assets. Queries are not proof of vulnerability.",
+  "categories": [
+    {
+      "id": "Config",
+      "description": "Find indexed configuration files that may expose sensitive fields.",
+      "queries": [
+        {
+          "id": "CFG-001",
+          "query": "filetype:json \"private_key\"",
+          "risk_note": "May find examples, test fixtures, or service-account configuration. Never copy a private key from a result."
+        },
+        {
+          "id": "CFG-002",
+          "query": "filetype:json \"client_secret\"",
+          "risk_note": "The term can appear in documentation and sample files; confirm context without collecting the value."
+        },
+        {
+          "id": "CFG-003",
+          "query": "filetype:env \"GEMINI_API_KEY\"",
+          "risk_note": "Environment variable names alone do not establish that a real key is present."
+        },
+        {
+          "id": "CFG-004",
+          "query": "filetype:yaml \"GOOGLE_API_KEY\"",
+          "risk_note": "May match safe placeholders or documentation."
+        }
+      ]
+    },
+    {
+      "id": "Source",
+      "description": "Find public code references that may indicate risky credential handling.",
+      "queries": [
+        {
+          "id": "SRC-001",
+          "query": "\"AIza\" \"API_KEY\"",
+          "risk_note": "The string prefix can appear in examples and test fixtures. Do not validate or use any matching key."
+        },
+        {
+          "id": "SRC-002",
+          "query": "\"client_secret\" \"oauth\"",
+          "risk_note": "Check for unsafe storage or accidental publication; do not infer exploitability from a text match."
+        },
+        {
+          "id": "SRC-003",
+          "query": "\"GOOGLE_GENERATIVE_AI_API_KEY\"",
+          "risk_note": "Variable-name search only; a result may contain no credential."
+        },
+        {
+          "id": "SRC-004",
+          "query": "\"GEMINI_API_KEY\" \"github.com\"",
+          "risk_note": "Limit follow-up to authorized repositories and avoid reproducing secret values."
+        }
+      ]
+    },
+    {
+      "id": "OAuthAppsScript",
+      "description": "Review public OAuth and Apps Script configuration references.",
+      "queries": [
+        {
+          "id": "OAUTH-001",
+          "query": "\"client_secret\" \"accounts.google.com\"",
+          "risk_note": "May return tutorials and sample configuration; a public client ID is not itself a secret."
+        },
+        {
+          "id": "AS-001",
+          "query": "site:script.google.com/macros/s/ \"exec\"",
+          "risk_note": "Public deployment URLs may be intentional. Do not attempt unauthorized access or invoke state-changing endpoints."
+        },
+        {
+          "id": "AS-002",
+          "query": "\"oauthScopes\" \"appsscript.json\"",
+          "risk_note": "Use for configuration review; assess scope necessity only for projects you are authorized to inspect."
+        }
+      ]
+    }
+  ]
+}
