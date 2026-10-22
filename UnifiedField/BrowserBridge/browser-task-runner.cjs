@@ -2,6 +2,7 @@
 
 const fs = require('node:fs');
 const os = require('node:os');
+const net = require('node:net');
 const path = require('node:path');
 const puppeteer = require('puppeteer-core');
 
@@ -11,6 +12,15 @@ const EDGE_CANDIDATES = [
   path.join(process.env['ProgramFiles(x86)'] || 'C:\\Program Files (x86)', 'Microsoft', 'Edge', 'Application', 'msedge.exe'),
   path.join(process.env.ProgramFiles || 'C:\\Program Files', 'Microsoft', 'Edge', 'Application', 'msedge.exe')
 ].filter(Boolean);
+
+function isValidHostname(hostname) {
+  const unwrapped = hostname.startsWith('[') && hostname.endsWith(']') ? hostname.slice(1, -1) : hostname;
+  if (net.isIP(unwrapped)) return true;
+  if (hostname.length > 253) return false;
+  return hostname.split('.').every(function (label) {
+    return /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(label);
+  });
+}
 
 function validateTask(task) {
   if (!task || typeof task !== 'object' || Array.isArray(task)) throw new Error('Task must be a JSON object.');
@@ -25,7 +35,7 @@ function validateTask(task) {
     if (typeof origin !== 'string' || origin !== origin.toLowerCase()) throw new Error('allowedOrigins entries must be lowercase exact HTTP(S) origins.');
     let parsed;
     try { parsed = new URL(origin); } catch { throw new Error('allowedOrigins entries must be valid HTTP(S) origins.'); }
-    if (!['http:', 'https:'].includes(parsed.protocol) || parsed.origin !== origin || parsed.username || parsed.password) throw new Error('allowedOrigins entries must be canonical origins with no path, query, or credentials.');
+    if (!['http:', 'https:'].includes(parsed.protocol) || parsed.origin !== origin || parsed.username || parsed.password || !isValidHostname(parsed.hostname)) throw new Error('allowedOrigins entries must be canonical origins with valid hostnames and no path, query, or credentials.');
     return origin;
   });
   if (new Set(origins).size !== origins.length || !origins.includes(url.origin)) throw new Error('The initial URL origin must appear exactly once in allowedOrigins.');
@@ -67,7 +77,7 @@ async function runTask(taskInput) {
       headless: true,
       userDataDir: profile,
       timeout: 10000,
-      protocolTimeout: 5000,
+      protocolTimeout: checked.timeoutMs + 5000,
       args: [
         '--disable-background-networking', '--disable-component-update', '--disable-sync',
         '--disable-extensions', '--no-first-run', '--no-default-browser-check', '--no-proxy-server'
@@ -86,7 +96,16 @@ async function runTask(taskInput) {
         request.abort('blockedbyclient').catch(function () {});
       }
     });
+    const mainTarget = page.target();
+    browser.on('targetcreated', function (target) {
+      if (target === mainTarget || target.type() !== 'page') return;
+      target.page().then(function (popup) { return popup && popup.close(); }).catch(function () {});
+    });
     page.on('popup', function (popup) { popup.close().catch(function () {}); });
+    await page.evaluateOnNewDocument(function () {
+      // Block script-created windows before page scripts execute; targetcreated is a second guard.
+      window.open = function () { return null; };
+    });
     await page.goto(task.url, { waitUntil: 'domcontentloaded', timeout: checked.timeoutMs });
 
     const actionResults = [];
