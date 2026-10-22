@@ -1,0 +1,253 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/HeavenzFire/HeavenzFire/blob/main/interchange/interchange_schema_v0.1.0.json",
+  "title": "HeavenzFire Portable Cross-AI Interchange Export",
+  "description": "Version 0.1.0 schema for evidence-carrying, permission-scoped cross-platform task handoffs. This is the canonical schema authored in this repository; it does not claim to be the missing original Meta AI schema.",
+  "type": "object",
+  "required": [
+    "version",
+    "project_id",
+    "source_platform",
+    "conversation_reference",
+    "objective",
+    "decisions",
+    "task_status",
+    "artifacts",
+    "test_results",
+    "next_actions",
+    "permissions",
+    "timestamp"
+  ],
+  "properties": {
+    "version": {
+      "const": "0.1.0"
+    },
+    "project_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source_platform": {
+      "type": "string",
+      "minLength": 1
+    },
+    "conversation_reference": {
+      "type": "object",
+      "required": [
+        "share_url",
+        "local_id",
+        "retrievable"
+      ],
+      "properties": {
+        "share_url": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "local_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "retrievable": {
+          "type": "boolean"
+        },
+        "last_verified_message": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    },
+    "objective": {
+      "type": "string",
+      "minLength": 1
+    },
+    "decisions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "statement",
+          "timestamp",
+          "status"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "statement": {
+            "type": "string",
+            "minLength": 1
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "task_status": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "task_id",
+          "title",
+          "status",
+          "owner"
+        ],
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "type": "string",
+            "minLength": 1
+          },
+          "evidence": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "owner": {
+            "type": "string",
+            "minLength": 1
+          },
+          "note": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "artifact_id",
+          "type",
+          "path"
+        ],
+        "properties": {
+          "artifact_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "type": {
+            "type": "string",
+            "minLength": 1
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-fA-F0-9]{64}$"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "test_results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "test_id",
+          "passed",
+          "output"
+        ],
+        "properties": {
+          "test_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "passed": {
+            "type": "boolean"
+          },
+          "output": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "next_actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "action",
+          "requires_auth",
+          "assignee"
+        ],
+        "properties": {
+          "action": {
+            "type": "string",
+            "minLength": 1
+          },
+          "requires_auth": {
+            "type": "boolean"
+          },
+          "assignee": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "permissions": {
+      "type": "object",
+      "required": [
+        "allow_network",
+        "allow_code_exec",
+        "allow_file_write",
+        "sensitive_actions_require_explicit_auth"
+      ],
+      "properties": {
+        "allow_network": {
+          "type": "boolean"
+        },
+        "allow_code_exec": {
+          "type": "boolean"
+        },
+        "allow_file_write": {
+          "type": "boolean"
+        },
+        "sensitive_actions_require_explicit_auth": {
+          "type": "boolean"
+        },
+        "allow_github_operations_when_authorized": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": true
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": true
+}
