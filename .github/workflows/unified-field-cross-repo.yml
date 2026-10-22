@@ -35,6 +35,7 @@ jobs:
           node --check UnifiedField/FieldCore/evidence-ledger.cjs
           node --check UnifiedField/FieldCore/public-record-adapter.cjs
           node --check UnifiedField/FieldCore/capability-registry-validator.cjs
+          node --check UnifiedField/FieldCore/ternary-policy-engine.cjs
           node --check UnifiedField/TeamBridge/team-ledger.cjs
           node --check UnifiedField/TeamBridge/team-dispatcher.cjs
           node --check UnifiedField/TeamBridge/record-provider-probe.cjs
@@ -42,4 +43,4 @@ jobs:
         env:
           HF_HUB_ADAPTER_PATH: ${{ github.workspace }}/UnifiedCodebase/integrations/shared-task-proposal-adapter.mjs
           HF_GOVERNED_LIFECYCLE_PATH: ${{ github.workspace }}/UnifiedCodebase/integrations/governed-task-lifecycle.mjs
-        run: node --test UnifiedField/FieldCore/shared-task-contract.test.cjs UnifiedField/FieldCore/task-inbox-server.test.cjs UnifiedField/BrowserBridge/browser-bridge.test.cjs UnifiedField/FieldCore/evidence-ledger.test.cjs UnifiedField/FieldCore/public-record-adapter.test.cjs UnifiedField/FieldCore/cross-repo-task-transport.test.cjs UnifiedField/FieldCore/capability-registry-validator.test.cjs UnifiedField/FieldCore/capability-registry-integration.test.cjs UnifiedField/TeamBridge/team-ledger.test.cjs UnifiedField/TeamBridge/team-dispatcher.test.cjs PropagationFabric/fabric-envelope.test.cjs
+        run: node --test UnifiedField/FieldCore/shared-task-contract.test.cjs UnifiedField/FieldCore/task-inbox-server.test.cjs UnifiedField/BrowserBridge/browser-bridge.test.cjs UnifiedField/FieldCore/evidence-ledger.test.cjs UnifiedField/FieldCore/public-record-adapter.test.cjs UnifiedField/FieldCore/cross-repo-task-transport.test.cjs UnifiedField/FieldCore/capability-registry-validator.test.cjs UnifiedField/FieldCore/capability-registry-integration.test.cjs UnifiedField/FieldCore/ternary-policy-engine.test.cjs UnifiedField/TeamBridge/team-ledger.test.cjs UnifiedField/TeamBridge/team-dispatcher.test.cjs PropagationFabric/fabric-envelope.test.cjs
