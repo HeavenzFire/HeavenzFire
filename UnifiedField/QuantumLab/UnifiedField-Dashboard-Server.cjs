@@ -85,6 +85,7 @@ const server=http.createServer(async(req,res)=>{
   try{
    for await(const chunk of req){raw+=chunk.toString('utf8');if(Buffer.byteLength(raw)>4096){res.writeHead(413,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'Blueprint draft request exceeds 4 KiB'}));}}
    const body=JSON.parse(raw||'{}');
+   if(!modelWorkloadAdmission()){res.writeHead(503,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'model drafting paused: available RAM is below 1 GiB'}));}
    const result=await draftWorkerBlueprint({model:body.model,role:body.role,objective:body.objective},{axes:FORGE_AXES});
    res.writeHead(result.ok?200:502,{'Content-Type':'application/json'});
    return res.end(JSON.stringify(result));
@@ -181,6 +182,8 @@ const server=http.createServer(async(req,res)=>{
    const validation=validateBlueprint(body.blueprint);
    if(!validation.ok){res.writeHead(400,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'blueprint_invalid',errors:validation.errors}));}
    if(!WORKER_MODEL_ALLOWLIST.includes(body.model)){res.writeHead(400,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'model_not_allowlisted'}));}
+   if(modelWorkloadBusy()){res.writeHead(409,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'another local model workload is active'}));}
+   if(!modelWorkloadAdmission()){res.writeHead(503,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'adversarial evaluation paused: available RAM is below 1 GiB'}));}
    const startedAt=new Date().toISOString();
    forgeEvaluationRun={running:true,startedAt,finishedAt:null,error:null,result:null,artifact_file:null,model:body.model,worker_id:body.blueprint.id,blueprint_hash:createBlueprint(body.blueprint).blueprint_hash,progress:{completed:0,total:10,profile:null,passed:null}};
    setImmediate(async()=>{
@@ -240,6 +243,7 @@ const server=http.createServer(async(req,res)=>{
    }
   }
   if(modelWorkloadBusy()){res.writeHead(409,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'another local model workload is active',workerRun}));}
+  if(!modelWorkloadAdmission()){res.writeHead(503,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'model worker admission paused: available RAM is below 1 GiB'}));}
   if(!fs.existsSync(WORKER_SCRIPT)){res.writeHead(500,{'Content-Type':'application/json'});return res.end(JSON.stringify({ok:false,error:'Worker script missing'}));}
   const powershell=path.join(process.env.SystemRoot||'C:\\Windows','System32','WindowsPowerShell','v1.0','powershell.exe');
   let workerStdout='',workerStderr='',spawnError=null;
