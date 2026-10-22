@@ -37,12 +37,12 @@ The integration test starts a temporary local fixture, clicks a button, checks p
 node .\browser-task-runner.cjs .\my-task.json
 ```
 
-A task contains an ID, a starting URL, exact allowed hostnames, bounded actions (click, fill, waitForText), assertions (textEquals, titleEquals, pathEquals), and a timeout capped at 20 seconds. Initial URLs containing credentials, query strings, or fragments are rejected. The runner creates an isolated temporary browser profile, intercepts page requests, blocks unlisted hosts, closes popups, writes redacted JSONL outcome evidence, and removes the temporary profile after the run.
+A task contains an ID, a starting URL, exact allowed origins (scheme, hostname, and port), bounded actions (click, fill, waitForText), assertions (textEquals, titleEquals, pathEquals), and a timeout capped at 20 seconds. Initial URLs containing credentials, query strings, or fragments are rejected. The runner creates an isolated temporary browser profile, intercepts page requests, blocks unlisted origins, closes popups, writes redacted JSONL outcome evidence, and removes the temporary profile after the run.
 
 ### Security and current limitations
 
 - Keep this runner for controlled, approved tasks; do not supply passwords, session cookies, private keys, or other secrets as task values.
-- The allowlist is an exact hostname list, not a per-path authorization system. Use dedicated test accounts and least-privilege access for authenticated sites.
+- The allowlist is an exact origin list including scheme and port, not a per-path authorization system. Use dedicated test accounts and least-privilege access for authenticated sites.
 - Browser page requests are intercepted and background browser networking is disabled; this does not claim to control networking by other applications on the computer.
 - Only a small deterministic action set is supported. CAPTCHA, MFA, arbitrary downloads, file uploads, complex SPA interactions, and third-party site compatibility are not yet accepted.
 - Do not disable a paid service for a workflow until that workflow has passed its own acceptance tests and rollback is documented.
