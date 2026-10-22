@@ -1,0 +1,56 @@
+{
+  "version": "0.1.0",
+  "project_id": "heavenzfire-unified-field",
+  "source_platform": "example-ai",
+  "conversation_reference": {
+    "share_url": null,
+    "local_id": "example-session",
+    "retrievable": false
+  },
+  "objective": "Demonstrate a portable, permission-scoped handoff with auditable test results.",
+  "decisions": [
+    {
+      "id": "D-EX-001",
+      "statement": "Use portable JSON files and explicit capability claims.",
+      "timestamp": "2026-10-22T00:00:00Z",
+      "status": "accepted"
+    }
+  ],
+  "task_status": [
+    {
+      "task_id": "T-EX-001",
+      "title": "Validate example against v0.1.0 schema",
+      "status": "complete",
+      "evidence": "interchange/tests/test_interchange.py",
+      "owner": "example-ai"
+    }
+  ],
+  "artifacts": [
+    {
+      "artifact_id": "A-EX-001",
+      "type": "example",
+      "path": "interchange/interchange_example_v0.1.0.json"
+    }
+  ],
+  "test_results": [
+    {
+      "test_id": "example-json-structure",
+      "passed": true,
+      "output": "Illustrative only; replace with actual execution evidence."
+    }
+  ],
+  "next_actions": [
+    {
+      "action": "Run the repository's test suite before relying on this example.",
+      "requires_auth": false,
+      "assignee": "receiving-agent"
+    }
+  ],
+  "permissions": {
+    "allow_network": false,
+    "allow_code_exec": true,
+    "allow_file_write": true,
+    "sensitive_actions_require_explicit_auth": true
+  },
+  "timestamp": "2026-10-22T00:00:00Z"
+}
