@@ -86,7 +86,7 @@ function createScopedExecutor(options = {}) {
   function capabilities() {
     return {
       workspace_root_configured: Boolean(root),
-      actions: root ? ['workspace.read_file', 'workspace.write_file', 'git.status', 'node.test'] : [],
+      actions: root ? ['workspace.read_file', 'workspace.write_file', 'git.status'] : [],
       configuration_error: root ? null : rootError,
       requires_approval: true,
       arbitrary_shell: false,
@@ -135,15 +135,6 @@ function createScopedExecutor(options = {}) {
         if (gitRoot !== root) throw new Error('git worktree root must exactly match the configured workspace root');
         const result = await execFileAsync('git', ['status', '--short', '--branch'], { cwd, timeout: 5000, windowsHide: true, maxBuffer: 64 * 1024 });
         return { ok: true, cwd, stdout: result.stdout.slice(0, 16000), stderr: result.stderr.slice(0, 2000) };
-      }
-      if (action === 'node.test') {
-        const testPath = resolvePath(input.path);
-        if (!testPath.endsWith('.test.cjs') && !testPath.endsWith('.test.js')) throw new Error('only explicitly named .test.cjs or .test.js files may run');
-        const stat = fs.lstatSync(testPath);
-        if (stat.isSymbolicLink() || !stat.isFile()) throw new Error('test file does not exist or is unsafe');
-        assertNoSymlinkComponents(testPath);
-        const result = await execFileAsync(process.execPath, ['--test', testPath], { cwd: root, timeout: 20000, windowsHide: true, maxBuffer: 128 * 1024 });
-        return { ok: true, exit_code: 0, stdout: result.stdout.slice(0, 24000), stderr: result.stderr.slice(0, 4000) };
       }
       throw new Error('action_not_allowlisted');
     } catch (error) {
