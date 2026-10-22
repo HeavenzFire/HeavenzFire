@@ -32,11 +32,11 @@ async function request(port, route, method = 'GET', body, headers = {}) {
   });
 }
 
-function startServer(t) {
+function startServer(t, options = {}) {
   return new Promise((resolve, reject) => {
     const port = 14000 + Math.floor(Math.random() * 1000);
     const child = spawn(process.execPath, [serverPath], {
-      env: { ...process.env, HF_UNIFIED_PORT: String(port), HF_UNIFIED_BASE_URL: 'http://127.0.0.1:1/v1' },
+      env: { ...process.env, HF_UNIFIED_PORT: String(port), HF_UNIFIED_BASE_URL: options.baseUrl || 'http://127.0.0.1:1/v1', HF_UNIFIED_MODEL: 'heavenzfire-qwen-0.5b' },
       stdio: ['ignore', 'pipe', 'pipe'],
     });
     let logs = '';
@@ -127,4 +127,52 @@ test('does not expose arbitrary filesystem paths through static routes', async t
   const result = await request(port, '/../../package.json');
   assert.equal(result.status, 404);
   assert.equal(result.body.error.code, 'NOT_FOUND');
+});
+
+test('end-to-end API accepts a real completion response and resets scoped memory', async t => {
+  const gateway = http.createServer((req, res) => {
+    let raw = '';
+    req.setEncoding('utf8');
+    req.on('data', chunk => { raw += chunk; });
+    req.on('end', () => {
+      const payload = JSON.parse(raw);
+      assert.equal(payload.model, 'heavenzfire-qwen-0.5b');
+      assert.equal(payload.temperature, 0);
+      assert.equal(payload.seed, 0);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ choices: [{ message: { content: 'HF_UNIFIED_CANARY_OK' } }] }));
+    });
+  });
+  await new Promise(resolve => gateway.listen(0, '127.0.0.1', resolve));
+  const gatewayPort = gateway.address().port;
+  t.after(() => new Promise(resolve => gateway.close(resolve)));
+
+  const { port } = await startServer(t, { baseUrl: 'http://127.0.0.1:' + gatewayPort + '/v1' });
+  const first = await request(port, '/api/chat', 'POST', {
+    sandboxId: 'e2e-sandbox',
+    profileId: 'hypatia',
+    message: 'first turn',
+  });
+  assert.equal(first.status, 200);
+  assert.equal(first.body.ok, true);
+  assert.equal(first.body.answer, 'HF_UNIFIED_CANARY_OK');
+  assert.equal(first.body.turns, 1);
+  assert.equal(first.body.memoryScope, 'hypatia');
+
+  const secondProfile = await request(port, '/api/chat', 'POST', {
+    sandboxId: 'e2e-sandbox',
+    profileId: 'ada_lovelace',
+    message: 'separate profile turn',
+  });
+  assert.equal(secondProfile.status, 200);
+  assert.equal(secondProfile.body.turns, 1);
+  assert.equal(secondProfile.body.memoryScope, 'ada_lovelace');
+
+  const reset = await request(port, '/api/memory/reset', 'POST', {
+    sandboxId: 'e2e-sandbox',
+    profileId: 'hypatia',
+  });
+  assert.equal(reset.status, 200);
+  assert.equal(reset.body.reset, true);
+  assert.equal(reset.body.turns, 0);
 });
