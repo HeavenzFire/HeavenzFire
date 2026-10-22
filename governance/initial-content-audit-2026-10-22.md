@@ -71,3 +71,27 @@ Fetched each repository's `main` recursive Git tree. All six responses were comp
 No blob path has the same SHA in **all six** repositories. The inventories do show repeated starter conventions (Vite config, TypeScript config, entry-point shape, metadata, generated README/banner), but product source trees and package manifests differ. For example, `HeavenzFire-Core-System-1` has audio-lab, analytics, harness, journal, replication, and security views; `Syntropic-Kernel-Code-Explore` has a file/code viewer; `HeavenzFire-Sovereign-Node` and `GuardianOS-Dashboard` have different domain components; `Sovereign-Node-` has an Express/WebSocket server, tests, diagnostics, and integration/security documents.
 
 **Decision:** consolidate common tooling and shared contracts only after proving compatibility; keep these six as separate applications for now. A shared starter template or component package may reduce duplication, but a monorepo migration is not justified by the available evidence.
+
+
+## Addendum — core project evidence map
+
+Recursive trees for four higher-priority repositories were inspected (all responses complete, not truncated):
+
+| Repository | Main tree SHA | Concrete artifacts observed | Initial role proposal |
+|---|---|---|---|
+| `Spirit_Engine` | `6325a493b24ac48eb1fa2305c0cf5dca03213d20` | `scripts/recovery.py`, `tests/test_recovery.py`, `services/guardian/server.py`, two GitHub workflows | Recovery/backup and restore verification |
+| `SpiritAngelusFramework` | `75bbeab09cfcb029aed3e10a07533dc0f5039e7b` | Handoff JSON schema, validator, example envelope, unit tests, CI workflow | Canonical cross-AI interchange contract |
+| `IBEN-Genesis` | `84c3e2809bed2b48ff4c1793e70dbf7c4203abd4` | Multiple Python test modules, operating principles, gyroid notes, nested `aero-sovereign` app | Research/runtime umbrella candidate; needs boundary and dependency review |
+| `Neural-Swarm-Orchestrator` | `b9f4f39ce3f4d09e684864b903fb3316e3c0020e` | TypeScript handshake test, client/UI code, Node package manifest, Python requirements | Agent/orchestration candidate; implementation and CI must be verified |
+
+### Hygiene item
+The inspected `IBEN-Genesis` tree includes tracked compiled Python cache artifacts under `__pycache__/`. Treat these as repository-hygiene findings: check ignore rules and whether any fixtures depend on them before proposing a removal commit. No files were changed.
+
+### Canonical boundary proposal (provisional)
+- **SpiritAngelusFramework:** own the versioned handoff schema/validator; other repositories consume a versioned contract rather than fork copies.
+- **Spirit_Engine:** own backup/recovery manifests, safe staging restore, integrity verification, and recovery tests.
+- **Neural-Swarm-Orchestrator:** own task routing and agent lifecycle; depend on the interchange contract and recovery layer through explicit interfaces.
+- **IBEN-Genesis:** remain a research/runtime project until its nested application boundaries and dependencies are mapped; do not absorb its entire tree into a control-plane repo by default.
+- **HeavenzFire/HeavenzFire:** remain the public ecosystem index/governance entry point, not a dumping ground for all source code.
+
+These are provisional responsibility assignments derived from visible file trees and README/manifest contents. They are not proof that the projects build, pass CI, or are ready for production.
