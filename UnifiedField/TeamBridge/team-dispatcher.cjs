@@ -1,6 +1,8 @@
 'use strict';
 
 const { createTeamStore } = require('./team-ledger.cjs');
+const crypto = require('node:crypto');
+const { DECISIONS, evaluatePolicy } = require('../FieldCore/ternary-policy-engine.cjs');
 
 const LOCAL_OLLAMA = 'http://127.0.0.1:11434/api/chat';
 const ALLOWED_MODELS = new Set([
@@ -10,6 +12,7 @@ const ALLOWED_MODELS = new Set([
   'llama3.2:1b'
 ]);
 const MAX_PROMPT_CHARS = 3000;
+const DEFAULT_POLICY = Object.freeze({ allowActions: ['inference.local'], denyActions: [], requireApproval: false });
 
 function createLocalOllamaDispatcher(options = {}) {
   if (!options.store) throw new TypeError('team_store_required');
@@ -46,6 +49,49 @@ function createLocalOllamaDispatcher(options = {}) {
         detail: 'Model is not on the local inference allowlist.'
       });
       return { ok: false, error: 'model_not_allowlisted', acknowledgement: ack };
+    }
+
+    // The action is adapter-owned, never read from the untrusted message payload.
+    // Policy and approval providers are trusted process configuration, not task input.
+    const action = 'inference.local';
+    let policy;
+    let approval;
+    try {
+      policy = typeof options.policyForMessage === 'function'
+        ? await options.policyForMessage(message)
+        : (options.policy || DEFAULT_POLICY);
+      approval = typeof options.approvalForMessage === 'function'
+        ? await options.approvalForMessage({ taskId: messageId, action, message })
+        : { status: 'not_required' };
+    } catch {
+      const ack = store.acknowledgeMessage(messageId, {
+        status: 'rejected',
+        acknowledged_by: 'teambridge-policy-engine',
+        detail: 'Policy or trusted approval provider failed; dispatch denied.'
+      });
+      return { ok: false, error: 'policy_provider_failed', acknowledgement: ack };
+    }
+
+    // This digest attests to the exact task envelope inputs validated at this
+    // boundary; it is not a claim that the model output is factually correct.
+    const evidenceRef = 'sha256:' + crypto.createHash('sha256')
+      .update(JSON.stringify({ message_id: messageId, target: message.envelope.target, model, prompt }))
+      .digest('hex');
+    const policyDecision = evaluatePolicy({
+      action,
+      taskId: messageId,
+      policy,
+      evidence: { status: 'verified', refs: [evidenceRef] },
+      approval
+    });
+    if (policyDecision.decision !== DECISIONS.ALLOW) {
+      const ack = store.acknowledgeMessage(messageId, {
+        status: 'rejected',
+        acknowledged_by: 'teambridge-policy-engine',
+        detail: 'Dispatch denied by policy: ' + policyDecision.reasons.join(', '),
+        result: { policy_decision: policyDecision, evidence_refs: [evidenceRef] }
+      });
+      return { ok: false, error: 'policy_' + policyDecision.label, policy_decision: policyDecision, acknowledgement: ack };
     }
 
     const controller = new AbortController();
@@ -90,7 +136,9 @@ function createLocalOllamaDispatcher(options = {}) {
         provider_id: 'local-ollama',
         model: typeof data.model === 'string' ? data.model : model,
         response: answer.trim(),
-        completed_at: new Date().toISOString()
+        completed_at: new Date().toISOString(),
+        policy_decision: policyDecision,
+        evidence_refs: [evidenceRef]
       };
       const ack = store.acknowledgeMessage(messageId, {
         status: 'delivered',
