@@ -1,0 +1,34 @@
+name: Unified Intelligence tests
+
+on:
+  push:
+    branches:
+      - main
+      - fix/historical-profile-deterministic-runtime
+    paths:
+      - "UnifiedField/QuantumLab/historical-profile-runtime.cjs"
+      - "UnifiedField/QuantumLab/historical-profile-runtime.test.cjs"
+      - "UnifiedField/QuantumLab/HeavenzFire-Unified-Intelligence-Server.cjs"
+      - "UnifiedField/QuantumLab/HeavenzFire-Unified-Intelligence-Server.test.cjs"
+      - ".github/workflows/unified-intelligence-tests.yml"
+  pull_request:
+    paths:
+      - "UnifiedField/QuantumLab/historical-profile-runtime.cjs"
+      - "UnifiedField/QuantumLab/historical-profile-runtime.test.cjs"
+      - "UnifiedField/QuantumLab/HeavenzFire-Unified-Intelligence-Server.cjs"
+      - "UnifiedField/QuantumLab/HeavenzFire-Unified-Intelligence-Server.test.cjs"
+      - ".github/workflows/unified-intelligence-tests.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  node-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Run unified runtime tests
+        run: node --test UnifiedField/QuantumLab/historical-profile-runtime.test.cjs UnifiedField/QuantumLab/HeavenzFire-Unified-Intelligence-Server.test.cjs
