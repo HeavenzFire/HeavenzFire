@@ -120,7 +120,7 @@ async function callOpenAICompatible(provider, model, messages) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   try {
-    const response = await fetch(cfg.base.replace(/\\/$/, '') + '/chat/completions', {
+    const response = await fetch(cfg.base.replace(/\/$/, '') + '/chat/completions', {
       method: 'POST',
       headers: { 'content-type': 'application/json', authorization: 'Bearer ' + cfg.key },
       body: JSON.stringify({ model: model || cfg.model, messages, stream: false }),
