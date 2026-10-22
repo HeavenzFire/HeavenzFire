@@ -12,15 +12,18 @@ Historical profiles are prompts applied to one model. They are not independent n
 
 - Local inference gateway: `http://127.0.0.1:11800/v1`
 - Documented model: `heavenzfire-qwen-0.5b`
-- Existing Micro Mind Sandbox UI: `http://127.0.0.1:11811/`
-- Unified runtime API and integrated UI: `http://127.0.0.1:11812/` (serves the new UI and API from one loopback origin).\n- Existing Micro Mind Sandbox UI: `http://127.0.0.1:11811/` (preserved; this branch does not overwrite its source).
+- Existing Micro Mind Sandbox UI: `http://127.0.0.1:11811/` (preserved; this branch does not overwrite its source).
+- Unified runtime API and integrated UI: `http://127.0.0.1:11812/` (serves the new UI and API from one loopback origin).
 
 ## What is in this branch
 
 - `historical-profile-runtime.cjs`: single-model adapter with deterministic request parameters, role prompts, memory isolation, reset, bounded inputs, loopback URL validation, and structured upstream errors.
 - `historical-profile-runtime.test.cjs`: unit tests for profile registration, model routing, memory isolation/reset, and failure handling.
 - `.github/workflows/unified-intelligence-tests.yml`: Node 22 CI test gate.
-- `micro-mind-unified-client.cjs` and its tests: bounded GET retries, no automatic chat POST retries, explicit error propagation, profile/sandbox scoping, and memory reset.\n- `MicroMind-Unified-Intelligence.html`: integrated text/voice UI served at the unified API origin.\n- `supervise-unified-intelligence.cjs` plus `unified-restart-policy.cjs`: optional foreground watchdog with health probes, exponential backoff, a rolling restart budget, and fail-closed behavior instead of endless crash loops.\n- `UNIFIED_INTELLIGENCE_CONSOLIDATION.md`: acceptance criteria, voice contract, resource policy, and rollout plan.
+- `micro-mind-unified-client.cjs` and its tests: bounded GET retries, no automatic chat POST retries, explicit error propagation, profile/sandbox scoping, and memory reset.
+- `MicroMind-Unified-Intelligence.html`: integrated text/voice UI served at the unified API origin.
+- `supervise-unified-intelligence.cjs` plus `unified-restart-policy.cjs`: optional foreground watchdog with health probes, exponential backoff, a rolling restart budget, and fail-closed behavior instead of endless crash loops.
+- `UNIFIED_INTELLIGENCE_CONSOLIDATION.md`: acceptance criteria, voice contract, resource policy, and rollout plan.
 
 ## Local verification and launch (PowerShell 5.1)
 
@@ -28,7 +31,7 @@ Run from the repository root:
 
 ```powershell
 node --version
-node --test .\UnifiedField\QuantumLab\historical-profile-runtime.test.cjs .\UnifiedField\QuantumLab\HeavenzFire-Unified-Intelligence-Server.test.cjs
+node --test .\UnifiedField\QuantumLab\historical-profile-runtime.test.cjs .\UnifiedField\QuantumLab\HeavenzFire-Unified-Intelligence-Server.test.cjs .\UnifiedField\QuantumLab\micro-mind-unified-client.test.cjs .\UnifiedField\QuantumLab\unified-restart-policy.test.cjs
 if ($LASTEXITCODE -ne 0) { throw "Unified runtime tests failed." }
 ```
 
@@ -61,6 +64,7 @@ The service binds to loopback only, serves the integrated UI at `http://127.0.0.
 4. Verify profile switching keeps the same model and separates memory scopes.
 5. Inject an upstream HTTP 500 and verify the UI shows a failure—not a fabricated answer.
 6. Verify voice off/on behavior and browser playback separately from text generation.
-7. Verify the integrated UI at `http://127.0.0.1:11812/` and keep the existing `:11811` page as a rollback path.\n8. The local Desktop Commander channel is currently usage-limited, so the Windows canary and actual browser speech test still need to run on the authorized host.
+7. Verify the integrated UI at `http://127.0.0.1:11812/` and keep the existing `:11811` page as a rollback path.
+8. The local Desktop Commander channel is currently usage-limited, so the Windows canary and actual browser speech test still need to run on the authorized host.
 
 No local service has been launched by this commit. A passing GitHub workflow proves tested code paths on the runner, not that the Windows services are healthy.
