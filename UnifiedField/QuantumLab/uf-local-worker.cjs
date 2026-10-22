@@ -9,6 +9,7 @@ const { createScopedExecutor } = require('./uf-scoped-executor.cjs');
 
 const MAX_BODY_BYTES = 16 * 1024;
 const MAX_EXECUTE_BODY_BYTES = 272 * 1024;
+const REMOTE_EXECUTION_ACTIONS = new Set(['workspace.read_file', 'git.status']);
 function safeEqual(a, b) {
   const aa = Buffer.from(String(a));
   const bb = Buffer.from(String(b));
@@ -68,7 +69,12 @@ function createWorkerServer(options = {}) {
           journal: { tasks: snapshot.tasks.length, corruptLines: snapshot.corruptLines.length, eventCount: snapshot.eventCount },
           capabilities: ['task-metadata-journal', 'idempotency', 'replay-eligibility-check'],
           limitations: ['no-shell-execution', 'no-arbitrary-shell', 'no-network-sync', 'no-automatic-replay', 'no-live-mesh'],
-          execution: executor.capabilities()
+          execution: {
+            ...executor.capabilities(),
+            actions: executor.capabilities().actions.filter(action => REMOTE_EXECUTION_ACTIONS.has(action)),
+            requires_approval: false,
+            write_actions_enabled_over_http: false
+          }
         });
       }
       if (req.method === 'POST' && url.pathname === '/api/execute') {
@@ -76,7 +82,7 @@ function createWorkerServer(options = {}) {
         const authorization = req.headers.authorization || '';
         if (!authorization.startsWith('Bearer ') || !safeEqual(authorization.slice(7), token)) return send(res, 401, { ok: false, error: 'unauthorized' });
         const body = await readJson(req, MAX_EXECUTE_BODY_BYTES);
-        if (body.approved !== true) return send(res, 403, { ok: false, error: 'explicit_approval_required' });
+        if (!REMOTE_EXECUTION_ACTIONS.has(body.action)) return send(res, 403, { ok: false, error: 'execution_action_not_enabled_over_http' });
         const requestId = typeof body.request_id === 'string' && /^[A-Za-z0-9._:-]{8,100}$/.test(body.request_id) ? body.request_id : '';
         if (!requestId) return send(res, 400, { ok: false, error: 'valid_request_id_required' });
         const result = await executor.execute(body.action, body.input || {});
