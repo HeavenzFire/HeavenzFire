@@ -11,8 +11,8 @@ const MAX_SANDBOXES = 64;
 const ALLOWED_ORIGINS = new Set([
   'http://127.0.0.1:11811',
   'http://localhost:11811',
-  'http://127.0.0.1:11812',
-  'http://localhost:11812',
+  'http://127.0.0.1:' + PORT,
+  'http://localhost:' + PORT,
 ]);
 const sandboxes = new Map();
 let requestCount = 0;
