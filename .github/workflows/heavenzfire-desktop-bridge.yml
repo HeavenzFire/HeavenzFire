@@ -1,0 +1,85 @@
+name: HeavenzFire GitHub Desktop Bridge
+
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: "Select a fixed, bounded operation on the registered Windows runner"
+        required: true
+        type: choice
+        options:
+          - connection_check
+          - local_runtime_health
+          - unified_field_tests
+        default: connection_check
+
+permissions:
+  contents: read
+
+concurrency:
+  group: heavenzfire-desktop-bridge
+  cancel-in-progress: false
+
+jobs:
+  desktop:
+    runs-on: [self-hosted, Windows, X64, heavenzfire-desktop]
+    timeout-minutes: 10
+    steps:
+      - name: Checkout trusted repository revision
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Verify Windows desktop runner
+        if: inputs.operation == 'connection_check'
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($env:RUNNER_OS -ne 'Windows') { throw "Expected Windows; got $env:RUNNER_OS" }
+          Write-Output "HF_DESKTOP_BRIDGE=CONNECTED"
+          Write-Output ("RUNNER_OS=" + $env:RUNNER_OS)
+          Write-Output ("RUNNER_ARCH=" + $env:RUNNER_ARCH)
+          Write-Output ("NODE=" + ((node --version 2>&1 | Select-Object -First 1) -join ' '))
+          Write-Output ("GIT=" + ((git --version 2>&1 | Select-Object -First 1) -join ' '))
+          Write-Output ("REPOSITORY=" + $env:GITHUB_REPOSITORY)
+          Write-Output ("REVISION=" + $env:GITHUB_SHA)
+          Write-Output "No credentials, environment dumps, usernames, or filesystem inventories are emitted."
+
+      - name: Probe local HeavenzFire runtime endpoints
+        if: inputs.operation == 'local_runtime_health'
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $targets = @(
+            @{ Name = 'ollama'; Url = 'http://127.0.0.1:11434/api/tags' },
+            @{ Name = 'heavenzfire-gateway'; Url = 'http://127.0.0.1:8787/health' },
+            @{ Name = 'heavenzfire-orchestrator'; Url = 'http://127.0.0.1:8788/health' },
+            @{ Name = 'heavenzfire-agent'; Url = 'http://127.0.0.1:8790/health' }
+          )
+          $failed = 0
+          foreach ($target in $targets) {
+            try {
+              $response = Invoke-WebRequest -Uri $target.Url -Method Get -TimeoutSec 3 -UseBasicParsing
+              Write-Output ("{0}=HTTP_{1}" -f $target.Name, [int]$response.StatusCode)
+            } catch {
+              $status = 'UNREACHABLE'
+              if ($_.Exception.Response -and $_.Exception.Response.StatusCode) {
+                $status = 'HTTP_' + [int]$_.Exception.Response.StatusCode
+              }
+              Write-Output ("{0}={1}" -f $target.Name, $status)
+              $failed++
+            }
+          }
+          if ($failed -gt 0) {
+            Write-Output ("ENDPOINTS_UNAVAILABLE=" + $failed)
+          } else {
+            Write-Output 'ENDPOINTS_REACHABLE=4'
+          }
+
+      - name: Run bounded Unified Field regression tests
+        if: inputs.operation == 'unified_field_tests'
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          node --test UnifiedField/QuantumLab/uf-tcp-policy.test.cjs UnifiedField/QuantumLab/uf-bridge-journal.test.cjs UnifiedField/QuantumLab/uf-local-worker.test.cjs
+          if ($LASTEXITCODE -ne 0) { throw "Unified Field regression tests failed with exit code $LASTEXITCODE" }
