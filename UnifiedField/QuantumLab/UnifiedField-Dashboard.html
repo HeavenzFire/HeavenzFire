@@ -153,7 +153,7 @@ async function pollForgeEvaluation(){
   if(x.running){
    const p=x.progress||{};const completed=Number(p.completed)||0;const total=Number(p.total)||10;
    $('forgeStatus').textContent='ADVERSARIAL SMOKE RUNNING · '+completed+'/'+total+' PROFILES';
-   $('forgeBlueprintResult').textContent='Current profile: '+(p.profile||'starting')+' · last profile '+(p.passed?'passed':p.passed===false?'failed':'pending')+' · two fixed-seed runs per profile. Smoke only; not full qualification.';
+   $('forgeBlueprintResult').textContent='Last completed profile: '+(p.profile||'starting')+' · last profile '+(p.passed?'passed':p.passed===false?'failed':'pending')+' · two fixed-seed runs per profile. Smoke only; not full qualification.';
    setTimeout(pollForgeEvaluation,3000);return
   }
   $('runAdversarialSmoke').disabled=false;
