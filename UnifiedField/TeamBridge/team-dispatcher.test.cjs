@@ -43,6 +43,9 @@ test('dispatch sends bounded prompt only to the loopback Ollama adapter and pers
     assert.equal(body.stream, false);
     assert.equal(body.messages[1].content, 'Return a test marker.');
     assert.equal(result.result.response, 'TEST_RESPONSE');
+    assert.equal(result.result.policy_decision.decision, 1);
+    assert.equal(result.result.policy_decision.label, 'allow');
+    assert.match(result.result.evidence_refs[0], /^sha256:[a-f0-9]{64}$/);
     const reopened = createTeamStore({ rootDir: f.rootDir });
     const stored = reopened.snapshot().messages[0];
     assert.equal(stored.delivery_status, 'delivered');
@@ -84,4 +87,89 @@ test('dispatcher rejects a non-loopback endpoint at construction', () => {
   } finally {
     fs.rmSync(f.rootDir, { recursive: true, force: true });
   }
+});
+
+test('explicit policy deny blocks inference before network access and persists decision', async () => {
+  const f = fixture();
+  try {
+    const message = f.store.queueMessage({
+      source: 'test', target: 'local-ollama', type: 'task',
+      payload: { prompt: 'Must not be sent.', model: 'qwen2.5:0.5b' }
+    }).message;
+    let calls = 0;
+    const dispatcher = createLocalOllamaDispatcher({
+      store: f.store,
+      policy: { allowActions: ['inference.local'], denyActions: ['inference.local'], requireApproval: false },
+      fetchImpl: async () => { calls += 1; throw new Error('must_not_call'); }
+    });
+    const result = await dispatcher.dispatchOne(message.message_id);
+    assert.equal(result.ok, false);
+    assert.equal(result.error, 'policy_deny');
+    assert.equal(result.policy_decision.reasons.includes('policy_explicit_deny'), true);
+    assert.equal(calls, 0);
+    const stored = createTeamStore({ rootDir: f.rootDir }).snapshot().messages[0];
+    assert.equal(stored.delivery_status, 'rejected');
+    assert.equal(stored.result.policy_decision.label, 'deny');
+  } finally { fs.rmSync(f.rootDir, { recursive: true, force: true }); }
+});
+
+test('required approval abstains and blocks inference when no trusted approval exists', async () => {
+  const f = fixture();
+  try {
+    const message = f.store.queueMessage({
+      source: 'test', target: 'local-ollama', type: 'task',
+      payload: { prompt: 'Must not be sent.', model: 'qwen2.5:0.5b' }
+    }).message;
+    let calls = 0;
+    const dispatcher = createLocalOllamaDispatcher({
+      store: f.store,
+      policy: { allowActions: ['inference.local'], denyActions: [], requireApproval: true },
+      fetchImpl: async () => { calls += 1; throw new Error('must_not_call'); }
+    });
+    const result = await dispatcher.dispatchOne(message.message_id);
+    assert.equal(result.error, 'policy_abstain');
+    assert.equal(result.policy_decision.reasons.includes('approval_pending'), true);
+    assert.equal(calls, 0);
+  } finally { fs.rmSync(f.rootDir, { recursive: true, force: true }); }
+});
+
+test('approval must be scoped to the exact task and action', async () => {
+  const f = fixture();
+  try {
+    const message = f.store.queueMessage({
+      source: 'test', target: 'local-ollama', type: 'task',
+      payload: { prompt: 'Must not be sent.', model: 'qwen2.5:0.5b' }
+    }).message;
+    let calls = 0;
+    const dispatcher = createLocalOllamaDispatcher({
+      store: f.store,
+      policy: { allowActions: ['inference.local'], denyActions: [], requireApproval: true },
+      approvalForMessage: async () => ({ status: 'approved', action: 'inference.local', taskId: 'another-task' }),
+      fetchImpl: async () => { calls += 1; throw new Error('must_not_call'); }
+    });
+    const result = await dispatcher.dispatchOne(message.message_id);
+    assert.equal(result.error, 'policy_deny');
+    assert.equal(result.policy_decision.reasons.includes('approval_scope_mismatch'), true);
+    assert.equal(calls, 0);
+  } finally { fs.rmSync(f.rootDir, { recursive: true, force: true }); }
+});
+
+test('policy provider failures fail closed before inference', async () => {
+  const f = fixture();
+  try {
+    const message = f.store.queueMessage({
+      source: 'test', target: 'local-ollama', type: 'task',
+      payload: { prompt: 'Must not be sent.', model: 'qwen2.5:0.5b' }
+    }).message;
+    let calls = 0;
+    const dispatcher = createLocalOllamaDispatcher({
+      store: f.store,
+      policyForMessage: async () => { throw new Error('policy unavailable'); },
+      fetchImpl: async () => { calls += 1; throw new Error('must_not_call'); }
+    });
+    const result = await dispatcher.dispatchOne(message.message_id);
+    assert.equal(result.error, 'policy_provider_failed');
+    assert.equal(calls, 0);
+    assert.equal(f.store.snapshot().messages[0].delivery_status, 'rejected');
+  } finally { fs.rmSync(f.rootDir, { recursive: true, force: true }); }
 });
