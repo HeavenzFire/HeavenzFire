@@ -29,6 +29,7 @@ test('allow requires an allowlisted action and verified evidence', () => {
 
 test('explicit deny wins even when the action is allowlisted', () => {
   const out = evaluatePolicy(request({
+    action: 'repo.write',
     policy: { allowActions: ['repo.write'], denyActions: ['repo.write'], requireApproval: false }
   }));
   assert.equal(out.decision, -1);
