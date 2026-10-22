@@ -123,3 +123,16 @@ If you want, I will:
 - Convert this timeline into a **visual timeline PNG** and a CSV of milestones for the dossier.  
 - Expand any phase into a detailed technical appendix (tests, code paths, manifest examples).  
 - Draft the **auditor’s playbook** for verifying an ExportAuthorizedBundle step‑by‑step.
+
+---
+
+## Permanent Presence — Cross-AI Continuity
+
+HeavenzFire's durable cross-AI handoff records now live in this repository:
+
+- [Permanent presence and operating contract](presence/README.md)
+- [ChatGPT capability registry](interchange/registries/chatgpt_capability_registry_entry_v0.1.0.json)
+- [ChatGPT interchange export](interchange/exports/chatgpt_interchange_export_v0.1.0.json)
+- [Execution evidence and limitations](interchange/logs/chatgpt_execution_log_v0.1.0.json)
+
+These versioned files are the persistent interchange record; they do **not** imply that local agents, the phone bridge, or a hosted website are continuously online. Runtime availability must be measured independently.
