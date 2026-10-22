@@ -1,0 +1,33 @@
+name: Fractal clone tests
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "tools/fractal_clone.py"
+      - "tests/test_fractal_clone.py"
+      - ".github/workflows/fractal-tests.yml"
+  pull_request:
+    paths:
+      - "tools/fractal_clone.py"
+      - "tests/test_fractal_clone.py"
+      - ".github/workflows/fractal-tests.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compile generator and tests
+        run: python -m compileall -q tools/fractal_clone.py tests/test_fractal_clone.py
+      - name: Run fractal clone tests
+        run: python -m unittest discover -s tests -p 'test_*.py' -v
