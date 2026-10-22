@@ -8,6 +8,7 @@ const { OfflineTaskJournal, MODES } = require('./uf-bridge-journal.cjs');
 const { createScopedExecutor } = require('./uf-scoped-executor.cjs');
 
 const MAX_BODY_BYTES = 16 * 1024;
+const MAX_EXECUTE_BODY_BYTES = 272 * 1024;
 function safeEqual(a, b) {
   const aa = Buffer.from(String(a));
   const bb = Buffer.from(String(b));
@@ -23,14 +24,14 @@ function send(res, status, payload) {
   });
   res.end(body);
 }
-function readJson(req) {
+function readJson(req, maxBytes = MAX_BODY_BYTES) {
   return new Promise((resolve, reject) => {
     let body = '', size = 0, settled = false;
     req.on('data', chunk => {
       size += chunk.length;
-      if (size > MAX_BODY_BYTES) {
+      if (size > maxBytes) {
         settled = true;
-        reject(Object.assign(new Error('request body exceeds 16 KiB'), { statusCode: 413 }));
+        reject(Object.assign(new Error('request body exceeds ' + maxBytes + ' bytes'), { statusCode: 413 }));
         req.destroy();
         return;
       }
@@ -74,7 +75,7 @@ function createWorkerServer(options = {}) {
         if (!token) return send(res, 503, { ok: false, error: 'execution_token_not_configured' });
         const authorization = req.headers.authorization || '';
         if (!authorization.startsWith('Bearer ') || !safeEqual(authorization.slice(7), token)) return send(res, 401, { ok: false, error: 'unauthorized' });
-        const body = await readJson(req);
+        const body = await readJson(req, MAX_EXECUTE_BODY_BYTES);
         if (body.approved !== true) return send(res, 403, { ok: false, error: 'explicit_approval_required' });
         const requestId = typeof body.request_id === 'string' && /^[A-Za-z0-9._:-]{8,100}$/.test(body.request_id) ? body.request_id : '';
         if (!requestId) return send(res, 400, { ok: false, error: 'valid_request_id_required' });
@@ -158,4 +159,4 @@ if (require.main === module) {
     });
   }
 }
-module.exports = { createWorkerServer, MAX_BODY_BYTES };
+module.exports = { createWorkerServer, MAX_BODY_BYTES, MAX_EXECUTE_BODY_BYTES };
