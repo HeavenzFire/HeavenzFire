@@ -10,6 +10,8 @@ on:
       - "UnifiedField/QuantumLab/historical-profile-runtime.test.cjs"
       - "UnifiedField/QuantumLab/HeavenzFire-Unified-Intelligence-Server.cjs"
       - "UnifiedField/QuantumLab/HeavenzFire-Unified-Intelligence-Server.test.cjs"
+      - "UnifiedField/QuantumLab/micro-mind-unified-client.cjs"
+      - "UnifiedField/QuantumLab/micro-mind-unified-client.test.cjs"
       - "UnifiedField/QuantumLab/Start-HeavenzFireUnifiedIntelligence.ps1"
       - ".github/workflows/unified-intelligence-tests.yml"
   pull_request:
@@ -18,6 +20,8 @@ on:
       - "UnifiedField/QuantumLab/historical-profile-runtime.test.cjs"
       - "UnifiedField/QuantumLab/HeavenzFire-Unified-Intelligence-Server.cjs"
       - "UnifiedField/QuantumLab/HeavenzFire-Unified-Intelligence-Server.test.cjs"
+      - "UnifiedField/QuantumLab/micro-mind-unified-client.cjs"
+      - "UnifiedField/QuantumLab/micro-mind-unified-client.test.cjs"
       - "UnifiedField/QuantumLab/Start-HeavenzFireUnifiedIntelligence.ps1"
       - ".github/workflows/unified-intelligence-tests.yml"
 
@@ -32,5 +36,5 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - name: Run unified runtime tests
-        run: node --test UnifiedField/QuantumLab/historical-profile-runtime.test.cjs UnifiedField/QuantumLab/HeavenzFire-Unified-Intelligence-Server.test.cjs
+      - name: Run unified runtime and browser-client tests
+        run: node --test UnifiedField/QuantumLab/historical-profile-runtime.test.cjs UnifiedField/QuantumLab/HeavenzFire-Unified-Intelligence-Server.test.cjs UnifiedField/QuantumLab/micro-mind-unified-client.test.cjs
