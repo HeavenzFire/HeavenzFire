@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10131b">
+  <meta name="description" content="HeavenzFire — a local-first, auditable AI engineering project focused on integrity, creative sovereignty, and cross-platform continuity.">
+  <title>HeavenzFire — A Light In The Dark</title>
+  <style>
+    :root { color-scheme: dark; --bg:#10131b; --panel:#181e2a; --ink:#eef2ff; --muted:#aab4c8; --line:#344057; --accent:#9bd5ff; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:radial-gradient(ellipse at 50% 0%,#202c43 0,var(--bg) 58%); color:var(--ink); font:16px/1.65 system-ui,-apple-system,Segoe UI,Roboto,sans-serif; }
+    main { width:min(920px,calc(100% - 32px)); margin:0 auto; padding:72px 0 48px; }
+    .eyebrow { color:var(--accent); letter-spacing:.16em; text-transform:uppercase; font-size:.78rem; font-weight:700; }
+    h1 { font-size:clamp(2.5rem,8vw,5rem); line-height:1.05; margin:.5rem 0 1rem; letter-spacing:-.04em; }
+    h2 { margin-top:0; font-size:1.25rem; }
+    .lead { color:var(--muted); font-size:1.15rem; max-width:68ch; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; margin:32px 0; }
+    section { background:rgba(24,30,42,.86); border:1px solid var(--line); border-radius:16px; padding:22px; }
+    a { color:var(--accent); text-underline-offset:3px; }
+    a:focus-visible { outline:3px solid var(--accent); outline-offset:4px; }
+    .pill { display:inline-block; border:1px solid var(--line); border-radius:999px; padding:4px 10px; color:var(--muted); font-size:.85rem; }
+    footer { color:var(--muted); border-top:1px solid var(--line); padding-top:20px; margin-top:34px; font-size:.9rem; }
+    .notice { border-left:3px solid var(--accent); padding-left:14px; color:var(--muted); }
+  </style>
+</head>
+<body>
+<main>
+  <div class="eyebrow">Independent engineering · Local-first · Evidence-led</div>
+  <h1>HeavenzFire</h1>
+  <p class="lead"><strong>A Light In The Dark.</strong> Building a testable, local-first AI agent framework with explicit permissions, auditable execution, portable cross-AI handoffs, and user-controlled infrastructure.</p>
+  <p><span class="pill">Public project home</span> <span class="pill">Versioned evidence</span> <span class="pill">No invented status</span></p>
+  <div class="grid">
+    <section>
+      <h2>Source of truth</h2>
+      <p>Code, change history, and durable project records live in public repositories. Start with the canonical profile repository.</p>
+      <p><a href="https://github.com/HeavenzFire/HeavenzFire">GitHub project archive ↗</a></p>
+    </section>
+    <section>
+      <h2>Cross-AI continuity</h2>
+      <p>Versioned JSON artifacts carry explicit task state and capability evidence between platforms. A shared link is not treated as API access or shared memory.</p>
+      <p><a href="https://github.com/HeavenzFire/HeavenzFire/tree/main/interchange">Interchange artifacts ↗</a></p>
+    </section>
+    <section>
+      <h2>Presence contract</h2>
+      <p>Public records are durable; local agents and phone bridges are separate runtime systems. They are marked online only when an actual health check proves reachability.</p>
+      <p><a href="https://github.com/HeavenzFire/HeavenzFire/blob/main/presence/README.md">Operating contract ↗</a></p>
+    </section>
+  </div>
+  <section>
+    <h2>What this site does—and does not—claim</h2>
+    <p>This page is a static public landing page. It does not mean the local Windows runtime, model gateway, mobile bridge, or agent fleet is running continuously. Live service status must come from timestamped health checks; missing or stale evidence means <em>unknown</em>, not online.</p>
+    <p class="notice">The project favors verifiable artifacts over superlatives: documented capabilities, repeatable tests, bounded permissions, and clear limitations.</p>
+  </section>
+  <footer>
+    <p>HeavenzFire · <a href="https://github.com/HeavenzFire">GitHub</a> · <a href="https://github.com/HeavenzFire/HeavenzFire/commits/main">Change history</a></p>
+    <p>Hosted with GitHub Pages when deployment is enabled. This page contains no API keys, device credentials, or private session contents.</p>
+  </footer>
+</main>
+</body>
+</html>
