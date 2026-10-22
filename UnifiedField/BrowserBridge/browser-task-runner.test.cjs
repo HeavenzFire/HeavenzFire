@@ -12,6 +12,8 @@ testRunner('rejects query strings, wildcard hosts, and unlisted initial hosts be
   const base = { id: 'validate-1', url: 'http://127.0.0.1:18896/fixture', allowedOrigins: ['http://127.0.0.1:18896'], actions: [], assertions: [] };
   assert.throws(() => validateTask({ ...base, url: base.url + '?token=secret' }), /without credentials, query strings, or fragments/);
   assert.throws(() => validateTask({ ...base, allowedOrigins: ['*'] }), /allowedOrigins entries/);
+  assert.throws(() => validateTask({ ...base, url: 'http://a..b/fixture', allowedOrigins: ['http://a..b'] }), /valid hostnames/);
+  assert.throws(() => validateTask({ ...base, url: 'http://-bad.example/fixture', allowedOrigins: ['http://-bad.example'] }), /valid hostnames/);
   assert.throws(() => validateTask({ ...base, allowedOrigins: ['http://localhost:18896'] }), /initial URL origin/);
 });
 
@@ -58,4 +60,12 @@ testRunner('runs a local browser task and blocks a page resource outside the exa
     await new Promise(resolve => server.close(resolve));
     fs.rmSync(temp, { recursive: true, force: true });
   }
+});
+
+testRunner('uses a protocol timeout longer than the configured task operation timeout and blocks popup creation', () => {
+  const source = fs.readFileSync(path.join(__dirname, 'browser-task-runner.cjs'), 'utf8');
+  assert.match(source, /protocolTimeout:\\s*checked\\.timeoutMs\\s*\\+\\s*5000/);
+  assert.match(source, /browser\\.on\\('targetcreated'/);
+  assert.match(source, /page\\.evaluateOnNewDocument/);
+  assert.match(source, /window\\.open\\s*=\\s*function/);
 });
