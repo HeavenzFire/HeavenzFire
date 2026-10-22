@@ -29,7 +29,7 @@ The `approveTask` API records the operator identity and reason supplied by the c
 
 ## Durable messaging
 
-Messages use the existing `heavenzfire.fabric.v1` envelope contract from `../PropagationFabric/fabric-envelope.cjs`. `queueMessage` writes a durable `message.queued` event. The `team-dispatcher.cjs` adapter can dispatch queued messages targeted at `local-ollama` to `http://127.0.0.1:11434/api/chat`, with a strict model allowlist, a prompt-size limit, and a timeout. It stores the response and only then acknowledges delivery. It rejects external provider targets; no external AI-provider transport is implemented yet. Run `node .\team-dispatcher.cjs --smoke-test` for an explicit end-to-end local inference test.
+Messages use the existing `heavenzfire.fabric.v1` envelope contract from `PropagationFabric/fabric-envelope.cjs` (the local workspace and repository checkout have different parent-folder layouts, so the module resolves either existing location). `queueMessage` writes a durable `message.queued` event. The `team-dispatcher.cjs` adapter can dispatch queued messages targeted at `local-ollama` to `http://127.0.0.1:11434/api/chat`, with a strict model allowlist, a prompt-size limit, and a timeout. It stores the response and only then acknowledges delivery. It rejects external provider targets; no external AI-provider transport is implemented yet. Run `node .\team-dispatcher.cjs --smoke-test` for an explicit end-to-end local inference test.
 
 The event ledger is append-only and fails closed on malformed records. It is designed for one writer at a time; do not share the JSONL ledger between concurrent processes until a locking/SQLite adapter is added. Keep task payloads metadata-only and free of secrets.
 
