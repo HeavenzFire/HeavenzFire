@@ -25,69 +25,40 @@ jobs:
     runs-on: [self-hosted, Windows, X64, heavenzfire-desktop]
     timeout-minutes: 10
     steps:
-      - name: Checkout trusted repository revision
+      - name: Checkout selected repository revision without persisting credentials
         uses: actions/checkout@v4
         with:
           persist-credentials: false
 
-      - name: Verify Windows desktop runner
-        if: inputs.operation == 'connection_check'
+      - name: Run bounded bridge operation and validate protocol handshake
         shell: powershell
+        env:
+          HF_OPERATION: ${{ inputs.operation }}
+          HF_REPOSITORY: ${{ github.repository }}
+          HF_REVISION: ${{ github.sha }}
         run: |
           $ErrorActionPreference = 'Stop'
-          if ($env:RUNNER_OS -ne 'Windows') { throw "Expected Windows; got $env:RUNNER_OS" }
-          $nodeCommand = Get-Command node -ErrorAction SilentlyContinue
-          if (-not $nodeCommand) { throw 'Required tool missing: node' }
-          $gitCommand = Get-Command git -ErrorAction SilentlyContinue
-          if (-not $gitCommand) { throw 'Required tool missing: git' }
-          $nodeVersion = (& node --version 2>&1 | Select-Object -First 1) -join ' '
-          if ($LASTEXITCODE -ne 0 -or $nodeVersion -notmatch '^v\d+\.\d+') { throw 'Node.js version probe failed' }
-          $gitVersion = (& git --version 2>&1 | Select-Object -First 1) -join ' '
-          if ($LASTEXITCODE -ne 0 -or $gitVersion -notmatch '^git version ') { throw 'Git version probe failed' }
-          Write-Output 'HF_DESKTOP_BRIDGE=CONNECTED'
-          Write-Output ("RUNNER_OS=" + $env:RUNNER_OS)
-          Write-Output ("RUNNER_ARCH=" + $env:RUNNER_ARCH)
-          Write-Output ("NODE=" + $nodeVersion)
-          Write-Output ("GIT=" + $gitVersion)
-          Write-Output ("REPOSITORY=" + $env:GITHUB_REPOSITORY)
-          Write-Output ("REVISION=" + $env:GITHUB_SHA)
-          Write-Output 'No credentials, environment dumps, usernames, or filesystem inventories are emitted.'
-
-      - name: Probe local HeavenzFire runtime endpoints
-        if: inputs.operation == 'local_runtime_health'
-        shell: powershell
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $targets = @(
-            @{ Name = 'ollama'; Url = 'http://127.0.0.1:11434/api/tags' },
-            @{ Name = 'heavenzfire-gateway'; Url = 'http://127.0.0.1:8787/health' },
-            @{ Name = 'heavenzfire-orchestrator'; Url = 'http://127.0.0.1:8788/health' },
-            @{ Name = 'heavenzfire-agent'; Url = 'http://127.0.0.1:8790/health' }
-          )
-          $failed = 0
-          foreach ($target in $targets) {
-            try {
-              $response = Invoke-WebRequest -Uri $target.Url -Method Get -TimeoutSec 3 -UseBasicParsing
-              Write-Output ("{0}=HTTP_{1}" -f $target.Name, [int]$response.StatusCode)
-            } catch {
-              $status = 'UNREACHABLE'
-              if ($_.Exception.Response -and $_.Exception.Response.StatusCode) {
-                $status = 'HTTP_' + [int]$_.Exception.Response.StatusCode
-              }
-              Write-Output ("{0}={1}" -f $target.Name, $status)
-              $failed++
-            }
-          }
-          if ($failed -gt 0) {
-            Write-Output ("ENDPOINTS_UNAVAILABLE=" + $failed)
+          if ($env:RUNNER_OS -ne 'Windows') { throw "Expected Windows runner; got '$env:RUNNER_OS'." }
+          $nonce = [Guid]::NewGuid().ToString('N')
+          $output = & .\UnifiedField\QuantumLab\heavenzfire-desktop-bridge.ps1 -Operation $env:HF_OPERATION -SessionNonce $nonce 2>&1
+          if ($LASTEXITCODE -ne 0) { throw "Bridge operation failed with exit code $LASTEXITCODE. Output follows: $($output -join [Environment]::NewLine)" }
+          if ($env:HF_OPERATION -eq 'unified_field_tests') {
+            Write-Output ($output -join [Environment]::NewLine)
           } else {
-            Write-Output 'ENDPOINTS_REACHABLE=4'
+            $reportText = ($output -join [Environment]::NewLine)
+            try { $report = $reportText | ConvertFrom-Json } catch { throw 'Bridge returned invalid JSON.' }
+            if ($report.protocol_version -ne 'heavenzfire.desktop-bridge.v1') { throw 'Protocol version mismatch.' }
+            if ($report.session_nonce -ne $nonce -or $report.nonce_echo -ne $nonce) { throw 'Handshake nonce mismatch.' }
+            if ($report.operation -ne $env:HF_OPERATION) { throw 'Operation mismatch.' }
+            if ($report.repository -ne $env:HF_REPOSITORY -or $report.revision -ne $env:HF_REVISION) { throw 'Repository/revision identity mismatch.' }
+            Write-Output 'HF_HANDSHAKE=VALID'
+            $report | ConvertTo-Json -Depth 8 -Compress | Write-Output
+            if ($report.status -eq 'DEGRADED') { Write-Warning 'Bridge responded, but one or more local probes are degraded. See structured results.' }
           }
 
-      - name: Run bounded Unified Field regression tests
-        if: inputs.operation == 'unified_field_tests'
+      - name: Record completion boundary
+        if: always()
         shell: powershell
         run: |
-          $ErrorActionPreference = 'Stop'
-          node --test UnifiedField/QuantumLab/uf-tcp-policy.test.cjs UnifiedField/QuantumLab/uf-bridge-journal.test.cjs UnifiedField/QuantumLab/uf-local-worker.test.cjs
-          if ($LASTEXITCODE -ne 0) { throw "Unified Field regression tests failed with exit code $LASTEXITCODE" }
+          Write-Output ("HF_JOB_CONCLUSION=" + '${{ job.status }}')
+          Write-Output 'A successful job proves only the selected bounded operation ran on this registered runner; it does not establish interactive desktop streaming.'
