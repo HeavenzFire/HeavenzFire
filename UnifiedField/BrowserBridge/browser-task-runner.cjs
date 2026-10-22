@@ -20,12 +20,15 @@ function validateTask(task) {
   if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password || url.search || url.hash) {
     throw new Error('Only HTTP(S) URLs without credentials, query strings, or fragments are permitted.');
   }
-  if (!Array.isArray(task.allowedHosts) || task.allowedHosts.length < 1 || task.allowedHosts.length > 20) throw new Error('allowedHosts must contain 1-20 exact hostnames.');
-  const hosts = task.allowedHosts.map(function (h) {
-    if (typeof h !== 'string' || h !== h.toLowerCase() || h.includes('*') || h.includes('/') || h.includes(':')) throw new Error('allowedHosts entries must be lowercase exact hostnames without wildcards or ports.');
-    return h;
+  if (!Array.isArray(task.allowedOrigins) || task.allowedOrigins.length < 1 || task.allowedOrigins.length > 20) throw new Error('allowedOrigins must contain 1-20 exact origins.');
+  const origins = task.allowedOrigins.map(function (origin) {
+    if (typeof origin !== 'string' || origin !== origin.toLowerCase()) throw new Error('allowedOrigins entries must be lowercase exact HTTP(S) origins.');
+    let parsed;
+    try { parsed = new URL(origin); } catch { throw new Error('allowedOrigins entries must be valid HTTP(S) origins.'); }
+    if (!['http:', 'https:'].includes(parsed.protocol) || parsed.origin !== origin || parsed.username || parsed.password) throw new Error('allowedOrigins entries must be canonical origins with no path, query, or credentials.');
+    return origin;
   });
-  if (new Set(hosts).size !== hosts.length || !hosts.includes(url.hostname.toLowerCase())) throw new Error('The initial URL host must appear exactly once in allowedHosts.');
+  if (new Set(origins).size !== origins.length || !origins.includes(url.origin)) throw new Error('The initial URL origin must appear exactly once in allowedOrigins.');
   if (!Array.isArray(task.actions) || task.actions.length > 30) throw new Error('actions must be an array with at most 30 entries.');
   if (!Array.isArray(task.assertions) || task.assertions.length > 30) throw new Error('assertions must be an array with at most 30 entries.');
   const timeoutMs = Number(task.timeoutMs || 10000);
@@ -41,7 +44,7 @@ function validateTask(task) {
     if (a.type === 'titleEquals' && typeof a.expected !== 'string') throw new Error('titleEquals requires expected string.');
     if (a.type === 'pathEquals' && (typeof a.expected !== 'string' || !a.expected.startsWith('/') || a.expected.length > 500)) throw new Error('pathEquals requires a path beginning with /.');
   }
-  return { task: task, url: url, hosts: hosts, timeoutMs: timeoutMs };
+  return { task: task, url: url, origins: origins, timeoutMs: timeoutMs };
 }
 
 function findEdge() {
@@ -56,7 +59,7 @@ async function runTask(taskInput) {
   const started = Date.now();
   const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'hf-browser-task-'));
   const evidencePath = process.env.HF_BROWSER_EVIDENCE_PATH || path.join(ROOT, 'browser-runner-evidence.jsonl');
-  const blockedHosts = new Set();
+  const blockedOrigins = new Set();
   let browser;
   try {
     browser = await puppeteer.launch({
@@ -75,11 +78,11 @@ async function runTask(taskInput) {
     page.setDefaultNavigationTimeout(checked.timeoutMs);
     await page.setRequestInterception(true);
     page.on('request', function (request) {
-      let host = '';
-      try { host = new URL(request.url()).hostname.toLowerCase(); } catch {}
-      if (checked.hosts.includes(host)) request.continue().catch(function () {});
+      let origin = '';
+      try { origin = new URL(request.url()).origin; } catch {}
+      if (checked.origins.includes(origin)) request.continue().catch(function () {});
       else {
-        blockedHosts.add(host || 'invalid-url');
+        blockedOrigins.add(origin || 'invalid-url');
         request.abort('blockedbyclient').catch(function () {});
       }
     });
@@ -128,11 +131,11 @@ async function runTask(taskInput) {
       durationMs: Date.now() - started,
       actionResults: actionResults,
       assertionResults: assertionResults,
-      blockedHosts: Array.from(blockedHosts).sort(),
-      outboundPolicy: 'Page requests are intercepted; only exact allowedHosts are continued.',
+      blockedOrigins: Array.from(blockedOrigins).sort(),
+      outboundPolicy: 'Page requests are intercepted; only exact allowedOrigins are continued.',
       externalCallsAllowed: false
     };
-    fs.appendFileSync(evidencePath, JSON.stringify({ at: new Date().toISOString(), taskId: task.id, status: result.status, durationMs: result.durationMs, blockedHosts: result.blockedHosts }) + os.EOL, 'utf8');
+    fs.appendFileSync(evidencePath, JSON.stringify({ at: new Date().toISOString(), taskId: task.id, status: result.status, durationMs: result.durationMs, blockedOrigins: result.blockedOrigins }) + os.EOL, 'utf8');
     return result;
   } catch (error) {
     const result = {
@@ -141,10 +144,10 @@ async function runTask(taskInput) {
       status: 'FAIL',
       durationMs: Date.now() - started,
       error: String(error && error.message || error).slice(0, 300),
-      blockedHosts: Array.from(blockedHosts).sort(),
+      blockedOrigins: Array.from(blockedOrigins).sort(),
       externalCallsAllowed: false
     };
-    try { fs.appendFileSync(evidencePath, JSON.stringify({ at: new Date().toISOString(), taskId: task.id, status: result.status, durationMs: result.durationMs, error: result.error, blockedHosts: result.blockedHosts }) + os.EOL, 'utf8'); } catch {}
+    try { fs.appendFileSync(evidencePath, JSON.stringify({ at: new Date().toISOString(), taskId: task.id, status: result.status, durationMs: result.durationMs, error: result.error, blockedOrigins: result.blockedOrigins }) + os.EOL, 'utf8'); } catch {}
     return result;
   } finally {
     if (browser) { try { await browser.close(); } catch {} }
