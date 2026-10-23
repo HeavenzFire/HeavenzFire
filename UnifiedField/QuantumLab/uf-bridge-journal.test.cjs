@@ -33,6 +33,24 @@ test('idempotency key prevents duplicate task enqueue', () => {
     assert.equal(q.inspect().tasks.length, 1);
   } finally { f.cleanup(); }
 });
+test('unsupported task risk classes are rejected before journaling', () => {
+  const f = fixture();
+  try {
+    const q = new OfflineTaskJournal(f.file);
+    for (const risk_class of ['UNKNOWN', 'CRITICAL', 'low', '', ' LOW ']) {
+      assert.throws(
+        () => q.enqueue(task({ task_id: 'invalid-' + JSON.stringify(risk_class), idempotency_key: 'invalid-' + JSON.stringify(risk_class), risk_class })),
+        /risk_class must be one of: LOW, MEDIUM, HIGH/
+      );
+    }
+    assert.equal(q.inspect().tasks.length, 0);
+    for (const risk_class of ['LOW', 'MEDIUM', 'HIGH']) {
+      assert.equal(q.enqueue(task({ task_id: 'valid-' + risk_class, idempotency_key: 'valid-' + risk_class, risk_class })).accepted, true);
+    }
+    assert.equal(q.inspect().tasks.length, 3);
+  } finally { f.cleanup(); }
+});
+
 test('target revision drift blocks replay and requests fresh evidence', () => {
   const f = fixture();
   try {
