@@ -80,6 +80,11 @@ function createOrchestrator(options = {}) {
   const port = options.port ?? DEFAULT_PORT;
   const model = options.model || DEFAULT_MODEL;
   const ollamaUrl = options.ollamaUrl || DEFAULT_OLLAMA;
+  let runtimeUrl;
+  try { runtimeUrl = new URL(ollamaUrl); } catch { throw new Error('ollama_url_invalid'); }
+  if (runtimeUrl.protocol !== 'http:' || !['127.0.0.1', 'localhost', '::1', '[::1]'].includes(runtimeUrl.hostname) || runtimeUrl.username || runtimeUrl.password) {
+    throw new Error('ollama_must_use_http_loopback_without_credentials');
+  }
   const invoke = options.invoke || invokeLocalRuntime;
   const now = options.now || (() => new Date().toISOString());
   const tasks = new Map();
