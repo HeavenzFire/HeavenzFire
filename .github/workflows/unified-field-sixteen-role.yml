@@ -5,12 +5,16 @@ on:
     paths:
       - 'UnifiedField/QuantumLab/sixteen-role-orchestrator.cjs'
       - 'UnifiedField/QuantumLab/sixteen-role-orchestrator.test.cjs'
+      - 'UnifiedField/FieldCore/Start-SixteenRoleOrchestrator.ps1'
+      - 'UnifiedField/FieldCore/LAUNCHER.md'
       - '.github/workflows/unified-field-sixteen-role.yml'
   push:
     branches: [main]
     paths:
       - 'UnifiedField/QuantumLab/sixteen-role-orchestrator.cjs'
       - 'UnifiedField/QuantumLab/sixteen-role-orchestrator.test.cjs'
+      - 'UnifiedField/FieldCore/Start-SixteenRoleOrchestrator.ps1'
+      - 'UnifiedField/FieldCore/LAUNCHER.md'
       - '.github/workflows/unified-field-sixteen-role.yml'
 
 permissions:
