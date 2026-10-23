@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "description": "Sixteen role-specialized local model workers. These are worker roles, not sixteen independent model processes.",
+  "maxParallel": 4,
+  "maxGoalChars": 4000,
+  "agents": [
+    {
+      "id": "planner",
+      "objective": "Decompose the goal into verifiable subproblems."
+    },
+    {
+      "id": "architect",
+      "objective": "Assess system architecture and interfaces."
+    },
+    {
+      "id": "implementer",
+      "objective": "Propose a minimal implementation plan."
+    },
+    {
+      "id": "test-engineer",
+      "objective": "Define tests and acceptance criteria."
+    },
+    {
+      "id": "security-reviewer",
+      "objective": "Find trust-boundary, authorization, and data-exposure risks."
+    },
+    {
+      "id": "adversarial-reviewer",
+      "objective": "Challenge assumptions and construct safe negative tests."
+    },
+    {
+      "id": "browser-integration",
+      "objective": "Review browser-extension and loopback bridge boundaries; do not assume browser access."
+    },
+    {
+      "id": "runtime-integrator",
+      "objective": "Assess local runtime and service integration."
+    },
+    {
+      "id": "reliability-engineer",
+      "objective": "Assess timeouts, retries, idempotency, and recovery."
+    },
+    {
+      "id": "data-integrity",
+      "objective": "Assess schemas, persistence, and evidence provenance."
+    },
+    {
+      "id": "privacy-reviewer",
+      "objective": "Minimize data exposure and outbound traffic."
+    },
+    {
+      "id": "windows-operator",
+      "objective": "Review Windows PowerShell compatibility and launch behavior."
+    },
+    {
+      "id": "network-reviewer",
+      "objective": "Assess loopback binding, Tailscale boundaries, and port conflicts."
+    },
+    {
+      "id": "documentation",
+      "objective": "Produce concise operator instructions."
+    },
+    {
+      "id": "independent-verifier",
+      "objective": "Check claims against evidence and identify missing proof."
+    },
+    {
+      "id": "synthesizer",
+      "objective": "Summarize agreements, conflicts, and next actions."
+    }
+  ],
+  "safety": {
+    "network": "Ollama loopback only",
+    "tools": "No shell, filesystem, browser, or arbitrary tool execution",
+    "taskLifecycle": [
+      "proposed",
+      "approved",
+      "running",
+      "completed",
+      "failed"
+    ],
+    "humanApprovalRequired": true
+  }
+}
