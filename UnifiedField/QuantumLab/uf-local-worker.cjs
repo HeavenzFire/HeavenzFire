@@ -1,7 +1,8 @@
 'use strict';
 
-// Loopback-only local worker API. It journals task metadata; it does not execute tasks,
-// run shell commands, connect to remote peers, or replay work automatically.
+// Loopback-only local worker API. It journals task metadata and exposes only a narrow,
+// read-only HTTP execution allowlist; it never runs arbitrary shell commands, connects
+// to remote peers, or replays queued work automatically.
 const http = require('node:http');
 const crypto = require('node:crypto');
 const { OfflineTaskJournal, MODES } = require('./uf-bridge-journal.cjs');
@@ -77,7 +78,6 @@ function createWorkerServer(options = {}) {
           execution: {
             ...executor.capabilities(),
             actions: executor.capabilities().actions.filter(action => REMOTE_EXECUTION_ACTIONS.has(action)),
-            requires_approval: false,
             write_actions_enabled_over_http: false
           }
         });
