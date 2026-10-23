@@ -8,6 +8,14 @@ const crypto = require('node:crypto');
 
 const STATES = new Set(['QUEUED', 'RUNNING', 'DONE', 'BLOCKED', 'CONFLICT', 'FAILED']);
 const MODES = new Set(['ONLINE', 'OFFLINE', 'DEGRADED', 'RECONNECTING']);
+const ALLOWED_TRANSITIONS = Object.freeze({
+  QUEUED: new Set(['RUNNING', 'BLOCKED', 'CONFLICT', 'FAILED']),
+  RUNNING: new Set(['DONE', 'BLOCKED', 'CONFLICT', 'FAILED']),
+  BLOCKED: new Set(['RUNNING', 'CONFLICT', 'FAILED']),
+  DONE: new Set(),
+  CONFLICT: new Set(),
+  FAILED: new Set()
+});
 
 function stableId(value) {
   return crypto.createHash('sha256').update(String(value)).digest('hex');
