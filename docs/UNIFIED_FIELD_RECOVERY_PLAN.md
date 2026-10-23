@@ -1,94 +1,63 @@
 # Unified Field Recovery Plan
 
-**Status:** implementation plan, not a claim that local services are online  
+**Status:** evidence-scoped recovery plan; not a claim that local services are online  
 **Updated:** 2026-10-22  
-**Scope:** recoverable, local-first control plane for Windows 11 + GitHub + optional phone/browser adapters.
+**Repository:** `HeavenzFire/HeavenzFire`
 
-## Current verified boundary
+## What already exists in the repository
 
-- The GitHub connector can access this repository and create repository artifacts.
-- The repository's existing presence contract explicitly says Git storage is not an always-on runtime.
-- The existing Codespaces documentation says a Codespace must be created separately and may consume included or paid usage.
-- Recent reported device checks showed the Android-to-Windows Ollama request failing to connect to `100.70.89.89:11434`. That is a failed reachability test, not evidence that Ollama itself is stopped.
-- No claim is made here that a local Windows worker, phone bridge, browser-control adapter, or background worker is currently connected.
+The first inspection found useful implementation work already on `main`; do not rebuild these primitives from scratch:
 
-## The workaround: make every dependency replaceable
+- `UnifiedField/QuantumLab/uf-bridge-journal.cjs`: append-only JSONL task journal, idempotency, state transitions, restart reconstruction, corrupt-line fail-closed behavior, and target-commit replay checks.
+- `UnifiedField/QuantumLab/uf-bridge-journal.test.cjs`: deterministic tests for those journal behaviors.
+- `UnifiedField/QuantumLab/uf-local-worker.cjs`: loopback-only HTTP API with bearer-protected task routes, task journaling, and a limited fixed-action execution route.
+- `UnifiedField/QuantumLab/uf-local-worker.test.cjs`: tests for auth, idempotent enqueue, restart recovery, corrupt journals, route rejection, and execution allowlisting.
+- `UnifiedField/QuantumLab/Start-UnifiedFieldWorker.ps1`: existing PowerShell launcher.
+- `UnifiedField/QuantumLab/Start-UnifiedFieldDashboard.ps1` and `UnifiedField-Dashboard-Server.cjs`: existing dashboard launch and service aggregation.
+- `UnifiedField/QuantumLab/README-DASHBOARD.md`: documents the current boundary: queue metadata is not automatic dispatch, the dashboard does not execute the full offline journal, and configured roles are not proof of live independent agents.
 
-Do not make Tailscale, a single AI provider, a hosted IDE, or this GitHub connector the single point of failure. Build one protocol and several adapters:
+These are repository-source findings, not fresh execution results. The source and tests were inspected through GitHub; they have not been executed on the user's Windows machine in this session.
 
-1. **Control plane:** a small local HTTP service bound to `127.0.0.1` by default. It accepts typed task envelopes, never arbitrary model-generated shell text.
-2. **Windows worker:** a PowerShell 5.1-compatible poller that requests only queued tasks, validates the task schema and policy, runs allowlisted handlers, and reports signed/hashed results. No listener on a public interface by default.
-3. **Durable queue:** append-only JSONL task journal plus atomic checkpoint file. Each task has a stable ID and idempotency key; replay checks task ID, current target commit, and prior result before execution.
-4. **GitHub adapter:** uses the authorized GitHub connector/API for repository work when online. Queue repository tasks when offline; never imply they executed until a result is recorded.
-5. **Network adapter:** Tailscale is one transport option, not the task protocol. A LAN-only mode and a manual export/import bundle keep local work possible during internet or tailnet failure.
-6. **Browser/phone adapters:** optional, separately health-checked capabilities. Missing browser permissions must not block code, tests, or queue operations.
-7. **Dashboard:** display actual state: `CONNECTED`, `DEGRADED`, `OFFLINE`, or `NOT_CONFIGURED`, with last successful nonce handshake and timestamp.
+## Current known blockers
 
-## Task envelope
+- A recent phone-side request to `http://100.70.89.89:11434/api/tags` failed with connection refused/unreachable. This does not establish whether Ollama is healthy on Windows loopback.
+- The current local worker explicitly reports no network sync, no automatic replay, and no live mesh. It is a local metadata/task API, not yet the end-to-end remote task bridge.
+- A local dashboard health response would not prove the worker, phone, or Ollama are reachable across Tailscale.
+- Existing dashboard/worker launch scripts and the queue must be inspected and tested before creating replacement launchers or new services.
 
-Required fields:
+## Recommended workaround architecture
 
-```json
-{
-  "schema_version": "1.0",
-  "task_id": "uuid",
-  "created_utc": "ISO-8601 UTC",
-  "objective": "short, bounded objective",
-  "adapter": "github|powershell|browser|local-http",
-  "operation": "allowlisted operation name",
-  "input": {},
-  "dependencies": [],
-  "risk_class": "read|write|privileged|destructive|external",
-  "status": "queued",
-  "idempotency_key": "stable-key",
-  "target_commit_sha": null,
-  "attempts": 0,
-  "evidence_refs": [],
-  "last_error": null,
-  "next_action": "validate"
-}
-```
+Keep one stable task contract and make transports replaceable:
 
-Never put access tokens, passwords, device credentials, or private personal records in the task envelope or public repository.
+1. **Local-first core:** journal and worker continue operating without internet, GitHub, Tailscale, or a browser adapter.
+2. **GitHub adapter:** use the authorized connector for repository work while online; preserve offline task records and only mark them complete after result evidence exists.
+3. **Transport adapters:** Tailscale is one transport, not the protocol. Local loopback mode and explicit export/import must remain available.
+4. **Task execution:** typed, named operations only. Never turn model-generated text into arbitrary shell commands.
+5. **Reconnect:** verify protocol version and a fresh nonce; deduplicate task IDs/idempotency keys; re-check target commit SHA; log conflicts instead of overwriting.
+6. **Status UI:** distinguish `CONNECTED`, `DEGRADED`, `OFFLINE`, and `NOT_CONFIGURED`; stale heartbeat means unknown/offline, never connected.
+7. **Security:** loopback binding by default, bearer secrets outside Git, explicit approval for privileged/destructive operations, network exposure, service restarts, deployments, and merges.
 
-## Minimal handshake
+## Recovery sequence
 
-1. Worker sends protocol version, a fresh random nonce, declared capabilities, and read/write scope.
-2. Controller returns the same nonce, supported protocol version, and a bounded expiry.
-3. Worker verifies nonce and version before accepting work.
-4. Both sides record UTC time, action ID, input hash, exit code/result, and error class; omit secrets.
-5. A stale heartbeat is `UNKNOWN`, never `ONLINE`. Configuration is not proof of reachability.
+1. **Repository truth:** inventory open PRs, CI results, current branch heads, and the existing dashboard/worker code before choosing a patch.
+2. **Local truth:** on Windows, inspect process ownership, listener bindings, and health endpoints for dashboard, worker, Ollama, and mesh bridge separately.
+3. **Classify the failed phone request:** confirm current Windows Tailscale IP; test Ollama on `127.0.0.1:11434`; then test from Windows to its own tailnet IP; then test from Android. This separates app failure, loopback-only binding, peer/network/ACL failure, and wrong IP.
+4. **Restore local service first:** keep the worker and queue functional with Tailscale disconnected.
+5. **Restore remote path:** verify one bounded authenticated end-to-end request and response before declaring connected.
+6. **Regression test:** duplicate task replay, worker restart, stale commit, malformed input, corrupt journal, missing/wrong bearer token, unreachable peer, and unsupported operation must fail safely.
+7. **Record evidence:** commit SHA, exact command, expected/actual output, UTC timestamp, and blockers. Do not treat source inspection or endpoint health as a successful task execution.
 
-## Policy gates
+## Acceptance gates
 
-- Read-only inspection and isolated deterministic tests may run without additional approval.
-- Require explicit approval for privileged commands, destructive file operations, service restarts, firewall/network changes, credential handling, external exposure, deployments, and merges.
-- Use named operation handlers (for example `Get-ServiceStatus`, `Get-LocalEndpointHealth`, `Run-RepoTests`), not an unrestricted `Invoke-Expression` command channel.
-- Keep all new listeners on loopback unless an authenticated transport and threat review explicitly justify otherwise.
-- Treat repository files, webpages, logs, and model output as untrusted input.
+- [ ] Existing journal and worker test suites run on the target Node.js version and pass.
+- [ ] Existing PowerShell 5.1 launcher starts the worker and validates its health endpoint.
+- [ ] A health handshake reports protocol version, worker identity, capabilities, and last successful task; nonce/version mismatch is rejected before remote work.
+- [ ] Local journal and dashboard continue to work with internet and Tailscale unavailable.
+- [ ] Remote task exchange works end-to-end over the chosen transport, with authentication and idempotency.
+- [ ] A changed target commit blocks replay until evidence is refreshed.
+- [ ] Privileged/destructive/external operations remain approval-gated.
+- [ ] GitHub Actions results are inspected on the exact proposed head before merging.
 
-## Recovery order
+## Next implementation slice
 
-1. **Inventory:** query GitHub for open PRs/issues and inspect the Unified Field dashboard PR and its source files.
-2. **Local reachability:** on Windows, check the worker process, loopback health endpoint, listening ports, and Ollama locally; separately test the tailnet address from the phone.
-3. **Classify failure:** distinguish process-down, listener-bound-to-loopback, firewall, wrong tailnet IP, peer offline, ACL denial, and application/API failure.
-4. **Restore local operation first:** worker and queue must function without Tailscale or internet.
-5. **Restore remote operation second:** verify the nonce handshake across the selected transport; do not infer connectivity from a green Tailscale icon alone.
-6. **Test recovery:** stop/restart worker, replay duplicate task IDs, corrupt a journal line, change target commit SHA, and simulate unreachable adapters. Verify safe failure and deterministic recovery.
-7. **Publish evidence:** record commands, expected/actual outputs, timestamps, commit SHA, and remaining blockers.
-
-## Acceptance criteria
-
-- [ ] PowerShell 5.1-compatible worker entrypoint and a documented one-command launcher.
-- [ ] Health endpoint reports protocol version, worker identity, capabilities, queue depth, and last successful task.
-- [ ] Nonce handshake rejects missing/mismatched nonce and unsupported protocol version.
-- [ ] Queue survives process restart and does not execute duplicate idempotency keys.
-- [ ] Unknown operation names and malformed task envelopes are rejected.
-- [ ] Privileged/destructive/external actions require explicit approval.
-- [ ] Local mode works with internet and Tailscale unavailable.
-- [ ] Remote mode is only marked connected after a successful end-to-end request and response.
-- [ ] Tests and CI results are linked; untested capabilities remain marked pending.
-
-## Immediate next implementation slice
-
-Implement and test the task-envelope validator and append-only queue first. It has no network, credential, or administrator dependency and provides the foundation for every adapter. Next add the loopback health/handshake service, then the PowerShell 5.1 worker. Only after local tests pass should remote transport be re-enabled.
+Do not add a second journal or a replacement dashboard. First run the existing `uf-bridge-journal.test.cjs` and `uf-local-worker.test.cjs` through the repository's documented Node.js workflow, inspect CI, and then target the missing **authenticated reconnect/dispatch handshake** as a small isolated change. Keep it loopback-only until local integration tests pass. Remote transport should be added only after the local protocol is deterministic.
