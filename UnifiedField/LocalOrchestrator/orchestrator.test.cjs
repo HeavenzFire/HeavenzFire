@@ -19,8 +19,10 @@ test('manifest contains 16 unique named roles and caps parallelism at four', () 
   assert.ok(manifest.maxParallel >= 1 && manifest.maxParallel <= 4);
 });
 
-test('refuses non-loopback bind addresses', () => {
+test('refuses non-loopback bind addresses and remote Ollama endpoints', () => {
   assert.throws(() => createOrchestrator({ host: '0.0.0.0' }), /must_bind_loopback/);
+  assert.throws(() => createOrchestrator({ ollamaUrl: 'http://192.168.1.10:11434' }), /ollama_must_use_http_loopback/);
+  assert.throws(() => createOrchestrator({ ollamaUrl: 'https://example.com' }), /ollama_must_use_http_loopback/);
 });
 
 test('proposal cannot run until explicit approval and then fans out to all 16 roles', async () => {
