@@ -30,6 +30,58 @@ test('binds loopback and reports explicit non-execution limitations', async () =
     assert.ok(data.limitations.includes('no-network-sync'));
   });
 });
+test('authenticated handshake negotiates protocol and returns worker identity', async () => {
+  await withWorker({ token: 'handshake-token' }, async base => {
+    const nonce = 'A'.repeat(32);
+    const denied = await fetch(base + '/api/handshake', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ protocol_version: 1, client_nonce: nonce })
+    });
+    assert.equal(denied.status, 401);
+
+    const mismatch = await fetch(base + '/api/handshake', {
+      method: 'POST',
+      headers: { authorization: 'Bearer handshake-token', 'content-type': 'application/json' },
+      body: JSON.stringify({ protocol_version: 99, client_nonce: nonce })
+    });
+    assert.equal(mismatch.status, 426);
+    assert.equal((await mismatch.json()).supported_protocol_version, 1);
+
+    const accepted = await fetch(base + '/api/handshake', {
+      method: 'POST',
+      headers: { authorization: 'Bearer handshake-token', 'content-type': 'application/json' },
+      body: JSON.stringify({ protocol_version: 1, client_nonce: nonce })
+    });
+    const data = await accepted.json();
+    assert.equal(accepted.status, 200);
+    assert.equal(data.ok, true);
+    assert.equal(data.protocol_version, 1);
+    assert.equal(data.client_nonce, nonce);
+    assert.match(data.worker_instance_id, /^[a-f0-9]{32}$/);
+    assert.ok(data.limitations.includes('no-network-sync'));
+  });
+});
+
+test('handshake rejects malformed and replayed client nonces', async () => {
+  await withWorker({ token: 'handshake-token' }, async base => {
+    const sendHandshake = client_nonce => fetch(base + '/api/handshake', {
+      method: 'POST',
+      headers: { authorization: 'Bearer handshake-token', 'content-type': 'application/json' },
+      body: JSON.stringify({ protocol_version: 1, client_nonce })
+    });
+    assert.equal((await sendHandshake('short')).status, 400);
+    const nonce = 'B'.repeat(32);
+    assert.equal((await sendHandshake(nonce)).status, 200);
+    const replay = await sendHandshake(nonce);
+    assert.equal(replay.status, 409);
+    assert.equal((await replay.json()).error, 'client_nonce_replayed');
+    const fresh = await sendHandshake('C'.repeat(32));
+    assert.equal(fresh.status, 200);
+    assert.equal((await fresh.json()).worker_instance_id, (await (await sendHandshake('D'.repeat(32))).json()).worker_instance_id);
+  });
+});
+
 test('task list is readable but enqueue requires bearer authentication', async () => {
   await withWorker({ token: 'test-token' }, async base => {
     const denied = await fetch(base + '/api/tasks', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ task }) });
