@@ -263,3 +263,47 @@ test('HTTP execution requires verifier approval bound to request, action, and in
     assert.equal(seen[1].approval, 'trusted-approval');
   });
 });
+
+
+test('HTTP execution fails closed when the approval verifier throws or returns a non-boolean value', async () => {
+  const cases = [
+    {
+      requestId: 'request-approval-throws',
+      approvalVerifier: async () => { throw new Error('verifier unavailable'); }
+    },
+    {
+      requestId: 'request-approval-truthy',
+      approvalVerifier: async () => 'true'
+    }
+  ];
+
+  for (const scenario of cases) {
+    let executions = 0;
+    const executor = {
+      capabilities: () => ({ actions: ['workspace.read_file'], requires_approval: true, arbitrary_shell: false }),
+      execute: async () => { executions++; return { ok: true }; }
+    };
+
+    await withWorker({
+      token: 'approval-token',
+      executor,
+      approvalVerifier: scenario.approvalVerifier
+    }, async base => {
+      const response = await fetch(base + '/api/execute', {
+        method: 'POST',
+        headers: { authorization: 'Bearer approval-token', 'content-type': 'application/json' },
+        body: JSON.stringify({
+          request_id: scenario.requestId,
+          approved: true,
+          approval: 'caller-claimed-approval',
+          action: 'workspace.read_file',
+          input: { path: 'README.md' }
+        })
+      });
+
+      assert.equal(response.status, 403);
+      assert.equal((await response.json()).error, 'server_side_approval_denied');
+      assert.equal(executions, 0);
+    });
+  }
+});
