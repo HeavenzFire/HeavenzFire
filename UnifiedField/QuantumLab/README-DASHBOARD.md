@@ -43,7 +43,9 @@ The proposed protocol and role architecture are documented in:
 - `UF-TCP-SPEC.md`: deterministic ternary decision policy and evidence contract.
 - `UF-144-COUNCIL-ARCHITECTURE.md`: 72 proposal-side roles and 72 counter-examination roles.
 - `uf-tcp-policy.cjs`: pure policy evaluator; no network, filesystem, model calls, or side effects.
-- `uf-tcp-policy.test.cjs`: Node.js built-in test suite (11/11 passed locally on Node.js 22.14.0).\n- `uf-144-council.cjs`: deterministic 144-seat role registry; every seat starts `NOT_CONFIGURED`, with zero live agents claimed.\n- `uf-144-council.test.cjs`: tests for 144-seat count, one-to-one pairing, explicit unconfigured state, and deterministic output.
+- `uf-tcp-policy.test.cjs`: Node.js built-in test suite (11/11 passed locally on Node.js 22.14.0).
+- `uf-144-council.cjs`: deterministic 144-seat role registry; every seat starts `NOT_CONFIGURED`, with zero live agents claimed.
+- `uf-144-council.test.cjs`: tests for 144-seat count, one-to-one pairing, explicit unconfigured state, and deterministic output.
 - `uf-bridge-journal.cjs`: append-only JSONL task journal with idempotency, restart recovery, state transitions, corruption reporting, and stale-target conflict checks. It records metadata only and does not execute commands.
 - `uf-bridge-journal.test.cjs`: tests persistence, deduplication, replay conflict detection, state transitions, corruption reporting, and executable-payload rejection.
 - `uf-local-worker.cjs`: loopback-only task metadata API; bearer authentication for task routes; no shell execution, network sync, or automatic replay.
@@ -62,7 +64,7 @@ From this directory, run the policy tests with a recent Node.js runtime:
 node --test .\uf-tcp-policy.test.cjs
 ```
 
-The dashboard remains read-only and does not yet execute the policy engine, run council seats, dispatch cross-examination tasks, or operate the offline journal as a worker. The journal is the first queue primitive, not a complete online/offline runtime; no local daemon or browser adapter is claimed as operational. A green service-health indicator means an endpoint responded; it is not proof that the 144-role council or end-to-end workflow is operational. Do not represent role records as independent live models unless that independence is separately demonstrated.
+The dashboard does not yet execute the policy engine, run council seats, dispatch cross-examination tasks, or operate the offline journal as a worker. It does expose the existing fixed, allowlisted worker actions and bounded simulated Avatar Body controls described above; it is not an arbitrary-command interface. The journal is the first queue primitive, not a complete online/offline runtime; no local daemon or browser adapter is claimed as operational. A green service-health indicator means an endpoint responded; it is not proof that the 144-role council or end-to-end workflow is operational. Do not represent role records as independent live models unless that independence is separately demonstrated.
 
 ## Generate a topology proposal
 
