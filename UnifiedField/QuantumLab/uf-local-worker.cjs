@@ -1,7 +1,7 @@
 'use strict';
 
-// Loopback-only local worker API. It journals task metadata; it does not execute tasks,
-// run shell commands, connect to remote peers, or replay work automatically.
+// Loopback-only local worker API. HTTP execution is allowlisted and requires a trusted,
+// server-configured approval verifier; caller-supplied approval booleans are never trusted.
 const http = require('node:http');
 const crypto = require('node:crypto');
 const { OfflineTaskJournal, MODES } = require('./uf-bridge-journal.cjs');
@@ -56,6 +56,8 @@ function createWorkerServer(options = {}) {
   const workerInstanceId = crypto.randomBytes(16).toString('hex');
   const seenClientNonces = new Map();
   const executor = options.executor || createScopedExecutor({ workspaceRoot: options.workspaceRoot || process.env.HEAVENZFIRE_WORKSPACE_ROOT });
+  // The host must verify an approval bound to requestId/action/input. No verifier means deny.
+  const approvalVerifier = options.approvalVerifier;
   const server = http.createServer(async (req, res) => {
     try {
       if (req.headers.host && !/^127\.0\.0\.1(?::\d+)?$/.test(req.headers.host)) {
@@ -77,7 +79,8 @@ function createWorkerServer(options = {}) {
           execution: {
             ...executor.capabilities(),
             actions: executor.capabilities().actions.filter(action => REMOTE_EXECUTION_ACTIONS.has(action)),
-            requires_approval: false,
+            requires_approval: true,
+            approval_verifier_configured: typeof approvalVerifier === 'function',
             write_actions_enabled_over_http: false
           }
         });
@@ -127,6 +130,21 @@ function createWorkerServer(options = {}) {
         if (!REMOTE_EXECUTION_ACTIONS.has(body.action)) return send(res, 403, { ok: false, error: 'execution_action_not_enabled_over_http' });
         const requestId = typeof body.request_id === 'string' && /^[A-Za-z0-9._:-]{8,100}$/.test(body.request_id) ? body.request_id : '';
         if (!requestId) return send(res, 400, { ok: false, error: 'valid_request_id_required' });
+        if (typeof approvalVerifier !== 'function') {
+          return send(res, 403, { ok: false, error: 'approval_verifier_not_configured', request_id: requestId });
+        }
+        let approved = false;
+        try {
+          approved = (await approvalVerifier({
+            requestId,
+            action: body.action,
+            input: body.input || {},
+            approval: body.approval
+          })) === true;
+        } catch {
+          approved = false;
+        }
+        if (!approved) return send(res, 403, { ok: false, error: 'server_side_approval_denied', request_id: requestId });
         const result = await executor.execute(body.action, body.input || {});
         return send(res, result.ok ? 200 : 400, { ok: result.ok, request_id: requestId, action: body.action, result });
       }
