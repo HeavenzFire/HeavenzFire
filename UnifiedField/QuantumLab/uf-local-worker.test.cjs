@@ -26,6 +26,8 @@ test('binds loopback and reports explicit non-execution limitations', async () =
     const data = await r.json();
     assert.equal(r.status, 200);
     assert.equal(data.bind, '127.0.0.1');
+    assert.equal(data.execution.requires_approval, true);
+    assert.equal(data.execution.arbitrary_shell, false);
     assert.ok(data.limitations.includes('no-shell-execution'));
     assert.ok(data.limitations.includes('no-network-sync'));
   });
