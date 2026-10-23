@@ -1,0 +1,30 @@
+name: Unified Field 16-role orchestrator
+
+on:
+  pull_request:
+    paths:
+      - 'UnifiedField/QuantumLab/sixteen-role-orchestrator.cjs'
+      - 'UnifiedField/QuantumLab/sixteen-role-orchestrator.test.cjs'
+      - '.github/workflows/unified-field-sixteen-role.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'UnifiedField/QuantumLab/sixteen-role-orchestrator.cjs'
+      - 'UnifiedField/QuantumLab/sixteen-role-orchestrator.test.cjs'
+      - '.github/workflows/unified-field-sixteen-role.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Run orchestrator regression tests
+        run: node --test UnifiedField/QuantumLab/sixteen-role-orchestrator.test.cjs
