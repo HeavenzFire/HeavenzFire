@@ -47,12 +47,30 @@ test('state transitions require RUNNING before DONE', () => {
   try {
     const q = new OfflineTaskJournal(f.file);
     q.enqueue(task());
-    assert.throws(() => q.setState('task-1', 'DONE'), /must be RUNNING/);
+    assert.throws(() => q.setState('task-1', 'DONE'), /cannot transition from QUEUED to DONE/);
     q.setState('task-1', 'RUNNING', { attempts: 1 });
     assert.equal(q.setState('task-1', 'DONE').status, 'DONE');
     assert.equal(q.evaluateReplay('task-1', 'abc123').action, 'SKIP_ALREADY_DONE');
   } finally { f.cleanup(); }
 });
+test('task states cannot move backward or leave terminal states', () => {
+  const f = fixture();
+  try {
+    const q = new OfflineTaskJournal(f.file);
+    q.enqueue(task());
+    q.setState('task-1', 'RUNNING', { attempts: 1 });
+    assert.throws(() => q.setState('task-1', 'QUEUED'), /cannot transition from RUNNING to QUEUED/);
+    q.setState('task-1', 'DONE');
+    for (const status of ['QUEUED', 'RUNNING', 'BLOCKED', 'CONFLICT', 'FAILED']) {
+      assert.throws(
+        () => q.setState('task-1', status, { last_error: 'test' }),
+        new RegExp('cannot transition from DONE to ' + status)
+      );
+    }
+    assert.equal(q.inspect().tasks[0].status, 'DONE');
+  } finally { f.cleanup(); }
+});
+
 test('corrupt journal lines are reported instead of silently discarded', () => {
   const f = fixture();
   try {
