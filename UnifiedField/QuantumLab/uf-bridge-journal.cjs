@@ -95,8 +95,9 @@ class OfflineTaskJournal {
     const snapshot = this._assertWritable();
     const t = snapshot.tasks.find(x => x.task_id === taskId);
     if (!t) throw new Error('unknown task_id');
-    if (status === 'RUNNING' && t.status !== 'QUEUED' && t.status !== 'BLOCKED') throw new Error('task cannot enter RUNNING from ' + t.status);
-    if (status === 'DONE' && t.status !== 'RUNNING') throw new Error('task must be RUNNING before DONE');
+    if (!ALLOWED_TRANSITIONS[t.status] || !ALLOWED_TRANSITIONS[t.status].has(status)) {
+      throw new Error('task cannot transition from ' + t.status + ' to ' + status);
+    }
     if (status === 'CONFLICT' && !details.last_error) throw new Error('conflict requires an explanatory last_error');
     this._append('TASK_STATE', { task_id: taskId, status, attempts: details.attempts ?? t.attempts, last_error: details.last_error ?? null });
     return this.inspect().tasks.find(x => x.task_id === taskId);
