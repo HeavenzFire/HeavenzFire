@@ -10,6 +10,9 @@ const { createScopedExecutor } = require('./uf-scoped-executor.cjs');
 const MAX_BODY_BYTES = 16 * 1024;
 const MAX_EXECUTE_BODY_BYTES = 272 * 1024;
 const REMOTE_EXECUTION_ACTIONS = new Set(['workspace.read_file', 'git.status']);
+const PROTOCOL_VERSION = 1;
+const NONCE_TTL_MS = 2 * 60 * 1000;
+const MAX_NONCES = 4096;
 function safeEqual(a, b) {
   const aa = Buffer.from(String(a));
   const bb = Buffer.from(String(b));
@@ -50,6 +53,8 @@ function createWorkerServer(options = {}) {
   const journal = options.journal || new OfflineTaskJournal(options.journalPath);
   const token = options.token || process.env.HEAVENZFIRE_BRIDGE_TOKEN || '';
   let mode = 'OFFLINE';
+  const workerInstanceId = crypto.randomBytes(16).toString('hex');
+  const seenClientNonces = new Map();
   const executor = options.executor || createScopedExecutor({ workspaceRoot: options.workspaceRoot || process.env.HEAVENZFIRE_WORKSPACE_ROOT });
   const server = http.createServer(async (req, res) => {
     try {
@@ -75,6 +80,43 @@ function createWorkerServer(options = {}) {
             requires_approval: false,
             write_actions_enabled_over_http: false
           }
+        });
+      }
+      if (req.method === 'POST' && url.pathname === '/api/handshake') {
+        if (!token) return send(res, 503, { ok: false, error: 'handshake_token_not_configured' });
+        const authorization = req.headers.authorization || '';
+        if (!authorization.startsWith('Bearer ') || !safeEqual(authorization.slice(7), token)) {
+          return send(res, 401, { ok: false, error: 'unauthorized' });
+        }
+        const body = await readJson(req, 4096);
+        if (body.protocol_version !== PROTOCOL_VERSION) {
+          return send(res, 426, { ok: false, error: 'protocol_version_mismatch', supported_protocol_version: PROTOCOL_VERSION });
+        }
+        const clientNonce = typeof body.client_nonce === 'string' && /^[A-Za-z0-9_-]{22,128}$/.test(body.client_nonce)
+          ? body.client_nonce
+          : '';
+        if (!clientNonce) return send(res, 400, { ok: false, error: 'valid_client_nonce_required' });
+
+        const now = Date.now();
+        for (const [nonce, expiresAt] of seenClientNonces) {
+          if (expiresAt <= now) seenClientNonces.delete(nonce);
+        }
+        if (seenClientNonces.has(clientNonce)) {
+          return send(res, 409, { ok: false, error: 'client_nonce_replayed' });
+        }
+        if (seenClientNonces.size >= MAX_NONCES) {
+          return send(res, 429, { ok: false, error: 'handshake_nonce_capacity_exceeded' });
+        }
+        seenClientNonces.set(clientNonce, now + NONCE_TTL_MS);
+        return send(res, 200, {
+          ok: true,
+          protocol_version: PROTOCOL_VERSION,
+          worker_instance_id: workerInstanceId,
+          client_nonce: clientNonce,
+          mode,
+          capabilities: ['task-metadata-journal', 'idempotency', 'replay-eligibility-check'],
+          limitations: ['no-network-sync', 'no-automatic-replay', 'no-live-mesh', 'no-arbitrary-shell'],
+          nonce_ttl_ms: NONCE_TTL_MS
         });
       }
       if (req.method === 'POST' && url.pathname === '/api/execute') {
@@ -165,4 +207,4 @@ if (require.main === module) {
     });
   }
 }
-module.exports = { createWorkerServer, MAX_BODY_BYTES, MAX_EXECUTE_BODY_BYTES };
+module.exports = { createWorkerServer, MAX_BODY_BYTES, MAX_EXECUTE_BODY_BYTES, PROTOCOL_VERSION, NONCE_TTL_MS, MAX_NONCES };
