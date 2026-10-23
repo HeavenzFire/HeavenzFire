@@ -1,0 +1,55 @@
+name: Unified Field 16-role orchestrator
+
+on:
+  pull_request:
+    paths:
+      - 'UnifiedField/QuantumLab/sixteen-role-orchestrator.cjs'
+      - 'UnifiedField/QuantumLab/sixteen-role-orchestrator.test.cjs'
+      - 'UnifiedField/FieldCore/Start-SixteenRoleOrchestrator.ps1'
+      - 'UnifiedField/FieldCore/LAUNCHER.md'
+      - '.github/workflows/unified-field-sixteen-role.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'UnifiedField/QuantumLab/sixteen-role-orchestrator.cjs'
+      - 'UnifiedField/QuantumLab/sixteen-role-orchestrator.test.cjs'
+      - 'UnifiedField/FieldCore/Start-SixteenRoleOrchestrator.ps1'
+      - 'UnifiedField/FieldCore/LAUNCHER.md'
+      - '.github/workflows/unified-field-sixteen-role.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Run orchestrator regression tests
+        run: node --test UnifiedField/QuantumLab/sixteen-role-orchestrator.test.cjs
+
+  powershell-5-1-parse:
+    runs-on: windows-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Parse launcher with Windows PowerShell
+        shell: powershell
+        run: |
+          $tokens = $null
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Join-Path $PWD 'UnifiedField\FieldCore\Start-SixteenRoleOrchestrator.ps1'),
+            [ref]$tokens,
+            [ref]$errors
+          ) | Out-Null
+          if ($errors.Count -gt 0) {
+            $errors | Format-List * | Out-String | Write-Error
+            exit 1
+          }
+          Write-Host 'Windows PowerShell parser reported no syntax errors.'
