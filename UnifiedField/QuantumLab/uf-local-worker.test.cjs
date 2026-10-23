@@ -26,6 +26,8 @@ test('binds loopback and reports explicit non-execution limitations', async () =
     const data = await r.json();
     assert.equal(r.status, 200);
     assert.equal(data.bind, '127.0.0.1');
+    assert.equal(data.execution.requires_approval, true);
+    assert.equal(data.execution.approval_verifier_configured, false);
     assert.ok(data.limitations.includes('no-shell-execution'));
     assert.ok(data.limitations.includes('no-network-sync'));
   });
@@ -199,5 +201,65 @@ test('HTTP execution rejects write and arbitrary Node test actions even when cal
     const nodeTest = await request('node.test');
     assert.equal(nodeTest.status, 403);
     assert.equal((await nodeTest.json()).error, 'execution_action_not_enabled_over_http');
+  });
+});
+
+
+test('HTTP execution fails closed without a server-side approval verifier', async () => {
+  let executions = 0;
+  const executor = {
+    capabilities: () => ({ actions: ['workspace.read_file'], requires_approval: true, arbitrary_shell: false }),
+    execute: async () => { executions++; return { ok: true, content: 'should not run' }; }
+  };
+  await withWorker({ token: 'approval-token', executor }, async base => {
+    const response = await fetch(base + '/api/execute', {
+      method: 'POST',
+      headers: { authorization: 'Bearer approval-token', 'content-type': 'application/json' },
+      body: JSON.stringify({ request_id: 'request-approval-1', approved: true, action: 'workspace.read_file', input: { path: 'README.md' } })
+    });
+    assert.equal(response.status, 403);
+    assert.equal((await response.json()).error, 'approval_verifier_not_configured');
+    assert.equal(executions, 0);
+  });
+});
+
+test('HTTP execution requires verifier approval bound to request, action, and input', async () => {
+  const seen = [];
+  let executions = 0;
+  const executor = {
+    capabilities: () => ({ actions: ['workspace.read_file'], requires_approval: true, arbitrary_shell: false }),
+    execute: async (action, input) => { executions++; return { ok: true, action, path: input.path }; }
+  };
+  await withWorker({
+    token: 'approval-token',
+    executor,
+    approvalVerifier: async context => {
+      seen.push(context);
+      return context.approval === 'trusted-approval' &&
+        context.requestId === 'request-approval-2' &&
+        context.action === 'workspace.read_file' &&
+        context.input.path === 'README.md';
+    }
+  }, async base => {
+    const denied = await fetch(base + '/api/execute', {
+      method: 'POST',
+      headers: { authorization: 'Bearer approval-token', 'content-type': 'application/json' },
+      body: JSON.stringify({ request_id: 'request-approval-2', approved: true, action: 'workspace.read_file', input: { path: 'README.md' } })
+    });
+    assert.equal(denied.status, 403);
+    assert.equal((await denied.json()).error, 'server_side_approval_denied');
+    assert.equal(executions, 0);
+
+    const accepted = await fetch(base + '/api/execute', {
+      method: 'POST',
+      headers: { authorization: 'Bearer approval-token', 'content-type': 'application/json' },
+      body: JSON.stringify({ request_id: 'request-approval-2', approved: true, approval: 'trusted-approval', action: 'workspace.read_file', input: { path: 'README.md' } })
+    });
+    assert.equal(accepted.status, 200);
+    assert.equal((await accepted.json()).result.path, 'README.md');
+    assert.equal(executions, 1);
+    assert.equal(seen.length, 2);
+    assert.equal(seen[0].approval, undefined);
+    assert.equal(seen[1].approval, 'trusted-approval');
   });
 });
