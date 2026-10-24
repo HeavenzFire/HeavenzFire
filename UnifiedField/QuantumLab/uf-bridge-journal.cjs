@@ -9,6 +9,14 @@ const crypto = require('node:crypto');
 const STATES = new Set(['QUEUED', 'RUNNING', 'DONE', 'BLOCKED', 'CONFLICT', 'FAILED']);
 const MODES = new Set(['ONLINE', 'OFFLINE', 'DEGRADED', 'RECONNECTING']);
 const RISK_CLASSES = new Set(['LOW', 'MEDIUM', 'HIGH']);
+const ALLOWED_TRANSITIONS = Object.freeze({
+  QUEUED: new Set(['RUNNING', 'BLOCKED', 'CONFLICT', 'FAILED']),
+  RUNNING: new Set(['DONE', 'BLOCKED', 'CONFLICT', 'FAILED']),
+  BLOCKED: new Set(['RUNNING', 'CONFLICT', 'FAILED']),
+  DONE: new Set(),
+  CONFLICT: new Set(),
+  FAILED: new Set()
+});
 
 function stableId(value) {
   return crypto.createHash('sha256').update(String(value)).digest('hex');
@@ -97,8 +105,9 @@ class OfflineTaskJournal {
     const snapshot = this._assertWritable();
     const t = snapshot.tasks.find(x => x.task_id === taskId);
     if (!t) throw new Error('unknown task_id');
-    if (status === 'RUNNING' && t.status !== 'QUEUED' && t.status !== 'BLOCKED') throw new Error('task cannot enter RUNNING from ' + t.status);
-    if (status === 'DONE' && t.status !== 'RUNNING') throw new Error('task must be RUNNING before DONE');
+    if (!ALLOWED_TRANSITIONS[t.status] || !ALLOWED_TRANSITIONS[t.status].has(status)) {
+      throw new Error('task cannot transition from ' + t.status + ' to ' + status);
+    }
     if (status === 'CONFLICT' && !details.last_error) throw new Error('conflict requires an explanatory last_error');
     this._append('TASK_STATE', { task_id: taskId, status, attempts: details.attempts ?? t.attempts, last_error: details.last_error ?? null });
     return this.inspect().tasks.find(x => x.task_id === taskId);
