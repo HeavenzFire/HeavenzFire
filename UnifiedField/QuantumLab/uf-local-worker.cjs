@@ -130,6 +130,12 @@ function createWorkerServer(options = {}) {
         if (!REMOTE_EXECUTION_ACTIONS.has(body.action)) return send(res, 403, { ok: false, error: 'execution_action_not_enabled_over_http' });
         const requestId = typeof body.request_id === 'string' && /^[A-Za-z0-9._:-]{8,100}$/.test(body.request_id) ? body.request_id : '';
         if (!requestId) return send(res, 400, { ok: false, error: 'valid_request_id_required' });
+        // Keep the approval and executor input identical and structurally unambiguous.
+        // Null, arrays, and primitive values must not be silently coerced into an empty object.
+        const input = body.input === undefined ? {} : body.input;
+        if (input === null || typeof input !== 'object' || Array.isArray(input)) {
+          return send(res, 400, { ok: false, error: 'execution_input_must_be_object', request_id: requestId });
+        }
         if (typeof approvalVerifier !== 'function') {
           return send(res, 403, { ok: false, error: 'approval_verifier_not_configured', request_id: requestId });
         }
@@ -138,14 +144,14 @@ function createWorkerServer(options = {}) {
           approved = (await approvalVerifier({
             requestId,
             action: body.action,
-            input: body.input || {},
+            input,
             approval: body.approval
           })) === true;
         } catch {
           approved = false;
         }
         if (!approved) return send(res, 403, { ok: false, error: 'server_side_approval_denied', request_id: requestId });
-        const result = await executor.execute(body.action, body.input || {});
+        const result = await executor.execute(body.action, input);
         return send(res, result.ok ? 200 : 400, { ok: result.ok, request_id: requestId, action: body.action, result });
       }
       if (req.method === 'GET' && url.pathname === '/api/tasks') {
