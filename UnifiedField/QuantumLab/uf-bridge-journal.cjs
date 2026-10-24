@@ -8,6 +8,7 @@ const crypto = require('node:crypto');
 
 const STATES = new Set(['QUEUED', 'RUNNING', 'DONE', 'BLOCKED', 'CONFLICT', 'FAILED']);
 const MODES = new Set(['ONLINE', 'OFFLINE', 'DEGRADED', 'RECONNECTING']);
+const RISK_CLASSES = new Set(['LOW', 'MEDIUM', 'HIGH']);
 
 function stableId(value) {
   return crypto.createHash('sha256').update(String(value)).digest('hex');
@@ -17,6 +18,7 @@ function validateTask(task) {
   for (const k of ['task_id', 'objective', 'risk_class', 'idempotency_key']) {
     if (typeof task[k] !== 'string' || !task[k].trim()) throw new TypeError(k + ' is required');
   }
+  if (!RISK_CLASSES.has(task.risk_class)) throw new TypeError('risk_class must be one of: LOW, MEDIUM, HIGH');
   if (task.objective.length > 2000) throw new RangeError('objective too long');
   if (!Array.isArray(task.scope) || task.scope.some(x => typeof x !== 'string')) throw new TypeError('scope must be a string array');
   if (task.command !== undefined || task.shell !== undefined || task.script !== undefined) {
@@ -110,4 +112,4 @@ class OfflineTaskJournal {
     return { action: 'ELIGIBLE_FOR_REVALIDATION', requiresFreshEvidence: true, taskId: t.task_id };
   }
 }
-module.exports = { OfflineTaskJournal, validateTask, readJournal, materialize, STATES, MODES };
+module.exports = { OfflineTaskJournal, validateTask, readJournal, materialize, STATES, MODES, RISK_CLASSES };
