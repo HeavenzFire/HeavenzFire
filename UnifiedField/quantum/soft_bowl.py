@@ -29,8 +29,12 @@ class OscillatorConfig:
             raise ValueError("Physical parameters must be finite.")
         if self.mass <= 0 or self.omega <= 0 or self.hbar <= 0 or self.x_max <= 0:
             raise ValueError("mass, omega, hbar, and x_max must be positive.")
+        if isinstance(self.points, bool) or not isinstance(self.points, int):
+            raise ValueError("points must be an odd integer >= 101.")
         if self.points < 101 or self.points % 2 == 0:
             raise ValueError("points must be an odd integer >= 101.")
+        if isinstance(self.states, bool) or not isinstance(self.states, int):
+            raise ValueError("states must be an integer between 1 and min(12, points - 2).")
         if not 1 <= self.states <= min(12, self.points - 2):
             raise ValueError("states must be between 1 and min(12, points - 2).")
 
