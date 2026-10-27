@@ -17,13 +17,15 @@ from tools.validate_capabilities import validate_registry
 def build_report(capability_data: Any, node_data: Any, timeout: float = 2.0) -> dict[str, Any]:
     capability_errors = validate_registry(capability_data)
     node_errors = validate_nodes(node_data)
-    if capability_errors or node_errors:
+    timeout_errors = [] if math.isfinite(timeout) and timeout > 0 else ["timeout: expected a finite positive number"]
+    if capability_errors or node_errors or timeout_errors:
         return {
             "schema_version": "1.0",
             "overall": "DARK",
             "validation_errors": {
                 "capabilities": capability_errors,
                 "nodes": node_errors,
+                "timeout": timeout_errors,
             },
             "capabilities": [],
             "nodes": [],
