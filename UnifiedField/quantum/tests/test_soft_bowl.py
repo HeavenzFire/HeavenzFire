@@ -45,13 +45,31 @@ class SoftBowlTests(unittest.TestCase):
             self.assertLess(state["relative_energy_error"], 1e-2)
         self.assertTrue(np.all(np.isfinite([s["sigma_x_numeric"] for s in result["states"]])))
 
+    def test_parameter_sweep_remains_finite_and_tracks_exact_spectrum(self):
+        configs = (
+            OscillatorConfig(mass=0.5, omega=2.0, hbar=1.2, x_max=6.0, points=301, states=3),
+            OscillatorConfig(mass=3.0, omega=0.75, hbar=0.8, x_max=6.0, points=301, states=3),
+            OscillatorConfig(mass=1.25, omega=1.1, hbar=0.9, x_max=7.0, points=351, states=4),
+        )
+        for config in configs:
+            with self.subTest(config=config):
+                result = solve(config)
+                self.assertTrue(result["checks"]["all_norms_within_1e-10"])
+                self.assertTrue(result["checks"]["energies_increasing"])
+                self.assertTrue(math.isfinite(result["checks"]["maximum_relative_energy_error"]))
+                self.assertLess(result["checks"]["maximum_relative_energy_error"], 1e-2)
+                self.assertTrue(np.all(np.isfinite([s["energy_numeric"] for s in result["states"]])))
+
     def test_invalid_physical_parameters_are_rejected(self):
         for config in (
             OscillatorConfig(mass=0),
             OscillatorConfig(omega=-1),
             OscillatorConfig(hbar=float("nan")),
             OscillatorConfig(points=100),
+            OscillatorConfig(points=101.5),
+            OscillatorConfig(points=True),
             OscillatorConfig(states=13),
+            OscillatorConfig(states=1.5),
         ):
             with self.subTest(config=config):
                 with self.assertRaises(ValueError):
