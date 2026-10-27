@@ -307,3 +307,21 @@ test('HTTP execution fails closed when the approval verifier throws or returns a
     });
   }
 });
+
+test('trusted proxy host is accepted only when exact and configured on loopback worker', async () => {
+  await withWorker({ token: 'proxy-token', trustedProxyHost: 'zdh.tailb4ab69.ts.net' }, async base => {
+    const trusted = await fetch(base + '/health', { headers: { host: 'zdh.tailb4ab69.ts.net' } });
+    assert.equal(trusted.status, 200);
+    const attacker = await fetch(base + '/health', { headers: { host: 'attacker.example' } });
+    assert.equal(attacker.status, 400);
+    assert.equal((await attacker.json()).error, 'invalid_host');
+  });
+});
+
+test('non-loopback proxy host is denied unless explicitly configured', async () => {
+  await withWorker({ token: 'proxy-token' }, async base => {
+    const denied = await fetch(base + '/health', { headers: { host: 'zdh.tailb4ab69.ts.net' } });
+    assert.equal(denied.status, 400);
+    assert.equal((await denied.json()).error, 'invalid_host');
+  });
+});
