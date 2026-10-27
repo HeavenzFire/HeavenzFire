@@ -1,7 +1,7 @@
 # Unified Field Recovery Plan
 
 **Status:** evidence-scoped recovery plan; not a claim that local services are online  
-**Updated:** 2026-10-22  
+**Updated:** 2026-10-27  
 **Repository:** `HeavenzFire/HeavenzFire`
 
 ## What already exists in the repository
@@ -21,7 +21,7 @@ These are repository-source findings, not fresh execution results. The source an
 ## Current known blockers
 
 - A recent phone-side request to `http://100.70.89.89:11434/api/tags` failed with connection refused/unreachable. This does not establish whether Ollama is healthy on Windows loopback.
-- The current local worker explicitly reports no network sync, no automatic replay, and no live mesh. It is a local metadata/task API, not yet the end-to-end remote task bridge.
+- The local worker has an authenticated `/api/handshake` endpoint with protocol-version checking, worker identity, client nonce validation, and in-memory replay rejection. It still explicitly reports no network sync, no automatic replay, and no live mesh; a handshake is not an end-to-end remote task bridge.
 - A local dashboard health response would not prove the worker, phone, or Ollama are reachable across Tailscale.
 - Existing dashboard/worker launch scripts and the queue must be inspected and tested before creating replacement launchers or new services.
 
@@ -33,7 +33,7 @@ Keep one stable task contract and make transports replaceable:
 2. **GitHub adapter:** use the authorized connector for repository work while online; preserve offline task records and only mark them complete after result evidence exists.
 3. **Transport adapters:** Tailscale is one transport, not the protocol. Local loopback mode and explicit export/import must remain available.
 4. **Task execution:** typed, named operations only. Never turn model-generated text into arbitrary shell commands.
-5. **Reconnect:** verify protocol version and a fresh nonce; deduplicate task IDs/idempotency keys; re-check target commit SHA; log conflicts instead of overwriting.
+5. **Reconnect:** reuse the existing worker handshake; implement and test a client-side handshake verifier and a bounded authenticated transport adapter. Preserve task-ID/idempotency checks, re-check target commit SHA, and log conflicts instead of overwriting.
 6. **Status UI:** distinguish `CONNECTED`, `DEGRADED`, `OFFLINE`, and `NOT_CONFIGURED`; stale heartbeat means unknown/offline, never connected.
 7. **Security:** loopback binding by default, bearer secrets outside Git, explicit approval for privileged/destructive operations, network exposure, service restarts, deployments, and merges.
 
@@ -51,7 +51,8 @@ Keep one stable task contract and make transports replaceable:
 
 - [ ] Existing journal and worker test suites run on the target Node.js version and pass.
 - [ ] Existing PowerShell 5.1 launcher starts the worker and validates its health endpoint.
-- [ ] A health handshake reports protocol version, worker identity, capabilities, and last successful task; nonce/version mismatch is rejected before remote work.
+- [x] Worker-side handshake reports protocol version, worker identity, capabilities, and echoes a validated client nonce; version mismatch and nonce replay are rejected in the existing worker tests.
+- [ ] Client-side handshake verification and a real authenticated cross-device request/response are tested end to end; the worker remains loopback-only by default.
 - [ ] Local journal and dashboard continue to work with internet and Tailscale unavailable.
 - [ ] Remote task exchange works end-to-end over the chosen transport, with authentication and idempotency.
 - [ ] A changed target commit blocks replay until evidence is refreshed.
@@ -60,4 +61,4 @@ Keep one stable task contract and make transports replaceable:
 
 ## Next implementation slice
 
-Do not add a second journal or a replacement dashboard. First run the existing `uf-bridge-journal.test.cjs` and `uf-local-worker.test.cjs` through the repository's documented Node.js workflow, inspect CI, and then target the missing **authenticated reconnect/dispatch handshake** as a small isolated change. Keep it loopback-only until local integration tests pass. Remote transport should be added only after the local protocol is deterministic.
+Do not add a second journal, duplicate handshake, or replacement dashboard. The source-path status command is now merged in `unified-field/uf.mjs`; it checks declared local component paths but does not claim runtime health. Next, add a client-side handshake verifier and a bounded transport adapter behind explicit configuration, with tests for wrong tokens, protocol mismatch, nonce replay, timeout, duplicate task delivery, stale target commits, and unavailable peers. Keep the existing worker loopback-only until the transport's authentication, authorization, and rollback behavior are independently tested. A production approval verifier with expiry and durable one-time consumption remains a separate blocker for any execution path.
