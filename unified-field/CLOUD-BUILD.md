@@ -8,12 +8,13 @@ From a checkout of this repository:
 
 ```sh
 node unified-field/uf.mjs validate
+node unified-field/uf.mjs status
 node unified-field/uf.mjs list
 node unified-field/uf.mjs graph
 node --test unified-field/core/registry.test.mjs
 ```
 
-The workflow `.github/workflows/unified-field-cloud-core.yml` runs the same validation and tests on GitHub-hosted runners for changes touching the Unified Field core.
+The workflow `.github/workflows/unified-field-cloud-core.yml` runs registry validation, local source-path integrity checks, module listing, and contract tests on GitHub-hosted runners for changes touching the Unified Field core. `status` checks committed source paths only; it does not claim that local services or remote integrations are online.
 
 ## How the ecosystem is unified
 

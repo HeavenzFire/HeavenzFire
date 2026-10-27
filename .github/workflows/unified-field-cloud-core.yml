@@ -28,6 +28,8 @@ jobs:
           node-version: "22"
       - name: Validate registry
         run: node unified-field/uf.mjs validate
+      - name: Check declared local source paths
+        run: node unified-field/uf.mjs status
       - name: List registered modules
         run: node unified-field/uf.mjs list
       - name: Run registry contract tests

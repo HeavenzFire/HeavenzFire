@@ -1,9 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { existsSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync, mkdtempSync, rmSync } from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { loadRegistry, validateRegistry, listModules } from "./registry.mjs";
+import { loadRegistry, validateRegistry, listModules, inspectModuleSources } from "./registry.mjs";
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 
@@ -76,4 +77,22 @@ test("integrated local control modules map to real repository paths", async () =
   assert.equal(byId.get("attention-guard").activation, "manual-unverified");
   assert.match(byId.get("attention-guard").status, /manual browser smoke test pending/);
   assert.equal(byId.get("consent-policy-gate").activation, "manual-until-enforced-by-caller");
+});
+
+test("source inspection reports present, missing, undeclared, and out-of-repository paths", () => {
+  const root = mkdtempSync(path.join(os.tmpdir(), "uf-source-status-"));
+  try {
+    mkdirSync(path.join(root, "src"));
+    writeFileSync(path.join(root, "src", "worker.cjs"), "module.exports = {};");
+    const registry = { modules: [
+      { id: "present", integration: "in-repository", activation: "operator-local", sourcePath: "src/worker.cjs" },
+      { id: "missing", integration: "in-repository", activation: "operator-local", sourcePath: "src/missing.cjs" },
+      { id: "external", integration: "repository-adapter", activation: "disabled-until-reviewed" },
+      { id: "escape", integration: "in-repository", activation: "operator-local", sourcePath: "../outside.cjs" }
+    ] };
+    const result = inspectModuleSources(registry, root);
+    assert.deepEqual(result.map(x => x.sourceState), ["PRESENT", "MISSING", "NOT_DECLARED", "OUTSIDE_REPOSITORY"]);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
