@@ -70,6 +70,7 @@ test('missing execution input is normalized once to an empty object for verifier
     assert.equal(response.status, 200);
     assert.deepEqual(verifiedInput, {});
     assert.deepEqual(executedInput, {});
+    assert.strictEqual(verifiedInput, executedInput, 'verifier and executor must receive the identical input object');
     assert.notEqual(verifiedInput, undefined);
   } finally {
     await worker.close();
