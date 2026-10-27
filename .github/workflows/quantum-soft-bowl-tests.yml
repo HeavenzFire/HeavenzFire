@@ -1,0 +1,36 @@
+name: Quantum Soft-Bowl Numerical Tests
+
+on:
+  push:
+    paths:
+      - "UnifiedField/quantum/**"
+      - ".github/workflows/quantum-soft-bowl-tests.yml"
+  pull_request:
+    paths:
+      - "UnifiedField/quantum/**"
+      - ".github/workflows/quantum-soft-bowl-tests.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  numerical-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install numerical dependency
+        run: python -m pip install --upgrade pip numpy
+      - name: Run regression and convergence tests
+        run: python -m unittest discover -s UnifiedField/quantum/tests -v
+      - name: Run default model and validate JSON output
+        run: |
+          python UnifiedField/quantum/soft_bowl.py > soft-bowl-output.txt
+          python -c "import json; p='soft-bowl-output.txt'; s=open(p).read(); data=json.loads(s[:s.index('\\nVALIDATION PASSED:')]); assert data['checks']['all_norms_within_1e-10']; assert data['checks']['energies_increasing']; print('Default model JSON validation passed; max relative energy error =', data['checks']['maximum_relative_energy_error'])"
