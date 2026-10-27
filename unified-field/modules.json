@@ -31,10 +31,10 @@
       "id": "local-mesh",
       "name": "Local Mesh Worker and Council",
       "repository": "HeavenzFire/HeavenzFire",
-      "sourcePath": "integrations/local-mesh",
+      "sourcePath": "UnifiedField/QuantumLab/heavenzfire-mesh-bridge.cjs",
       "kind": "core-adapter",
       "integration": "in-repository",
-      "status": "candidate; local runtime contract documented",
+      "status": "prototype; source exists; loopback bridge only, with no remote sync or live-mesh claim",
       "dependencies": [
         "fieldcore"
       ],
@@ -47,19 +47,19 @@
     },
     {
       "id": "guardian-audit",
-      "name": "Guardian Text Audit",
+      "name": "Guardian Repository Audit",
       "repository": "HeavenzFire/HeavenzFire",
-      "sourcePath": "integrations/guardian",
-      "kind": "safety-module",
+      "sourcePath": "tools/Invoke-GuardianAudit.ps1",
+      "kind": "governance-adapter",
       "integration": "in-repository",
-      "status": "prototype; text-only and human-review required",
+      "status": "prototype; compares repository metadata against a baseline; differences require human review and are not proof of compromise",
       "dependencies": [
         "fieldcore"
       ],
       "capabilities": [
-        "deterministic-text-cues",
-        "evidence-quote-validation",
-        "review-gating"
+        "repository-integrity-baseline",
+        "metadata-change-detection",
+        "human-review-gating"
       ],
       "activation": "manual"
     },
