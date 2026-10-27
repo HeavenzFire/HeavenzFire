@@ -4,12 +4,36 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+const http = require('node:http');
 const { createWorkerServer } = require('./uf-local-worker.cjs');
 
 function fixture() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'uf-worker-'));
   return { dir, journalPath: path.join(dir, 'tasks.jsonl'), cleanup: () => fs.rmSync(dir, { recursive: true, force: true }) };
 }
+
+function requestWithHost(base, host) {
+  const url = new URL('/health', base);
+  return new Promise((resolve, reject) => {
+    const req = http.get({
+      hostname: '127.0.0.1',
+      port: Number(url.port),
+      path: '/health',
+      headers: { Host: host }
+    }, res => {
+      let body = '';
+      res.setEncoding('utf8');
+      res.on('data', chunk => { body += chunk; });
+      res.on('end', () => {
+        let data;
+        try { data = JSON.parse(body); } catch { data = null; }
+        resolve({ status: res.statusCode, data });
+      });
+    });
+    req.on('error', reject);
+  });
+}
+
 async function withWorker(options, fn) {
   const f = fixture();
   const worker = createWorkerServer({ journalPath: f.journalPath, ...options });
@@ -306,4 +330,22 @@ test('HTTP execution fails closed when the approval verifier throws or returns a
       assert.equal(executions, 0);
     });
   }
+});
+
+test('trusted proxy host is accepted only when exact and configured on loopback worker', async () => {
+  await withWorker({ token: 'proxy-token', trustedProxyHost: 'zdh.tailb4ab69.ts.net' }, async base => {
+    const trusted = await requestWithHost(base, 'zdh.tailb4ab69.ts.net');
+    assert.equal(trusted.status, 200);
+    const attacker = await requestWithHost(base, 'attacker.example');
+    assert.equal(attacker.status, 400);
+    assert.equal(attacker.data.error, 'invalid_host');
+  });
+});
+
+test('non-loopback proxy host is denied unless explicitly configured', async () => {
+  await withWorker({ token: 'proxy-token' }, async base => {
+    const denied = await requestWithHost(base, 'zdh.tailb4ab69.ts.net');
+    assert.equal(denied.status, 400);
+    assert.equal(denied.data.error, 'invalid_host');
+  });
 });

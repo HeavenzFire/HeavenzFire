@@ -60,7 +60,13 @@ function createWorkerServer(options = {}) {
   const approvalVerifier = options.approvalVerifier;
   const server = http.createServer(async (req, res) => {
     try {
-      if (req.headers.host && !/^127\.0\.0\.1(?::\d+)?$/.test(req.headers.host)) {
+      const requestHost = String(req.headers.host || '').toLowerCase();
+      const trustedProxyHost = String(options.trustedProxyHost || process.env.HEAVENZFIRE_TRUSTED_PROXY_HOST || '').toLowerCase();
+      const peer = req.socket.remoteAddress || '';
+      const peerIsLoopback = peer === '127.0.0.1' || peer === '::1' || peer === '::ffff:127.0.0.1';
+      const directLoopbackHost = /^127\.0\.0\.1(?::\d+)?$/.test(requestHost);
+      const proxyHostAllowed = Boolean(trustedProxyHost) && requestHost === trustedProxyHost && peerIsLoopback;
+      if (req.headers.host && !directLoopbackHost && !proxyHostAllowed) {
         return send(res, 400, { ok: false, error: 'invalid_host' });
       }
       if (req.method === 'OPTIONS') return send(res, 405, { ok: false, error: 'method_not_allowed' });
