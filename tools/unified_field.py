@@ -6,6 +6,7 @@ This is read-only discovery/diagnostics; it never invokes capability entrypoints
 """
 from __future__ import annotations
 import argparse
+import math
 import json
 import sys
 from pathlib import Path
@@ -80,8 +81,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("nodes", help="node health registry JSON")
     parser.add_argument("--timeout", type=float, default=2.0, help="HTTP timeout per node (default: 2)")
     args = parser.parse_args(argv)
-    if args.timeout <= 0:
-        parser.error("--timeout must be positive")
+    if not math.isfinite(args.timeout) or args.timeout <= 0:
+        parser.error("--timeout must be finite and positive")
     try:
         capabilities = json.loads(Path(args.capabilities).read_text(encoding="utf-8"))
         nodes = json.loads(Path(args.nodes).read_text(encoding="utf-8"))
