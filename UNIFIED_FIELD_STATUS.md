@@ -17,7 +17,7 @@ Success requires usable controls and verifiable behavior. A repository, health e
 | Consent policy gate | Merged | Fail-closed decision helper exists. Callers must explicitly enforce its result; its presence alone does not authorize actions. |
 | Health probe | Merged | Loopback default and explicit external-host allowlist; redirects are denied. |
 | Shared task contract and local inbox | Merged | Node integration tests cover task validation, idempotency, bounded listing, and persistence. |
-| Local worker handshake and client response verifier | Merged | Worker checks bearer authentication, protocol version, client nonce shape/replay, and returns worker identity/capabilities; pure client verifier rejects mismatched protocol/nonce and malformed identity/capability data. CI covers the verifier. This is not a remote transport or a production approval lifecycle. |
+| Local worker handshake and client response verifier | Merged | Worker checks bearer authentication, protocol version, client nonce shape/replay, and returns worker identity/capabilities; the client verifier validates the response, and the loopback client completes an authenticated request/response with timeout and remote-host refusal. CI covers the end-to-end loopback handshake. This is not a remote transport or a production approval lifecycle. |
 | Windows task inbox control | Merged | UnifiedField/Invoke-UnifiedFieldTaskInbox.ps1 provides Start, Status, Submit, Review, and Stop. |
 | Read-only review CLI | Merged | Confirms proposals remain proposed/pending; does not approve or execute tasks. |
 | Proposal submission CLI | Merged | Validates task IDs and bounded input; reports executionStarted=false. |
@@ -51,7 +51,7 @@ The default runtime data directory is %LOCALAPPDATA%\HeavenzFire\UnifiedFieldRun
 - Windows CI smoke tests exercise service start, loopback health, proposal submission, invalid task-ID rejection, bounded read-only review, idempotent start, stop ownership checks, and persistence of pending records.
 - Node CI validates the shared task contract, inbox API, module registry, and cross-repository task transport.
 - A local Windows smoke deployment was started and checked during this work session. Runtime state is machine-local and can change; check the health/status command before relying on it.
-- The local worker handshake remains loopback-only by default; authenticated cross-device task exchange is not yet verified.
+- The local worker handshake client intentionally refuses non-loopback hosts; authenticated cross-device task exchange is not yet implemented or verified.
 - No production approval verifier with durable one-time consumption, expiry enforcement, or multi-process replay protection is claimed.
 - No task execution, automatic approval, unattended model worker, or browser extension installation is claimed as verified.
 - No repository can, by itself, prove that attention extraction or economic monopoly has been ended at a societal level.
