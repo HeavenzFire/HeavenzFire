@@ -1,9 +1,11 @@
 import { readFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_REGISTRY = path.resolve(HERE, "..", "modules.json");
+const DEFAULT_REPO_ROOT = path.resolve(HERE, "../..");
 
 export async function loadRegistry(file = DEFAULT_REGISTRY) {
   const raw = await readFile(file, "utf8");
@@ -103,6 +105,29 @@ export function listModules(registry) {
     activation: module.activation,
     capabilities: module.capabilities
   }));
+}
+
+// This checks only source paths committed in the local checkout. It does not probe
+// services, start workers, or claim that an integration is operational.
+export function inspectModuleSources(registry, repoRoot = DEFAULT_REPO_ROOT) {
+  const root = path.resolve(repoRoot);
+  return registry.modules.map(module => {
+    if (typeof module.sourcePath !== "string" || !module.sourcePath.trim()) {
+      return { id: module.id, integration: module.integration, activation: module.activation, sourcePath: null, sourceState: "NOT_DECLARED" };
+    }
+    const resolved = path.resolve(root, module.sourcePath);
+    const relative = path.relative(root, resolved);
+    if (relative === ".." || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative)) {
+      return { id: module.id, integration: module.integration, activation: module.activation, sourcePath: module.sourcePath, sourceState: "OUTSIDE_REPOSITORY" };
+    }
+    return {
+      id: module.id,
+      integration: module.integration,
+      activation: module.activation,
+      sourcePath: module.sourcePath,
+      sourceState: existsSync(resolved) ? "PRESENT" : "MISSING"
+    };
+  });
 }
 
 export async function validateFile(file = DEFAULT_REGISTRY) {
