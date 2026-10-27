@@ -38,7 +38,7 @@ class HealthProbeTests(unittest.TestCase):
         for value in ("nan", "inf", "-inf", "0", "-1"):
             with self.subTest(timeout=value):
                 stderr = io.StringIO()
-                with patch.object(sys, "argv", ["health_probe.py", "nodes.json", "--timeout", value]):
+                with patch.object(sys, "argv", ["health_probe.py", "nodes.json", "--timeout=" + value]):
                     with contextlib.redirect_stderr(stderr):
                         with self.assertRaises(SystemExit) as raised:
                             main()
