@@ -64,7 +64,7 @@ function createWorkerServer(options = {}) {
       const trustedProxyHost = String(options.trustedProxyHost || process.env.HEAVENZFIRE_TRUSTED_PROXY_HOST || '').toLowerCase();
       const peer = req.socket.remoteAddress || '';
       const peerIsLoopback = peer === '127.0.0.1' || peer === '::1' || peer === '::ffff:127.0.0.1';
-      const directLoopbackHost = /^127\\.0\\.0\\.1(?::\\d+)?$/.test(requestHost);
+      const directLoopbackHost = /^127\.0\.0\.1(?::\\d+)?$/.test(requestHost);
       const proxyHostAllowed = Boolean(trustedProxyHost) && requestHost === trustedProxyHost && peerIsLoopback;
       if (req.headers.host && !directLoopbackHost && !proxyHostAllowed) {
         return send(res, 400, { ok: false, error: 'invalid_host' });
