@@ -1,7 +1,9 @@
 'use strict';
 
-// Pure client-side validation for the worker's authenticated handshake response.
-// This module does not send credentials or open a network connection.
+const crypto = require('node:crypto');
+
+// Pure response validation plus an explicitly loopback-only handshake client.
+// Remote transports must use a separately reviewed HTTPS/authentication adapter.
 const MODES = new Set(['ONLINE', 'OFFLINE', 'DEGRADED', 'RECONNECTING']);
 
 function fail(code, message) {
@@ -56,4 +58,59 @@ function verifyHandshakeResponse(payload, expectedClientNonce, expectedProtocolV
   });
 }
 
-module.exports = { verifyHandshakeResponse };
+async function performLoopbackHandshake(options = {}) {
+  const { baseUrl, token, protocolVersion, fetchImpl = globalThis.fetch, timeoutMs = 3000 } = options;
+  if (typeof token !== 'string' || token.length < 1) {
+    return fail('handshake_token_required', 'A bearer token is required.');
+  }
+  if (!Number.isSafeInteger(protocolVersion) || protocolVersion < 1) {
+    return fail('invalid_expected_protocol_version', 'Protocol version must be a positive integer.');
+  }
+  if (typeof fetchImpl !== 'function') {
+    return fail('fetch_unavailable', 'A fetch implementation is required.');
+  }
+  if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 30000) {
+    return fail('invalid_timeout', 'Timeout must be between 1 and 30000 milliseconds.');
+  }
+
+  let base;
+  try { base = new URL(baseUrl); }
+  catch { return fail('invalid_base_url', 'A valid loopback base URL is required.'); }
+  if (base.protocol !== 'http:' || base.hostname !== '127.0.0.1' ||
+      base.username || base.password || base.search || base.hash || base.pathname !== '/') {
+    return fail('loopback_only', 'Handshake client accepts only an http://127.0.0.1[:port]/ base URL.');
+  }
+
+  const clientNonce = crypto.randomBytes(24).toString('base64url');
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  let response;
+  try {
+    response = await fetchImpl(new URL('/api/handshake', base), {
+      method: 'POST',
+      headers: {
+        authorization: 'Bearer ' + token,
+        'content-type': 'application/json',
+        accept: 'application/json'
+      },
+      body: JSON.stringify({ protocol_version: protocolVersion, client_nonce: clientNonce }),
+      redirect: 'error',
+      signal: controller.signal
+    });
+  } catch (error) {
+    if (controller.signal.aborted) return fail('handshake_timeout', 'Worker handshake timed out.');
+    return fail('handshake_transport_failed', 'Worker handshake transport failed: ' + (error?.message || 'unknown error'));
+  } finally {
+    clearTimeout(timer);
+  }
+
+  if (!response || response.status !== 200) {
+    return fail('handshake_http_status', 'Worker handshake returned HTTP ' + (response?.status ?? 'unknown') + '.');
+  }
+  let payload;
+  try { payload = await response.json(); }
+  catch { return fail('invalid_handshake_json', 'Worker returned invalid handshake JSON.'); }
+  return verifyHandshakeResponse(payload, clientNonce, protocolVersion);
+}
+
+module.exports = { verifyHandshakeResponse, performLoopbackHandshake };
