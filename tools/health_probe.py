@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import ipaddress
+import math
 import json
 import re
 import sys
@@ -112,6 +113,9 @@ def probe_node(
     node_id = node.get("id", "unknown")
     url = node.get("health_url", "")
     started = time.monotonic()
+    if not math.isfinite(timeout) or timeout <= 0:
+        return {"id": node_id, "status": "DARK", "reason": "timeout must be finite and positive",
+                "http_status": None, "latency_ms": 0.0}
     parsed = urlparse(url) if isinstance(url, str) else None
     if (parsed is None or parsed.scheme not in {"http", "https"} or not parsed.hostname
             or parsed.username or parsed.password):
@@ -146,6 +150,8 @@ def probe_node(
 
 def run_registry(data: dict[str, Any], timeout: float = 2.0) -> dict[str, Any]:
     errors = validate_nodes(data)
+    if not math.isfinite(timeout) or timeout <= 0:
+        errors.append("timeout: expected a finite positive number")
     if errors:
         return {"schema_version": "1.0", "overall": "DARK", "validation_errors": errors, "nodes": []}
     results = [probe_node(node, timeout, data.get("allowed_hosts", [])) for node in data["nodes"]]
@@ -159,8 +165,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("registry", help="JSON node registry path")
     parser.add_argument("--timeout", type=float, default=2.0, help="per-node HTTP timeout in seconds (default: 2)")
     args = parser.parse_args(argv)
-    if args.timeout <= 0:
-        parser.error("--timeout must be positive")
+    if not math.isfinite(args.timeout) or args.timeout <= 0:
+        parser.error("--timeout must be finite and positive")
     try:
         data = json.loads(Path(args.registry).read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
