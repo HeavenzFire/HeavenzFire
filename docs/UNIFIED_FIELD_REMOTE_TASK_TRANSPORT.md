@@ -60,6 +60,31 @@ Run from an elevated or ordinary PowerShell window as appropriate for your exist
 
 8. Stop sharing when not needed with `tailscale serve off`. This disables Serve; it does not stop the local worker. Stop the worker separately with Ctrl+C.
 
+## Android/Termux diagnostic when MagicDNS does not resolve
+
+A hostname lookup failure is not proof that the worker is down. First confirm the Android Tailscale app says **Connected** and shows the Windows device online. Copy the Windows device's current Tailscale IPv4 address from Tailscale; do not guess it.
+
+To isolate MagicDNS from the private network path, substitute the exact HTTPS hostname and the copied IPv4 address in this command in Termux:
+
+```sh
+curl -sS --connect-timeout 3 --max-time 8 \
+  --resolve 'YOUR-EXACT-DEVICE-NAME.YOUR-TAILNET.ts.net:443:100.x.y.z' \
+  -w '\nHTTP_STATUS:%{http_code}\n' \
+  'https://YOUR-EXACT-DEVICE-NAME.YOUR-TAILNET.ts.net/health'
+```
+
+This pins the hostname to the supplied IP for this request while keeping the HTTPS hostname for certificate validation. It does not disable TLS verification, expose the service publicly, or bypass Tailscale connectivity/ACL requirements. The health endpoint does not require the bearer token.
+
+Interpret the result:
+
+- `HTTP_STATUS:200` with JSON containing `"ok":true`: the private route, Serve proxy, and worker health endpoint responded.
+- `HTTP_STATUS:400` with `invalid_host`: the worker's `HEAVENZFIRE_TRUSTED_PROXY_HOST` does not match the exact HTTPS hostname being used, or the request is not arriving through the expected local proxy.
+- `HTTP_STATUS:502` or `503`: inspect `tailscale serve status` and confirm the worker is listening on `127.0.0.1:8798`; the precise response body matters.
+- `HTTP_STATUS:000`, timeout, or connection failure: verify both devices are connected to the same tailnet, the copied IP is current, and ACL/device approval permits the path. This result alone does not identify which of those is at fault.
+- A TLS certificate error: re-check the exact MagicDNS hostname and system time. Do not use `-k` or disable certificate validation.
+
+If the IP-pinned request works but the normal hostname request fails, investigate MagicDNS/DNS settings. If both fail, continue with tailnet reachability and Serve/worker checks before changing application code.
+
 ## Rollback and failure behavior
 
 - If hostname, TLS, token, handshake, or task validation fails, do not weaken the checks to force success.
