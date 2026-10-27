@@ -16,6 +16,7 @@ on:
       - 'UnifiedField/QuantumLab/uf-topology-cli.test.cjs'
       - 'UnifiedField/QuantumLab/uf-local-worker.cjs'
       - 'UnifiedField/QuantumLab/uf-local-worker.test.cjs'
+      - 'UnifiedField/QuantumLab/uf-local-worker-input-hardening.test.cjs'
       - 'UnifiedField/QuantumLab/Start-UnifiedFieldWorker.ps1'
       - '.github/workflows/uf-tcp-policy.yml'
   pull_request:
@@ -32,6 +33,7 @@ on:
       - 'UnifiedField/QuantumLab/uf-topology-cli.test.cjs'
       - 'UnifiedField/QuantumLab/uf-local-worker.cjs'
       - 'UnifiedField/QuantumLab/uf-local-worker.test.cjs'
+      - 'UnifiedField/QuantumLab/uf-local-worker-input-hardening.test.cjs'
       - 'UnifiedField/QuantumLab/Start-UnifiedFieldWorker.ps1'
       - '.github/workflows/uf-tcp-policy.yml'
   workflow_dispatch:
@@ -50,4 +52,4 @@ jobs:
         with:
           node-version: '22'
       - name: Run deterministic policy tests
-        run: node --test UnifiedField/QuantumLab/uf-tcp-policy.test.cjs UnifiedField/QuantumLab/uf-144-council.test.cjs UnifiedField/QuantumLab/uf-bridge-journal.test.cjs UnifiedField/QuantumLab/uf-topology.test.cjs UnifiedField/QuantumLab/uf-topology-cli.test.cjs UnifiedField/QuantumLab/uf-local-worker.test.cjs
+        run: node --test UnifiedField/QuantumLab/uf-tcp-policy.test.cjs UnifiedField/QuantumLab/uf-144-council.test.cjs UnifiedField/QuantumLab/uf-bridge-journal.test.cjs UnifiedField/QuantumLab/uf-topology.test.cjs UnifiedField/QuantumLab/uf-topology-cli.test.cjs UnifiedField/QuantumLab/uf-local-worker.test.cjs UnifiedField/QuantumLab/uf-local-worker-input-hardening.test.cjs
