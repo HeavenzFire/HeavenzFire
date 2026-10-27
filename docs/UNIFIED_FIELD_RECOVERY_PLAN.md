@@ -52,7 +52,8 @@ Keep one stable task contract and make transports replaceable:
 - [ ] Existing journal and worker test suites run on the target Node.js version and pass.
 - [ ] Existing PowerShell 5.1 launcher starts the worker and validates its health endpoint.
 - [x] Worker-side handshake reports protocol version, worker identity, capabilities, and echoes a validated client nonce; version mismatch and nonce replay are rejected in the existing worker tests.
-- [ ] Client-side handshake verification and a real authenticated cross-device request/response are tested end to end; the worker remains loopback-only by default.
+- [x] Client-side handshake response verification and an authenticated loopback request/response are covered by CI tests.
+- [ ] A real authenticated cross-device request/response is tested end to end; the worker remains loopback-only by default.
 - [ ] Local journal and dashboard continue to work with internet and Tailscale unavailable.
 - [ ] Remote task exchange works end-to-end over the chosen transport, with authentication and idempotency.
 - [ ] A changed target commit blocks replay until evidence is refreshed.
@@ -61,4 +62,4 @@ Keep one stable task contract and make transports replaceable:
 
 ## Next implementation slice
 
-Do not add a second journal, duplicate handshake, or replacement dashboard. The source-path status command is now merged in `unified-field/uf.mjs`; it checks declared local component paths but does not claim runtime health. Next, add a client-side handshake verifier and a bounded transport adapter behind explicit configuration, with tests for wrong tokens, protocol mismatch, nonce replay, timeout, duplicate task delivery, stale target commits, and unavailable peers. Keep the existing worker loopback-only until the transport's authentication, authorization, and rollback behavior are independently tested. A production approval verifier with expiry and durable one-time consumption remains a separate blocker for any execution path.
+Do not add a second journal, duplicate handshake, or replacement dashboard. The source-path status command, client handshake verifier, and loopback handshake client are now merged. CI covers source-path integrity and a real authenticated loopback handshake, including wrong-token and remote-host rejection. The next implementation slice is a separately reviewed remote transport adapter: require authenticated HTTPS or an explicitly configured Tailscale Serve endpoint, never send the bearer token to plain-HTTP remote hosts, and keep the worker itself bound to loopback. Test timeout, duplicate task delivery, stale target commits, unavailable peers, and transport rollback before calling remote connectivity verified. A production approval verifier with expiry and durable one-time consumption remains a separate blocker for any execution path.
