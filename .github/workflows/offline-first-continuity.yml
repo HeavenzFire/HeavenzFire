@@ -1,0 +1,36 @@
+name: Offline-first continuity tests
+
+on:
+  pull_request:
+    paths:
+      - 'unified_field/**'
+      - 'tests/test_task_ledger.py'
+      - '.github/workflows/offline-first-continuity.yml'
+  push:
+    branches:
+      - main
+      - 'feat/offline-first-continuity-v0.1'
+    paths:
+      - 'unified_field/**'
+      - 'tests/test_task_ledger.py'
+      - '.github/workflows/offline-first-continuity.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  task-ledger-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12', '3.13']
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Run task ledger tests
+        run: python -m unittest tests.test_task_ledger -v
