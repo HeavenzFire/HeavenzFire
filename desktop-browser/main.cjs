@@ -8,18 +8,7 @@ const tabs = new Map();
 const TOOLBAR_HEIGHT = 106;
 const MIN_VIEW_HEIGHT = 160;
 
-function normalizeWebUrl(raw) {
-  const value = String(raw || "").trim();
-  if (!value) return "https://www.google.com/";
-  const candidate = /^[a-zA-Z][a-zA-Z\d+.-]*:/.test(value) ? value :
-    (value.includes(" ") || (!value.includes(".") && value !== "localhost")
-      ? "https://www.google.com/search?q=" + encodeURIComponent(value)
-      : "https://" + value);
-  let parsed;
-  try { parsed = new URL(candidate); } catch { throw new Error("That address is not a valid URL or search query."); }
-  if (!["http:", "https:"].includes(parsed.protocol)) throw new Error("Only HTTP and HTTPS pages are allowed.");
-  return parsed.toString();
-}
+const { normalizeWebUrl } = require("./navigation-policy.cjs");
 function safeSend(channel, payload) {
   if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.webContents.isDestroyed()) mainWindow.webContents.send(channel, payload);
 }
@@ -49,7 +38,11 @@ function createTab(initialUrl="https://www.google.com/") {
     try { createTab(normalizeWebUrl(url)); } catch(error) { safeSend("browser:error",{message:error.message}); }
     return {action:"deny"};
   });
-  wc.on("will-navigate",(event,url)=>{try{normalizeWebUrl(url);}catch{event.preventDefault();}});
+  const blockNonWebNavigation = (event, url) => {
+    try { normalizeWebUrl(url); } catch { event.preventDefault(); }
+  };
+  wc.on("will-navigate", blockNonWebNavigation);
+  wc.on("will-redirect", blockNonWebNavigation);
   wc.on("page-title-updated",(_event,title)=>{tab.title=title||"Untitled";publishState();});
   wc.on("did-navigate",(_event,url)=>{tab.url=url;publishState();});
   wc.on("did-navigate-in-page",(_event,url)=>{tab.url=url;publishState();});
