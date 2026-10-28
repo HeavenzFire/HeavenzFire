@@ -29,7 +29,7 @@ Run from an elevated or ordinary PowerShell window as appropriate for your exist
    ```powershell
    $env:HEAVENZFIRE_TRUSTED_PROXY_HOST = 'YOUR-EXACT-DEVICE-NAME.YOUR-TAILNET.ts.net'
    $env:HEAVENZFIRE_BRIDGE_PORT = '8798'
-   $env:HEAVENZFIRE_BRIDGE_JOURNAL = Join-Path $env:LOCALAPPDATA 'HeavenzFire\UnifiedFieldRuntime\state\remote-tasks.jsonl'
+   $env:HEAVENZFIRE_BRIDGE_JOURNAL = Join-Path $env:LOCALAPPDATA 'HeavenzFire\\UnifiedFieldRuntime\\state\\remote-tasks.jsonl'
    ```
 
 3. Set `HEAVENZFIRE_BRIDGE_TOKEN` to a long, unique secret using your password manager or a secure secret-generation tool. Keep the same token only on the authorized client device. Do not put it in the repository or command history.
@@ -37,7 +37,7 @@ Run from an elevated or ordinary PowerShell window as appropriate for your exist
 4. Start the worker from the repository root:
 
    ```powershell
-   node .\UnifiedField\QuantumLab\uf-local-worker.cjs
+   node .\\UnifiedField\\QuantumLab\\uf-local-worker.cjs
    ```
 
    In a second PowerShell window, set the same `HEAVENZFIRE_TRUSTED_PROXY_HOST` and run:
@@ -64,16 +64,19 @@ Run from an elevated or ordinary PowerShell window as appropriate for your exist
 
 A hostname lookup failure is not proof that the worker is down. First confirm the Android Tailscale app says **Connected** and shows the Windows device online. Copy the Windows device's current Tailscale IPv4 address from Tailscale; do not guess it.
 
-To isolate MagicDNS from the private network path, substitute the exact HTTPS hostname and the copied IPv4 address in this command in Termux:
+A no-install, read-only preflight script is available at `tools/termux_preflight.sh`. From a checkout of this repository in Termux, run:
 
 ```sh
-curl -sS --connect-timeout 3 --max-time 8 \
-  --resolve 'YOUR-EXACT-DEVICE-NAME.YOUR-TAILNET.ts.net:443:100.x.y.z' \
-  -w '\nHTTP_STATUS:%{http_code}\n' \
-  'https://YOUR-EXACT-DEVICE-NAME.YOUR-TAILNET.ts.net/health'
+bash tools/termux_preflight.sh
 ```
 
-This pins the hostname to the supplied IP for this request while keeping the HTTPS hostname for certificate validation. It does not disable TLS verification, expose the service publicly, or bypass Tailscale connectivity/ACL requirements. The health endpoint does not require the bearer token.
+This inventories common utilities without installing packages or changing settings. To test the read-only health endpoint while isolating MagicDNS resolution, pass the exact Windows MagicDNS hostname and its current Tailscale IPv4 address:
+
+```sh
+bash tools/termux_preflight.sh 'YOUR-EXACT-DEVICE-NAME.YOUR-TAILNET.ts.net' '100.x.y.z'
+```
+
+The script uses `curl --resolve` to pin the hostname to the supplied IP for this request while keeping the HTTPS hostname for certificate validation. It does not disable TLS verification, expose the service publicly, send the bearer token, or submit/execute a task. Do not use `-k` or disable certificate validation.
 
 Interpret the result:
 
