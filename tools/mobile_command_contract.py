@@ -101,17 +101,17 @@ def validate_command_envelope(
                 errors.append("invalid_request_ttl")
 
     target = envelope.get("target")
-    if target not in ALLOWED_TARGETS:
+    if not isinstance(target, str) or target not in ALLOWED_TARGETS:
         errors.append("unsupported_target")
 
     action = envelope.get("action")
-    if action not in ALLOWED_ACTIONS:
+    if not isinstance(action, str) or action not in ALLOWED_ACTIONS:
         errors.append("action_not_allowlisted")
 
     params = envelope.get("params")
     if not isinstance(params, dict):
         errors.append("params_must_be_object")
-    elif action in ALLOWED_ACTIONS:
+    elif isinstance(action, str) and action in ALLOWED_ACTIONS:
         if action == "run_repo_tests":
             if set(params) != {"repo_id"} or not isinstance(params.get("repo_id"), str) or not _REPO_ID.fullmatch(params.get("repo_id", "")):
                 errors.append("invalid_params")
