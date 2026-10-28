@@ -5,6 +5,8 @@ on:
     paths:
       - 'unified_field/**'
       - 'tests/test_task_ledger.py'
+      - 'tests/test_public_evidence.py'
+      - 'benchmarks/benchmark_task_ledger.py'
       - '.github/workflows/offline-first-continuity.yml'
   push:
     branches:
@@ -13,6 +15,8 @@ on:
     paths:
       - 'unified_field/**'
       - 'tests/test_task_ledger.py'
+      - 'tests/test_public_evidence.py'
+      - 'benchmarks/benchmark_task_ledger.py'
       - '.github/workflows/offline-first-continuity.yml'
 
 permissions:
@@ -32,5 +36,17 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Run task ledger tests
-        run: python -m unittest tests.test_task_ledger -v
+      - name: Run offline continuity tests
+        run: python -m unittest tests.test_task_ledger tests.test_public_evidence -v
+
+  measured-throughput:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Measure task-ledger throughput at 1, 2, 4, 8, and 16 workers
+        run: python benchmarks/benchmark_task_ledger.py --tasks 96 --iterations 2000
