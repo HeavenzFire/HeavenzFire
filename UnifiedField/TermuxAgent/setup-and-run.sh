@@ -8,7 +8,7 @@ REPO_ROOT="${HF_REPO_ROOT:-$HOME/src/llama.cpp}"
 AGENT_DIR="${HF_AGENT_DIR:-$HOME/HeavenzFire/TermuxAgent}"
 BRANCH="feat/termux-local-first-agent"
 RAW_BASE="https://raw.githubusercontent.com/HeavenzFire/HeavenzFire/$BRANCH/UnifiedField/TermuxAgent"
-HOST="${HF_SERVER_HOST:-127.0.0.1}"
+HOST="127.0.0.1"
 PORT="${HF_SERVER_PORT:-8080}"
 CONTEXT="${HF_CONTEXT_SIZE:-2048}"
 JOBS="${HF_BUILD_JOBS:-2}"
@@ -81,8 +81,8 @@ fi
 case "$MODEL" in *.gguf|*.GGUF) ;; *) die "Model path must point to a .gguf file: $MODEL" ;; esac
 
 note "Checking whether the local inference endpoint is already responding"
-if curl --fail --silent --max-time 2 "http://127.0.0.1:$PORT/health" >/dev/null; then
-  note "A server already responds on port $PORT; reusing it without starting a duplicate."
+if curl --fail --silent --max-time 2 "http://127.0.0.1:$PORT/v1/models" >/dev/null; then
+  note "An OpenAI-compatible inference server responds on port $PORT; reusing it without starting a duplicate."
 else
   note "Starting llama-server on loopback only"
   nohup "$SERVER_BIN" -m "$MODEL" --host "$HOST" --port "$PORT" -c "$CONTEXT" >"$SERVER_LOG" 2>&1 &
