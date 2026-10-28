@@ -49,4 +49,4 @@ jobs:
         with:
           python-version: '3.12'
       - name: Measure task-ledger throughput at 1, 2, 4, 8, and 16 workers
-        run: python benchmarks/benchmark_task_ledger.py --tasks 96 --iterations 2000
+        run: python benchmarks/benchmark_task_ledger.py --tasks 96 --iterations 50000
