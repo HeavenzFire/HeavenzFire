@@ -1,0 +1,38 @@
+{
+  "name": "heavenzfire-desktop-browser",
+  "version": "0.1.0",
+  "description": "A local-first, security-hardened Chromium desktop browser shell for HeavenzFire Unified Field.",
+  "private": true,
+  "main": "main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --check main.cjs && node --check preload.cjs && node --check renderer/app.js",
+    "dist": "electron-builder --win nsis"
+  },
+  "devDependencies": {
+    "electron": "^38.0.0",
+    "electron-builder": "^26.0.0"
+  },
+  "build": {
+    "appId": "org.heavenzfire.desktopbrowser",
+    "productName": "HeavenzFire Desktop Browser",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "main.cjs",
+      "preload.cjs",
+      "renderer/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}
