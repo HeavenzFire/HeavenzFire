@@ -55,7 +55,7 @@ class MobileCommandContractTests(unittest.TestCase):
         self.assertIn("unsupported_target", validate_command_envelope(envelope(target="internet"), now=NOW)["errors"])
 
     def test_extra_parameters_are_denied(self):
-        result = validate_command_envelope(envelope(action="runtime_health", params={"path": "C:\\\"}), now=NOW)
+        result = validate_command_envelope(envelope(action="runtime_health", params={"unexpected": "blocked"}), now=NOW)
         self.assertIn("invalid_params", result["errors"])
 
     def test_repo_id_must_be_an_opaque_slug(self):
