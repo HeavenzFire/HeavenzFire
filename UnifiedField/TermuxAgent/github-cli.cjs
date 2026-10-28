@@ -2,7 +2,8 @@
 
 const fs = require('node:fs/promises');
 const path = require('node:path');
-const gh = require('./github-write.cjs');
+const gh = require('./github.cjs');
+const ghWrite = require('./github-write.cjs');
 
 function usage() {
   console.log(`HeavenzFire GitHub bridge (Termux)
@@ -64,7 +65,7 @@ async function main(argv) {
   if (cmd === 'branch') {
     const [branch] = args;
     if (!branch) throw new Error('Branch name required, e.g. hf-agent/fix-queue');
-    console.log(JSON.stringify(await gh.createFeatureBranch(repo, branch, opts), null, 2));
+    console.log(JSON.stringify(await ghWrite.createFeatureBranch(repo, branch, opts), null, 2));
     return;
   }
   if (cmd === 'write') {
@@ -73,7 +74,7 @@ async function main(argv) {
     if (!branch || !repoPath || !localFile || !message) throw new Error('Missing branch, repo path, local file, or commit message');
     const resolved = path.resolve(localFile);
     const content = await fs.readFile(resolved, 'utf8');
-    console.log(JSON.stringify(await gh.writeFile(repo, branch, repoPath, content, message, opts), null, 2));
+    console.log(JSON.stringify(await ghWrite.writeFile(repo, branch, repoPath, content, message, opts), null, 2));
     return;
   }
   if (cmd === 'pr') {
@@ -81,7 +82,7 @@ async function main(argv) {
     const bodyFile = bodyFileParts.join(' ');
     if (!branch || !title || !bodyFile) throw new Error('Missing branch, title, or body file');
     const body = await fs.readFile(path.resolve(bodyFile), 'utf8');
-    console.log(JSON.stringify(await gh.openPullRequest(repo, branch, title, body, opts), null, 2));
+    console.log(JSON.stringify(await ghWrite.openPullRequest(repo, branch, title, body, opts), null, 2));
     return;
   }
   usage();
