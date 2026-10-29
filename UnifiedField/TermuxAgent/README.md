@@ -1,10 +1,10 @@
 # HeavenzFire Termux Local Agent
 
-A dependency-free Node.js CLI for local inference and an opt-in GitHub bridge. The local model endpoint remains loopback-only; GitHub access is a separate explicit capability and never falls back to cloud inference.
+A dependency-free Node.js CLI for local inference, bounded local multi-agent fan-out, and an opt-in GitHub bridge. Inference is restricted to loopback; the local agent and orchestrator have no shell tools.
 
 ## Local inference
 
-For llama.cpp, start the server in one Termux session using a real GGUF path:
+Start llama.cpp in one Termux session with a real GGUF path:
 
 ```sh
 ./build/bin/llama-server -m "$HOME/models/your-model.gguf" --host 127.0.0.1 --port 8080 -c 2048
@@ -16,11 +16,34 @@ In another session:
 node UnifiedField/TermuxAgent/agent.cjs
 ```
 
-Set `HF_LOCAL_ENDPOINT` and `HF_LOCAL_MODEL` if your server uses different values. Commands: `:help`, `:reset`, `:quit`.
+Set `HF_LOCAL_ENDPOINT` and `HF_LOCAL_MODEL` when needed. Interactive commands: `:help`, `:reset`, `:quit`.
+
+## Bounded local orchestration
+
+Create a JSON plan. Each task is a separate prompt to the configured local model; concurrency is capped at 16. Results and individual failures are written to a JSON evidence report. This is parallel prompt orchestration, not independent models, shell execution, or proof that model answers are correct.
+
+```json
+{
+  "parallelism": 4,
+  "tasks": [
+    { "id": "repo-risk-review", "prompt": "Review the supplied design for security risks. State assumptions and tests needed." },
+    { "id": "test-plan", "prompt": "Propose focused regression tests for the design. Separate required tests from optional tests." },
+    { "id": "integration-map", "prompt": "Identify interfaces and dependencies needed to integrate this component." }
+  ]
+}
+```
+
+Save that as `plan.json` in the repository root, then run:
+
+```sh
+node UnifiedField/TermuxAgent/orchestrate.cjs plan.json artifacts/local-orchestration-run.json
+```
+
+The run rejects non-loopback endpoints, duplicate/invalid task IDs, oversized plans, and concurrency outside 1–16. The report records a run ID, model label, endpoint, per-task status, durations, answers or errors, and summary counts. Treat generated output as untrusted analysis; review it before using it to modify code.
 
 ## GitHub connection
 
-The GitHub bridge is separate from local inference. It uses Node.js built-in `fetch`; no package install is required. Set a GitHub fine-grained personal access token in the current Termux shell. Grant only the needed repository access and permissions: **Contents: read/write** and **Pull requests: read/write** for the selected repository. Issues: read-only is sufficient for issue listing. Never paste the token into chat, commit it, or put it in a script.
+GitHub access is separate from local inference. Set a fine-grained token only in the current Termux shell; never paste it into chat, commit it, or put it in a script. Grant only the required repository permissions.
 
 ```sh
 export HF_GITHUB_TOKEN='YOUR_TOKEN_IN_THIS_TERMUX_SESSION'
@@ -29,38 +52,26 @@ node UnifiedField/TermuxAgent/github-cli.cjs issues HeavenzFire/HeavenzFire
 node UnifiedField/TermuxAgent/github-cli.cjs prs HeavenzFire/HeavenzFire
 ```
 
-Writes require a second explicit switch and are restricted to feature branches; there is no merge command:
+Writes require the separate explicit opt-in `HF_GITHUB_WRITE=1` and are limited to non-default feature branches. There is no merge command. Review diffs and CI before approving a pull request.
+
+## Validation
 
 ```sh
-export HF_GITHUB_WRITE=1
-node UnifiedField/TermuxAgent/github-cli.cjs branch HeavenzFire/HeavenzFire hf-agent/orchestration
-# Commit a local file to that branch:
-node UnifiedField/TermuxAgent/github-cli.cjs write HeavenzFire/HeavenzFire hf-agent/orchestration UnifiedField/TermuxAgent/example.md ./example.md "Add example"
-# Open a draft PR from that branch (body is read from a local Markdown file):
-node UnifiedField/TermuxAgent/github-cli.cjs pr HeavenzFire/HeavenzFire hf-agent/orchestration "HeavenzFire orchestration update" ./pr-body.md
+bash UnifiedField/TermuxAgent/verify-termux.sh
 ```
 
-The bridge creates commits and draft PRs on a non-default branch. It does not merge PRs, change repository settings, or run arbitrary shell commands. Inspect the branch diff and CI results before approving or merging. The write client validates repository/branch inputs and never logs the token.
+This checks Node.js 18+, syntax-checks the modules, and runs the agent, GitHub bridge, and orchestration test suites. For a live inference smoke test, start the local server, set the correct `HF_LOCAL_ENDPOINT` and `HF_LOCAL_MODEL`, then run:
 
-## Files
+```sh
+HF_LOCAL_SMOKE=1 bash UnifiedField/TermuxAgent/verify-termux.sh
+```
 
-- `agent.cjs`: interactive local model chat, no shell tools.
+## Files and boundaries
+
+- `agent.cjs`: interactive local chat; no shell tools.
+- `orchestrate.cjs`: bounded parallel local prompt runner; no shell or GitHub write access.
 - `github.cjs`: read-only GitHub API client.
-- `github-write.cjs`: explicit-opt-in branch-scoped file/PR writes.
-- `github-cli.cjs`: command-line interface to those GitHub operations.
+- `github-write.cjs` / `github-cli.cjs`: explicit-opt-in branch-scoped GitHub writes.
+- `*.test.cjs`: deterministic unit tests using mocked endpoints.
 
-## Tests
-
-```sh
-node --check UnifiedField/TermuxAgent/agent.cjs
-node --check UnifiedField/TermuxAgent/github.cjs
-node --check UnifiedField/TermuxAgent/github-write.cjs
-node --check UnifiedField/TermuxAgent/github-cli.cjs
-node --test UnifiedField/TermuxAgent/agent.test.cjs
-node --test UnifiedField/TermuxAgent/github.test.cjs
-node --test UnifiedField/TermuxAgent/github-write.test.cjs
-```
-
-## Boundaries
-
-Local inference prompts are sent only to the configured loopback inference server. GitHub requests use the official GitHub API over HTTPS when explicitly invoked. The GitHub bridge is write-capable only after the user sets `HF_GITHUB_WRITE=1`; its default is read-only. These are separate execution paths: GitHub connectivity does not itself prove autonomous multi-agent orchestration or validate model output.
+Automated tests are not a substitute for an on-device live inference run. Parallel prompts to one model are not the same as a multi-model agent team, distributed consensus, or validated autonomous software engineering.
