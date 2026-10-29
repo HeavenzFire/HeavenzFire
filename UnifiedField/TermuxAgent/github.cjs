@@ -9,6 +9,11 @@ function validateRepo(repo) {
   if (typeof repo !== 'string' || !/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repo)) {
     throw new Error('Repository must use owner/name format');
   }
+  const [owner, name] = repo.split('/');
+  if (owner === '.' || owner === '..' || name === '.' || name === '..' ||
+      owner.includes('..') || name.includes('..')) {
+    throw new Error('Repository owner/name cannot contain dot traversal segments');
+  }
   return repo;
 }
 
