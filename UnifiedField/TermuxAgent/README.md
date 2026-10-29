@@ -41,23 +41,23 @@ node UnifiedField/TermuxAgent/orchestrate.cjs plan.json artifacts/local-orchestr
 
 The run rejects non-loopback endpoints, duplicate/invalid task IDs, oversized plans, and concurrency outside 1–16. The report records a run ID, model label, endpoint, per-task status, durations, answers or errors, and summary counts. Treat generated output as untrusted analysis; review it before using it to modify code.
 
-## Submit a task to the shared Unified Field inbox
+## Submit and verify a remote task proposal
 
-This connects the phone-side CLI to the existing authenticated remote proposal transport in `UnifiedField/QuantumLab/uf-remote-task-client.cjs`. It requires the remote HTTPS Serve endpoint to be configured and reachable; it does not create that network path for you.
+This uses the authenticated HTTPS transport in `UnifiedField/QuantumLab/uf-remote-task-client.cjs`. It requires an already configured and reachable HTTPS Serve endpoint; this CLI does not create the network route, configure the Windows worker, or create credentials.
 
-Create `task.json`:
+Create `task.json` (the worker journal caps objectives at 2,000 characters):
 
 ```json
 {
   "task_id": "phone-review-001",
-  "objective": "Review a named repository integration boundary and report evidence-backed findings.",
-  "scope": ["github:read", "analysis"],
+  "objective": "Read the worker health and task queue, then report evidence-backed status. Do not execute or modify anything.",
+  "scope": ["worker:health", "task:list", "analysis"],
   "risk_class": "LOW",
   "idempotency_key": "phone-review-001:v1"
 }
 ```
 
-Configure secrets only in the current Termux shell. Use the exact hostname and token configured for the authorized remote task worker:
+Configure secrets only in the current Termux shell. Use the exact hostname and token configured for the authorized remote worker:
 
 ```sh
 export HF_REMOTE_TASK_URL='https://YOUR-CONFIGURED-SERVE-HOST/'
@@ -67,7 +67,9 @@ node UnifiedField/TermuxAgent/remote-task-cli.cjs submit task.json
 unset HF_REMOTE_TASK_TOKEN
 ```
 
-The client requires HTTPS, an exact hostname allowlist, bearer authentication, and a verified handshake; redirects are denied. It accepts only LOW or MEDIUM proposal risk and reports `execution_started: false`. Submission means **proposed/queued and pending approval**, not execution or completion. Never put a token in the JSON task file, repository, or chat. A working end-to-end submission still depends on the Serve endpoint and token being configured and reachable.
+The CLI performs an authenticated handshake, submits the bounded task metadata, then reads the queue back and verifies the same task ID plus `approval_state=pending`. A successful report includes `remote_readback_verified: true`; a missing task or changed approval state is a hard failure. The worker journal reports queued metadata (for example, `QUEUED`), not task completion.
+
+**Security boundary:** this is a task-metadata enqueue, not remote execution. The worker explicitly reports no network sync, no automatic replay, and no live mesh. Remote `/api/execute` is separately allowlisted and requires a server-side approval verifier; caller-supplied approval fields alone are not authorization. Never put a token in the task JSON, repository, or chat.
 
 ## GitHub connection
 
@@ -98,9 +100,9 @@ HF_LOCAL_SMOKE=1 bash UnifiedField/TermuxAgent/verify-termux.sh
 
 - `agent.cjs`: interactive local chat; no shell tools.
 - `orchestrate.cjs`: bounded parallel local prompt runner; no shell or GitHub write access.
-- `remote-task-cli.cjs`: submits bounded proposals through the existing authenticated remote task transport; it does not approve or execute them.
+- `remote-task-cli.cjs`: submits a bounded task proposal and verifies authenticated read-back; it does not execute the task.
 - `github.cjs`: read-only GitHub API client.
 - `github-write.cjs` / `github-cli.cjs`: explicit-opt-in branch-scoped GitHub writes.
 - `*.test.cjs`: deterministic unit tests using mocked endpoints.
 
-Automated tests are not a substitute for an on-device live inference run or a live two-device proposal round trip. Parallel prompts to one model are not the same as a multi-model agent team, distributed consensus, or validated autonomous software engineering.
+Automated tests do not substitute for an on-device live inference run or a live two-device task round trip. Parallel prompts to one model are not the same as a multi-model agent team, distributed consensus, or validated autonomous software engineering.
