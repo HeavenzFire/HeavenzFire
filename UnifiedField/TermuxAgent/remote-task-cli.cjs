@@ -18,7 +18,7 @@ function validateTask(task) {
   if (!task || typeof task !== 'object' || Array.isArray(task)) throw new Error('Task file must contain a JSON object.');
   const id = task.task_id;
   if (typeof id !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(id)) throw new Error('task_id must be 1–128 safe identifier characters.');
-  if (typeof task.objective !== 'string' || !task.objective.trim() || task.objective.length > 4000) throw new Error('objective must contain 1–4000 characters.');
+  if (typeof task.objective !== 'string' || !task.objective.trim() || task.objective.length > 2000) throw new Error('objective must contain 1–2000 characters for the worker journal.');
   if (!Array.isArray(task.scope) || task.scope.length < 1 || task.scope.length > 16 ||
       task.scope.some(s => typeof s !== 'string' || !s.trim() || s.length > 120)) throw new Error('scope must be an array of 1–16 bounded strings.');
   if (!['LOW', 'MEDIUM'].includes(task.risk_class)) throw new Error('risk_class must be LOW or MEDIUM; higher-risk tasks require a separate reviewed workflow.');
@@ -29,8 +29,8 @@ function validateTask(task) {
     scope: task.scope.map(s => s.trim()),
     risk_class: task.risk_class,
     idempotency_key: task.idempotency_key,
-    source: 'heavenzfire-termux-agent',
-    approval_state: 'pending'
+    approval_state: 'pending',
+    source: 'heavenzfire-termux-agent'
   };
 }
 
@@ -38,16 +38,29 @@ async function submitTaskFile(file, options = {}) {
   const task = validateTask(JSON.parse(await fs.readFile(path.resolve(file), 'utf8')));
   const client = options.client || createRemoteTaskClient(options.config || readConfig());
   const session = await client.connect();
-  const result = await client.submitTask(task);
-  if (!result || !['QUEUED', 'proposed', 'pending'].includes(result.status)) {
+  const submitted = await client.submitTask(task);
+  if (!submitted || !['QUEUED', 'proposed', 'pending'].includes(submitted.status)) {
     throw new Error('Remote inbox did not confirm a queued proposal; no execution is claimed.');
   }
+
+  // A successful POST is not sufficient evidence. Read the task back through the
+  // authenticated API and verify identity + pending approval before reporting success.
+  const tasks = await client.listTasks();
+  if (!Array.isArray(tasks)) throw new Error('Remote read-back did not return a task list.');
+  const stored = tasks.find(item => item && item.task_id === task.task_id);
+  if (!stored) throw new Error('Remote task was accepted but could not be read back; verification failed.');
+  if (stored.approval_state !== 'pending') throw new Error('Remote task read-back does not preserve approval_state=pending.');
+  if (!['QUEUED', 'proposed', 'pending'].includes(stored.status)) {
+    throw new Error('Remote task read-back has unexpected status: ' + String(stored.status));
+  }
+
   return {
     schema: 'heavenzfire.termux-task-submission.v1',
     task_id: task.task_id,
-    status: result.status,
-    duplicate: result.duplicate === true,
-    approval_state: 'pending',
+    status: stored.status,
+    duplicate: submitted.duplicate === true,
+    approval_state: stored.approval_state,
+    remote_readback_verified: true,
     execution_started: false,
     worker_instance_id: session.worker_instance_id,
     submitted_at: new Date().toISOString()
@@ -58,6 +71,7 @@ async function main(argv) {
   const [command, file] = argv;
   if (!command || command === '--help' || command === 'help') {
     console.log('Usage: node UnifiedField/TermuxAgent/remote-task-cli.cjs submit <task.json>');
+    console.log('Submission includes authenticated remote read-back verification.');
     console.log('Requires HF_REMOTE_TASK_URL, HF_REMOTE_TASK_HOSTS, and HF_REMOTE_TASK_TOKEN.');
     return;
   }
