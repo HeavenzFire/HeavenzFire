@@ -2,15 +2,15 @@
 # Reproducible validation for HeavenzFire's Termux local-first agent.
 set -eu
 SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
-REPO_ROOT="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null || printf '%s' "$SCRIPT_DIR/../../..')"
+REPO_ROOT="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null || printf '%s' "$SCRIPT_DIR/../../..")"
 cd "$REPO_ROOT"
 printf '%s\n' '== Runtime =='
 node --version
 node -e "if (Number(process.versions.node.split('.')[0]) < 18) { console.error('Node.js 18+ required for built-in fetch'); process.exit(1); }"
 printf '%s\n' '== Syntax checks =='
-for file in agent.cjs github.cjs github-write.cjs github-cli.cjs orchestrate.cjs; do node --check "UnifiedField/TermuxAgent/$file"; done
+for file in agent.cjs github.cjs github-write.cjs github-cli.cjs orchestrate.cjs remote-task-cli.cjs; do node --check "UnifiedField/TermuxAgent/$file"; done
 printf '%s\n' '== Automated tests =='
-for file in agent.test.cjs github.test.cjs github-write.test.cjs orchestrate.test.cjs; do node --test "UnifiedField/TermuxAgent/$file"; done
+for file in agent.test.cjs github.test.cjs github-write.test.cjs orchestrate.test.cjs remote-task-cli.test.cjs; do node --test "UnifiedField/TermuxAgent/$file"; done
 if [ "${HF_LOCAL_SMOKE:-0}" = "1" ]; then
   printf '%s\n' '== Live local inference smoke test =='
   node - <<'NODE'
