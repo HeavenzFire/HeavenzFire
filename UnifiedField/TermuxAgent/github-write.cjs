@@ -9,15 +9,22 @@ function validateRepo(repo) {
   if (typeof repo !== 'string' || !/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repo)) {
     throw new Error('Repository must use owner/name format');
   }
+  const [owner, name] = repo.split('/');
+  if (owner === '.' || owner === '..' || name === '.' || name === '..' ||
+      owner.includes('..') || name.includes('..')) {
+    throw new Error('Repository owner/name cannot contain dot traversal segments');
+  }
   return repo;
 }
 
 function validateBranch(branch, defaultBranch) {
+  if (typeof branch === 'string' && branch === defaultBranch) {
+    throw new Error('Refusing to write to the repository default branch');
+  }
   if (typeof branch !== 'string' || !/^(?:hf-agent|feat|fix|work)\/[A-Za-z0-9._/-]+$/.test(branch) ||
       branch.includes('..') || branch.endsWith('/') || branch.includes('//')) {
     throw new Error('Write branch must be a safe hf-agent/, feat/, fix/, or work/ branch');
   }
-  if (branch === defaultBranch) throw new Error('Refusing to write to the repository default branch');
   return branch;
 }
 
@@ -57,7 +64,7 @@ async function request(method, path, body, options = {}) {
   return data;
 }
 
-const repoPath = repo => '/repos/' + validateRepo(repo);
+const repoPath = (repo, suffix = '') => '/repos/' + validateRepo(repo) + suffix;
 
 async function getRepo(repo, options) {
   return request('GET', repoPath(repo), undefined, options);
