@@ -1,6 +1,6 @@
 # HeavenzFire Termux Local Agent
 
-A dependency-free Node.js CLI for local inference, bounded local multi-agent fan-out, and an opt-in GitHub bridge. Inference is restricted to loopback; the local agent and orchestrator have no shell tools.
+A dependency-free Node.js CLI for local inference, bounded local multi-agent fan-out, remote Unified Field task proposals, and an opt-in GitHub bridge. Inference is restricted to loopback; the local agent and orchestrator have no shell tools.
 
 ## Local inference
 
@@ -41,6 +41,34 @@ node UnifiedField/TermuxAgent/orchestrate.cjs plan.json artifacts/local-orchestr
 
 The run rejects non-loopback endpoints, duplicate/invalid task IDs, oversized plans, and concurrency outside 1–16. The report records a run ID, model label, endpoint, per-task status, durations, answers or errors, and summary counts. Treat generated output as untrusted analysis; review it before using it to modify code.
 
+## Submit a task to the shared Unified Field inbox
+
+This connects the phone-side CLI to the existing authenticated remote proposal transport in `UnifiedField/QuantumLab/uf-remote-task-client.cjs`. It requires the remote HTTPS Serve endpoint to be configured and reachable; it does not create that network path for you.
+
+Create `task.json`:
+
+```json
+{
+  "task_id": "phone-review-001",
+  "objective": "Review a named repository integration boundary and report evidence-backed findings.",
+  "scope": ["github:read", "analysis"],
+  "risk_class": "LOW",
+  "idempotency_key": "phone-review-001:v1"
+}
+```
+
+Configure secrets only in the current Termux shell. Use the exact hostname and token configured for the authorized remote task worker:
+
+```sh
+export HF_REMOTE_TASK_URL='https://YOUR-CONFIGURED-SERVE-HOST/'
+export HF_REMOTE_TASK_HOSTS='YOUR-CONFIGURED-SERVE-HOST'
+read -rsp 'Remote task token: ' HF_REMOTE_TASK_TOKEN; export HF_REMOTE_TASK_TOKEN; echo
+node UnifiedField/TermuxAgent/remote-task-cli.cjs submit task.json
+unset HF_REMOTE_TASK_TOKEN
+```
+
+The client requires HTTPS, an exact hostname allowlist, bearer authentication, and a verified handshake; redirects are denied. It accepts only LOW or MEDIUM proposal risk and reports `execution_started: false`. Submission means **proposed/queued and pending approval**, not execution or completion. Never put a token in the JSON task file, repository, or chat. A working end-to-end submission still depends on the Serve endpoint and token being configured and reachable.
+
 ## GitHub connection
 
 GitHub access is separate from local inference. Set a fine-grained token only in the current Termux shell; never paste it into chat, commit it, or put it in a script. Grant only the required repository permissions.
@@ -60,7 +88,7 @@ Writes require the separate explicit opt-in `HF_GITHUB_WRITE=1` and are limited 
 bash UnifiedField/TermuxAgent/verify-termux.sh
 ```
 
-This checks Node.js 18+, syntax-checks the modules, and runs the agent, GitHub bridge, and orchestration test suites. For a live inference smoke test, start the local server, set the correct `HF_LOCAL_ENDPOINT` and `HF_LOCAL_MODEL`, then run:
+This checks Node.js 18+, syntax-checks the modules, and runs the agent, GitHub bridge, orchestration, and remote proposal test suites. For a live inference smoke test, start the local server, set the correct `HF_LOCAL_ENDPOINT` and `HF_LOCAL_MODEL`, then run:
 
 ```sh
 HF_LOCAL_SMOKE=1 bash UnifiedField/TermuxAgent/verify-termux.sh
@@ -70,8 +98,9 @@ HF_LOCAL_SMOKE=1 bash UnifiedField/TermuxAgent/verify-termux.sh
 
 - `agent.cjs`: interactive local chat; no shell tools.
 - `orchestrate.cjs`: bounded parallel local prompt runner; no shell or GitHub write access.
+- `remote-task-cli.cjs`: submits bounded proposals through the existing authenticated remote task transport; it does not approve or execute them.
 - `github.cjs`: read-only GitHub API client.
 - `github-write.cjs` / `github-cli.cjs`: explicit-opt-in branch-scoped GitHub writes.
 - `*.test.cjs`: deterministic unit tests using mocked endpoints.
 
-Automated tests are not a substitute for an on-device live inference run. Parallel prompts to one model are not the same as a multi-model agent team, distributed consensus, or validated autonomous software engineering.
+Automated tests are not a substitute for an on-device live inference run or a live two-device proposal round trip. Parallel prompts to one model are not the same as a multi-model agent team, distributed consensus, or validated autonomous software engineering.
