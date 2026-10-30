@@ -72,7 +72,7 @@ if ! command -v curl >/dev/null 2>&1; then
 fi
 
 printf '\nTesting HTTPS health endpoint (read-only; no task submission)...\n'
-curl --silent --show-error --connect-timeout 3 --max-time 8 \
+curl -q --noproxy '*' --silent --show-error --connect-timeout 3 --max-time 8 \
   --resolve "${HOST}:443:${IP}" \
   --write-out '\nHTTP_STATUS:%{http_code}\n' \
   "https://${HOST}/health"
