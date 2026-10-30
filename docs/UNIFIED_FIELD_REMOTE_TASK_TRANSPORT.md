@@ -29,7 +29,7 @@ Run from an elevated or ordinary PowerShell window as appropriate for your exist
    ```powershell
    $env:HEAVENZFIRE_TRUSTED_PROXY_HOST = 'YOUR-EXACT-DEVICE-NAME.YOUR-TAILNET.ts.net'
    $env:HEAVENZFIRE_BRIDGE_PORT = '8798'
-   $env:HEAVENZFIRE_BRIDGE_JOURNAL = Join-Path $env:LOCALAPPDATA 'HeavenzFire\UnifiedFieldRuntime\state\remote-tasks.jsonl'
+   $env:HEAVENZFIRE_BRIDGE_JOURNAL = Join-Path $env:LOCALAPPDATA 'HeavenzFire\\UnifiedFieldRuntime\\state\\remote-tasks.jsonl'
    ```
 
 3. Set `HEAVENZFIRE_BRIDGE_TOKEN` to a long, unique secret using your password manager or a secure secret-generation tool. Keep the same token only on the authorized client device. Do not put it in the repository or command history.
@@ -37,7 +37,7 @@ Run from an elevated or ordinary PowerShell window as appropriate for your exist
 4. Start the worker from the repository root:
 
    ```powershell
-   node .\UnifiedField\QuantumLab\uf-local-worker.cjs
+   node .\\UnifiedField\\QuantumLab\\uf-local-worker.cjs
    ```
 
    In a second PowerShell window, set the same `HEAVENZFIRE_TRUSTED_PROXY_HOST` and run:
@@ -59,6 +59,34 @@ Run from an elevated or ordinary PowerShell window as appropriate for your exist
 7. Verify the live service from the remote device. Submit only a harmless test proposal with a unique task ID and idempotency key, list tasks, submit the identical proposal again, and confirm it is reported as a duplicate rather than creating a second record. Confirm no task is executed.
 
 8. Stop sharing when not needed with `tailscale serve off`. This disables Serve; it does not stop the local worker. Stop the worker separately with Ctrl+C.
+
+## Android/Termux diagnostic when MagicDNS does not resolve
+
+A hostname lookup failure is not proof that the worker is down. First confirm the Android Tailscale app says **Connected** and shows the Windows device online. Copy the Windows device's current Tailscale IPv4 address from Tailscale; do not guess it.
+
+A no-install, read-only preflight script is available at `tools/termux_preflight.sh`. From a checkout of this repository in Termux, run:
+
+```sh
+bash tools/termux_preflight.sh
+```
+
+This inventories common utilities without installing packages or changing settings. To test the read-only health endpoint while isolating MagicDNS resolution, pass the exact Windows MagicDNS hostname and its current Tailscale IPv4 address:
+
+```sh
+bash tools/termux_preflight.sh 'YOUR-EXACT-DEVICE-NAME.YOUR-TAILNET.ts.net' '100.x.y.z'
+```
+
+The script uses `curl --resolve` to pin the hostname to the supplied IP for this request while keeping the HTTPS hostname for certificate validation. It does not disable TLS verification, expose the service publicly, send the bearer token, or submit/execute a task. Do not use `-k` or disable certificate validation.
+
+Interpret the result:
+
+- `HTTP_STATUS:200` with JSON containing `"ok":true`: the private route, Serve proxy, and worker health endpoint responded.
+- `HTTP_STATUS:400` with `invalid_host`: the worker's `HEAVENZFIRE_TRUSTED_PROXY_HOST` does not match the exact HTTPS hostname being used, or the request is not arriving through the expected local proxy.
+- `HTTP_STATUS:502` or `503`: inspect `tailscale serve status` and confirm the worker is listening on `127.0.0.1:8798`; the precise response body matters.
+- `HTTP_STATUS:000`, timeout, or connection failure: verify both devices are connected to the same tailnet, the copied IP is current, and ACL/device approval permits the path. This result alone does not identify which of those is at fault.
+- A TLS certificate error: re-check the exact MagicDNS hostname and system time. Do not use `-k` or disable certificate validation.
+
+If the IP-pinned request works but the normal hostname request fails, investigate MagicDNS/DNS settings. If both fail, continue with tailnet reachability and Serve/worker checks before changing application code.
 
 ## Rollback and failure behavior
 
