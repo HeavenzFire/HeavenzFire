@@ -48,7 +48,13 @@ class TaskLedger{
  async open(){
   if(this.loaded)return this;await fs.mkdir(path.dirname(this.file),{recursive:true});let raw='';
   try{raw=await fs.readFile(this.file,'utf8')}catch(e){if(e.code!=='ENOENT')throw e}
-  const lines=raw.split('\n');if(lines.length&&lines[lines.length-1]!=='')lines.pop();
+  const lastNewline=raw.lastIndexOf('\n');
+  if(raw.length&&lastNewline!==raw.length-1){
+   const complete=lastNewline<0?'':raw.slice(0,lastNewline+1);
+   await fs.truncate(this.file,Buffer.byteLength(complete,'utf8'));
+   raw=complete;
+  }
+  const lines=raw.split('\n');if(lines.length&&lines[lines.length-1]==='')lines.pop();
   for(const line of lines){if(!line)continue;let event;try{event=JSON.parse(line)}catch{throw Error('Ledger contains a malformed complete event')}this._apply(event)}
   this.loaded=true;return this;
  }
