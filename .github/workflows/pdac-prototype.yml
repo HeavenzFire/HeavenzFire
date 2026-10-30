@@ -1,0 +1,24 @@
+name: PDAC research prototype
+on:
+  push:
+    paths:
+      - "research/pdac-prototype/**"
+      - ".github/workflows/pdac-prototype.yml"
+  pull_request:
+    paths:
+      - "research/pdac-prototype/**"
+      - ".github/workflows/pdac-prototype.yml"
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run model tests
+        run: python -m unittest discover -s research/pdac-prototype/tests -v
+      - name: Run reproducible demonstration
+        run: python research/pdac-prototype/run_simulation.py --days 120 --dt 0.1 --treatment on --out /tmp/pdac-demo
