@@ -24,3 +24,5 @@ jobs:
         uses: actions/checkout@v4
       - name: Validate Bash syntax
         run: bash -n tools/termux_preflight.sh
+      - name: Verify curl isolation regression guard
+        run: bash tests/test_termux_preflight.sh
