@@ -1,0 +1,40 @@
+name: Simulation-time scheduler
+
+on:
+  pull_request:
+    paths:
+      - "simulation_time/**"
+      - "tests/test_simulation_time_clock.py"
+      - ".github/workflows/simulation-time.yml"
+  push:
+    branches: [main]
+    paths:
+      - "simulation_time/**"
+      - "tests/test_simulation_time_clock.py"
+      - ".github/workflows/simulation-time.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: simulation-time-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scheduler-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Run simulation-time scheduler tests
+        run: python -m unittest tests.test_simulation_time_clock -v
