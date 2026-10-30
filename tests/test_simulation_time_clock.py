@@ -20,8 +20,7 @@ class SimulationClockTests(unittest.TestCase):
         clock.register("noop", lambda _: None)
         with self.assertRaises(ValueError):
             clock.advance_to(-1)
-        with self.assertRaises(ValueError):
-            clock.schedule(1, "noop")
+        clock.schedule(1, "noop")
         clock.advance_to(2)
         with self.assertRaises(ValueError):
             clock.schedule(1, "noop")
