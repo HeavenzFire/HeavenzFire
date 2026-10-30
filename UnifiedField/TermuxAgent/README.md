@@ -106,3 +106,23 @@ HF_LOCAL_SMOKE=1 bash UnifiedField/TermuxAgent/verify-termux.sh
 - `*.test.cjs`: deterministic unit tests using mocked endpoints.
 
 Automated tests do not substitute for an on-device live inference run or a live two-device task round trip. Parallel prompts to one model are not the same as a multi-model agent team, distributed consensus, or validated autonomous software engineering.
+
+## Android inference fabric v0.1
+
+The fabric adds a backend registry, resource-aware scheduler, and durable JSONL task ledger. It is independent of llama.cpp and adds no package dependencies.
+
+```js
+const { RuntimeRegistry, TaskLedger, FabricScheduler } = require('./fabric.cjs');
+const registry = new RuntimeRegistry();
+registry.register({ id: 'phone-model', endpoint: 'http://127.0.0.1:8080', model: 'local-model', priority: 10, maxParallel: 2 });
+await registry.probeAll();
+const ledger = await new TaskLedger('./artifacts/fabric/tasks.jsonl').open();
+await ledger.recoverRunning();
+const scheduler = new FabricScheduler({ registry, ledger });
+const report = await scheduler.run([{ id: 'review', prompt: 'Review this design...' }], { parallelism: 4 });
+console.log(JSON.stringify(report, null, 2));
+```
+
+The scheduler estimates safe concurrency from available RAM, configured reserve memory, per-task memory estimate, and registered backend capacity. It tries healthy backends in priority order and records failover attempts. The JSONL ledger persists queued/running/succeeded/failed transitions; interrupted running tasks are marked failed with `recoverable: true` during recovery. Remote endpoints require HTTPS and an explicit hostname allowlist. No shell execution is provided and model output is untrusted analysis, not verified fact.
+
+Run `node --test UnifiedField/TermuxAgent/fabric.test.cjs` for registry, resource, ledger recovery, failover, and concurrency tests.
