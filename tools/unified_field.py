@@ -6,6 +6,7 @@ This is read-only discovery/diagnostics; it never invokes capability entrypoints
 """
 from __future__ import annotations
 import argparse
+import math
 import json
 import sys
 from pathlib import Path
@@ -16,13 +17,15 @@ from tools.validate_capabilities import validate_registry
 def build_report(capability_data: Any, node_data: Any, timeout: float = 2.0) -> dict[str, Any]:
     capability_errors = validate_registry(capability_data)
     node_errors = validate_nodes(node_data)
-    if capability_errors or node_errors:
+    timeout_errors = [] if math.isfinite(timeout) and timeout > 0 else ["timeout: expected a finite positive number"]
+    if capability_errors or node_errors or timeout_errors:
         return {
             "schema_version": "1.0",
             "overall": "DARK",
             "validation_errors": {
                 "capabilities": capability_errors,
                 "nodes": node_errors,
+                "timeout": timeout_errors,
             },
             "capabilities": [],
             "nodes": [],
@@ -80,8 +83,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("nodes", help="node health registry JSON")
     parser.add_argument("--timeout", type=float, default=2.0, help="HTTP timeout per node (default: 2)")
     args = parser.parse_args(argv)
-    if args.timeout <= 0:
-        parser.error("--timeout must be positive")
+    if not math.isfinite(args.timeout) or args.timeout <= 0:
+        parser.error("--timeout must be finite and positive")
     try:
         capabilities = json.loads(Path(args.capabilities).read_text(encoding="utf-8"))
         nodes = json.loads(Path(args.nodes).read_text(encoding="utf-8"))

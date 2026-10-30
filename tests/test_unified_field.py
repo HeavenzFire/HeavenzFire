@@ -1,7 +1,10 @@
 """Tests for the crosswalk between capability declarations and observed node health."""
 import unittest
+import contextlib
+import io
+import sys
 from unittest.mock import patch
-from tools.unified_field import build_report
+from tools.unified_field import build_report, main
 
 CAPS = {"schema_version": "1.0", "capabilities": [{
     "id": "local.model", "name": "Local Model", "version": "1.0.0",
@@ -11,6 +14,26 @@ CAPS = {"schema_version": "1.0", "capabilities": [{
 NODES = {"schema_version": "1.0", "nodes": [{"id": "agent-a", "health_url": "http://127.0.0.1:8790/health"}]}
 
 class UnifiedFieldReportTests(unittest.TestCase):
+    def test_report_api_rejects_non_finite_or_non_positive_timeout(self):
+        for value in (float("nan"), float("inf"), float("-inf"), 0, -1):
+            with self.subTest(timeout=value):
+                report = build_report(CAPS, NODES, timeout=value)
+                self.assertEqual(report["overall"], "DARK")
+                self.assertIn("finite positive", report["validation_errors"]["timeout"][0])
+                self.assertEqual(report["capabilities"], [])
+                self.assertEqual(report["nodes"], [])
+
+    def test_cli_rejects_non_finite_or_non_positive_timeout(self):
+        for value in ("nan", "inf", "-inf", "0", "-1"):
+            with self.subTest(timeout=value):
+                stderr = io.StringIO()
+                with patch.object(sys, "argv", ["unified_field.py", "caps.json", "nodes.json", "--timeout=" + value]):
+                    with contextlib.redirect_stderr(stderr):
+                        with self.assertRaises(SystemExit) as raised:
+                            main()
+                self.assertEqual(raised.exception.code, 2)
+                self.assertIn("finite and positive", stderr.getvalue())
+
     @patch("tools.unified_field.run_registry")
     def test_bound_live_capability_reports_alive(self, mocked):
         mocked.return_value = {"schema_version": "1.0", "overall": "ALIVE",

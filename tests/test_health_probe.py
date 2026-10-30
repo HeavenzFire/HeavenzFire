@@ -1,11 +1,14 @@
 """Tests for health registry validation, egress allowlists, and probe status semantics."""
 import unittest
+import contextlib
+import io
+import sys
 from unittest.mock import patch, MagicMock
 from urllib.error import URLError
 from urllib.request import Request
 
 from tools.health_probe import (
-    NoRedirectHandler, validate_nodes, probe_node, run_registry,
+    NoRedirectHandler, validate_nodes, probe_node, run_registry, main,
 )
 
 VALID = {
@@ -15,6 +18,33 @@ VALID = {
 
 
 class HealthProbeTests(unittest.TestCase):
+    def test_direct_probe_rejects_non_finite_or_non_positive_timeout(self):
+        for value in (float("nan"), float("inf"), float("-inf"), 0, -1):
+            with self.subTest(timeout=value):
+                with patch("tools.health_probe._open_url") as mocked:
+                    result = probe_node(VALID["nodes"][0], timeout=value)
+                self.assertEqual(result["status"], "DARK")
+                self.assertIn("finite and positive", result["reason"])
+                mocked.assert_not_called()
+
+    def test_registry_rejects_non_finite_or_non_positive_timeout(self):
+        for value in (float("nan"), float("inf"), float("-inf"), 0, -1):
+            with self.subTest(timeout=value):
+                result = run_registry(VALID, timeout=value)
+                self.assertEqual(result["overall"], "DARK")
+                self.assertIn("finite positive", result["validation_errors"][0])
+
+    def test_cli_rejects_non_finite_or_non_positive_timeout(self):
+        for value in ("nan", "inf", "-inf", "0", "-1"):
+            with self.subTest(timeout=value):
+                stderr = io.StringIO()
+                with patch.object(sys, "argv", ["health_probe.py", "nodes.json", "--timeout=" + value]):
+                    with contextlib.redirect_stderr(stderr):
+                        with self.assertRaises(SystemExit) as raised:
+                            main()
+                self.assertEqual(raised.exception.code, 2)
+                self.assertIn("finite and positive", stderr.getvalue())
+
     def test_registry_validates_loopback_endpoint(self):
         self.assertEqual(validate_nodes(VALID), [])
 
