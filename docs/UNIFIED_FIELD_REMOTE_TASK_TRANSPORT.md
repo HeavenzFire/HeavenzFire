@@ -29,7 +29,7 @@ Run from an elevated or ordinary PowerShell window as appropriate for your exist
    ```powershell
    $env:HEAVENZFIRE_TRUSTED_PROXY_HOST = 'YOUR-EXACT-DEVICE-NAME.YOUR-TAILNET.ts.net'
    $env:HEAVENZFIRE_BRIDGE_PORT = '8798'
-   $env:HEAVENZFIRE_BRIDGE_JOURNAL = Join-Path $env:LOCALAPPDATA 'HeavenzFire\\UnifiedFieldRuntime\\state\\remote-tasks.jsonl'
+   $env:HEAVENZFIRE_BRIDGE_JOURNAL = Join-Path $env:LOCALAPPDATA 'HeavenzFire\UnifiedFieldRuntime\state\remote-tasks.jsonl'
    ```
 
 3. Set `HEAVENZFIRE_BRIDGE_TOKEN` to a long, unique secret using your password manager or a secure secret-generation tool. Keep the same token only on the authorized client device. Do not put it in the repository or command history.
@@ -37,7 +37,7 @@ Run from an elevated or ordinary PowerShell window as appropriate for your exist
 4. Start the worker from the repository root:
 
    ```powershell
-   node .\\UnifiedField\\QuantumLab\\uf-local-worker.cjs
+   node .\UnifiedField\QuantumLab\uf-local-worker.cjs
    ```
 
    In a second PowerShell window, set the same `HEAVENZFIRE_TRUSTED_PROXY_HOST` and run:
