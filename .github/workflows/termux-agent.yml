@@ -34,5 +34,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Check bootstrap shell syntax
+        run: bash -n UnifiedField/TermuxAgent/setup-and-run.sh
       - name: Run Termux agent syntax and unit tests
         run: bash UnifiedField/TermuxAgent/verify-termux.sh
