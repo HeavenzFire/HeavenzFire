@@ -35,7 +35,8 @@ class RuntimeRegistry{
  healthy(capability='chat'){return this.list().filter(b=>b.state==='healthy'&&b.capabilities.includes(capability))}
 }
 async function readResourceSnapshot({meminfoPath='/proc/meminfo',statfs=fs.statfs,home=os.homedir(),loadavg=os.loadavg}={}){
- const s={capturedAt:new Date().toISOString(),platform:process.platform,arch:process.arch,cpuCount:os.cpus().length,load1m:loadavg()[0],memory:null,storage:null};
+ const cpuCount=Math.max(1,Number(typeof os.availableParallelism==='function'?os.availableParallelism():0)||os.cpus().length||1);
+ const s={capturedAt:new Date().toISOString(),platform:process.platform,arch:process.arch,cpuCount,load1m:loadavg()[0],memory:null,storage:null};
  try{const raw=await fs.readFile(meminfoPath,'utf8'),v=Object.fromEntries([...raw.matchAll(/^(\w+):\s+(\d+)\s+kB$/gm)].map(m=>[m[1],Number(m[2])*1024]));s.memory={totalBytes:v.MemTotal??null,availableBytes:v.MemAvailable??null,freeBytes:v.MemFree??null,swapFreeBytes:v.SwapFree??null}}
  catch{s.memory={totalBytes:null,availableBytes:null,freeBytes:null,swapFreeBytes:null}}
  try{const x=await statfs(home);s.storage={totalBytes:Number(x.blocks)*Number(x.bsize),availableBytes:Number(x.bavail)*Number(x.bsize)}}
