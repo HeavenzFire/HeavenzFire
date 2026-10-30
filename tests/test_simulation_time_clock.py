@@ -35,7 +35,7 @@ class SimulationClockTests(unittest.TestCase):
             with self.subTest(value=value), self.assertRaises(ValueError):
                 clock.advance_to(value)
 
-    def test_event_budget_refuses_before_dispatch(self):
+    def test_event_budget_refuses_initial_queue_before_dispatch(self):
         clock = SimulationClock(max_events_per_advance=1)
         seen = []
         clock.register("record", lambda payload: seen.append(payload))
@@ -45,6 +45,25 @@ class SimulationClockTests(unittest.TestCase):
             clock.advance_to(2)
         self.assertEqual(seen, [])
         self.assertEqual(clock.now, 0)
+
+    def test_event_budget_bounds_same_time_rescheduling(self):
+        clock = SimulationClock(max_events_per_advance=3)
+        seen = []
+
+        def reschedule(payload):
+            seen.append(payload)
+            clock.schedule(clock.now, "reschedule", payload + 1)
+
+        clock.register("reschedule", reschedule)
+        clock.schedule(0, "reschedule", 0)
+
+        with self.assertRaisesRegex(RuntimeError, "event budget exceeded during dispatch"):
+            clock.advance_to(0)
+
+        self.assertEqual(seen, [0, 1, 2])
+        self.assertEqual(clock.now, 0)
+        self.assertEqual(len(clock._queue), 1)
+        self.assertEqual(clock.trace[-1]["event"], "event_budget_exceeded")
 
     def test_payload_must_be_json_compatible(self):
         clock = SimulationClock()
