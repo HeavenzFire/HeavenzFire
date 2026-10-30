@@ -39,7 +39,10 @@ async function submitTaskFile(file, options = {}) {
   const client = options.client || createRemoteTaskClient(options.config || readConfig());
   const session = await client.connect();
   const submitted = await client.submitTask(task);
-  if (!submitted || !['QUEUED', 'proposed', 'pending'].includes(submitted.status)) {
+  // The worker API stores status inside its task object; tolerate the normalized
+  // top-level status shape used by test doubles and compatible remote versions.
+  const submittedStatus = submitted?.status ?? submitted?.task?.status;
+  if (!submitted || !['QUEUED', 'proposed', 'pending'].includes(submittedStatus)) {
     throw new Error('Remote inbox did not confirm a queued proposal; no execution is claimed.');
   }
 
