@@ -6,7 +6,7 @@ set -Eeuo pipefail
 
 REPO_ROOT="${HF_REPO_ROOT:-$HOME/src/llama.cpp}"
 AGENT_DIR="${HF_AGENT_DIR:-$HOME/HeavenzFire/TermuxAgent}"
-BRANCH="feat/termux-local-first-agent"
+BRANCH="main"
 RAW_BASE="https://raw.githubusercontent.com/HeavenzFire/HeavenzFire/$BRANCH/UnifiedField/TermuxAgent"
 HOST="127.0.0.1"
 PORT="${HF_SERVER_PORT:-8080}"
@@ -24,9 +24,6 @@ need() { command -v "$1" >/dev/null 2>&1 || die "Required command not found: $1"
 [[ "$PREFIX" == *"/com.termux/"* ]] || printf 'Warning: this script is designed for Android Termux.\n' >&2
 need curl
 need node
-need python
-need pgrep
-need pkill
 mkdir -p "$AGENT_DIR"
 
 note "Downloading HeavenzFire Local Agent files"
