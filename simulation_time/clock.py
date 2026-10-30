@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 import hashlib
+import heapq
 import json
 import math
 from typing import Any, Callable
@@ -48,11 +49,9 @@ class SimulationClock:
             raise ValueError("cannot schedule an event in the past")
         if name not in self._handlers:
             raise ValueError(f"no handler registered for: {name}")
-        # Ensure payload can be represented in the canonical trace before queueing.
         self._canonical(payload)
         sequence = self._next_sequence
         self._next_sequence += 1
-        import heapq
         heapq.heappush(self._queue, _Event(at, sequence, name, payload))
         self._record("scheduled", at=at, sequence=sequence, name=name, payload=payload)
         return sequence
@@ -61,13 +60,21 @@ class SimulationClock:
         target = self._finite_number(target, "target")
         if target < self.now:
             raise ValueError("simulation clock cannot move backwards")
-        # Refuse before dispatch if the requested advance would exceed the budget.
+        # Preserve the all-or-nothing preflight for events already queued.
         due_count = sum(1 for event in self._queue if event.at <= target)
         if due_count > self._limit:
             raise RuntimeError(f"event budget exceeded: {due_count} due, limit {self._limit}")
-        import heapq
+
         dispatched = 0
         while self._queue and self._queue[0].at <= target:
+            # Handlers may enqueue more due events. Enforce the budget against
+            # actual dispatches too, before removing the next event from the heap.
+            if dispatched >= self._limit:
+                self._record("event_budget_exceeded", target=target,
+                             dispatched=dispatched, limit=self._limit)
+                raise RuntimeError(
+                    f"event budget exceeded during dispatch: limit {self._limit}"
+                )
             event = heapq.heappop(self._queue)
             self.now = event.at
             try:
@@ -92,8 +99,6 @@ class SimulationClock:
 
     def _record(self, event: str, **fields: Any) -> None:
         record = {"event": event, "clock": self.now, **fields}
-        # Round-trip through JSON to reject non-serializable/non-finite values and
-        # keep the trace detached from mutable caller-owned payload objects.
         canonical = self._canonical(record)
         self.trace.append(json.loads(canonical))
 
