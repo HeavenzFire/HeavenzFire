@@ -25,10 +25,7 @@ class Tensor {
 public:
     Tensor(std::size_t rows, std::size_t cols,
            std::size_t memory_limit = kDefaultMemoryLimitBytes)
-        : rows_(rows), cols_(cols), values_(checked_elements(rows, cols)) {
-        const std::size_t bytes = values_.size() * sizeof(float);
-        if (bytes > memory_limit) throw std::length_error("tensor exceeds configured memory limit");
-    }
+        : rows_(rows), cols_(cols), values_(allocate(rows, cols, memory_limit)) {}
 
     std::size_t rows() const noexcept { return rows_; }
     std::size_t cols() const noexcept { return cols_; }
@@ -48,6 +45,14 @@ public:
     const std::vector<float>& data() const noexcept { return values_; }
 
 private:
+    static std::vector<float> allocate(std::size_t rows, std::size_t cols,
+                                       std::size_t memory_limit) {
+        const std::size_t elements = checked_elements(rows, cols);
+        if (elements > memory_limit / sizeof(float))
+            throw std::length_error("tensor exceeds configured memory limit");
+        return std::vector<float>(elements);
+    }
+
     std::size_t rows_;
     std::size_t cols_;
     std::vector<float> values_;
