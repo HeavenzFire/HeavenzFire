@@ -1,0 +1,38 @@
+name: Termux local-first agent
+
+on:
+  pull_request:
+    paths:
+      - 'UnifiedField/TermuxAgent/**'
+      - 'UnifiedField/QuantumLab/uf-remote-task-client.cjs'
+      - 'UnifiedField/QuantumLab/uf-handshake-client.cjs'
+      - '.github/workflows/termux-agent.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'UnifiedField/TermuxAgent/**'
+      - 'UnifiedField/QuantumLab/uf-remote-task-client.cjs'
+      - 'UnifiedField/QuantumLab/uf-handshake-client.cjs'
+      - '.github/workflows/termux-agent.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: termux-agent-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  termux-agent:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run Termux agent syntax and unit tests
+        run: bash UnifiedField/TermuxAgent/verify-termux.sh

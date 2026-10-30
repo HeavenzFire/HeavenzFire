@@ -105,7 +105,12 @@ function createRemoteTaskClient(options = {}) {
     async submitTask(task) {
       if (!task || typeof task !== 'object' || Array.isArray(task)) fail('invalid_task', 'Task must be an object.');
       const result = await request('/api/tasks', 'POST', { task });
-      return Object.freeze({ status: result.status, duplicate: result.duplicate === true, task: result.task });
+      // The worker journal's enqueue contract returns { accepted, duplicate, task };
+      // the materialized task carries the canonical QUEUED state. Preserve support
+      // for an explicit status field from compatible worker implementations.
+      const status = result.status ?? result.task?.status;
+      if (typeof status !== 'string') fail('invalid_task_response', 'Remote task API did not return a task status.');
+      return Object.freeze({ status, duplicate: result.duplicate === true, task: result.task });
     },
     getSession() { return session; }
   });
