@@ -88,7 +88,9 @@ class FabricScheduler{
  async capacity(requested){
   const snapshot=await this.resourceProvider(),available=snapshot.memory?.availableBytes;
   const memorySlots=Number.isFinite(available)?Math.max(0,Math.floor((available/1048576-this.reserveMemoryMB)/this.memoryPerTaskMB)):1;
-  const backendSlots=this.registry.healthy().reduce((n,b)=>n+b.maxParallel,0);
+  const healthy=this.registry.healthy();
+  // Workers prefer the first healthy backend, so cap against that backend's declared capacity.
+  const backendSlots=healthy.length?healthy[0].maxParallel:0;
   return {snapshot,parallelism:Math.max(1,Math.min(requested,this.maxParallel,memorySlots||1,backendSlots||1)),memorySlots,backendSlots};
  }
  async run(tasks,{parallelism=4}={}){
