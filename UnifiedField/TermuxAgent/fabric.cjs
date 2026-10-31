@@ -45,9 +45,9 @@ async function readResourceSnapshot({meminfoPath='/proc/meminfo',statfs=fs.statf
  return s;
 }
 class TaskLedger{
- constructor(file){this.file=path.resolve(file);this.events=[];this.states=new Map();this.loaded=false;this.writeQueue=Promise.resolve()}
+ constructor(file){this.file=path.resolve(file);this.events=[];this.states=new Map();this.loaded=false;this.poisoned=false;this.writeQueue=Promise.resolve()}
  async open(){
-  if(this.loaded)return this;await fs.mkdir(path.dirname(this.file),{recursive:true});let raw='';
+  if(this.loaded)return this;this.events=[];this.states.clear();await fs.mkdir(path.dirname(this.file),{recursive:true});let raw='';
   try{raw=await fs.readFile(this.file,'utf8')}catch(e){if(e.code!=='ENOENT')throw e}
   const lastNewline=raw.lastIndexOf('\n');
   if(raw.length&&lastNewline!==raw.length-1){
@@ -57,7 +57,7 @@ class TaskLedger{
   }
   const lines=raw.split('\n');if(lines.length&&lines[lines.length-1]==='')lines.pop();
   for(const line of lines){if(!line)continue;let event;try{event=JSON.parse(line)}catch{throw Error('Ledger contains a malformed complete event')}this._apply(event)}
-  this.loaded=true;return this;
+  this.loaded=true;this.poisoned=false;return this;
  }
  _validate(event){
   if(!event||typeof event.taskId!=='string'||!TRANSITIONS[event.state])throw Error('Invalid ledger event');
@@ -69,11 +69,13 @@ class TaskLedger{
  async append(taskId,state,details={}){
   if(!this.loaded)await this.open();
   const operation=this.writeQueue.then(async()=>{
+   if(this.poisoned)await this.open();
    if(!details||typeof details!=='object'||Array.isArray(details))throw Error('Ledger event details must be an object');
    for(const key of RESERVED_EVENT_FIELDS)if(Object.prototype.hasOwnProperty.call(details,key))throw Error('Ledger event details cannot override '+key);
    const event={...details,eventId:crypto.randomUUID(),taskId,state,at:new Date().toISOString()};
    this._validate(event);
-   await fs.appendFile(this.file,JSON.stringify(event)+'\n',{encoding:'utf8',mode:0o600});
+   try{await fs.appendFile(this.file,JSON.stringify(event)+'\n',{encoding:'utf8',mode:0o600})}
+   catch(error){this.poisoned=true;this.loaded=false;throw error}
    this._apply(event);
    return event;
   });
