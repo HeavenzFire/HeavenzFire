@@ -132,3 +132,5 @@ main().catch(error => {
 The scheduler estimates safe concurrency from available RAM, configured reserve memory, per-task memory estimate, and registered backend capacity. It tries healthy backends in priority order and records failover attempts. The JSONL ledger persists queued/running/succeeded/failed transitions; interrupted running tasks are marked failed with `recoverable: true` during recovery. Remote endpoints require HTTPS and an explicit hostname allowlist. No shell execution is provided and model output is untrusted analysis, not verified fact.
 
 Run `node --test UnifiedField/TermuxAgent/fabric.test.cjs` for registry, resource, ledger recovery, failover, and concurrency tests.
+
+The Termux `setup-and-run.sh` bootstrap provisions `fabric.cjs` and `fabric.test.cjs` alongside the local agent, syntax-checks the fabric module, and runs its tests before starting inference. Existing files in the target directory are preserved as timestamped backups before replacement. The bootstrap still requires a local GGUF model and a working `llama-server`; it does not download model weights.
