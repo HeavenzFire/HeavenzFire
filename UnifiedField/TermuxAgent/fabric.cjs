@@ -2,6 +2,7 @@
 const fs=require('node:fs/promises'), os=require('node:os'), path=require('node:path'), crypto=require('node:crypto');
 const LOOPBACK=new Set(['127.0.0.1','localhost','::1','[::1]']);
 const TRANSITIONS={queued:new Set(['running','failed']),running:new Set(['succeeded','failed']),succeeded:new Set(),failed:new Set(['queued'])};
+const RESERVED_EVENT_FIELDS=new Set(['eventId','taskId','state','at']);
 function validateBackendEndpoint(value,remoteHosts=[]){
  let u; try{u=new URL(value)}catch{throw Error('Backend endpoint must be a valid URL')}
  if(u.username||u.password||u.search||u.hash)throw Error('Backend endpoint cannot contain credentials, query, or fragment');
@@ -44,7 +45,7 @@ async function readResourceSnapshot({meminfoPath='/proc/meminfo',statfs=fs.statf
  return s;
 }
 class TaskLedger{
- constructor(file){this.file=path.resolve(file);this.events=[];this.states=new Map();this.loaded=false}
+ constructor(file){this.file=path.resolve(file);this.events=[];this.states=new Map();this.loaded=false;this.writeQueue=Promise.resolve()}
  async open(){
   if(this.loaded)return this;await fs.mkdir(path.dirname(this.file),{recursive:true});let raw='';
   try{raw=await fs.readFile(this.file,'utf8')}catch(e){if(e.code!=='ENOENT')throw e}
@@ -58,16 +59,26 @@ class TaskLedger{
   for(const line of lines){if(!line)continue;let event;try{event=JSON.parse(line)}catch{throw Error('Ledger contains a malformed complete event')}this._apply(event)}
   this.loaded=true;return this;
  }
- _apply(event){
+ _validate(event){
   if(!event||typeof event.taskId!=='string'||!TRANSITIONS[event.state])throw Error('Invalid ledger event');
   const previous=this.states.get(event.taskId);
   if(!previous){if(event.state!=='queued')throw Error('First task event must be queued')}
   else if(!TRANSITIONS[previous.state].has(event.state))throw Error('Invalid task transition: '+previous.state+' -> '+event.state);
-  this.states.set(event.taskId,event);this.events.push(event);return event;
  }
+ _apply(event){this._validate(event);this.states.set(event.taskId,event);this.events.push(event);return event}
  async append(taskId,state,details={}){
-  if(!this.loaded)await this.open();const event={eventId:crypto.randomUUID(),taskId,state,at:new Date().toISOString(),...details};
-  this._apply(event);await fs.appendFile(this.file,JSON.stringify(event)+'\n',{encoding:'utf8',mode:0o600});return event;
+  if(!this.loaded)await this.open();
+  const operation=this.writeQueue.then(async()=>{
+   if(!details||typeof details!=='object'||Array.isArray(details))throw Error('Ledger event details must be an object');
+   for(const key of RESERVED_EVENT_FIELDS)if(Object.prototype.hasOwnProperty.call(details,key))throw Error('Ledger event details cannot override '+key);
+   const event={...details,eventId:crypto.randomUUID(),taskId,state,at:new Date().toISOString()};
+   this._validate(event);
+   await fs.appendFile(this.file,JSON.stringify(event)+'\n',{encoding:'utf8',mode:0o600});
+   this._apply(event);
+   return event;
+  });
+  this.writeQueue=operation.catch(()=>{});
+  return operation;
  }
  async create(taskId,input={}){
   if(!/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(taskId))throw Error('Invalid task id');
@@ -90,15 +101,16 @@ async function invokeChat(backend,prompt,{fetchImpl=fetch,timeoutMs=60000}={}){
 class FabricScheduler{
  constructor({registry,ledger,resourceProvider=readResourceSnapshot,invoke=invokeChat,reserveMemoryMB=512,memoryPerTaskMB=256,maxParallel=16,timeoutMs=60000}={}){
   if(!registry||!ledger)throw Error('Scheduler requires registry and ledger');
+  if(!Number.isFinite(reserveMemoryMB)||reserveMemoryMB<0||!Number.isFinite(memoryPerTaskMB)||memoryPerTaskMB<=0)throw Error('Memory limits must be finite and reserve/task estimates must be valid');
+  if(!Number.isInteger(maxParallel)||maxParallel<1||maxParallel>16)throw Error('maxParallel must be 1..16');
   this.registry=registry;this.ledger=ledger;this.resourceProvider=resourceProvider;this.invoke=invoke;this.reserveMemoryMB=reserveMemoryMB;this.memoryPerTaskMB=memoryPerTaskMB;this.maxParallel=maxParallel;this.timeoutMs=timeoutMs;
  }
  async capacity(requested){
   const snapshot=await this.resourceProvider(),available=snapshot.memory?.availableBytes;
-  const memorySlots=Number.isFinite(available)?Math.max(0,Math.floor((available/1048576-this.reserveMemoryMB)/this.memoryPerTaskMB)):1;
+  const memorySlots=Number.isFinite(available)?Math.max(0,Math.floor((available/1048576-this.reserveMemoryMB)/this.memoryPerTaskMB)):0;
   const healthy=this.registry.healthy();
-  // Workers prefer the first healthy backend, so cap against that backend's declared capacity.
-  const backendSlots=healthy.length?healthy[0].maxParallel:0;
-  return {snapshot,parallelism:Math.max(1,Math.min(requested,this.maxParallel,memorySlots||1,backendSlots||1)),memorySlots,backendSlots};
+  const backendSlots=healthy.reduce((sum,b)=>sum+b.maxParallel,0);
+  return {snapshot,parallelism:Math.min(requested,this.maxParallel,memorySlots,backendSlots),memorySlots,backendSlots};
  }
  async run(tasks,{parallelism=4}={}){
   if(!Array.isArray(tasks)||tasks.length<1||tasks.length>64)throw Error('Provide 1..64 tasks');
@@ -107,10 +119,28 @@ class FabricScheduler{
   await this.ledger.open();const backends=this.registry.healthy(),cap=await this.capacity(parallelism);
   for(const t of tasks)await this.ledger.create(t.id,{prompt:t.prompt});
   const results=new Array(tasks.length);let next=0;
+  const active=new Map(backends.map(b=>[b.id,0])),waiters=new Map(backends.map(b=>[b.id,[]]));
+  const acquire=async backend=>{
+   while(active.get(backend.id)>=backend.maxParallel)await new Promise(resolve=>waiters.get(backend.id).push(resolve));
+   active.set(backend.id,active.get(backend.id)+1);
+   return ()=>{active.set(backend.id,active.get(backend.id)-1);const wake=waiters.get(backend.id).shift();if(wake)wake()};
+  };
   const worker=async()=>{
-   while(true){const i=next++;if(i>=tasks.length)return;const t=tasks[i],startedAt=new Date().toISOString(),started=Date.now();
+   while(true){
+    const i=next++;if(i>=tasks.length)return;
+    const t=tasks[i],startedAt=new Date().toISOString(),started=Date.now();
+    if(cap.parallelism===0){
+     const error=cap.memorySlots===0?'insufficient_memory_headroom':'no_backend_capacity';
+     await this.ledger.transition(t.id,'failed',{error,durationMs:0});
+     results[i]={id:t.id,status:'failed',error,durationMs:0};continue;
+    }
     await this.ledger.transition(t.id,'running',{startedAt});let answer,selected,errors=[];
-    for(const b of backends){try{answer=await this.invoke(b,t.prompt,{timeoutMs:this.timeoutMs});selected=b;break}catch(e){errors.push({backendId:b.id,error:String(e.message||e)})}}
+    for(const b of backends){
+     const release=await acquire(b);
+     try{answer=await this.invoke(b,t.prompt,{timeoutMs:this.timeoutMs});selected=b;break}
+     catch(e){errors.push({backendId:b.id,error:String(e.message||e)})}
+     finally{release()}
+    }
     if(selected){const d={backendId:selected.id,model:selected.model,durationMs:Date.now()-started};await this.ledger.transition(t.id,'succeeded',d);results[i]={id:t.id,status:'succeeded',...d,answer,failoverErrors:errors}}
     else{const error=backends.length?'all_backends_failed':'no_healthy_backend';await this.ledger.transition(t.id,'failed',{error,attempts:errors,durationMs:Date.now()-started});results[i]={id:t.id,status:'failed',error,attempts:errors,durationMs:Date.now()-started}}
    }
