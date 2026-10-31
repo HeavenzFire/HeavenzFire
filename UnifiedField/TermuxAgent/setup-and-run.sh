@@ -31,8 +31,8 @@ for file in agent.cjs agent.test.cjs fabric.cjs fabric.test.cjs README.md; do
   curl --fail --silent --show-error --location "$RAW_BASE/$file" -o "$AGENT_DIR/$file.tmp" ||
     die "Could not download $file from branch $BRANCH"
   [[ -s "$AGENT_DIR/$file.tmp" ]] || die "Downloaded file is empty: $file"
-  if [[ -e "$AGENT_DIR/$file" ]] && ! cmp -s "$AGENT_DIR/$file.tmp" "$AGENT_DIR/$file"; then
-    backup="$AGENT_DIR/$file.backup.$(date +%Y%m%d%H%M%S).$"
+  if [[ -e "$AGENT_DIR/$file" ]]; then
+    backup="$AGENT_DIR/$file.backup.$(date +%s).$PPID"
     mv "$AGENT_DIR/$file" "$backup" || die "Could not preserve existing $file as $backup"
     note "Preserved previous $file at $backup"
   fi
