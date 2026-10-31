@@ -145,7 +145,7 @@ class FabricScheduler{
     else{const error=backends.length?'all_backends_failed':'no_healthy_backend';await this.ledger.transition(t.id,'failed',{error,attempts:errors,durationMs:Date.now()-started});results[i]={id:t.id,status:'failed',error,attempts:errors,durationMs:Date.now()-started}}
    }
   };
-  await Promise.all(Array.from({length:Math.min(cap.parallelism,tasks.length)},worker));
+  await Promise.all(Array.from({length:Math.max(1,Math.min(cap.parallelism,tasks.length))},worker));
   return {schema:'heavenzfire.inference-fabric-run.v1',runId:crypto.randomUUID(),finishedAt:new Date().toISOString(),requestedParallelism:parallelism,effectiveParallelism:Math.min(cap.parallelism,tasks.length),capacity:{memorySlots:cap.memorySlots,backendSlots:cap.backendSlots,availableMemoryBytes:cap.snapshot.memory?.availableBytes??null},backends:backends.map(b=>({id:b.id,model:b.model,kind:b.kind})),taskCount:results.length,succeeded:results.filter(x=>x.status==='succeeded').length,failed:results.filter(x=>x.status==='failed').length,results};
  }
 }
