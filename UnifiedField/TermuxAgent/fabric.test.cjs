@@ -16,5 +16,27 @@ test('scheduler caps concurrency from RAM headroom',async t=>{const ledger=await
 test('scheduler refuses to dispatch when memory headroom is below reserve',async t=>{const ledger=await tempLedger(t),r=new RuntimeRegistry({fetchImpl:async()=>ok()});r.register({id:'local',endpoint:'http://127.0.0.1:8080'});await r.probeAll();let invoked=0;const s=new FabricScheduler({registry:r,ledger,reserveMemoryMB:512,memoryPerTaskMB:256,resourceProvider:async()=>({memory:{availableBytes:128*1024*1024}}),invoke:async()=>{invoked++;return'ok'}});const report=await s.run([{id:'low-memory',prompt:'work'}]);assert.equal(report.effectiveParallelism,0);assert.equal(report.results[0].error,'insufficient_memory_headroom');assert.equal(invoked,0);assert.equal(ledger.get('low-memory').state,'failed')});
 test('scheduler enforces each backend concurrency limit during failover',async t=>{const ledger=await tempLedger(t),r=new RuntimeRegistry({fetchImpl:async()=>ok()});r.register({id:'primary',endpoint:'http://127.0.0.1:8081',priority:1,maxParallel:1});r.register({id:'backup',endpoint:'http://127.0.0.1:8082',priority:2,maxParallel:1});await r.probeAll();let backupActive=0,backupPeak=0;const s=new FabricScheduler({registry:r,ledger,reserveMemoryMB:0,memoryPerTaskMB:1,resourceProvider:async()=>({memory:{availableBytes:1024**3}}),invoke:async b=>{if(b.id==='primary')throw Error('primary_down');backupActive++;backupPeak=Math.max(backupPeak,backupActive);await new Promise(x=>setTimeout(x,5));backupActive--;return'ok'}});const tasks=Array.from({length:5},(_,i)=>({id:'failover-'+i,prompt:'work'}));const report=await s.run(tasks,{parallelism:8});assert.equal(report.succeeded,5);assert.equal(backupPeak,1)});
 test('all backend failures are persisted',async t=>{const ledger=await tempLedger(t),r=new RuntimeRegistry({fetchImpl:async()=>ok()});r.register({id:'local',endpoint:'http://127.0.0.1:8080'});await r.probeAll();const s=new FabricScheduler({registry:r,ledger,resourceProvider:async()=>({memory:{availableBytes:2e9}}),invoke:async()=>{throw Error('offline')}});const report=await s.run([{id:'offline-task',prompt:'x'}]);assert.equal(report.failed,1);assert.equal(report.results[0].error,'all_backends_failed');assert.equal(ledger.get('offline-task').state,'failed')});
+test('scheduler uses a free lower-priority backend while the preferred backend is saturated',{timeout:2000},async t=>{
+ const ledger=await tempLedger(t),r=new RuntimeRegistry({fetchImpl:async()=>ok()});
+ r.register({id:'primary',endpoint:'http://127.0.0.1:8081',priority:1,maxParallel:1});
+ r.register({id:'backup',endpoint:'http://127.0.0.1:8082',priority:2,maxParallel:1});
+ await r.probeAll();
+ let releasePrimary,markPrimaryStarted,markBackupStarted;
+ const primaryGate=new Promise(resolve=>{releasePrimary=resolve});
+ const primaryStarted=new Promise(resolve=>{markPrimaryStarted=resolve});
+ const backupStarted=new Promise(resolve=>{markBackupStarted=resolve});
+ const s=new FabricScheduler({registry:r,ledger,reserveMemoryMB:0,memoryPerTaskMB:1,resourceProvider:async()=>({memory:{availableBytes:1024**3}}),invoke:async b=>{
+  if(b.id==='primary'){markPrimaryStarted();await primaryGate;return 'primary response'}
+  markBackupStarted();return 'backup response';
+ }});
+ const run=s.run([{id:'primary-task',prompt:'first'},{id:'backup-task',prompt:'second'}],{parallelism:2});
+ await primaryStarted;
+ await Promise.race([backupStarted,new Promise((_,reject)=>setTimeout(()=>reject(Error('free backup backend was not scheduled')),500))]);
+ releasePrimary();
+ const report=await run;
+ assert.equal(report.succeeded,2);
+ assert.equal(report.effectiveParallelism,2);
+ assert.equal(report.results[1].backendId,'backup');
+});
 test('resource monitor returns device telemetry shape',async()=>{const s=await readResourceSnapshot();assert.ok(Number.isInteger(s.cpuCount)&&s.cpuCount>0);assert.ok(s.memory&&'availableBytes'in s.memory);assert.ok(s.storage&&'availableBytes'in s.storage)});
 test('ledger truncates an incomplete trailing append before accepting new events',async t=>{const l=await tempLedger(t);await l.open();await l.create('durable',{prompt:'ok'});await fs.appendFile(l.file,'{\\"taskId\\":\\"torn\\"');const reopened=new TaskLedger(l.file);await reopened.open();await reopened.create('after-recovery',{prompt:'safe'});const verified=new TaskLedger(l.file);await verified.open();assert.equal(verified.get('durable').state,'queued');assert.equal(verified.get('after-recovery').state,'queued');assert.equal(verified.get('torn'),null)});
