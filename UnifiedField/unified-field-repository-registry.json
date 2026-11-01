@@ -5,7 +5,7 @@
   "completeness": "inventory-paginated-but-code-review-partial",
   "inventorySnapshot": "UnifiedField/unified-field-repository-inventory.snapshot.json",
   "inventoryLimitations": "The separate list_repositories endpoint returned 100 names at offset 0 and zero at offset 100, omitting the known OpenSourceAIHub repository. The paginated installed-repository search for user:HeavenzFire returned 276 unique repositories (pages 100, 100, 76, then 0), including OpenSourceAIHub. This is complete for that query result set, not proof that every account repository is indexed or accessible; all entries still need code-level review.",
-  "lastReviewed": "2026-10-20",
+  "lastReviewed": "2026-11-01",
   "taskContract": "heavenzfire.shared-task.v1",
   "invariants": [
     "pending approval never implies approved",
@@ -229,6 +229,17 @@
         "UnifiedField/BrowserBridge/manifest.json",
         "UnifiedField/BrowserBridge/browser-bridge.test.cjs"
       ]
+    },
+    {
+      "id": "orloj-agent-infrastructure",
+      "repository": "OrlojHQ/orloj",
+      "role": "external-agent-control-plane-and-worker-runtime",
+      "status": "adapter_implemented",
+      "integrationStatus": "live-runtime-verification-pending",
+      "upstreamRevision": "00091ac69b8f72a20969e7b02a73248b075125f2",
+      "license": "Apache-2.0",
+      "adapter": "UnifiedField/OrlojAdapter/orloj-adapter.cjs",
+      "evidence": "Pinned upstream API reviewed. HeavenzFire PR #128 merged as 907180b70bc6f371003fb939a5904ee8ce6a3552; adapter-contract CI passed on PR head. Adapter reads /healthz and /v1/capabilities, submits Task resources only for explicitly approved HeavenzFire records with approval evidence, and reads task status. No live Orloj service was available; live task execution remains unverified."
     }
   ],
   "requiredComponentStatuses": [
