@@ -1,0 +1,31 @@
+name: Unified Field Orloj Adapter
+
+on:
+  pull_request:
+    paths:
+      - "UnifiedField/OrlojAdapter/**"
+      - "UnifiedField/FieldCore/shared-task-contract.cjs"
+      - ".github/workflows/orloj-adapter.yml"
+  push:
+    branches: ["main", "integration/**"]
+    paths:
+      - "UnifiedField/OrlojAdapter/**"
+      - "UnifiedField/FieldCore/shared-task-contract.cjs"
+      - ".github/workflows/orloj-adapter.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  adapter-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Test Orloj adapter
+        run: node --test UnifiedField/OrlojAdapter/orloj-adapter.test.cjs
+      - name: Test shared task contract regression
+        run: node --test UnifiedField/FieldCore/shared-task-contract.test.cjs
