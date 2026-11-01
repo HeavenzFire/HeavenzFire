@@ -122,10 +122,18 @@ class FabricScheduler{
   for(const t of tasks)await this.ledger.create(t.id,{prompt:t.prompt});
   const results=new Array(tasks.length);let next=0;
   const active=new Map(backends.map(b=>[b.id,0])),waiters=new Map(backends.map(b=>[b.id,[]]));
-  const acquire=async backend=>{
-   while(active.get(backend.id)>=backend.maxParallel)await new Promise(resolve=>waiters.get(backend.id).push(resolve));
-   active.set(backend.id,active.get(backend.id)+1);
-   return ()=>{active.set(backend.id,active.get(backend.id)-1);const wake=waiters.get(backend.id).shift();if(wake)wake()};
+  const acquire=async candidates=>{
+   while(true){
+    const backend=candidates.find(b=>active.get(b.id)<b.maxParallel);
+    if(backend){
+     active.set(backend.id,active.get(backend.id)+1);let released=false;
+     return {backend,release:()=>{
+      if(released)return;released=true;active.set(backend.id,active.get(backend.id)-1);
+      for(const wake of waiters.splice(0))wake();
+     }};
+    }
+    await new Promise(resolve=>waiters.push(resolve));
+   }
   };
   const worker=async()=>{
    while(true){
@@ -137,10 +145,11 @@ class FabricScheduler{
      results[i]={id:t.id,status:'failed',error,durationMs:0};continue;
     }
     await this.ledger.transition(t.id,'running',{startedAt});let answer,selected,errors=[];
-    for(const b of backends){
-     const release=await acquire(b);
+    let remaining=[...backends];
+    while(remaining.length){
+     const {backend:b,release}=await acquire(remaining);
      try{answer=await this.invoke(b,t.prompt,{timeoutMs:this.timeoutMs});selected=b;break}
-     catch(e){errors.push({backendId:b.id,error:String(e.message||e)})}
+     catch(e){errors.push({backendId:b.id,error:String(e.message||e)});remaining=remaining.filter(candidate=>candidate.id!==b.id)}
      finally{release()}
     }
     if(selected){const d={backendId:selected.id,model:selected.model,durationMs:Date.now()-started};await this.ledger.transition(t.id,'succeeded',d);results[i]={id:t.id,status:'succeeded',...d,answer,failoverErrors:errors}}
