@@ -40,6 +40,7 @@ for file in agent.cjs agent.test.cjs fabric.cjs fabric.test.cjs README.md; do
 done
 
 note "Checking JavaScript syntax and running tests"
+node -e "if (Number(process.versions.node.split('.')[0]) < 18) { console.error('Node.js 18+ required for built-in fetch'); process.exit(1); }"
 node --check "$AGENT_DIR/agent.cjs"
 node --check "$AGENT_DIR/fabric.cjs"
 node --test "$AGENT_DIR/agent.test.cjs"
