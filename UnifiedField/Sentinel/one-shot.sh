@@ -44,7 +44,7 @@ if [ -n "$(git status --porcelain)" ]; then
 fi
 
 echo "[1/4] Synchronizing the approved Sentinel branch..."
-git fetch origin "$BRANCH" || fail "Could not fetch origin/$BRANCH."
+git fetch origin "$BRANCH:refs/remotes/origin/$BRANCH" || fail "Could not fetch origin/$BRANCH."
 if git show-ref --verify --quiet "refs/heads/$BRANCH"; then
   git checkout "$BRANCH" || fail "Could not switch to $BRANCH."
 else
