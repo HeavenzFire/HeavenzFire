@@ -67,9 +67,8 @@ class TaskLedger{
  }
  _apply(event){this._validate(event);this.states.set(event.taskId,event);this.events.push(event);return event}
  async append(taskId,state,details={}){
-  if(!this.loaded)await this.open();
   const operation=this.writeQueue.then(async()=>{
-   if(this.poisoned)await this.open();
+   if(!this.loaded||this.poisoned)await this.open();
    if(!details||typeof details!=='object'||Array.isArray(details))throw Error('Ledger event details must be an object');
    for(const key of RESERVED_EVENT_FIELDS)if(Object.prototype.hasOwnProperty.call(details,key))throw Error('Ledger event details cannot override '+key);
    const event={...details,eventId:crypto.randomUUID(),taskId,state,at:new Date().toISOString()};
@@ -107,10 +106,9 @@ class FabricScheduler{
   if(!Number.isInteger(maxParallel)||maxParallel<1||maxParallel>16)throw Error('maxParallel must be 1..16');
   this.registry=registry;this.ledger=ledger;this.resourceProvider=resourceProvider;this.invoke=invoke;this.reserveMemoryMB=reserveMemoryMB;this.memoryPerTaskMB=memoryPerTaskMB;this.maxParallel=maxParallel;this.timeoutMs=timeoutMs;
  }
- async capacity(requested){
+ async capacity(requested,healthy=this.registry.healthy()){
   const snapshot=await this.resourceProvider(),available=snapshot.memory?.availableBytes;
   const memorySlots=Number.isFinite(available)?Math.max(0,Math.floor((available/1048576-this.reserveMemoryMB)/this.memoryPerTaskMB)):0;
-  const healthy=this.registry.healthy();
   const backendSlots=healthy.reduce((sum,b)=>sum+b.maxParallel,0);
   return {snapshot,parallelism:Math.min(requested,this.maxParallel,memorySlots,backendSlots),memorySlots,backendSlots};
  }
@@ -118,7 +116,9 @@ class FabricScheduler{
   if(!Array.isArray(tasks)||tasks.length<1||tasks.length>64)throw Error('Provide 1..64 tasks');
   if(!Number.isInteger(parallelism)||parallelism<1||parallelism>16)throw Error('parallelism must be 1..16');
   const ids=new Set();for(const t of tasks){if(!t||typeof t.id!=='string'||!/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(t.id)||ids.has(t.id))throw Error('Task ids must be valid and unique');if(typeof t.prompt!=='string'||!t.prompt.trim()||t.prompt.length>8000)throw Error('Task prompt must contain 1..8000 characters');ids.add(t.id)}
-  await this.ledger.open();const backends=this.registry.healthy(),cap=await this.capacity(parallelism);
+  await this.ledger.open();const backends=this.registry.healthy();
+  for(const t of tasks)if(this.ledger.get(t.id))throw Error('Task already exists: '+t.id);
+  const cap=await this.capacity(parallelism,backends);
   for(const t of tasks)await this.ledger.create(t.id,{prompt:t.prompt});
   const results=new Array(tasks.length);let next=0;
   const active=new Map(backends.map(b=>[b.id,0])),waiters=new Map(backends.map(b=>[b.id,[]]));
@@ -132,7 +132,7 @@ class FabricScheduler{
     const i=next++;if(i>=tasks.length)return;
     const t=tasks[i],startedAt=new Date().toISOString(),started=Date.now();
     if(cap.parallelism===0){
-     const error=cap.memorySlots===0?'insufficient_memory_headroom':'no_backend_capacity';
+     const error=!backends.length?'no_healthy_backend':cap.memorySlots===0?'insufficient_memory_headroom':'no_backend_capacity';
      await this.ledger.transition(t.id,'failed',{error,durationMs:0});
      results[i]={id:t.id,status:'failed',error,durationMs:0};continue;
     }
