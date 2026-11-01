@@ -121,7 +121,7 @@ class FabricScheduler{
   const cap=await this.capacity(parallelism,backends);
   for(const t of tasks)await this.ledger.create(t.id,{prompt:t.prompt});
   const results=new Array(tasks.length);let next=0;
-  const active=new Map(backends.map(b=>[b.id,0])),waiters=new Map(backends.map(b=>[b.id,[]]));
+  const active=new Map(backends.map(b=>[b.id,0])),waiters=[];
   const acquire=async candidates=>{
    while(true){
     const backend=candidates.find(b=>active.get(b.id)<b.maxParallel);
