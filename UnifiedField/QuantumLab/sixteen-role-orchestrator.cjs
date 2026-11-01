@@ -25,7 +25,7 @@ const ROLES = Object.freeze([
   { id: 'synthesis', title: 'Synthesis', dependsOn: ['researcher', 'requirements', 'integrator', 'test-engineer', 'security-reviewer', 'adversarial-verifier', 'reliability-engineer', 'performance-analyst', 'documentation', 'evidence-auditor', 'release-manager'], task: 'Summarize cross-role findings, unresolved risks, and next steps.' }
 ]);
 
-const REFUSAL = /^(?:\\s)*(?:i can(?:not|'t) help|i am unable to help|i cannot assist|sorry,? i can(?:not|'t))/i;
+const REFUSAL = /^\s*(?:i can(?:not|'t) help|i am unable to help|i cannot assist|sorry,? i can(?:not|'t))/i;
 
 function validateEndpoint(value) {
   let url;
@@ -38,6 +38,22 @@ function validateEndpoint(value) {
 }
 
 function isRefusal(text) { return REFUSAL.test(String(text || '')); }
+
+function normalizeRoleModels(value, roleIds) {
+  if (value === undefined || value === null) return Object.freeze({});
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new TypeError('roleModels must be a JSON object keyed by known role IDs');
+  }
+  const normalized = Object.create(null);
+  for (const [roleId, modelName] of Object.entries(value)) {
+    if (!roleIds.has(roleId)) throw new TypeError('roleModels contains unknown role: ' + roleId);
+    if (typeof modelName !== 'string' || !modelName.trim() || modelName.length > 128) {
+      throw new TypeError('model for role ' + roleId + ' must be non-empty text up to 128 characters');
+    }
+    normalized[roleId] = modelName.trim();
+  }
+  return Object.freeze(normalized);
+}
 
 async function callLocalModel({ endpoint, model, prompt, maxTokens = 256, temperature = 0.1, timeoutMs = 90000 }) {
   const base = validateEndpoint(endpoint);
@@ -76,6 +92,14 @@ async function callLocalModel({ endpoint, model, prompt, maxTokens = 256, temper
   }
 }
 
+function parseRoleModelsJson(flags, environmentValue) {
+  const supplied = Object.prototype.hasOwnProperty.call(flags, 'role-models-json');
+  const raw = supplied ? flags['role-models-json'] : environmentValue;
+  if (raw === undefined || raw === null) return undefined;
+  try { return JSON.parse(raw); }
+  catch { throw new Error('role-models-json must be a valid JSON object'); }
+}
+
 function makePrompt(role, goal, dependencyResults) {
   const dependencyText = dependencyResults.length
     ? dependencyResults.map(d => d.id + ' (' + d.status + '): ' + d.response.slice(0, 450)).join('\n')
@@ -98,9 +122,14 @@ async function runSixteenRoleField(options = {}) {
   if (!goal) throw new TypeError('goal is required');
   const endpoint = options.endpoint || 'http://127.0.0.1:11800';
   validateEndpoint(endpoint);
-  const model = String(options.model || 'heavenzfire-qwen-0.5b');
+  const model = String(options.model || 'heavenzfire-qwen-0.5b').trim();
+  if (!model || model.length > 128) throw new TypeError('model must be non-empty text up to 128 characters');
+  const roleIds = new Set(ROLES.map(role => role.id));
+  const roleModels = normalizeRoleModels(options.roleModels, roleIds);
   const maxParallel = Number(options.maxParallel === undefined ? 2 : options.maxParallel);
   const maxTokens = Number(options.maxTokens === undefined ? 256 : options.maxTokens);
+  const timeoutMs = Number(options.timeoutMs === undefined ? 90000 : options.timeoutMs);
+  if (!Number.isInteger(timeoutMs) || timeoutMs < 1000 || timeoutMs > 120000) throw new RangeError('timeoutMs must be 1000..120000');
   if (!Number.isInteger(maxParallel) || maxParallel < 1 || maxParallel > 4) throw new RangeError('maxParallel must be 1..4');
   if (!Number.isInteger(maxTokens) || maxTokens < 16 || maxTokens > 512) throw new RangeError('maxTokens must be 16..512');
   const invoke = options.invoke || (request => callLocalModel(request));
@@ -110,6 +139,14 @@ async function runSixteenRoleField(options = {}) {
   const records = Object.create(null);
   const active = new Map();
   const byId = new Map(ROLES.map(role => [role.id, role]));
+  const onProgress = typeof options.onProgress === 'function' ? options.onProgress : null;
+  const progressObserverErrors = [];
+  const emitProgress = event => {
+    if (!onProgress) return;
+    try { onProgress(Object.freeze({ runId, at: new Date().toISOString(), ...event })); }
+    catch (error) { progressObserverErrors.push(String(error && error.message || error).slice(0, 200)); }
+  };
+  emitProgress({ type: 'run_started', roleCount: ROLES.length, maxParallel, timeoutMs });
 
   while (pending.size || active.size) {
     let changed = false;
@@ -117,7 +154,8 @@ async function runSixteenRoleField(options = {}) {
       const role = byId.get(id);
       const terminalBadDependency = role.dependsOn.find(dep => records[dep] && records[dep].status !== 'completed' && records[dep].status !== 'running');
       if (terminalBadDependency) {
-        records[id] = { roleId: id, title: role.title, status: 'blocked', response: '', usable: false, dependencyIds: role.dependsOn.slice(), blockedBy: role.dependsOn.filter(dep => records[dep] && records[dep].status !== 'completed'), reason: 'One or more prerequisites did not produce usable output' };
+        records[id] = { roleId: id, title: role.title, model: roleModels[id] || model, status: 'blocked', response: '', usable: false, dependencyIds: role.dependsOn.slice(), blockedBy: role.dependsOn.filter(dep => records[dep] && records[dep].status !== 'completed'), reason: 'One or more prerequisites did not produce usable output' };
+        emitProgress({ type: 'role_blocked', roleId: id, title: role.title, model: roleModels[id] || model, reason: records[id].reason, blockedBy: records[id].blockedBy });
         pending.delete(id);
         changed = true;
       }
@@ -127,11 +165,12 @@ async function runSixteenRoleField(options = {}) {
       const role = ROLES.find(candidate => pending.has(candidate.id) && candidate.dependsOn.every(dep => records[dep] && records[dep].status === 'completed'));
       if (!role) break;
       pending.delete(role.id);
-      records[role.id] = { roleId: role.id, title: role.title, status: 'running', response: '', usable: false, dependencyIds: role.dependsOn.slice() };
+      const roleModel = roleModels[role.id] || model;
+      records[role.id] = { roleId: role.id, title: role.title, model: roleModel, status: 'running', response: '', usable: false, dependencyIds: role.dependsOn.slice() };
       const dependencyResults = role.dependsOn.map(id => ({ id, status: records[id].status, response: records[id].response || '' }));
       const prompt = makePrompt(role, goal, dependencyResults);
       const task = Promise.resolve().then(() => invoke({
-        endpoint, model, prompt, maxTokens, temperature: 0.1, timeoutMs: options.timeoutMs || 90000, roleId: role.id
+        endpoint, model: roleModel, prompt, maxTokens, temperature: 0.1, timeoutMs, roleId: role.id
       })).then(output => {
         const response = output && typeof output.response === 'string' ? output.response.trim() : '';
         const finishReason = output && output.finishReason ? output.finishReason : 'unknown';
@@ -140,15 +179,25 @@ async function runSixteenRoleField(options = {}) {
         records[role.id] = {
           roleId: role.id, title: role.title,
           status: usable ? 'completed' : 'review_required',
+          model: roleModel,
+          providerModel: output && typeof output.model === 'string' && output.model.trim() ? output.model.trim() : null,
           response, usable, refusal, finishReason,
           dependencyIds: role.dependsOn.slice(),
           durationMs: Number(output && output.durationMs) || null,
           responseSha256: crypto.createHash('sha256').update(response).digest('hex')
         };
+        emitProgress({
+          type: usable ? 'role_completed' : 'role_review_required',
+          roleId: role.id, title: role.title, model: records[role.id].model,
+          providerModel: records[role.id].providerModel,
+          durationMs: records[role.id].durationMs, finishReason, refusal
+        });
       }).catch(error => {
-        records[role.id] = { roleId: role.id, title: role.title, status: 'failed', response: '', usable: false, dependencyIds: role.dependsOn.slice(), error: String(error && error.message || error).slice(0, 500) };
+        records[role.id] = { roleId: role.id, title: role.title, model: roleModel, status: 'failed', response: '', usable: false, dependencyIds: role.dependsOn.slice(), error: String(error && error.message || error).slice(0, 500) };
+        emitProgress({ type: 'role_failed', roleId: role.id, title: role.title, model: roleModel, error: records[role.id].error });
       });
       active.set(role.id, task);
+      emitProgress({ type: 'role_started', roleId: role.id, title: role.title, model: roleModel, active: active.size, maxParallel });
       changed = true;
     }
 
@@ -158,12 +207,15 @@ async function runSixteenRoleField(options = {}) {
       continue;
     }
     if (pending.size && !changed) {
-      for (const id of pending) records[id] = { roleId: id, title: byId.get(id).title, status: 'blocked', response: '', usable: false, dependencyIds: byId.get(id).dependsOn.slice(), reason: 'No schedulable stage; dependency graph may contain a cycle' };
+      for (const id of pending) {
+        records[id] = { roleId: id, title: byId.get(id).title, model: roleModels[id] || model, status: 'blocked', response: '', usable: false, dependencyIds: byId.get(id).dependsOn.slice(), reason: 'No schedulable stage; dependency graph may contain a cycle' };
+        emitProgress({ type: 'role_blocked', roleId: id, title: byId.get(id).title, model: roleModels[id] || model, reason: records[id].reason });
+      }
       pending.clear();
     }
   }
 
-  const roleRecords = ROLES.map(role => records[role.id] || { roleId: role.id, title: role.title, status: 'not_run', response: '', usable: false, dependencyIds: role.dependsOn.slice() });
+  const roleRecords = ROLES.map(role => records[role.id] || { roleId: role.id, title: role.title, model: roleModels[role.id] || model, status: 'not_run', response: '', usable: false, dependencyIds: role.dependsOn.slice() });
   const counts = { total: roleRecords.length, completed: 0, failed: 0, blocked: 0, reviewRequired: 0, notRun: 0 };
   for (const record of roleRecords) {
     if (record.status === 'completed') counts.completed += 1;
@@ -176,9 +228,10 @@ async function runSixteenRoleField(options = {}) {
   const report = {
     schema: 'heavenzfire.sixteen-role-run-report.v1',
     runId, startedAt, finishedAt: new Date().toISOString(),
-    goal, model, endpoint, maxParallel, maxTokens,
+    goal, model, endpoint, maxParallel, maxTokens, timeoutMs,
     executionModel: 'classical-concurrent-dag',
     roleCount: ROLES.length, roleRecords, counts,
+    modelsUsed: [...new Set(roleRecords.filter(record => ['completed', 'failed', 'review_required'].includes(record.status)).map(record => record.model).filter(Boolean))].sort(),
     qualityGate: {
       passed: structuralPassed,
       structuralChecksOnly: true,
@@ -188,8 +241,10 @@ async function runSixteenRoleField(options = {}) {
     },
     status: 'review_required',
     ok: false,
+    progressObserverErrors,
     executionStarted: true
   };
+  emitProgress({ type: 'run_finished', status: report.status, counts, modelsUsed: report.modelsUsed });
   return report;
 }
 
@@ -199,20 +254,28 @@ async function main(argv) {
   const flags = {};
   for (let i = 0; i < args.length; i += 1) {
     const arg = args[i];
-    const match = /^--(endpoint|model|max-parallel|max-tokens|timeout-ms)=(.*)$/.exec(arg);
+    const match = /^--(endpoint|model|max-parallel|max-tokens|timeout-ms|role-models-json)=(.*)$/.exec(arg);
     if (match) flags[match[1]] = match[2];
     else if (arg.startsWith('--')) throw new Error('Unknown option: ' + arg);
     else goalParts.push(arg);
   }
   const goal = goalParts.join(' ').trim();
-  if (!goal) throw new Error('Usage: node sixteen-role-orchestrator.cjs "goal" [--endpoint=http://127.0.0.1:11800] [--model=NAME] [--max-parallel=2] [--max-tokens=256]');
+  if (!goal) throw new Error('Usage: node sixteen-role-orchestrator.cjs "goal" [--endpoint=http://127.0.0.1:11800] [--model=NAME] [--role-models-json=JSON] [--max-parallel=2] [--max-tokens=256] [--timeout-ms=90000]');
   const endpoint = flags.endpoint || process.env.HF_UNIFIED_FIELD_INFERENCE_URL || 'http://127.0.0.1:11800';
   const model = flags.model || process.env.HF_UNIFIED_FIELD_MODEL || 'heavenzfire-qwen-0.5b';
+  const roleModels = parseRoleModelsJson(flags, process.env.HF_UNIFIED_FIELD_ROLE_MODELS);
   const result = await runSixteenRoleField({
-    goal, endpoint, model,
+    goal, endpoint, model, roleModels,
     maxParallel: Number(flags['max-parallel'] || process.env.HF_UNIFIED_FIELD_MAX_PARALLEL || 2),
     maxTokens: Number(flags['max-tokens'] || process.env.HF_UNIFIED_FIELD_MAX_TOKENS || 256),
-    timeoutMs: Number(flags['timeout-ms'] || 90000)
+    timeoutMs: Number(flags['timeout-ms'] || process.env.HF_UNIFIED_FIELD_TIMEOUT_MS || 90000),
+    onProgress: event => {
+      if (event.type === 'role_started') process.stdout.write('[START] ' + event.roleId + ' model=' + event.model + ' active=' + event.active + '/' + event.maxParallel + '\n');
+      else if (event.type === 'role_completed') process.stdout.write('[PASS] ' + event.roleId + ' model=' + event.model + ' ' + (event.durationMs ?? '?') + 'ms\n');
+      else if (event.type === 'role_review_required') process.stdout.write('[REVIEW] ' + event.roleId + ' model=' + event.model + ' finish=' + event.finishReason + '\n');
+      else if (event.type === 'role_failed') process.stdout.write('[FAIL] ' + event.roleId + ' model=' + event.model + ' error=' + event.error + '\n');
+      else if (event.type === 'role_blocked') process.stdout.write('[BLOCKED] ' + event.roleId + ' reason=' + event.reason + '\n');
+    }
   });
   const reportDir = path.join(__dirname, 'reports');
   const runsDir = path.join(reportDir, 'runs');
@@ -229,7 +292,7 @@ async function main(argv) {
     roleCount: result.roleCount,
     counts: result.counts,
     durationMs: Date.parse(result.finishedAt) - Date.parse(result.startedAt),
-    model: result.model, endpoint: result.endpoint, maxParallel: result.maxParallel, maxTokens: result.maxTokens,
+    model: result.model, modelsUsed: result.modelsUsed, endpoint: result.endpoint, maxParallel: result.maxParallel, maxTokens: result.maxTokens,
     qualityGate: result.qualityGate,
     report: reportPath,
     latestReport: path.join(reportDir, 'latest-sixteen-role-run.json')
@@ -245,4 +308,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { ROLES, validateEndpoint, isRefusal, makePrompt, callLocalModel, runSixteenRoleField };
+module.exports = { ROLES, validateEndpoint, isRefusal, makePrompt, callLocalModel, parseRoleModelsJson, runSixteenRoleField };

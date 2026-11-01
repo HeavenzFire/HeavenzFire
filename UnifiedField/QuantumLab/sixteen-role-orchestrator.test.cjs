@@ -2,7 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { ROLES, validateEndpoint, runSixteenRoleField } = require('./sixteen-role-orchestrator.cjs');
+const { ROLES, validateEndpoint, parseRoleModelsJson, runSixteenRoleField } = require('./sixteen-role-orchestrator.cjs');
 
 test('registry has sixteen unique roles with resolvable dependencies', () => {
   assert.equal(ROLES.length, 16);
@@ -51,6 +51,83 @@ test('runs all roles through the DAG with bounded concurrency and retains semant
   assert.equal(result.qualityGate.semanticReviewRequired, true);
   assert.equal(result.status, 'review_required');
   assert.equal(result.ok, false);
+});
+
+test('routes roles across configured local models and emits live progress events', async () => {
+  const events = [];
+  const calls = [];
+  const roleModels = {
+    architect: 'qwen2.5:0.5b',
+    planner: 'heavenzfire-runtime:latest',
+    researcher: 'heavenzfire:latest',
+    requirements: 'llama3.2:1b'
+  };
+  const result = await runSixteenRoleField({
+    goal: 'Verify per-role model routing and observable progress.',
+    endpoint: 'http://127.0.0.1:11434',
+    model: 'qwen2.5:0.5b',
+    roleModels,
+    maxParallel: 2,
+    onProgress: event => events.push(event),
+    invoke: async task => {
+      calls.push({ roleId: task.roleId, model: task.model });
+      return {
+        response: task.roleId + ': bounded result; verify independently.',
+        finishReason: 'stop',
+        durationMs: 5,
+        model: task.roleId === 'researcher' ? 'provider-reported-alias' : task.model
+      };
+    }
+  });
+
+  assert.equal(result.counts.completed, 16);
+  assert.equal(calls.length, 16);
+  for (const [roleId, model] of Object.entries(roleModels)) {
+    assert.equal(calls.find(call => call.roleId === roleId).model, model);
+    assert.equal(result.roleRecords.find(record => record.roleId === roleId).model, model);
+  }
+  const researcherRecord = result.roleRecords.find(record => record.roleId === 'researcher');
+  assert.equal(researcherRecord.model, roleModels.researcher);
+  assert.equal(researcherRecord.providerModel, 'provider-reported-alias');
+  assert.deepEqual(result.modelsUsed.sort(), [
+    'heavenzfire-runtime:latest', 'heavenzfire:latest', 'llama3.2:1b', 'qwen2.5:0.5b'
+  ]);
+  assert.ok(events.some(event => event.type === 'run_started'));
+  assert.equal(events.filter(event => event.type === 'role_started').length, 16);
+  assert.equal(events.filter(event => event.type === 'role_completed').length, 16);
+  assert.ok(events.some(event => event.type === 'run_finished'));
+});
+
+test('rejects unknown role-model mappings and invalid timeouts before dispatch', async () => {
+  const invoke = async () => { throw new Error('must not dispatch'); };
+  await assert.rejects(runSixteenRoleField({
+    goal: 'invalid role mapping', roleModels: { not_a_role: 'model' }, invoke
+  }), /unknown role/);
+  await assert.rejects(runSixteenRoleField({
+    goal: 'invalid timeout', timeoutMs: 999, invoke
+  }), /timeoutMs must be 1000..120000/);
+});
+
+
+test('explicit empty role-model CLI value is rejected instead of falling back to environment', () => {
+  assert.throws(
+    () => parseRoleModelsJson({ 'role-models-json': '' }, '{"architect":"environment-model"}'),
+    /valid JSON object/
+  );
+  assert.deepEqual(
+    parseRoleModelsJson({}, '{"architect":"environment-model"}'),
+    { architect: 'environment-model' }
+  );
+});
+
+test('refusal detection handles leading whitespace', async () => {
+  const result = await runSixteenRoleField({
+    goal: 'Check whitespace-tolerant refusal handling.',
+    invoke: async () => ({ response: '   I cannot assist with that request.', finishReason: 'stop' })
+  });
+  assert.equal(result.counts.reviewRequired, 1);
+  assert.equal(result.counts.blocked, 15);
+  assert.equal(result.roleRecords[0].refusal, true);
 });
 
 test('truncated architect output fails closed and blocks dependent roles', async () => {

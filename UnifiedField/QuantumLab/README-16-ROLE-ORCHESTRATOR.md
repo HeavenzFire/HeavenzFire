@@ -18,6 +18,39 @@ node (Join-Path $root 'sixteen-role-orchestrator.cjs') 'Audit the local Unified 
 
 Optional environment overrides are `HF_UNIFIED_FIELD_INFERENCE_URL`, `HF_UNIFIED_FIELD_MODEL`, `HF_UNIFIED_FIELD_MAX_PARALLEL`, and `HF_UNIFIED_FIELD_MAX_TOKENS`. Command-line options are `--endpoint=`, `--model=`, `--max-parallel=`, `--max-tokens=`, and `--timeout-ms=`.
 
+## Per-role model routing and live progress
+
+The runner can send different DAG roles to different model IDs through one OpenAI-compatible loopback endpoint. Unmapped roles use the fallback `HF_UNIFIED_FIELD_MODEL` (default `heavenzfire-qwen-0.5b`). Set `HF_UNIFIED_FIELD_ROLE_MODELS` to a JSON object keyed by the exact role IDs:
+
+```powershell
+$env:HF_UNIFIED_FIELD_INFERENCE_URL = 'http://127.0.0.1:11434'
+$env:HF_UNIFIED_FIELD_ROLE_MODELS = @'
+{
+  "architect": "qwen2.5:0.5b",
+  "requirements": "qwen2.5:0.5b",
+  "evidence-auditor": "qwen2.5:0.5b",
+  "synthesis": "qwen2.5:0.5b",
+  "planner": "heavenzfire-runtime:latest",
+  "designer": "heavenzfire-runtime:latest",
+  "integrator": "heavenzfire-runtime:latest",
+  "documentation": "heavenzfire-runtime:latest",
+  "researcher": "heavenzfire:latest",
+  "builder": "heavenzfire:latest",
+  "release-manager": "heavenzfire:latest",
+  "performance-analyst": "heavenzfire:latest",
+  "test-engineer": "llama3.2:1b",
+  "security-reviewer": "llama3.2:1b",
+  "adversarial-verifier": "llama3.2:1b",
+  "reliability-engineer": "llama3.2:1b"
+}
+'@
+node (Join-Path $root 'sixteen-role-orchestrator.cjs') 'Audit the local Unified Field runtime; report evidence, defects, and next tests.' --max-parallel=2 --max-tokens=256 --timeout-ms=45000
+```
+
+Use the Ollama endpoint only when its OpenAI-compatible API is actually listening at `127.0.0.1:11434`. The role map selects model IDs; it does not install models or prove they are loaded. Start with bounded concurrency (1–2) until available RAM and model-load behavior are measured. `--role-models-json=...` is also available, and the timeout is bounded to 1,000–120,000 ms.
+
+The CLI now emits `[START]`, `[PASS]`, `[REVIEW]`, `[FAIL]`, and `[BLOCKED]` lines as roles change state, rather than remaining silent until the final report. The JSON report records the model selected for each role and the distinct models actually attempted. Sixteen roles remain logical DAG workers, not sixteen independent processes; outputs still require semantic review.
+
 The endpoint guard accepts HTTP(S) loopback destinations only. The runner writes a timestamped report under `reports/runs` and updates `reports/latest-sixteen-role-run.json` beside the script. Keep generated reports local; they may contain task details.
 
 ## Gate semantics
