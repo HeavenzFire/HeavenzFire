@@ -22,7 +22,7 @@ The Unified Field is the coordinated system formed by HeavenzFire's repositories
 | `OrlojHQ/orloj` | Apache-2.0 agent control plane/runtime, pinned at `00091ac69b8f72a20969e7b02a73248b075125f2` | Loopback-only adapter implemented in `UnifiedField/OrlojAdapter`; CI contract tests passed; live Orloj health/task round-trip and worker execution remain unverified |
 | `HeavenzFire/OpenSourceAIHub` | README describes local Ollama inventory, health checks, and Solver → Orchestrator → Reviewer → Synthesizer handoff | Adapter proposed in [draft PR #1](https://github.com/HeavenzFire/OpenSourceAIHub/pull/1); server, pipeline, and inbox syntax checks passed; 20 combined contract/API/pipeline/inbox/transport tests passed on the connected Windows PC, including a cross-repository proposal-delivery smoke test; GitHub CI and a full live R&D cycle remain unverified |
 | `UnifiedField/BrowserBridge` (in core PR #9) | Manifest V3 popup for user-reviewed selection capture and proposal submission | Implemented on the draft core branch; 4 tests pass; permissions are limited to `activeTab`, `scripting`, and the loopback task inbox; browser installation smoke test remains pending |
-| `HeavenzFire/UnifiedCodebase` | Repository exists; README was not found on default branch during this pass | Discovery only; role and contents require inspection |
+| `HeavenzFire/UnifiedCodebase` | MicroFederation durable task ledger, orchestrator worker bridge, and persistent capability store | PR #16 merged; Node 18/20/22 CI passed; primitives remain opt-in and are not yet bridged to `heavenzfire.shared-task.v1` or deployed as a supervised live service |
 | `HeavenzFire/ollama` | Ollama source fork/repository | Upstream/runtime dependency; do not treat as HeavenzFire-authored runtime without file-level provenance |
 | `HeavenzFire/llama.cpp` | llama.cpp source fork/repository | Inference backend dependency; integrate through documented interfaces |
 | `HeavenzFire/Qwen-AgentJC` | Agent-related repository | Candidate agent/capability component; interface and license review pending |
@@ -31,6 +31,13 @@ The Unified Field is the coordinated system formed by HeavenzFire's repositories
 | `HeavenzFire/Spirit_Engine`, `HeavenzFire/spirit-angelus`, `HeavenzFire/SpiritAngelusFramework`, `HeavenzFire/5D-FRAMEWORK` | Related named framework repositories exist | Candidate research/framework components; no compatibility claim yet |
 
 The inventory snapshot at `UnifiedField/unified-field-repository-inventory.snapshot.json` now records 276 unique repositories returned by the paginated GitHub search query `user:HeavenzFire` (100, 100, 76, then 0 results; no duplicates), including `HeavenzFire/OpenSourceAIHub`. A separate listing endpoint returned only 100 names and omitted that known repository, so its pagination behavior was unreliable. The 276-result snapshot is complete for that search query, not proof that every account repository is indexed or accessible. All 276 entries remain discovered/unreviewed until source, licensing, provenance, and interfaces are inspected.
+
+## Durable MicroFederation ledger status (2026-11-01)
+
+The separate `HeavenzFire/UnifiedCodebase` repository now contains merged opt-in persistence primitives in PR #16 (merge commit `17836902fcb5832688400a1fc8f0e985159d47eb`). The change adds a JSON-backed task ledger with idempotent creation, worker-bound leases, bounded retries, cancellation, result/evidence persistence, plus a persistent capability store with scoped grants, expiry, revocation, and hash-chained policy events. GitHub Actions passed on Node 18, 20, and 22 after the final changes; tests include restart recovery, worker ownership, lease reclamation, secret-field rejection, idle polling, and expired-lease persistence.
+
+This is **not yet the Unified Field's canonical task service**. The MicroFederation ledger has its own task schema and serializes writes within one Node.js process; it is not a distributed queue or cross-process lock. The capability store's `humanApproval` input is a primitive and must be supplied by a trusted control plane, never by an agent payload. No long-running service, live worker pool, remote model connection, or production deployment is claimed. A versioned adapter to `heavenzfire.shared-task.v1`, supervised single-writer service lifecycle, and live host verification remain open work.
+
 
 ## Security and provenance review
 
