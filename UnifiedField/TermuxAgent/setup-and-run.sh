@@ -28,7 +28,7 @@ mkdir -p "$AGENT_DIR"
 
 note "Downloading HeavenzFire Local Agent files"
 for file in agent.cjs agent.test.cjs fabric.cjs fabric.test.cjs README.md; do
-  curl --fail --silent --show-error --location "$RAW_BASE/$file" -o "$AGENT_DIR/$file.tmp" ||
+  curl -q --fail --silent --show-error --location "$RAW_BASE/$file" -o "$AGENT_DIR/$file.tmp" ||
     die "Could not download $file from branch $BRANCH"
   [[ -s "$AGENT_DIR/$file.tmp" ]] || die "Downloaded file is empty: $file"
   if [[ -e "$AGENT_DIR/$file" ]]; then
@@ -86,7 +86,7 @@ fi
 case "$MODEL" in *.gguf|*.GGUF) ;; *) die "Model path must point to a .gguf file: $MODEL" ;; esac
 
 note "Checking whether the local inference endpoint is already responding"
-if curl --fail --silent --max-time 2 "http://127.0.0.1:$PORT/v1/models" >/dev/null; then
+if curl -q --noproxy "*" --fail --silent --max-time 2 "http://127.0.0.1:$PORT/v1/models" >/dev/null; then
   note "An OpenAI-compatible inference server responds on port $PORT; reusing it without starting a duplicate."
 else
   note "Starting llama-server on loopback only"
@@ -95,9 +95,9 @@ else
   printf '%s\n' "$SERVER_PID" > "$SERVER_PID_FILE"
   ready=0
   for _ in $(seq 1 90); do
-    if curl --fail --silent --max-time 2 "$ENDPOINT" >/dev/null 2>&1; then ready=1; break; fi
+    if curl -q --noproxy "*" --fail --silent --max-time 2 "$ENDPOINT" >/dev/null 2>&1; then ready=1; break; fi
     # /v1/models is a GET readiness route; avoid sending an invalid POST to chat completions.
-    if curl --fail --silent --max-time 2 "http://127.0.0.1:$PORT/v1/models" >/dev/null 2>&1; then ready=1; break; fi
+    if curl -q --noproxy "*" --fail --silent --max-time 2 "http://127.0.0.1:$PORT/v1/models" >/dev/null 2>&1; then ready=1; break; fi
     if ! kill -0 "$SERVER_PID" 2>/dev/null; then
       tail -n 80 "$SERVER_LOG" >&2 || true
       die "llama-server exited during startup; see $SERVER_LOG"
