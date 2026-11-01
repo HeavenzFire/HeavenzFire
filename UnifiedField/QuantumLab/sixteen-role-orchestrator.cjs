@@ -265,11 +265,11 @@ async function main(argv) {
     maxTokens: Number(flags['max-tokens'] || process.env.HF_UNIFIED_FIELD_MAX_TOKENS || 256),
     timeoutMs: Number(flags['timeout-ms'] || process.env.HF_UNIFIED_FIELD_TIMEOUT_MS || 90000),
     onProgress: event => {
-      if (event.type === 'role_started') process.stdout.write('[START] ' + event.roleId + ' model=' + event.model + ' active=' + event.active + '/' + event.maxParallel + '\\n');
-      else if (event.type === 'role_completed') process.stdout.write('[PASS] ' + event.roleId + ' model=' + event.model + ' ' + (event.durationMs ?? '?') + 'ms\\n');
-      else if (event.type === 'role_review_required') process.stdout.write('[REVIEW] ' + event.roleId + ' model=' + event.model + ' finish=' + event.finishReason + '\\n');
-      else if (event.type === 'role_failed') process.stdout.write('[FAIL] ' + event.roleId + ' model=' + event.model + ' error=' + event.error + '\\n');
-      else if (event.type === 'role_blocked') process.stdout.write('[BLOCKED] ' + event.roleId + ' reason=' + event.reason + '\\n');
+      if (event.type === 'role_started') process.stdout.write('[START] ' + event.roleId + ' model=' + event.model + ' active=' + event.active + '/' + event.maxParallel + '\n');
+      else if (event.type === 'role_completed') process.stdout.write('[PASS] ' + event.roleId + ' model=' + event.model + ' ' + (event.durationMs ?? '?') + 'ms\n');
+      else if (event.type === 'role_review_required') process.stdout.write('[REVIEW] ' + event.roleId + ' model=' + event.model + ' finish=' + event.finishReason + '\n');
+      else if (event.type === 'role_failed') process.stdout.write('[FAIL] ' + event.roleId + ' model=' + event.model + ' error=' + event.error + '\n');
+      else if (event.type === 'role_blocked') process.stdout.write('[BLOCKED] ' + event.roleId + ' reason=' + event.reason + '\n');
     }
   });
   const reportDir = path.join(__dirname, 'reports');
