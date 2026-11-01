@@ -2,7 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { ROLES, validateEndpoint, runSixteenRoleField } = require('./sixteen-role-orchestrator.cjs');
+const { ROLES, validateEndpoint, parseRoleModelsJson, runSixteenRoleField } = require('./sixteen-role-orchestrator.cjs');
 
 test('registry has sixteen unique roles with resolvable dependencies', () => {
   assert.equal(ROLES.length, 16);
@@ -75,7 +75,7 @@ test('routes roles across configured local models and emits live progress events
         response: task.roleId + ': bounded result; verify independently.',
         finishReason: 'stop',
         durationMs: 5,
-        model: task.model
+        model: task.roleId === 'researcher' ? 'provider-reported-alias' : task.model
       };
     }
   });
@@ -86,6 +86,9 @@ test('routes roles across configured local models and emits live progress events
     assert.equal(calls.find(call => call.roleId === roleId).model, model);
     assert.equal(result.roleRecords.find(record => record.roleId === roleId).model, model);
   }
+  const researcherRecord = result.roleRecords.find(record => record.roleId === 'researcher');
+  assert.equal(researcherRecord.model, roleModels.researcher);
+  assert.equal(researcherRecord.providerModel, 'provider-reported-alias');
   assert.deepEqual(result.modelsUsed.sort(), [
     'heavenzfire-runtime:latest', 'heavenzfire:latest', 'llama3.2:1b', 'qwen2.5:0.5b'
   ]);
@@ -103,6 +106,18 @@ test('rejects unknown role-model mappings and invalid timeouts before dispatch',
   await assert.rejects(runSixteenRoleField({
     goal: 'invalid timeout', timeoutMs: 999, invoke
   }), /timeoutMs must be 1000..120000/);
+});
+
+
+test('explicit empty role-model CLI value is rejected instead of falling back to environment', () => {
+  assert.throws(
+    () => parseRoleModelsJson({ 'role-models-json': '' }, '{"architect":"environment-model"}'),
+    /valid JSON object/
+  );
+  assert.deepEqual(
+    parseRoleModelsJson({}, '{"architect":"environment-model"}'),
+    { architect: 'environment-model' }
+  );
 });
 
 test('refusal detection handles leading whitespace', async () => {
