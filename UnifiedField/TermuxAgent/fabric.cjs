@@ -121,11 +121,24 @@ class FabricScheduler{
   const cap=await this.capacity(parallelism,backends);
   for(const t of tasks)await this.ledger.create(t.id,{prompt:t.prompt});
   const results=new Array(tasks.length);let next=0;
-  const active=new Map(backends.map(b=>[b.id,0])),waiters=new Map(backends.map(b=>[b.id,[]]));
-  const acquire=async backend=>{
-   while(active.get(backend.id)>=backend.maxParallel)await new Promise(resolve=>waiters.get(backend.id).push(resolve));
-   active.set(backend.id,active.get(backend.id)+1);
-   return ()=>{active.set(backend.id,active.get(backend.id)-1);const wake=waiters.get(backend.id).shift();if(wake)wake()};
+  const active=new Map(backends.map(b=>[b.id,0])),waiters=new Set();
+  const acquire=async(excluded=new Set())=>{
+   while(true){
+    const backend=backends.find(b=>!excluded.has(b.id)&&active.get(b.id)<b.maxParallel);
+    if(backend){
+     active.set(backend.id,active.get(backend.id)+1);
+     let released=false;
+     return {backend,release:()=>{
+      if(released)return;
+      released=true;
+      active.set(backend.id,active.get(backend.id)-1);
+      for(const wake of waiters)wake();
+      waiters.clear();
+     }};
+    }
+    if(backends.every(b=>excluded.has(b.id)))return null;
+    await new Promise(resolve=>waiters.add(resolve));
+   }
   };
   const worker=async()=>{
    while(true){
@@ -137,11 +150,14 @@ class FabricScheduler{
      results[i]={id:t.id,status:'failed',error,durationMs:0};continue;
     }
     await this.ledger.transition(t.id,'running',{startedAt});let answer,selected,errors=[];
-    for(const b of backends){
-     const release=await acquire(b);
+    const attempted=new Set();
+    while(attempted.size<backends.length){
+     const lease=await acquire(attempted);
+     if(!lease)break;
+     const b=lease.backend;attempted.add(b.id);
      try{answer=await this.invoke(b,t.prompt,{timeoutMs:this.timeoutMs});selected=b;break}
      catch(e){errors.push({backendId:b.id,error:String(e.message||e)})}
-     finally{release()}
+     finally{lease.release()}
     }
     if(selected){const d={backendId:selected.id,model:selected.model,durationMs:Date.now()-started};await this.ledger.transition(t.id,'succeeded',d);results[i]={id:t.id,status:'succeeded',...d,answer,failoverErrors:errors}}
     else{const error=backends.length?'all_backends_failed':'no_healthy_backend';await this.ledger.transition(t.id,'failed',{error,attempts:errors,durationMs:Date.now()-started});results[i]={id:t.id,status:'failed',error,attempts:errors,durationMs:Date.now()-started}}
