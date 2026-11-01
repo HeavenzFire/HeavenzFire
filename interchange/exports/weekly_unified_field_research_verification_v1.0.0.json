@@ -1,0 +1,63 @@
+{
+  "artifact_id": "A-UF-RD-VERIFY-001",
+  "artifact_type": "scheduled-research-and-verification-workflow",
+  "schema_version": "1.0.0",
+  "project_id": "heavenzfire-unified-field",
+  "title": "Weekly Unified Field research and verification",
+  "status": "scheduled",
+  "automation": {
+    "task_title": "Weekly Unified Field research and verification",
+    "task_id": "6ad8968c72c8819185617fb49126c67b",
+    "schedule": {
+      "frequency": "weekly",
+      "day": "Friday",
+      "local_time_target": "08:00",
+      "timezone": "America/Chicago",
+      "delivery_mode": "flexible"
+    },
+    "consolidates": [
+      "Friday Research Brief",
+      "Weekly Unified Field research and verification"
+    ],
+    "note": "The existing Friday Research Brief was updated in place; no duplicate scheduled task was created."
+  },
+  "scope": [
+    "Agentic AI, multi-agent orchestration, local/cloud AI integration, task queues, fault tolerance, self-healing, shared memory, and reproducible verification",
+    "Quantum/classical computing, compression, memory architectures, energy-efficient compute, and measured energy-per-successful-task performance",
+    "Privacy engineering, informed consent, data minimization, user sovereignty, accessibility, security, and human-centered design",
+    "Labor economics and worker bargaining power; algorithmic management and discrimination; surveillance; dark patterns; attention capture; exploitative data practices; effects on children and vulnerable communities",
+    "Computational biology, cancer research, scientific AI workflows, and reproducible biomedical analysis",
+    "Human-centered, life-preserving, non-extractive technology and relevant science, culture, and society"
+  ],
+  "execution_requirements": [
+    "Prioritize work published since the previous briefing; use a seven-day fallback if needed and verify dates and source links.",
+    "Prefer peer-reviewed primary studies, standards, official technical documentation, datasets, regulatory guidance, benchmark papers, authoritative institutional sources, and primary repository/release artifacts; label preprints.",
+    "For each significant finding, report research question, methods/evidence, main finding, practical implications, limitations, and material counterevidence.",
+    "Identify who benefits, who bears costs or risks, and measurable engineering requirements or safeguards relevant to Unified Field.",
+    "When authorized GitHub access exists, inspect current source, exact commit SHAs, PRs, issues, workflow runs, tests, and evidence files; independently inspect changed code rather than relying on builder summaries.",
+    "Evaluate fault detection/recovery, idempotency, concurrency, persistence, approval provenance, secret handling, privacy, retention, accessibility, security boundaries, and energy efficiency.",
+    "Distinguish implemented-and-tested capabilities from proposals, simulations, reported results, and unverified claims.",
+    "Recommend one or two high-value bounded experiments, prioritizing genuinely new tests; include measurable success criteria, safety boundaries, and reproducible verification paths.",
+    "Do not modify repositories, merge PRs, close issues, deploy services, run destructive operations, or change system settings.",
+    "Deliver a report every Friday even when there are no major developments; explicitly state when no meaningful new evidence was found.",
+    "Never invent results, benchmarks, citations, repository status, or test outcomes."
+  ],
+  "report_sections": [
+    "Notable findings with source and publication date",
+    "Methods, evidence, limitations, and counterevidence",
+    "Human impact: beneficiaries, cost-bearers, and risks",
+    "Unified Field project verification with exact repository evidence",
+    "Open engineering and safety risks",
+    "One or two recommended next experiments",
+    "Direct source links and paywall labels"
+  ],
+  "governance": {
+    "durable_source_of_truth": "HeavenzFire/HeavenzFire",
+    "default_branch": "main",
+    "approval_boundary": "Research and recommendations only; no repository mutations or privileged actions.",
+    "evidence_rule": "A scheduled report, repository artifact, health endpoint, or green unit test alone does not establish end-to-end capability or societal impact.",
+    "privacy_rule": "Do not publish secrets, private conversation contents, tokens, personal records, or device credentials."
+  },
+  "created_from": "User-approved consolidation of the existing Friday Research Brief with the expanded Unified Field research and independent verification scope.",
+  "recorded_at": "2026-11-01"
+}
