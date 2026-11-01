@@ -7,6 +7,7 @@ This directory is the durable public handoff point for HeavenzFire cross-AI cont
 - [ChatGPT capability registry entry](../interchange/registries/chatgpt_capability_registry_entry_v0.1.0.json)
 - [ChatGPT interchange export](../interchange/exports/chatgpt_interchange_export_v0.1.0.json)
 - [ChatGPT execution log](../interchange/logs/chatgpt_execution_log_v0.1.0.json)
+- [Weekly Unified Field research and verification workflow](../interchange/exports/weekly_unified_field_research_verification_v1.0.0.json)
 
 ## Operating contract
 
@@ -16,11 +17,13 @@ This directory is the durable public handoff point for HeavenzFire cross-AI cont
 4. Keep secrets, private conversation contents, tokens, personal records, and device credentials out of this public repository.
 5. The public repository is durable storage, not an always-on runtime. Local agents and phone bridges must report their own heartbeat and reachability separately.
 6. Public status must be based on observed checks. An absent or stale heartbeat means `unknown`, not `online`.
+7. Publish new versioned artifacts for durable decisions and workflow changes rather than silently rewriting prior evidence.
 
-## Current status (2026-10-21)
+## Current status (2026-11-01)
 
 - Cross-AI transfer: explicit file-based interchange supported.
-- ChatGPT-side artifact checks: 5/5 passed.
+- Weekly Unified Field research and verification: scheduled through the existing Friday Research Brief automation, consolidated in place; see the versioned workflow artifact for scope and governance.
+- ChatGPT-side artifact checks: 5/5 passed for the original capability-registry export; this does not validate the new workflow artifact's runtime execution.
 - Original Meta AI schema/test reproduction: blocked until the original schema, example, test script, and log are supplied.
 - Live Windows/phone services: not represented as continuously online by this repository.
 - Persistent hosted website or 24/7 runtime: not yet verified as deployed.
