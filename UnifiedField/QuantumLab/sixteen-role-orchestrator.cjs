@@ -92,6 +92,14 @@ async function callLocalModel({ endpoint, model, prompt, maxTokens = 256, temper
   }
 }
 
+function parseRoleModelsJson(flags, environmentValue) {
+  const supplied = Object.prototype.hasOwnProperty.call(flags, 'role-models-json');
+  const raw = supplied ? flags['role-models-json'] : environmentValue;
+  if (raw === undefined || raw === null) return undefined;
+  try { return JSON.parse(raw); }
+  catch { throw new Error('role-models-json must be a valid JSON object'); }
+}
+
 function makePrompt(role, goal, dependencyResults) {
   const dependencyText = dependencyResults.length
     ? dependencyResults.map(d => d.id + ' (' + d.status + '): ' + d.response.slice(0, 450)).join('\n')
@@ -171,7 +179,8 @@ async function runSixteenRoleField(options = {}) {
         records[role.id] = {
           roleId: role.id, title: role.title,
           status: usable ? 'completed' : 'review_required',
-          model: output && typeof output.model === 'string' && output.model.trim() ? output.model.trim() : roleModel,
+          model: roleModel,
+          providerModel: output && typeof output.model === 'string' && output.model.trim() ? output.model.trim() : null,
           response, usable, refusal, finishReason,
           dependencyIds: role.dependsOn.slice(),
           durationMs: Number(output && output.durationMs) || null,
@@ -180,6 +189,7 @@ async function runSixteenRoleField(options = {}) {
         emitProgress({
           type: usable ? 'role_completed' : 'role_review_required',
           roleId: role.id, title: role.title, model: records[role.id].model,
+          providerModel: records[role.id].providerModel,
           durationMs: records[role.id].durationMs, finishReason, refusal
         });
       }).catch(error => {
@@ -253,12 +263,7 @@ async function main(argv) {
   if (!goal) throw new Error('Usage: node sixteen-role-orchestrator.cjs "goal" [--endpoint=http://127.0.0.1:11800] [--model=NAME] [--role-models-json=JSON] [--max-parallel=2] [--max-tokens=256] [--timeout-ms=90000]');
   const endpoint = flags.endpoint || process.env.HF_UNIFIED_FIELD_INFERENCE_URL || 'http://127.0.0.1:11800';
   const model = flags.model || process.env.HF_UNIFIED_FIELD_MODEL || 'heavenzfire-qwen-0.5b';
-  const roleModelsJson = flags['role-models-json'] || process.env.HF_UNIFIED_FIELD_ROLE_MODELS;
-  let roleModels;
-  if (roleModelsJson) {
-    try { roleModels = JSON.parse(roleModelsJson); }
-    catch { throw new Error('role-models-json must be a valid JSON object'); }
-  }
+  const roleModels = parseRoleModelsJson(flags, process.env.HF_UNIFIED_FIELD_ROLE_MODELS);
   const result = await runSixteenRoleField({
     goal, endpoint, model, roleModels,
     maxParallel: Number(flags['max-parallel'] || process.env.HF_UNIFIED_FIELD_MAX_PARALLEL || 2),
@@ -303,4 +308,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { ROLES, validateEndpoint, isRefusal, makePrompt, callLocalModel, runSixteenRoleField };
+module.exports = { ROLES, validateEndpoint, isRefusal, makePrompt, callLocalModel, parseRoleModelsJson, runSixteenRoleField };
