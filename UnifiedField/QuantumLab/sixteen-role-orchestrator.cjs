@@ -132,8 +132,11 @@ async function runSixteenRoleField(options = {}) {
   const active = new Map();
   const byId = new Map(ROLES.map(role => [role.id, role]));
   const onProgress = typeof options.onProgress === 'function' ? options.onProgress : null;
+  const progressObserverErrors = [];
   const emitProgress = event => {
-    if (onProgress) onProgress(Object.freeze({ runId, at: new Date().toISOString(), ...event }));
+    if (!onProgress) return;
+    try { onProgress(Object.freeze({ runId, at: new Date().toISOString(), ...event })); }
+    catch (error) { progressObserverErrors.push(String(error && error.message || error).slice(0, 200)); }
   };
   emitProgress({ type: 'run_started', roleCount: ROLES.length, maxParallel, timeoutMs });
 
@@ -168,7 +171,7 @@ async function runSixteenRoleField(options = {}) {
         records[role.id] = {
           roleId: role.id, title: role.title,
           status: usable ? 'completed' : 'review_required',
-          model: output && output.model ? output.model : roleModel,
+          model: output && typeof output.model === 'string' && output.model.trim() ? output.model.trim() : roleModel,
           response, usable, refusal, finishReason,
           dependencyIds: role.dependsOn.slice(),
           durationMs: Number(output && output.durationMs) || null,
@@ -215,10 +218,10 @@ async function runSixteenRoleField(options = {}) {
   const report = {
     schema: 'heavenzfire.sixteen-role-run-report.v1',
     runId, startedAt, finishedAt: new Date().toISOString(),
-    goal, model, endpoint, maxParallel, maxTokens,
+    goal, model, endpoint, maxParallel, maxTokens, timeoutMs,
     executionModel: 'classical-concurrent-dag',
     roleCount: ROLES.length, roleRecords, counts,
-    modelsUsed: [...new Set(roleRecords.map(record => record.model).filter(Boolean))].sort(),
+    modelsUsed: [...new Set(roleRecords.filter(record => ['completed', 'failed', 'review_required'].includes(record.status)).map(record => record.model).filter(Boolean))].sort(),
     qualityGate: {
       passed: structuralPassed,
       structuralChecksOnly: true,
@@ -228,6 +231,7 @@ async function runSixteenRoleField(options = {}) {
     },
     status: 'review_required',
     ok: false,
+    progressObserverErrors,
     executionStarted: true
   };
   emitProgress({ type: 'run_finished', status: report.status, counts, modelsUsed: report.modelsUsed });
