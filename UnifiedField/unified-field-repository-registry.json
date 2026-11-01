@@ -31,9 +31,14 @@
     {
       "id": "unified-codebase",
       "repository": "HeavenzFire/UnifiedCodebase",
-      "role": "unknown-pending-inspection",
-      "status": "discovered",
-      "evidence": "repository metadata; default-branch README not found during initial pass"
+      "role": "durable-task-ledger-and-microfederation-orchestration",
+      "status": "adapter_implemented",
+      "evidence": "HeavenzFire/UnifiedCodebase PR #16 merged as 17836902fcb5832688400a1fc8f0e985159d47eb. Adds opt-in JSON task ledger, lease/retry/cancellation/result persistence, ledger-backed orchestrator worker, and persistent scoped capability grants/revocations with hash-chained policy events. Final GitHub Actions passed on Node 18, 20, and 22. This is not yet bridged to heavenzfire.shared-task.v1 or deployed as a supervised live service; JSON write serialization is process-local, and human approval must come from a trusted control plane.",
+      "integrationStatus": "durable-primitives-merged; shared-task-contract-adapter-and-live-service-pending",
+      "sourceRefs": [
+        "https://github.com/HeavenzFire/UnifiedCodebase/pull/16",
+        "https://github.com/HeavenzFire/UnifiedCodebase/commit/17836902fcb5832688400a1fc8f0e985159d47eb"
+      ]
     },
     {
       "id": "ollama-runtime",
