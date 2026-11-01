@@ -27,16 +27,24 @@ need node
 mkdir -p "$AGENT_DIR"
 
 note "Downloading HeavenzFire Local Agent files"
-for file in agent.cjs agent.test.cjs README.md; do
+for file in agent.cjs agent.test.cjs fabric.cjs fabric.test.cjs README.md; do
   curl --fail --silent --show-error --location "$RAW_BASE/$file" -o "$AGENT_DIR/$file.tmp" ||
     die "Could not download $file from branch $BRANCH"
   [[ -s "$AGENT_DIR/$file.tmp" ]] || die "Downloaded file is empty: $file"
+  if [[ -e "$AGENT_DIR/$file" ]]; then
+    backup="$AGENT_DIR/$file.backup.$(date +%s).$PPID"
+    mv "$AGENT_DIR/$file" "$backup" || die "Could not preserve existing $file as $backup"
+    note "Preserved previous $file at $backup"
+  fi
   mv "$AGENT_DIR/$file.tmp" "$AGENT_DIR/$file"
 done
 
 note "Checking JavaScript syntax and running tests"
+node -e "if (Number(process.versions.node.split('.')[0]) < 18) { console.error('Node.js 18+ required for built-in fetch'); process.exit(1); }"
 node --check "$AGENT_DIR/agent.cjs"
+node --check "$AGENT_DIR/fabric.cjs"
 node --test "$AGENT_DIR/agent.test.cjs"
+node --test "$AGENT_DIR/fabric.test.cjs"
 
 find_server() {
   local candidate

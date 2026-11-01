@@ -8,9 +8,9 @@ printf '%s\n' '== Runtime =='
 node --version
 node -e "if (Number(process.versions.node.split('.')[0]) < 18) { console.error('Node.js 18+ required for built-in fetch'); process.exit(1); }"
 printf '%s\n' '== Syntax checks =='
-for file in agent.cjs github.cjs github-write.cjs github-cli.cjs orchestrate.cjs remote-task-cli.cjs; do node --check "UnifiedField/TermuxAgent/$file"; done
+for file in agent.cjs github.cjs github-write.cjs github-cli.cjs orchestrate.cjs remote-task-cli.cjs fabric.cjs; do node --check "UnifiedField/TermuxAgent/$file"; done
 printf '%s\n' '== Automated tests =='
-for file in agent.test.cjs github.test.cjs github-write.test.cjs orchestrate.test.cjs remote-task-cli.test.cjs; do node --test "UnifiedField/TermuxAgent/$file"; done
+for file in agent.test.cjs github.test.cjs github-write.test.cjs orchestrate.test.cjs remote-task-cli.test.cjs fabric.test.cjs; do node --test "UnifiedField/TermuxAgent/$file"; done
 if [ "${HF_LOCAL_SMOKE:-0}" = "1" ]; then
   printf '%s\n' '== Live local inference smoke test =='
   node - <<'NODE'
@@ -22,6 +22,6 @@ askLocal({ endpoint, model, timeoutMs: 30000, messages: [{ role: 'user', content
   .catch(error => { console.error('Live inference smoke test failed:', error.message || error); process.exitCode = 1; });
 NODE
 else
-  printf '%s\n' 'Live inference not attempted. Set HF_LOCAL_SMOKE=1 after starting your local llama-server.'
+  printf '%s\n' 'Live inference not attempted. Set HF_LOCAL_SMOKE=1 after starting your local inference server.'
 fi
 printf '%s\n' 'Verification script completed.'
