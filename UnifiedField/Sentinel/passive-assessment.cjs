@@ -15,15 +15,24 @@ function isPublicAddress(address) {
   const family = net.isIP(address);
   if (family === 4) {
     const p = address.split('.').map(Number);
-    return !(p[0] === 0 || p[0] === 10 || p[0] === 127 ||
-      (p[0] === 169 && p[1] === 254) || (p[0] === 172 && p[1] >= 16 && p[1] <= 31) ||
-      (p[0] === 192 && p[1] === 168) || p[0] >= 224);
+    const a=p[0], b=p[1], c=p[2];
+    if (a===0 || a===10 || a===127 || a>=224) return false;
+    if (a===100 && b>=64 && b<=127) return false;
+    if (a===169 && b===254) return false;
+    if (a===172 && b>=16 && b<=31) return false;
+    if (a===192 && (b===0 || b===168)) return false;
+    if (a===192 && b===0 && c===2) return false;
+    if (a===198 && (b===18 || b===19 || b===51 && c===100)) return false;
+    if (a===203 && b===0 && c===113) return false;
+    return true;
   }
   if (family === 6) {
     const a = address.toLowerCase();
-    return a === '::1' ? false : !(a === '::' || a.startsWith('fc') || a.startsWith('fd') ||
-      a.startsWith('fe8') || a.startsWith('fe9') || a.startsWith('fea') || a.startsWith('feb') ||
-      a.startsWith('ff') || a.startsWith('::ffff:127.') || a.startsWith('::ffff:10.'));
+    if (a.startsWith('::ffff:')) return isPublicAddress(a.slice(7));
+    // Permit only globally routable 2000::/3 unicast; exclude documentation space.
+    if (!/^2[0-9a-f]{3}:/.test(a)) return false;
+    if (a.startsWith('2001:db8:')) return false;
+    return true;
   }
   return false;
 }
