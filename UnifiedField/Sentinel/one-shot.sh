@@ -4,8 +4,7 @@
 # stashes, resets, cleans, installs packages, or modifies project files.
 set -u
 
-SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
-REPO_ROOT="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null)" || {
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || {
   echo "STOP: Sentinel must be inside a Git checkout."
   exit 2
 }
