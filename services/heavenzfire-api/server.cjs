@@ -266,7 +266,7 @@ function createServer() {
         }
         const swarm = createAgentSwarm({
           maxAgents: 16,
-          maxConcurrency: 4,
+          maxConcurrency: 16,
           stateDir: process.env.HF_SWARM_STATE_DIR || path.join(process.cwd(), 'state', 'swarm'),
           dispatch: ({ messages }) => dispatchProvider(provider, model, messages, maxOutputTokens)
         });
