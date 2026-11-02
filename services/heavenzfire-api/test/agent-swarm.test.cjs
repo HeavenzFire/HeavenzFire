@@ -55,7 +55,7 @@ test('isolates individual agent failures and reports partial completion', async 
     maxAgents: 4,
     maxConcurrency: 2,
     dispatch: async ({ agent }) => {
-      if (agent.id === 'A02') throw new Error('fixture failure');
+      if (agent.id === 'architecture') throw new Error('fixture failure');
       return 'OK_' + agent.id;
     }
   });
