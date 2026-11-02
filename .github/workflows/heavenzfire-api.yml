@@ -28,7 +28,7 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $root = Join-Path $env:RUNNER_TEMP 'hf-api-ci'
           $api = Join-Path $root 'services\heavenzfire-api'
-          $files = @('package.json', 'server.cjs', 'test/api.test.cjs', 'Start-HeavenzFire-GPT.ps1')
+          $files = @('package.json', 'server.cjs', 'agent-swarm.cjs', 'test/api.test.cjs', 'test/agent-swarm.test.cjs', 'test/swarm-route.test.cjs', 'Start-HeavenzFire-GPT.ps1')
           foreach ($relative in $files) {
             $target = Join-Path $api ($relative -replace '/', '\')
             New-Item -ItemType Directory -Path (Split-Path $target -Parent) -Force | Out-Null
