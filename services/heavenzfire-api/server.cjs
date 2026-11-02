@@ -253,6 +253,9 @@ function createServer() {
     try {
       const input = await readJson(req);
       if (url.pathname === '/v1/swarm/run') {
+        if (!input || typeof input !== 'object' || Array.isArray(input)) {
+          return json(res, 400, { error: { code: 'invalid_request', message: 'Swarm request must be a JSON object.' } });
+        }
         const provider = typeof input.provider === 'string' ? input.provider : 'openai';
         const model = typeof input.model === 'string' ? input.model : undefined;
         const swarm = createAgentSwarm({
