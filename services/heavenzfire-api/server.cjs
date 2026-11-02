@@ -62,7 +62,7 @@ function extractGeminiText(data) {
     .map(p => p.text || '').join('');
 }
 
-async function callGemini(model, messages) {
+async function callGemini(model, messages, maxOutputTokens) {
   const key = process.env.GEMINI_API_KEY;
   if (!key) throw Object.assign(new Error('Gemini provider is not configured'), { status: 503, code: 'provider_not_configured' });
   const contents = messages.filter(m => m.role !== 'system').map(m => ({
@@ -71,6 +71,7 @@ async function callGemini(model, messages) {
   }));
   const system = messages.find(m => m.role === 'system');
   const body = { contents };
+  if (Number.isInteger(maxOutputTokens)) body.generationConfig = { maxOutputTokens };
   if (system) body.systemInstruction = { parts: [{ text: String(system.content) }] };
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
@@ -89,7 +90,7 @@ async function callGemini(model, messages) {
   }
 }
 
-async function callOllama(model, messages) {
+async function callOllama(model, messages, maxOutputTokens) {
   const base = (process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434').replace(/\/$/, '');
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
@@ -97,7 +98,7 @@ async function callOllama(model, messages) {
     const response = await fetch(base + '/api/chat', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ model, messages, stream: false }),
+      body: JSON.stringify({ model, messages, stream: false, ...(Number.isInteger(maxOutputTokens) ? { options: { num_predict: maxOutputTokens } } : {}) }),
       signal: controller.signal
     });
     if (!response.ok) throw Object.assign(new Error('Local model request failed'), { status: 502, code: 'provider_error' });
@@ -108,7 +109,7 @@ async function callOllama(model, messages) {
   }
 }
 
-async function callOpenAI(model, messages) {
+async function callOpenAI(model, messages, maxOutputTokens) {
   const key = process.env.OPENAI_API_KEY;
   if (!key) throw Object.assign(new Error('OpenAI provider is not configured'), { status: 503, code: 'provider_not_configured' });
   const base = (process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1').replace(/\/$/, '');
@@ -120,7 +121,8 @@ async function callOpenAI(model, messages) {
       headers: { 'content-type': 'application/json', authorization: 'Bearer ' + key },
       body: JSON.stringify({
         model: model || process.env.OPENAI_MODEL || 'gpt-6',
-        input: messages.map(message => ({ role: message.role, content: message.content }))
+        input: messages.map(message => ({ role: message.role, content: message.content })),
+        ...(Number.isInteger(maxOutputTokens) ? { max_output_tokens: maxOutputTokens } : {})
       }),
       signal: controller.signal
     });
@@ -142,7 +144,7 @@ async function callOpenAI(model, messages) {
   }
 }
 
-async function callOpenAICompatible(provider, model, messages) {
+async function callOpenAICompatible(provider, model, messages, maxOutputTokens) {
   const configs = {
     openai: { key: process.env.OPENAI_API_KEY, base: process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1', model: process.env.OPENAI_MODEL || 'gpt-4.1-mini' },
     mistral: { key: process.env.MISTRAL_API_KEY, base: process.env.MISTRAL_BASE_URL || 'https://api.mistral.ai/v1', model: process.env.MISTRAL_MODEL || 'mistral-small-latest' },
@@ -159,7 +161,7 @@ async function callOpenAICompatible(provider, model, messages) {
     const response = await fetch(cfg.base.replace(/\/$/, '') + '/chat/completions', {
       method: 'POST',
       headers: { 'content-type': 'application/json', authorization: 'Bearer ' + cfg.key },
-      body: JSON.stringify({ model: model || cfg.model, messages, stream: false }),
+      body: JSON.stringify({ model: model || cfg.model, messages, stream: false, ...(Number.isInteger(maxOutputTokens) ? { max_tokens: maxOutputTokens } : {}) }),
       signal: controller.signal
     });
     const data = await response.json().catch(() => ({}));
@@ -168,7 +170,7 @@ async function callOpenAICompatible(provider, model, messages) {
   } finally { clearTimeout(timer); }
 }
 
-async function callAnthropic(model, messages) {
+async function callAnthropic(model, messages, maxOutputTokens) {
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) throw Object.assign(new Error('Anthropic provider is not configured'), { status: 503, code: 'provider_not_configured' });
   const system = messages.filter(m => m.role === 'system').map(m => m.content).join('\\n');
@@ -180,7 +182,7 @@ async function callAnthropic(model, messages) {
       headers: { 'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
       body: JSON.stringify({
         model: model || process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-5',
-        max_tokens: Number(process.env.ANTHROPIC_MAX_TOKENS || 1024),
+        max_tokens: Number.isInteger(maxOutputTokens) ? maxOutputTokens : Number(process.env.ANTHROPIC_MAX_TOKENS || 1024),
         ...(system ? { system } : {}),
         messages: messages.filter(m => m.role !== 'system').map(m => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.content }))
       }),
@@ -192,13 +194,13 @@ async function callAnthropic(model, messages) {
   } finally { clearTimeout(timer); }
 }
 
-async function dispatchProvider(provider, model, messages) {
-  if (provider === 'gemini') return callGemini(model, messages);
-  if (provider === 'ollama') return callOllama(model, messages);
-  if (provider === 'openai') return callOpenAI(model, messages);
-  if (provider === 'anthropic') return callAnthropic(model, messages);
+async function dispatchProvider(provider, model, messages, maxOutputTokens) {
+  if (provider === 'gemini') return callGemini(model, messages, maxOutputTokens);
+  if (provider === 'ollama') return callOllama(model, messages, maxOutputTokens);
+  if (provider === 'openai') return callOpenAI(model, messages, maxOutputTokens);
+  if (provider === 'anthropic') return callAnthropic(model, messages, maxOutputTokens);
   if (['mistral', 'qwen', 'groq', 'openrouter', 'custom'].includes(provider)) {
-    return callOpenAICompatible(provider, model, messages);
+    return callOpenAICompatible(provider, model, messages, maxOutputTokens);
   }
   throw Object.assign(new Error('Unsupported provider'), { status: 400, code: 'unsupported_provider' });
 }
@@ -258,11 +260,15 @@ function createServer() {
         }
         const provider = typeof input.provider === 'string' ? input.provider : 'openai';
         const model = typeof input.model === 'string' ? input.model : undefined;
+        const maxOutputTokens = input.maxOutputTokens === undefined ? 512 : input.maxOutputTokens;
+        if (!Number.isInteger(maxOutputTokens) || maxOutputTokens < 64 || maxOutputTokens > 2048) {
+          return json(res, 400, { error: { code: 'invalid_output_budget', message: 'maxOutputTokens must be an integer between 64 and 2048.' } });
+        }
         const swarm = createAgentSwarm({
           maxAgents: 16,
           maxConcurrency: 4,
           stateDir: process.env.HF_SWARM_STATE_DIR || path.join(process.cwd(), 'state', 'swarm'),
-          dispatch: ({ messages }) => dispatchProvider(provider, model, messages)
+          dispatch: ({ messages }) => dispatchProvider(provider, model, messages, maxOutputTokens)
         });
         const report = await swarm.run(input);
         return json(res, report.status === 'failed' ? 502 : 200, report);
