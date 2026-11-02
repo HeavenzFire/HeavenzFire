@@ -50,6 +50,31 @@ test('runs bounded parallel workers and persists hash-verifiable evidence', asyn
   assert.match(saved.results[0].outputSha256, /^[a-f0-9]{64}$/);
 });
 
+test('runs all sixteen specialist agents concurrently when configured', async () => {
+  let active = 0;
+  let peak = 0;
+  const swarm = createAgentSwarm({
+    maxAgents: 16,
+    maxConcurrency: 16,
+    dispatch: async () => {
+      active += 1;
+      peak = Math.max(peak, active);
+      await new Promise(resolve => setTimeout(resolve, 20));
+      active -= 1;
+      return 'PARALLEL_OK';
+    }
+  });
+  const report = await swarm.run({
+    mission: 'Verify sixteen-way parallel execution.',
+    maxAgents: 16,
+    concurrency: 16
+  });
+  assert.equal(report.status, 'completed');
+  assert.equal(report.completedAgents, 16);
+  assert.equal(report.peakConcurrency, 16);
+  assert.equal(peak, 16);
+});
+
 test('isolates individual agent failures and reports partial completion', async () => {
   const swarm = createAgentSwarm({
     maxAgents: 4,
