@@ -1,0 +1,69 @@
+name: HeavenzFire API
+
+on:
+  pull_request:
+    paths:
+      - 'services/heavenzfire-api/**'
+      - '.github/workflows/heavenzfire-api.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'services/heavenzfire-api/**'
+      - '.github/workflows/heavenzfire-api.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test-api:
+    runs-on: windows-latest
+    steps:
+      # This repository currently has a malformed submodule entry that makes
+      # actions/checkout fail during its submodule cleanup, even with submodules disabled.
+      # Download only the reviewed public API test inputs at this event's exact SHA.
+      - name: Fetch API source snapshot without recursive checkout
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $root = Join-Path $env:RUNNER_TEMP 'hf-api-ci'
+          $api = Join-Path $root 'services\heavenzfire-api'
+          $files = @('package.json', 'server.cjs', 'agent-swarm.cjs', 'test/api.test.cjs', 'test/agent-swarm.test.cjs', 'test/swarm-route.test.cjs', 'Start-HeavenzFire-GPT.ps1')
+          foreach ($relative in $files) {
+            $target = Join-Path $api ($relative -replace '/', '\')
+            New-Item -ItemType Directory -Path (Split-Path $target -Parent) -Force | Out-Null
+            $uri = 'https://raw.githubusercontent.com/' + $env:GITHUB_REPOSITORY + '/' + $env:GITHUB_SHA + '/services/heavenzfire-api/' + $relative
+            Invoke-WebRequest -UseBasicParsing -Uri $uri -OutFile $target
+          }
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Check server syntax
+        working-directory: '${{ runner.temp }}/hf-api-ci/services/heavenzfire-api'
+        run: node --check server.cjs
+        shell: powershell
+
+      - name: Run API regression tests
+        working-directory: '${{ runner.temp }}/hf-api-ci/services/heavenzfire-api'
+        run: npm test
+        shell: powershell
+
+      - name: Parse PowerShell launcher without executing it
+        working-directory: '${{ runner.temp }}/hf-api-ci/services/heavenzfire-api'
+        shell: powershell
+        run: |
+          $tokens = $null
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Join-Path (Get-Location).Path 'Start-HeavenzFire-GPT.ps1'),
+            [ref]$tokens,
+            [ref]$errors
+          ) | Out-Null
+          if ($errors.Count -gt 0) {
+            $errors | ForEach-Object { Write-Error $_.Message }
+            exit 1
+          }
+          Write-Host 'PowerShell launcher parsed successfully; it was not executed.'
