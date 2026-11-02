@@ -2,6 +2,8 @@
 
 const http = require('node:http');
 const crypto = require('node:crypto');
+const path = require('node:path');
+const { createAgentSwarm } = require('./agent-swarm.cjs');
 
 const MAX_BODY_BYTES = Number(process.env.HF_MAX_BODY_BYTES || 1024 * 1024);
 const REQUEST_TIMEOUT_MS = Number(process.env.HF_REQUEST_TIMEOUT_MS || 60000);
@@ -190,6 +192,17 @@ async function callAnthropic(model, messages) {
   } finally { clearTimeout(timer); }
 }
 
+async function dispatchProvider(provider, model, messages) {
+  if (provider === 'gemini') return callGemini(model, messages);
+  if (provider === 'ollama') return callOllama(model, messages);
+  if (provider === 'openai') return callOpenAI(model, messages);
+  if (provider === 'anthropic') return callAnthropic(model, messages);
+  if (['mistral', 'qwen', 'groq', 'openrouter', 'custom'].includes(provider)) {
+    return callOpenAICompatible(provider, model, messages);
+  }
+  throw Object.assign(new Error('Unsupported provider'), { status: 400, code: 'unsupported_provider' });
+}
+
 function configuredProviders() {
   const list = [];
   if (process.env.GEMINI_API_KEY) list.push({ id: process.env.HF_DEFAULT_MODEL || DEFAULT_MODEL, provider: 'gemini' });
@@ -233,12 +246,24 @@ function createServer() {
       if (!authorized(req)) return json(res, 401, { error: { code: 'unauthorized', message: 'A valid Bearer API key is required.' } });
       return json(res, 200, { object: 'list', data: configuredProviders().map(m => ({ id: m.id, object: 'model', owned_by: m.provider })) });
     }
-    if (req.method !== 'POST' || !['/v1/chat/completions', '/v1/generate'].includes(url.pathname)) {
+    if (req.method !== 'POST' || !['/v1/chat/completions', '/v1/generate', '/v1/swarm/run'].includes(url.pathname)) {
       return json(res, 404, { error: { code: 'not_found', message: 'Route not found.' } });
     }
     if (!authorized(req)) return json(res, 401, { error: { code: 'unauthorized', message: 'A valid Bearer API key is required.' } });
     try {
       const input = await readJson(req);
+      if (url.pathname === '/v1/swarm/run') {
+        const provider = typeof input.provider === 'string' ? input.provider : 'openai';
+        const model = typeof input.model === 'string' ? input.model : undefined;
+        const swarm = createAgentSwarm({
+          maxAgents: 16,
+          maxConcurrency: 4,
+          stateDir: process.env.HF_SWARM_STATE_DIR || path.join(process.cwd(), 'state', 'swarm'),
+          dispatch: ({ messages }) => dispatchProvider(provider, model, messages)
+        });
+        const report = await swarm.run(input);
+        return json(res, report.status === 'failed' ? 502 : 200, report);
+      }
       const prompt = typeof input.prompt === 'string' ? input.prompt.trim() : '';
       const messages = Array.isArray(input.messages) ? input.messages : (prompt ? [{ role: 'user', content: prompt }] : []);
       if (!messages.length || messages.some(m => !m || !['system', 'user', 'assistant'].includes(m.role) || typeof m.content !== 'string')) {
