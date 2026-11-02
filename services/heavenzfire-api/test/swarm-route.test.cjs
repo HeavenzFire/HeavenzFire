@@ -24,6 +24,7 @@ test('authenticated swarm route fans out through the configured provider and per
     assert.equal(String(url), 'https://api.openai.com/v1/responses');
     assert.equal(options.headers.authorization, 'Bearer test-provider-key');
     const request = JSON.parse(options.body);
+    assert.equal(request.max_output_tokens, 512);
     active += 1;
     peak = Math.max(peak, active);
     await new Promise(resolve => setTimeout(resolve, 8));
