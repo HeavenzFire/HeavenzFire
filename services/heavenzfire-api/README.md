@@ -8,7 +8,7 @@ A local-first API layer owned by HeavenzFire. It presents one authenticated inte
 - `GET /v1/models` — authenticated model list.
 - `POST /v1/chat/completions` — authenticated chat endpoint with an OpenAI-style response envelope.
 - `POST /v1/generate` — authenticated simple text-generation endpoint.
-- `POST /v1/swarm/run` — authenticated 16-role specialist fan-out using the configured provider adapters; maximum concurrency 4.
+- `POST /v1/swarm/run` — authenticated 16-role specialist fan-out using the configured provider adapters; maximum concurrency 16.
 
 Requests to protected routes require `Authorization: Bearer <HF_API_KEYS entry>`.
 
@@ -58,13 +58,13 @@ The authenticated swarm endpoint accepts a JSON object:
   "provider": "openai",
   "model": "gpt-6",
   "maxAgents": 16,
-  "concurrency": 4,
+  "concurrency": 16,
   "maxOutputTokens": 512,
   "context": "Optional bounded operator-supplied context."
 }
 ```
 
-Send it to `POST /v1/swarm/run` with the same `Authorization: Bearer <HF_API_KEYS entry>` header used by the other protected routes. Provider credentials stay in the API process environment. The route fans out up to 16 specialist role prompts through the existing provider adapters, with at most four simultaneous calls. Each provider request receives a server-enforced output ceiling (64–2048 tokens; default 512). Individual agent failures are isolated and included in the run report. JSON evidence reports are written beneath `state/swarm` by default; set `HF_SWARM_STATE_DIR` to choose another state directory.
+Send it to `POST /v1/swarm/run` with the same `Authorization: Bearer <HF_API_KEYS entry>` header used by the other protected routes. Provider credentials stay in the API process environment. The route fans out up to 16 specialist role prompts through the existing provider adapters, with at most sixteen simultaneous calls. Each provider request receives a server-enforced output ceiling (64–2048 tokens; default 512). Individual agent failures are isolated and included in the run report. JSON evidence reports are written beneath `state/swarm` by default; set `HF_SWARM_STATE_DIR` to choose another state directory.
 
 This is bounded multi-call orchestration, not 16 separate model instances. The initial workers only reason over the supplied mission/context: they do not have GitHub write access, shell access, browser control, or arbitrary tool execution. Add tool capabilities through separately permissioned adapters with approval and audit boundaries.
 
