@@ -53,7 +53,7 @@ function createAgentSwarm(options = {}) {
   }
 
   const maxAgents = clampInteger(options.maxAgents ?? 16, 1, 16, 'maxAgents');
-  const maxConcurrency = clampInteger(options.maxConcurrency ?? 4, 1, 4, 'maxConcurrency');
+  const maxConcurrency = clampInteger(options.maxConcurrency ?? 16, 1, 16, 'maxConcurrency');
   const maxMissionChars = options.maxMissionChars ?? 12000;
   const maxContextChars = options.maxContextChars ?? 8000;
   const maxOutputChars = options.maxOutputChars ?? 12000;
