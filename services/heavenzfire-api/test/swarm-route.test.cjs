@@ -67,18 +67,18 @@ test('authenticated swarm route fans out through the configured provider and per
       mission: 'Analyze the test fixture and report concrete findings.',
       provider: 'openai',
       model: 'test-model',
-      maxAgents: 4,
-      concurrency: 2
+      maxAgents: 16,
+      concurrency: 16
     })
   });
 
   assert.equal(response.status, 200);
   const report = await response.json();
   assert.equal(report.status, 'completed');
-  assert.equal(report.plannedAgents, 4);
-  assert.equal(report.completedAgents, 4);
-  assert.equal(report.peakConcurrency, 2);
-  assert.ok(peak <= 2);
+  assert.equal(report.plannedAgents, 16);
+  assert.equal(report.completedAgents, 16);
+  assert.equal(report.peakConcurrency, 16);
+  assert.equal(peak, 16);
   assert.ok(report.evidenceFile);
   assert.equal((await fs.readdir(stateDir)).length, 1);
 });
