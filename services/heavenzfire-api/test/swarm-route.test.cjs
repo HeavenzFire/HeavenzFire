@@ -20,6 +20,7 @@ test('authenticated swarm route fans out through the configured provider and per
   let active = 0;
   let peak = 0;
   global.fetch = async (url, options) => {
+    if (!String(url).startsWith('https://api.openai.com/')) return oldFetch(url, options);
     assert.equal(String(url), 'https://api.openai.com/v1/responses');
     assert.equal(options.headers.authorization, 'Bearer test-provider-key');
     const request = JSON.parse(options.body);
