@@ -29,6 +29,13 @@ test('accepts a structurally complete capability without overstating verificatio
   assert.equal(result.summary.verified, 0);
 });
 
+test('rejects non-object registries and empty capability lists', () => {
+  assert.equal(validateRegistry(null).ok, false);
+  const result = validateRegistry({ schemaVersion: 1, capabilities: [] });
+  assert.equal(result.ok, false);
+  assert.ok(result.errors.includes('capabilities_must_not_be_empty'));
+});
+
 test('rejects duplicate capability identifiers', () => {
   const item = capability();
   const result = validateRegistry({ schemaVersion: 1, capabilities: [item, { ...item }] });
@@ -45,16 +52,52 @@ test('rejects unknown lifecycle states', () => {
   assert.ok(result.errors.some(error => error.includes('invalid_status')));
 });
 
+test('rejects empty or wrongly typed required strings and arrays', () => {
+  const result = validateRegistry({
+    schemaVersion: 1,
+    capabilities: [capability({
+      name: ' ',
+      owner: 42,
+      substrates: ['node', ' '],
+      triggers: [],
+      integrations: ['task', null]
+    })]
+  });
+  assert.equal(result.ok, false);
+  assert.ok(result.errors.some(error => error.includes('invalid_name')));
+  assert.ok(result.errors.some(error => error.includes('invalid_owner')));
+  assert.ok(result.errors.some(error => error.includes('substrates_must_be_nonempty_string_array')));
+  assert.ok(result.errors.some(error => error.includes('triggers_must_be_nonempty_string_array')));
+  assert.ok(result.errors.some(error => error.includes('integrations_must_be_nonempty_string_array')));
+});
+
 test('does not allow verified without reproducible passing evidence', () => {
   const result = validateRegistry({
     schemaVersion: 1,
     capabilities: [capability({ status: 'verified' })]
   });
   assert.equal(result.ok, false);
-  assert.ok(result.errors.some(error => error.includes('verified_requires_reproducible_evidence')));
+  assert.ok(result.errors.some(error => error.includes('verified_requires_reproducible_passing_evidence')));
 });
 
-test('accepts verified only with command, passing result, revision, and timestamp', () => {
+test('rejects verified evidence with failed result, invalid revision, or invalid timestamp', () => {
+  const result = validateRegistry({
+    schemaVersion: 1,
+    capabilities: [capability({
+      status: 'verified',
+      evidence: {
+        testCommand: 'node --test example.test.cjs',
+        testResult: 'failed',
+        revision: 'not-a-sha',
+        verifiedAt: 'yesterday'
+      }
+    })]
+  });
+  assert.equal(result.ok, false);
+  assert.ok(result.errors.some(error => error.includes('verified_requires_reproducible_passing_evidence')));
+});
+
+test('accepts verified only with command, passing result, commit SHA, and UTC timestamp', () => {
   const result = validateRegistry({
     schemaVersion: 1,
     capabilities: [capability({
