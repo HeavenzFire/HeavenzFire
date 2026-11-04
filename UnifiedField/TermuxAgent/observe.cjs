@@ -126,6 +126,7 @@ async function fetchBounded(url, options = {}) {
     if ([301, 302, 303, 307, 308].includes(response.status)) {
       const location = response.headers.get('location');
       if (!location) throw new Error('Redirect response did not include a Location header.');
+      if (response.body && typeof response.body.cancel === 'function') await response.body.cancel();
       if (hop === 5) throw new Error('Redirect limit exceeded.');
       current = new URL(location, parsed).toString();
       continue;
@@ -187,7 +188,7 @@ function extractSearchResults(html, query) {
     try {
       const parsed = new URL(href, 'https://html.duckduckgo.com');
       const redirected = parsed.searchParams.get('uddg');
-      if (redirected) href = decodeURIComponent(redirected);
+      if (redirected) href = redirected;
       const target = new URL(href);
       if (!['http:', 'https:'].includes(target.protocol)) continue;
       const title = stripMarkup(match[2]).slice(0, 300);
