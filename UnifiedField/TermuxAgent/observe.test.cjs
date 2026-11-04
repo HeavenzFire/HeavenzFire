@@ -64,3 +64,16 @@ test('YouTube URL classifier accepts supported hosts only', () => {
   assert.equal(isYouTubeUrl('https://youtu.be/abc123'), true);
   assert.equal(isYouTubeUrl('https://example.com/watch?v=abc123'), false);
 });
+
+test('bounded fetch rejects response bodies without a readable stream', async () => {
+  const fetchImpl = async () => ({
+    ok: true,
+    status: 200,
+    headers: { get: () => 'text/html' },
+    body: null
+  });
+  await assert.rejects(fetchBounded('https://example.com/', {
+    fetchImpl,
+    lookup: async () => [{ address: '93.184.216.34', family: 4 }]
+  }), /must expose a readable stream/);
+});
