@@ -1,9 +1,9 @@
-# UF-TCP Assistant Integration and KPI Contract v0.1
+# UF-TCP Assistant Integration and KPI Contract v0.2
 
-**Status:** Integration contract proposal; implementation and end-to-end verification pending  
-**Protocol:** UF-TCP/0.1  
+**Status:** KPI and adapter contract; policy engine v0.2 implemented and CI-verified; runtime adoption and end-to-end provider integration pending  
+**Protocol:** UF-TCP/0.2  
 **Target:** HeavenzFire Unified Field  
-**Canonical policy:** `QuantumLab/uf-tcp-policy.cjs`  
+**Canonical policy:** `QuantumLab/uf-tcp-policy.cjs` (merged implementation: [PR #137](https://github.com/HeavenzFire/HeavenzFire/pull/137))  
 **Coordination ledger:** [UnifiedCodebase issue #6](https://github.com/HeavenzFire/UnifiedCodebase/issues/6)
 
 ## 1. Objective
@@ -157,7 +157,8 @@ The assistant may autonomously perform read-only inspection, source analysis, do
 - Reject missing or malformed provenance rather than silently filling it with assumptions.
 
 ### Stage C — UF-TCP evaluation
-- Integrate the pure `uf-tcp-policy.cjs` evaluator at the task verification boundary.
+- [x] Implement the deterministic UF-TCP/0.2 policy evaluator with proposer separation, verifier provenance fields, counterexample handling, and ternary outcomes. Merged in [PR #137](https://github.com/HeavenzFire/HeavenzFire/pull/137); GitHub Actions run [41803287549](https://github.com/HeavenzFire/HeavenzFire/actions/runs/41803287549) passed.
+- [ ] Integrate the evaluator at the canonical task verification boundary.
 - Add tests for missing verifier, correlated verifier, changed commit, malformed digest, failed safety invariant, stale tests, audit corruption, and disagreement.
 - Ensure `VERIFIED` cannot be reached from provider response status alone.
 
@@ -181,8 +182,8 @@ Inspected from `HeavenzFire/HeavenzFire` main at the time this contract was prep
 - `services/heavenzfire-api/server.cjs` — commit `f007936a42888cb674c72617c1cf1fdc3282e366`; contains `callOpenAI` using the Responses API and `callOllama`.
 - `services/heavenzfire-api/agent-swarm.cjs` — commit `5ed5177472963518f8048519690c2bf81d7473e2`; defines 16 specialist role prompts and bounded provider dispatch. It is multi-call role fan-out, not proof of 16 independent model instances.
 - `services/heavenzfire-api/README.md` — documents the local gateway, DPAPI-based launcher, API billing separation, and limitations.
-- `UnifiedField/QuantumLab/UF-TCP-SPEC.md` — commit `582e2b62c8747a4dd0f4da867edf79ff7f60348c`; proposed protocol and evidence contract.
-- `UnifiedField/QuantumLab/uf-tcp-policy.cjs` — commit `ebaa0afbc68a850837b85ecaa9725f1f8fffef8e`; pure deterministic evaluator.
+- `UnifiedField/QuantumLab/UF-TCP-SPEC.md` — updated to UF-TCP/0.2 in PR #137.
+- `UnifiedField/QuantumLab/uf-tcp-policy.cjs` and `uf-tcp-policy.test.cjs` — implemented and merged in PR #137; the policy test suite and LocalOrchestrator suite pass in GitHub Actions.
 - `UnifiedField/QuantumLab/UF-144-COUNCIL-ARCHITECTURE.md` — commit `1ba862849539aec62fd48f9b4fcc3454e855a6fe`; role architecture and independence caveats.
 - `UnifiedField/QuantumLab/README-DASHBOARD.md` — explicitly states the dashboard does not yet execute UF-TCP or dispatch the council.
 
@@ -196,4 +197,4 @@ These are source-inspection findings, not a fresh local test run or end-to-end i
 4. Add deterministic integration tests proving that provider success cannot directly produce `VERIFIED`.
 5. Submit the code change for independent review; do not merge without explicit approval.
 
-**Current state:** the OpenAI provider adapter and pure ternary evaluator exist as separate components. Their end-to-end integration, assistant KPI telemetry, independent verification, and verified runtime connection are not yet established.
+**Current state:** the OpenAI provider adapter and UF-TCP/0.2 policy are implemented as separate components. The KPI contract is defined. The canonical task-envelope adapter, per-task KPI telemetry, cryptographic verifier provenance, end-to-end provider inference, and full runtime enforcement across all services remain unimplemented and unverified.
