@@ -79,6 +79,37 @@ async function validatePublicUrl(input, lookup = dns.lookup) {
   return url;
 }
 
+async function readBodyLimited(response, maxBytes) {
+  if (!response.body || typeof response.body.getReader !== 'function') {
+    const bytes = await readBodyLimited(response, maxBytes);
+    return bytes;
+  }
+  const reader = response.body.getReader();
+  const chunks = [];
+  let total = 0;
+  try {
+    while (true) {
+      const part = await reader.read();
+      if (part.done) break;
+      total += part.value.byteLength;
+      if (total > maxBytes) {
+        await reader.cancel();
+        throw new Error('Page exceeds the configured response-size limit.');
+      }
+      chunks.push(part.value);
+    }
+  } finally {
+    try { reader.releaseLock(); } catch {}
+  }
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return bytes;
+}
+
 async function fetchBounded(url, options = {}) {
   const fetchImpl = options.fetchImpl || fetch;
   const lookup = options.lookup || dns.lookup;
@@ -273,6 +304,6 @@ if (require.main === module) {
 }
 
 module.exports = {
-  decodeEntities, stripMarkup, isPrivateIp, validatePublicUrl, fetchBounded,
+  decodeEntities, stripMarkup, isPrivateIp, validatePublicUrl, readBodyLimited, fetchBounded,
   parsePage, extractSearchResults, searchWeb, observePage, isYouTubeUrl, observeYouTube
 };
