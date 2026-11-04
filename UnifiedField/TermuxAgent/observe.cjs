@@ -80,8 +80,7 @@ async function validatePublicUrl(input, lookup = dns.lookup) {
 
 async function readBodyLimited(response, maxBytes) {
   if (!response.body || typeof response.body.getReader !== 'function') {
-    const bytes = await readBodyLimited(response, maxBytes);
-    return bytes;
+    throw new Error('Response body must expose a readable stream; refusing an unbounded fallback.');
   }
   const reader = response.body.getReader();
   const chunks = [];
