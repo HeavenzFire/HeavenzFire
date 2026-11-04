@@ -11,11 +11,9 @@ const STATUSES = new Set([
   'verified'
 ]);
 
-const REQUIRED = [
-  'id', 'name', 'layer', 'status', 'owner', 'implementation',
-  'substrates', 'triggers', 'integrations', 'permissions',
-  'evidence', 'acceptance'
-];
+const REQUIRED_STRINGS = ['id', 'name', 'layer', 'owner', 'implementation'];
+const REQUIRED_ARRAYS = ['substrates', 'triggers', 'integrations', 'permissions', 'acceptance'];
+const VERIFIED_SHA = /^(?:[a-f0-9]{7,40})$/i;
 
 function validateRegistry(registry) {
   const errors = [];
@@ -23,7 +21,11 @@ function validateRegistry(registry) {
     return { ok: false, errors: ['registry_must_be_object'], summary: null };
   }
   if (registry.schemaVersion !== 1) errors.push('unsupported_schema_version');
-  if (!Array.isArray(registry.capabilities)) errors.push('capabilities_must_be_array');
+  if (!Array.isArray(registry.capabilities)) {
+    errors.push('capabilities_must_be_array');
+  } else if (registry.capabilities.length === 0) {
+    errors.push('capabilities_must_not_be_empty');
+  }
 
   const ids = new Set();
   const capabilities = Array.isArray(registry.capabilities) ? registry.capabilities : [];
@@ -34,32 +36,39 @@ function validateRegistry(registry) {
       errors.push(prefix + ':must_be_object');
       continue;
     }
-    for (const key of REQUIRED) {
-      if (!(key in item)) errors.push(prefix + ':missing_' + key);
-    }
-    if (typeof item.id !== 'string' || !/^[a-z0-9][a-z0-9._-]{1,79}$/.test(item.id)) {
-      errors.push(prefix + ':invalid_id');
-    } else if (ids.has(item.id)) {
-      errors.push(prefix + ':duplicate_id:' + item.id);
-    } else {
-      ids.add(item.id);
-    }
-    if (!STATUSES.has(item.status)) errors.push(prefix + ':invalid_status');
-    for (const key of ['substrates', 'triggers', 'integrations', 'permissions', 'acceptance']) {
-      if (!Array.isArray(item[key]) || item[key].length === 0) {
-        errors.push(prefix + ':' + key + '_must_be_nonempty_array');
+
+    for (const key of REQUIRED_STRINGS) {
+      if (typeof item[key] !== 'string' || item[key].trim().length === 0) {
+        errors.push(prefix + ':invalid_' + key);
       }
     }
+    if (typeof item.id === 'string' && /^[a-z0-9][a-z0-9._-]{1,79}$/.test(item.id)) {
+      if (ids.has(item.id)) errors.push(prefix + ':duplicate_id:' + item.id);
+      else ids.add(item.id);
+    } else {
+      errors.push(prefix + ':invalid_id');
+    }
+
+    if (!STATUSES.has(item.status)) errors.push(prefix + ':invalid_status');
+    for (const key of REQUIRED_ARRAYS) {
+      if (!Array.isArray(item[key]) || item[key].length === 0 ||
+          item[key].some(value => typeof value !== 'string' || value.trim().length === 0)) {
+        errors.push(prefix + ':' + key + '_must_be_nonempty_string_array');
+      }
+    }
+
     if (!item.evidence || typeof item.evidence !== 'object' || Array.isArray(item.evidence)) {
       errors.push(prefix + ':evidence_must_be_object');
     } else if (item.status === 'verified') {
-      if (!item.evidence.testCommand || !item.evidence.testResult ||
-          !item.evidence.revision || !item.evidence.verifiedAt) {
-        errors.push(prefix + ':verified_requires_reproducible_evidence');
+      const evidence = item.evidence;
+      if (typeof evidence.testCommand !== 'string' || !evidence.testCommand.trim() ||
+          evidence.testResult !== 'pass' ||
+          typeof evidence.revision !== 'string' || !VERIFIED_SHA.test(evidence.revision) ||
+          typeof evidence.verifiedAt !== 'string' ||
+          !/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$/.test(evidence.verifiedAt) ||
+          !Number.isFinite(Date.parse(evidence.verifiedAt))) {
+        errors.push(prefix + ':verified_requires_reproducible_passing_evidence');
       }
-    }
-    if (item.status === 'verified' && item.evidence && item.evidence.testResult !== 'pass') {
-      errors.push(prefix + ':verified_requires_passing_test');
     }
   }
 
