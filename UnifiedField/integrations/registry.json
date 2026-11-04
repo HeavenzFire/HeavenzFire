@@ -169,5 +169,11 @@
       ],
       "notes": "Design-level evidence only; hardware-in-loop verification required."
     }
-  ]
+  ],
+  "completeness_registry": {
+    "schema": "UnifiedField/QuantumLab/unified-field-completeness.json",
+    "validator": "UnifiedField/QuantumLab/uf-completeness-registry.cjs",
+    "pull_request": "https://github.com/HeavenzFire/HeavenzFire/pull/139",
+    "purpose": "Cross-cutting operational completeness and evidence gate; adapter status in this file is not end-to-end verification."
+  }
 }
