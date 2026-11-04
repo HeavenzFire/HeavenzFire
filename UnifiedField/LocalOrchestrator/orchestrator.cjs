@@ -4,6 +4,7 @@ const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
+const { createTaskLedger } = require('./task-ledger.cjs');
 
 const DEFAULT_HOST = '127.0.0.1';
 const DEFAULT_PORT = 18797;
@@ -87,7 +88,16 @@ function createOrchestrator(options = {}) {
   }
   const invoke = options.invoke || invokeLocalRuntime;
   const now = options.now || (() => new Date().toISOString());
-  const tasks = new Map();
+  const ledger = options.ledger || createTaskLedger({ filePath: options.ledgerPath || process.env.HF_TASK_LEDGER_PATH || path.join(__dirname, 'data', 'tasks.jsonl') });
+  const tasks = new Map(ledger.load().map(task => [task.id, task]));
+  for (const task of tasks.values()) {
+    if (task.state === 'running') {
+      task.state = 'failed';
+      task.error = 'process_interrupted_before_completion';
+      task.updatedAt = now();
+      ledger.save(task);
+    }
+  }
   let active = 0;
 
   function json(res, status, data) {
@@ -128,6 +138,7 @@ function createOrchestrator(options = {}) {
         const timestamp = now();
         const task = { id: crypto.randomUUID(), goal: input.goal.trim(), state: 'proposed', createdAt: timestamp, updatedAt: timestamp };
         tasks.set(task.id, task);
+        ledger.save(task);
         return json(res, 201, { task: publicTask(task), executionStarted: false });
       }
       const match = url.pathname.match(/^\/api\/tasks\/([0-9a-f-]{36})\/(approve|run)$/);
@@ -139,11 +150,12 @@ function createOrchestrator(options = {}) {
           if (input.approve !== true) return json(res, 400, { error: 'explicit_approve_true_required' });
           if (task.state !== 'proposed') return json(res, 409, { error: 'task_not_proposed', state: task.state });
           task.state = 'approved'; task.approvedAt = now(); task.updatedAt = task.approvedAt;
+          ledger.save(task);
           return json(res, 200, { task: publicTask(task), executionStarted: false });
         }
         if (task.state !== 'approved') return json(res, 409, { error: 'human_approval_required', state: task.state });
         if (active >= 1) return json(res, 429, { error: 'orchestrator_busy', retryable: true });
-        task.state = 'running'; task.updatedAt = now(); active++;
+        task.state = 'running'; task.updatedAt = now(); ledger.save(task); active++;
         try {
           task.results = await runBounded(manifest.agents, manifest.maxParallel, async agent => {
             const result = await invoke({ agent, goal: task.goal, model, ollamaUrl, timeoutMs: options.timeoutMs || 90000 });
@@ -152,6 +164,7 @@ function createOrchestrator(options = {}) {
           const failed = task.results.filter(result => result.state !== 'completed').length;
           task.state = failed === 0 ? 'completed' : 'failed';
           task.completedAt = now(); task.updatedAt = task.completedAt;
+          ledger.save(task);
           return json(res, failed === 0 ? 200 : 502, { task: publicTask(task), completedRoles: 16 - failed, failedRoles: failed, executionStarted: true });
         } finally { active--; }
       }
