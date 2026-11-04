@@ -55,6 +55,32 @@ Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:18797/api/tasks/$taskId/ap
 Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:18797/api/tasks/$taskId/run" -ContentType 'application/json' -Body '{}'
 ```
 
+## Ternary verification boundary
+
+A successful sixteen-role execution is an **analysis completion**, not an accepted result. The orchestrator records UF-TCP/0.2 as `ABSTAIN` until a separate verification request supplies evidence bound to the exact candidate commit.
+
+When creating a code-review task, include its immutable candidate SHA:
+
+```json
+{ "goal": "Review candidate implementation", "candidateCommit": "40-character-git-commit-sha" }
+```
+
+After the task reaches `completed`, submit `POST /api/tasks/{id}/verify` with:
+- `candidate_commit`, `reviewed_commit`, and `tested_commit`, all exactly equal to the task's candidate SHA;
+- `proposer_id`, mandatory invariants, and the five required gates;
+- a 64-character `evidence_sha256` digest;
+- two verifier records with distinct IDs, identities, execution IDs, and isolation IDs, each bound to the same digest and decision `1`;
+- counterexamples explicitly marked `refuted`, or an empty array.
+
+The evaluator returns one deterministic ternary result:
+- `+1 ACCEPT`: task becomes `verified`;
+- `0 ABSTAIN`: task remains `completed` and cannot be treated as verified;
+- `-1 REJECT`: task becomes `rejected`.
+
+Missing candidate SHA, revision drift, incomplete evidence, unresolved counterexamples, or verifier disagreement abstains. A reproduced counterexample rejects. The policy checks structural provenance fields; those fields are not cryptographic proof that separate processes actually ran. External attestation remains necessary for high-assurance independence claims.
+
+The endpoint does not authorize merges or deployments. Those remain separate human-approved operations. Existing tasks without a candidate SHA can still be executed for analysis, but cannot pass source-revision verification.
+
 ## Durable ledger behavior
 
 - The ledger is an append-only JSONL event stream containing versioned task snapshots.
