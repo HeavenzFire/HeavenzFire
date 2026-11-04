@@ -360,3 +360,67 @@ test('health reports the selected authenticated gateway provider without exposin
     assert.equal(JSON.stringify(health).includes('local-bearer-token'), false);
   });
 });
+
+
+test('task scheduler dispatches all role calls through the authenticated HeavenzFire API adapter', async () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'hf-gateway-scheduler-test-'));
+  let calls = 0;
+  const app = createOrchestrator({
+    port: 0,
+    ledgerPath: path.join(directory, 'tasks.jsonl'),
+    provider: 'heavenzfire-api',
+    gatewayUrl: 'http://127.0.0.1:18796',
+    gatewayToken: 'local-bearer-token-123456789',
+    gatewayProvider: 'openai',
+    model: 'gpt-test-model',
+    fetchImpl: async (_url, options) => {
+      calls += 1;
+      assert.equal(options.headers.authorization, 'Bearer local-bearer-token-123456789');
+      const request = JSON.parse(options.body);
+      assert.equal(request.provider, 'openai');
+      assert.equal(request.model, 'gpt-test-model');
+      return {
+        ok: true,
+        json: async () => ({
+          id: 'gateway-request-' + calls,
+          model: 'gpt-test-model',
+          choices: [{ message: { content: 'gateway-result-' + calls } }]
+        })
+      };
+    }
+  });
+  await new Promise(resolve => app.server.listen(0, '127.0.0.1', resolve));
+  const address = app.server.address();
+  const base = 'http://127.0.0.1:' + address.port;
+  try {
+    const created = await fetch(base + '/api/tasks', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ goal: 'Exercise the hosted model adapter.' })
+    });
+    const task = (await created.json()).task;
+    await fetch(base + '/api/tasks/' + task.id + '/approve', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ approve: true })
+    });
+    const response = await fetch(base + '/api/tasks/' + task.id + '/run', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: '{}'
+    });
+    assert.equal(response.status, 200);
+    const result = (await response.json()).task;
+    assert.equal(calls, 16);
+    assert.equal(result.results.length, 16);
+    assert.ok(result.results.every(item => item.provider === 'openai'));
+    assert.equal(result.execution.provider, 'openai');
+    assert.equal(result.execution.model, 'gpt-test-model');
+    assert.equal(result.execution.providerRequestIds.length, 16);
+    assert.equal(result.consensus.decision, 0);
+    assert.equal(result.state, 'completed');
+  } finally {
+    await new Promise(resolve => app.server.close(resolve));
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
