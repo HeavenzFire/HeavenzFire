@@ -5,7 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { createOrchestrator, readManifest, runBounded } = require('./orchestrator.cjs');
+const { createOrchestrator, readManifest, runBounded, invokeGatewayRuntime } = require('./orchestrator.cjs');
 const { createTaskLedger } = require('./task-ledger.cjs');
 
 async function withServer(options, fn) {
@@ -18,6 +18,56 @@ async function withServer(options, fn) {
     await new Promise(resolve => app.server.close(resolve));
     fs.rmSync(tempDir, { recursive: true, force: true });
   }
+}
+
+
+async function createCompletedTask(base, candidateCommit) {
+  const body = { goal: 'Exercise the UF-TCP task verification boundary.' };
+  if (candidateCommit !== undefined) body.candidateCommit = candidateCommit;
+  const created = await fetch(base + '/api/tasks', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  assert.equal(created.status, 201);
+  const task = (await created.json()).task;
+  const approved = await fetch(base + '/api/tasks/' + task.id + '/approve', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ approve: true })
+  });
+  assert.equal(approved.status, 200);
+  const ran = await fetch(base + '/api/tasks/' + task.id + '/run', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: '{}'
+  });
+  assert.equal(ran.status, 200);
+  return task;
+}
+
+function validConsensus(candidateCommit) {
+  const digest = 'a'.repeat(64);
+  return {
+    candidate_commit: candidateCommit,
+    reviewed_commit: candidateCommit,
+    tested_commit: candidateCommit,
+    proposer_id: 'local-orchestrator',
+    mandatory_invariants: [{ id: 'no-secret-leak', status: 'pass' }],
+    counterexamples: [],
+    gates: {
+      tests_pass: true,
+      security_review_pass: true,
+      evidence_complete: true,
+      reproducible: true,
+      fresh: true
+    },
+    evidence_sha256: digest,
+    verifiers: [
+      { id: 'verifier-a', identity: 'process-a', execution_id: 'exec-a', isolation_id: 'sandbox-a', independent: true, evidence_sha256: digest, decision: 1, rationale: 'Reviewed the exact candidate revision.' },
+      { id: 'verifier-b', identity: 'process-b', execution_id: 'exec-b', isolation_id: 'sandbox-b', independent: true, evidence_sha256: digest, decision: 1, rationale: 'Independently reproduced the required checks.' }
+    ]
+  };
 }
 
 test('manifest contains 16 unique named roles and caps parallelism at four', () => {
@@ -50,6 +100,9 @@ test('proposal cannot run until explicit approval and then fans out to all 16 ro
     const result = await ran.json();
     assert.equal(result.completedRoles, 16);
     assert.equal(result.task.results.length, 16);
+    assert.equal(result.task.state, 'completed');
+    assert.equal(result.task.consensus.decision, 0);
+    assert.equal(result.task.consensus.code, 'VERIFICATION_NOT_RUN');
     assert.equal(calls, 16);
   });
 });
@@ -114,6 +167,260 @@ test('orchestrator reloads durable task history after a process restart', async 
     assert.equal(tasks[0].id, taskId);
     assert.equal(tasks[0].state, 'proposed');
   } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+
+test('rejects malformed candidate commit at task creation', async () => {
+  await withServer({}, async base => {
+    const response = await fetch(base + '/api/tasks', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ goal: 'invalid revision', candidateCommit: 'not-a-git-sha' })
+    });
+    assert.equal(response.status, 400);
+    assert.equal((await response.json()).error, 'candidate_commit_must_be_a_40_character_git_sha');
+  });
+});
+
+test('verification cannot run before the approved task has completed', async () => {
+  await withServer({}, async base => {
+    const created = await fetch(base + '/api/tasks', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ goal: 'verification lifecycle', candidateCommit: 'b'.repeat(40) })
+    });
+    const task = (await created.json()).task;
+    const verify = await fetch(base + '/api/tasks/' + task.id + '/verify', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(validConsensus('b'.repeat(40)))
+    });
+    assert.equal(verify.status, 409);
+  });
+});
+
+test('role completion alone remains ABSTAIN and cannot mark a task verified', async () => {
+  await withServer({}, async base => {
+    const task = await createCompletedTask(base);
+    const response = await fetch(base + '/api/tasks/' + task.id + '/verify', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: '{}'
+    });
+    assert.equal(response.status, 200);
+    const result = (await response.json()).task;
+    assert.equal(result.state, 'completed');
+    assert.equal(result.verificationStatus, 'abstain');
+    assert.equal(result.consensus.decision, 0);
+    assert.equal(result.consensus.code, 'CANDIDATE_COMMIT_MISSING');
+  });
+});
+
+test('UF-TCP ACCEPT requires exact candidate, reviewed, and tested revision binding', async () => {
+  await withServer({}, async base => {
+    const sha = 'c'.repeat(40);
+    const task = await createCompletedTask(base, sha);
+    const evidence = validConsensus(sha);
+    const response = await fetch(base + '/api/tasks/' + task.id + '/verify', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(evidence)
+    });
+    assert.equal(response.status, 200);
+    const result = (await response.json()).task;
+    assert.equal(result.state, 'verified');
+    assert.equal(result.verificationStatus, 'accepted');
+    assert.equal(result.consensus.decision, 1);
+    assert.equal(result.consensus.policy, 'UF-TCP/0.2');
+  });
+});
+
+test('revision drift abstains and leaves task unverified', async () => {
+  await withServer({}, async base => {
+    const sha = 'd'.repeat(40);
+    const task = await createCompletedTask(base, sha);
+    const evidence = validConsensus(sha);
+    evidence.tested_commit = 'e'.repeat(40);
+    const response = await fetch(base + '/api/tasks/' + task.id + '/verify', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(evidence)
+    });
+    const result = (await response.json()).task;
+    assert.equal(result.state, 'completed');
+    assert.equal(result.verificationStatus, 'abstain');
+    assert.equal(result.consensus.code, 'REVISION_BINDING_MISMATCH');
+  });
+});
+
+test('UF-TCP REJECT records a reproduced counterexample and rejects the task', async () => {
+  await withServer({}, async base => {
+    const sha = 'f'.repeat(40);
+    const task = await createCompletedTask(base, sha);
+    const evidence = validConsensus(sha);
+    evidence.counterexamples = [{ id: 'reproduced-failure', status: 'reproduced' }];
+    const response = await fetch(base + '/api/tasks/' + task.id + '/verify', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(evidence)
+    });
+    const result = (await response.json()).task;
+    assert.equal(result.state, 'rejected');
+    assert.equal(result.verificationStatus, 'rejected');
+    assert.equal(result.consensus.decision, -1);
+    assert.equal(result.consensus.code, 'REPRODUCIBLE_COUNTEREXAMPLE');
+  });
+});
+
+
+test('gateway provider is loopback-only and requires a bearer token', () => {
+  assert.throws(() => createOrchestrator({
+    provider: 'heavenzfire-api',
+    gatewayUrl: 'http://192.168.1.10:18796',
+    gatewayToken: 'x'.repeat(32)
+  }), /gateway_must_use_http_loopback/);
+  assert.throws(() => createOrchestrator({
+    provider: 'heavenzfire-api',
+    gatewayUrl: 'http://127.0.0.1:18796',
+    gatewayToken: ''
+  }), /gateway_bearer_token_required/);
+});
+
+test('gateway adapter sends authenticated provider/model provenance and captures request ID', async () => {
+  let captured;
+  const result = await invokeGatewayRuntime({
+    agent: { id: 'adversarial-reviewer', objective: 'Try to falsify the claim.' },
+    goal: 'Review commit abcdef.',
+    model: 'gpt-test-model',
+    gatewayUrl: 'http://127.0.0.1:18796',
+    gatewayToken: 'local-bearer-token-123456789',
+    gatewayProvider: 'openai',
+    fetchImpl: async (url, options) => {
+      captured = { url: String(url), options, body: JSON.parse(options.body) };
+      return {
+        ok: true,
+        json: async () => ({
+          id: 'hf-request-123',
+          model: 'gpt-test-model',
+          choices: [{ message: { content: 'Independent review proposal.' } }]
+        })
+      };
+    }
+  });
+
+  assert.equal(captured.url, 'http://127.0.0.1:18796/v1/chat/completions');
+  assert.equal(captured.options.headers.authorization, 'Bearer local-bearer-token-123456789');
+  assert.equal(captured.body.provider, 'openai');
+  assert.equal(captured.body.model, 'gpt-test-model');
+  assert.equal(result.state, 'completed');
+  assert.equal(result.provider, 'openai');
+  assert.equal(result.providerRequestId, 'hf-request-123');
+  assert.equal(result.output, 'Independent review proposal.');
+});
+
+test('gateway adapter fails closed on authentication and empty-response errors', async () => {
+  const base = {
+    agent: { id: 'builder', objective: 'Implement a scoped patch.' },
+    goal: 'Build.',
+    model: 'gpt-test-model',
+    gatewayUrl: 'http://127.0.0.1:18796',
+    gatewayToken: 'local-bearer-token-123456789',
+    gatewayProvider: 'openai'
+  };
+  const unauthorized = await invokeGatewayRuntime({
+    ...base,
+    fetchImpl: async () => ({ ok: false, status: 401 })
+  });
+  assert.equal(unauthorized.state, 'failed');
+  assert.equal(unauthorized.error, 'gateway_unauthorized');
+
+  const empty = await invokeGatewayRuntime({
+    ...base,
+    fetchImpl: async () => ({ ok: true, json: async () => ({ choices: [] }) })
+  });
+  assert.equal(empty.state, 'failed');
+  assert.equal(empty.error, 'gateway_empty_response');
+});
+
+test('health reports the selected authenticated gateway provider without exposing its token', async () => {
+  await withServer({
+    provider: 'heavenzfire-api',
+    gatewayUrl: 'http://127.0.0.1:18796',
+    gatewayToken: 'local-bearer-token-123456789',
+    gatewayProvider: 'openai',
+    model: 'gpt-test-model'
+  }, async base => {
+    const response = await fetch(base + '/health');
+    const health = await response.json();
+    assert.equal(health.provider, 'openai');
+    assert.equal(health.model, 'gpt-test-model');
+    assert.equal(health.execution, 'authenticated-loopback-heavenzfire-api');
+    assert.equal(JSON.stringify(health).includes('local-bearer-token'), false);
+  });
+});
+
+
+test('task scheduler dispatches all role calls through the authenticated HeavenzFire API adapter', async () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'hf-gateway-scheduler-test-'));
+  let calls = 0;
+  const app = createOrchestrator({
+    port: 0,
+    ledgerPath: path.join(directory, 'tasks.jsonl'),
+    provider: 'heavenzfire-api',
+    gatewayUrl: 'http://127.0.0.1:18796',
+    gatewayToken: 'local-bearer-token-123456789',
+    gatewayProvider: 'openai',
+    model: 'gpt-test-model',
+    fetchImpl: async (_url, options) => {
+      calls += 1;
+      assert.equal(options.headers.authorization, 'Bearer local-bearer-token-123456789');
+      const request = JSON.parse(options.body);
+      assert.equal(request.provider, 'openai');
+      assert.equal(request.model, 'gpt-test-model');
+      return {
+        ok: true,
+        json: async () => ({
+          id: 'gateway-request-' + calls,
+          model: 'gpt-test-model',
+          choices: [{ message: { content: 'gateway-result-' + calls } }]
+        })
+      };
+    }
+  });
+  await new Promise(resolve => app.server.listen(0, '127.0.0.1', resolve));
+  const address = app.server.address();
+  const base = 'http://127.0.0.1:' + address.port;
+  try {
+    const created = await fetch(base + '/api/tasks', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ goal: 'Exercise the hosted model adapter.' })
+    });
+    const task = (await created.json()).task;
+    await fetch(base + '/api/tasks/' + task.id + '/approve', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ approve: true })
+    });
+    const response = await fetch(base + '/api/tasks/' + task.id + '/run', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: '{}'
+    });
+    assert.equal(response.status, 200);
+    const result = (await response.json()).task;
+    assert.equal(calls, 16);
+    assert.equal(result.results.length, 16);
+    assert.ok(result.results.every(item => item.provider === 'openai'));
+    assert.equal(result.execution.provider, 'openai');
+    assert.equal(result.execution.model, 'gpt-test-model');
+    assert.equal(result.execution.providerRequestIds.length, 16);
+    assert.equal(result.consensus.decision, 0);
+    assert.equal(result.state, 'completed');
+  } finally {
+    await new Promise(resolve => app.server.close(resolve));
     fs.rmSync(directory, { recursive: true, force: true });
   }
 });

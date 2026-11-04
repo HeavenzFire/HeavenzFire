@@ -37,6 +37,25 @@ Invoke-RestMethod http://127.0.0.1:18797/health
 Invoke-RestMethod http://127.0.0.1:18797/api/agents
 ```
 
+## Hosted model adapter through the existing HeavenzFire API
+
+The orchestrator can keep its local scheduler, JSONL ledger, approvals, and UF-TCP gate while dispatching role calls through the existing authenticated HeavenzFire API. This reuses the provider adapters in `services/heavenzfire-api/server.cjs`; it does not create a second provider registry or expose provider credentials to the orchestrator.
+
+Start the API on loopback with `HF_API_KEYS` configured and the desired provider credential configured in that API process. Then set these variables in the orchestrator's PowerShell process:
+
+```powershell
+$env:HF_ORCHESTRATOR_PROVIDER = 'heavenzfire-api'
+$env:HF_GATEWAY_URL = 'http://127.0.0.1:18796'
+$env:HF_GATEWAY_API_KEY = '<same local bearer token configured in HF_API_KEYS>'
+$env:HF_GATEWAY_PROVIDER = 'openai'
+$env:HF_GATEWAY_MODEL = 'gpt-4.1-mini'
+node .\\UnifiedField\\LocalOrchestrator\\orchestrator.cjs
+```
+
+Use `HF_GATEWAY_PROVIDER` values supported by the API: `openai`, `gemini`, `ollama`, `anthropic`, `mistral`, `qwen`, `groq`, `openrouter`, or `custom`. Set `HF_GATEWAY_MODEL` to a model actually enabled for that provider. The gateway URL is restricted to HTTP loopback and the local bearer token is required. The orchestrator stores provider name, model, and returned request IDs with task execution metadata; it never stores the bearer token or provider API key.
+
+The API key for OpenAI (or another hosted provider) remains only in the API server's environment/secret store. ChatGPT subscription access is not converted into API access or billing. This adapter connects to the configured provider API through the local gateway; it does not attach this ChatGPT web session's private runtime.
+
 ## Task lifecycle
 
 1. Submit a proposal: `POST /api/tasks` with JSON `{"goal":"Review a local change" }`.
@@ -54,6 +73,32 @@ $taskId = $proposal.task.id
 Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:18797/api/tasks/$taskId/approve" -ContentType 'application/json' -Body '{"approve":true}'
 Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:18797/api/tasks/$taskId/run" -ContentType 'application/json' -Body '{}'
 ```
+
+## Ternary verification boundary
+
+A successful sixteen-role execution is an **analysis completion**, not an accepted result. The orchestrator records UF-TCP/0.2 as `ABSTAIN` until a separate verification request supplies evidence bound to the exact candidate commit.
+
+When creating a code-review task, include its immutable candidate SHA:
+
+```json
+{ "goal": "Review candidate implementation", "candidateCommit": "40-character-git-commit-sha" }
+```
+
+After the task reaches `completed`, submit `POST /api/tasks/{id}/verify` with:
+- `candidate_commit`, `reviewed_commit`, and `tested_commit`, all exactly equal to the task's candidate SHA;
+- `proposer_id`, mandatory invariants, and the five required gates;
+- a 64-character `evidence_sha256` digest;
+- two verifier records with distinct IDs, identities, execution IDs, and isolation IDs, each bound to the same digest and decision `1`;
+- counterexamples explicitly marked `refuted`, or an empty array.
+
+The evaluator returns one deterministic ternary result:
+- `+1 ACCEPT`: task becomes `verified`;
+- `0 ABSTAIN`: task remains `completed` and cannot be treated as verified;
+- `-1 REJECT`: task becomes `rejected`.
+
+Missing candidate SHA, revision drift, incomplete evidence, unresolved counterexamples, or verifier disagreement abstains. A reproduced counterexample rejects. The policy checks structural provenance fields; those fields are not cryptographic proof that separate processes actually ran. External attestation remains necessary for high-assurance independence claims.
+
+The endpoint does not authorize merges or deployments. Those remain separate human-approved operations. The regression suite exercises ACCEPT, ABSTAIN, and REJECT through the HTTP task lifecycle, not only as isolated policy-function calls. Existing tasks without a candidate SHA can still be executed for analysis, but cannot pass source-revision verification.
 
 ## Durable ledger behavior
 
