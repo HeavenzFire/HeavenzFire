@@ -1,0 +1,173 @@
+{
+  "schema_version": "heavenzfire.integration-registry.v1",
+  "updated_at": "2026-11-04",
+  "source_repository": "HeavenzFire/HeavenzFire",
+  "policy": {
+    "default_network_access": "deny",
+    "remote_access_requires_authentication": true,
+    "execution_requires_trusted_approval_evidence": true,
+    "external_content_is_untrusted": true,
+    "merge_policy": "feature-branch-and-reviewed-pull-request",
+    "status_values": [
+      "discovered",
+      "reviewed",
+      "implemented",
+      "verified",
+      "degraded",
+      "disabled"
+    ]
+  },
+  "adapters": [
+    {
+      "id": "local-inference",
+      "domain": "inference",
+      "component": "UnifiedField/TermuxAgent",
+      "contract": "heavenzfire.inference.v1",
+      "status": "implemented",
+      "evidence": [
+        "UnifiedField/TermuxAgent/README.md"
+      ],
+      "notes": "Loopback inference and bounded scheduler; live runtime is device-dependent."
+    },
+    {
+      "id": "digital-brain",
+      "domain": "neural-simulation",
+      "component": "UnifiedField/QuantumLab/HeavenzFire-DigitalBrain-Server.cjs",
+      "contract": "heavenzfire.simulation.v1",
+      "status": "implemented",
+      "evidence": [
+        "UnifiedField/QuantumLab/HeavenzFire-DigitalBrain-Server.cjs"
+      ],
+      "notes": "64 sampled gyroid-level-set nodes and recurrent/spatial graph; computational prototype, not biological neural tissue."
+    },
+    {
+      "id": "opencv-camera",
+      "domain": "vision",
+      "component": "UnifiedField/QuantumLab/HeavenzFire-Avatar-Vision.py",
+      "contract": "heavenzfire.vision.v1",
+      "status": "implemented",
+      "evidence": [
+        "UnifiedField/QuantumLab/HeavenzFire-Avatar-Vision.py"
+      ],
+      "notes": "Face/person bounding boxes and brightness only; no semantic VLM."
+    },
+    {
+      "id": "github",
+      "domain": "source-control",
+      "component": "UnifiedField/TermuxAgent/github.cjs",
+      "contract": "heavenzfire.git.v1",
+      "status": "implemented",
+      "evidence": [
+        "UnifiedField/TermuxAgent/README.md"
+      ],
+      "notes": "Read API plus separate opt-in branch-scoped writes."
+    },
+    {
+      "id": "web-observer",
+      "domain": "web-video",
+      "component": "UnifiedField/TermuxAgent/observe.cjs",
+      "contract": "heavenzfire.web-observation.v1",
+      "status": "discovered",
+      "evidence": [
+        "https://github.com/HeavenzFire/HeavenzFire/pull/140"
+      ],
+      "notes": "Draft PR only; text and caption observation, no visual inspection."
+    },
+    {
+      "id": "shared-task-ledger",
+      "domain": "tasks-evidence",
+      "component": "HeavenzFire/UnifiedCodebase",
+      "contract": "heavenzfire.shared-task.v1",
+      "status": "implemented",
+      "evidence": [
+        "https://github.com/HeavenzFire/UnifiedCodebase/pull/16"
+      ],
+      "notes": "Merged persistence primitives; not yet canonical distributed service."
+    },
+    {
+      "id": "orloj",
+      "domain": "agent-runtime",
+      "component": "UnifiedField/OrlojAdapter",
+      "contract": "heavenzfire.shared-task.v1",
+      "status": "implemented",
+      "evidence": [
+        "https://github.com/HeavenzFire/HeavenzFire/pull/128"
+      ],
+      "notes": "Approved-task gated loopback adapter; live worker path unverified."
+    },
+    {
+      "id": "opensource-ai-hub",
+      "domain": "agent-runtime",
+      "component": "HeavenzFire/OpenSourceAIHub",
+      "contract": "heavenzfire.shared-task.v1",
+      "status": "discovered",
+      "evidence": [
+        "https://github.com/HeavenzFire/OpenSourceAIHub/pull/1"
+      ],
+      "notes": "Draft proposal transport; live service unverified."
+    },
+    {
+      "id": "browser-bridge",
+      "domain": "browser",
+      "component": "UnifiedField/BrowserBridge",
+      "contract": "heavenzfire.browser.v1",
+      "status": "discovered",
+      "evidence": [
+        "UnifiedField/UNIFIED-FIELD-ARCHITECTURE.md"
+      ],
+      "notes": "User-reviewed browser proposal prototype; install smoke test pending."
+    },
+    {
+      "id": "elysium-gemini",
+      "domain": "remote-multimodal",
+      "component": "Elysium Gateway / Google Gemini",
+      "contract": "heavenzfire.inference.v1",
+      "status": "discovered",
+      "evidence": [
+        "UnifiedField/UNIFIED-FIELD-ARCHITECTURE.md"
+      ],
+      "notes": "Review key exposure, API version, and network binding before use."
+    },
+    {
+      "id": "gyroid-toroid-research",
+      "domain": "geometry-neural-simulation",
+      "component": "EntangledMultimodalSystem-3; -JUDGEMENT-DAY-; UnifiedField/QuantumLab",
+      "contract": "heavenzfire.simulation.v1",
+      "status": "discovered",
+      "evidence": [
+        "https://github.com/HeavenzFire/EntangledMultimodalSystem-3/blob/main/neuromorphic_topology.py",
+        "https://github.com/HeavenzFire/-JUDGEMENT-DAY-/blob/main/topological_kernel.py"
+      ],
+      "notes": "Independent implementations; numerical and baseline comparison required."
+    },
+    {
+      "id": "biosignal-ingestion",
+      "domain": "biosignals",
+      "component": "future ECG/PPG/EEG sensor adapter",
+      "contract": "heavenzfire.biosignal.v1",
+      "status": "discovered",
+      "evidence": [],
+      "notes": "No connected sensor or live signal source verified."
+    },
+    {
+      "id": "audio-video-perception",
+      "domain": "audio-video",
+      "component": "future microphone and video frame adapters",
+      "contract": "heavenzfire.audio.v1 / heavenzfire.video.v1",
+      "status": "discovered",
+      "evidence": [],
+      "notes": "Requires capture source, timestamp alignment, and genuine audio/vision models."
+    },
+    {
+      "id": "fpga-mesh",
+      "domain": "hardware",
+      "component": "throne-infra FPGA mesh design",
+      "contract": "heavenzfire.hardware.v1",
+      "status": "discovered",
+      "evidence": [
+        "UnifiedField/UNIFIED-FIELD-ARCHITECTURE.md"
+      ],
+      "notes": "Design-level evidence only; hardware-in-loop verification required."
+    }
+  ]
+}
