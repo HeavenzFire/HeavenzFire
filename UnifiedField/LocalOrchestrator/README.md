@@ -8,7 +8,9 @@ A loopback-only, local-model analysis coordinator for sixteen named specialist r
 - At most four role calls run concurrently.
 - No shell, filesystem, browser, network-navigation, or arbitrary tool execution is exposed to workers.
 - Goals are proposals until a separate explicit approval request is received.
-- Running a task sends prompts only to the configured Ollama endpoint; default is `http://127.0.0.1:11434`.
+- Task snapshots are appended to a local JSONL ledger (`UnifiedField/LocalOrchestrator/data/tasks.jsonl` by default); set `HF_TASK_LEDGER_PATH` to choose another path.
+- Ledger writes use an exclusive lock file, append-and-fsync, and torn-final-record recovery. A task found in `running` state at startup is marked failed with `process_interrupted_before_completion`; it is never silently rerun.
+- Running a task sends prompts only to the configured loopback runtime endpoint; the default source configuration is `http://127.0.0.1:11434`.
 - The HTTP server refuses non-loopback bind addresses. Do not expose it directly to a LAN or Tailscale interface.
 
 ## Requirements
@@ -52,6 +54,13 @@ $taskId = $proposal.task.id
 Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:18797/api/tasks/$taskId/approve" -ContentType 'application/json' -Body '{"approve":true}'
 Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:18797/api/tasks/$taskId/run" -ContentType 'application/json' -Body '{}'
 ```
+
+## Durable ledger behavior
+
+- The ledger is an append-only JSONL event stream containing versioned task snapshots.
+- A process obtains an exclusive sibling `.lock` file before reading or appending. Lock acquisition is bounded; stale locks are reclaimed only when the recorded owner process is no longer alive and the lock is older than the configured stale threshold.
+- Each appended record is flushed with `fsync`. On startup, an incomplete final line is truncated; malformed complete records fail closed rather than being silently discarded.
+- This is local-filesystem persistence, not a distributed database. Keep the ledger on a local disk, protect it with normal OS account permissions, and back it up with the application stopped.
 
 ## Tests
 
