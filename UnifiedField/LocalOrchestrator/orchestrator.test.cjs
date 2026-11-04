@@ -20,6 +20,56 @@ async function withServer(options, fn) {
   }
 }
 
+
+async function createCompletedTask(base, candidateCommit) {
+  const body = { goal: 'Exercise the UF-TCP task verification boundary.' };
+  if (candidateCommit !== undefined) body.candidateCommit = candidateCommit;
+  const created = await fetch(base + '/api/tasks', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  assert.equal(created.status, 201);
+  const task = (await created.json()).task;
+  const approved = await fetch(base + '/api/tasks/' + task.id + '/approve', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ approve: true })
+  });
+  assert.equal(approved.status, 200);
+  const ran = await fetch(base + '/api/tasks/' + task.id + '/run', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: '{}'
+  });
+  assert.equal(ran.status, 200);
+  return task;
+}
+
+function validConsensus(candidateCommit) {
+  const digest = 'a'.repeat(64);
+  return {
+    candidate_commit: candidateCommit,
+    reviewed_commit: candidateCommit,
+    tested_commit: candidateCommit,
+    proposer_id: 'local-orchestrator',
+    mandatory_invariants: [{ id: 'no-secret-leak', status: 'pass' }],
+    counterexamples: [],
+    gates: {
+      tests_pass: true,
+      security_review_pass: true,
+      evidence_complete: true,
+      reproducible: true,
+      fresh: true
+    },
+    evidence_sha256: digest,
+    verifiers: [
+      { id: 'verifier-a', identity: 'process-a', execution_id: 'exec-a', isolation_id: 'sandbox-a', independent: true, evidence_sha256: digest, decision: 1, rationale: 'Reviewed the exact candidate revision.' },
+      { id: 'verifier-b', identity: 'process-b', execution_id: 'exec-b', isolation_id: 'sandbox-b', independent: true, evidence_sha256: digest, decision: 1, rationale: 'Independently reproduced the required checks.' }
+    ]
+  };
+}
+
 test('manifest contains 16 unique named roles and caps parallelism at four', () => {
   const manifest = readManifest();
   assert.equal(manifest.agents.length, 16);
@@ -50,6 +100,9 @@ test('proposal cannot run until explicit approval and then fans out to all 16 ro
     const result = await ran.json();
     assert.equal(result.completedRoles, 16);
     assert.equal(result.task.results.length, 16);
+    assert.equal(result.task.state, 'completed');
+    assert.equal(result.task.consensus.decision, 0);
+    assert.equal(result.task.consensus.code, 'VERIFICATION_NOT_RUN');
     assert.equal(calls, 16);
   });
 });
@@ -116,4 +169,107 @@ test('orchestrator reloads durable task history after a process restart', async 
   } finally {
     fs.rmSync(directory, { recursive: true, force: true });
   }
+});
+
+
+test('rejects malformed candidate commit at task creation', async () => {
+  await withServer({}, async base => {
+    const response = await fetch(base + '/api/tasks', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ goal: 'invalid revision', candidateCommit: 'not-a-git-sha' })
+    });
+    assert.equal(response.status, 400);
+    assert.equal((await response.json()).error, 'candidate_commit_must_be_a_40_character_git_sha');
+  });
+});
+
+test('verification cannot run before the approved task has completed', async () => {
+  await withServer({}, async base => {
+    const created = await fetch(base + '/api/tasks', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ goal: 'verification lifecycle', candidateCommit: 'b'.repeat(40) })
+    });
+    const task = (await created.json()).task;
+    const verify = await fetch(base + '/api/tasks/' + task.id + '/verify', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(validConsensus('b'.repeat(40)))
+    });
+    assert.equal(verify.status, 409);
+  });
+});
+
+test('role completion alone remains ABSTAIN and cannot mark a task verified', async () => {
+  await withServer({}, async base => {
+    const task = await createCompletedTask(base);
+    const response = await fetch(base + '/api/tasks/' + task.id + '/verify', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: '{}'
+    });
+    assert.equal(response.status, 200);
+    const result = (await response.json()).task;
+    assert.equal(result.state, 'completed');
+    assert.equal(result.verificationStatus, 'abstain');
+    assert.equal(result.consensus.decision, 0);
+    assert.equal(result.consensus.code, 'CANDIDATE_COMMIT_MISSING');
+  });
+});
+
+test('UF-TCP ACCEPT requires exact candidate, reviewed, and tested revision binding', async () => {
+  await withServer({}, async base => {
+    const sha = 'c'.repeat(40);
+    const task = await createCompletedTask(base, sha);
+    const evidence = validConsensus(sha);
+    const response = await fetch(base + '/api/tasks/' + task.id + '/verify', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(evidence)
+    });
+    assert.equal(response.status, 200);
+    const result = (await response.json()).task;
+    assert.equal(result.state, 'verified');
+    assert.equal(result.verificationStatus, 'accepted');
+    assert.equal(result.consensus.decision, 1);
+    assert.equal(result.consensus.policy, 'UF-TCP/0.2');
+  });
+});
+
+test('revision drift abstains and leaves task unverified', async () => {
+  await withServer({}, async base => {
+    const sha = 'd'.repeat(40);
+    const task = await createCompletedTask(base, sha);
+    const evidence = validConsensus(sha);
+    evidence.tested_commit = 'e'.repeat(40);
+    const response = await fetch(base + '/api/tasks/' + task.id + '/verify', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(evidence)
+    });
+    const result = (await response.json()).task;
+    assert.equal(result.state, 'completed');
+    assert.equal(result.verificationStatus, 'abstain');
+    assert.equal(result.consensus.code, 'REVISION_BINDING_MISMATCH');
+  });
+});
+
+test('UF-TCP REJECT records a reproduced counterexample and rejects the task', async () => {
+  await withServer({}, async base => {
+    const sha = 'f'.repeat(40);
+    const task = await createCompletedTask(base, sha);
+    const evidence = validConsensus(sha);
+    evidence.counterexamples = [{ id: 'reproduced-failure', status: 'reproduced' }];
+    const response = await fetch(base + '/api/tasks/' + task.id + '/verify', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(evidence)
+    });
+    const result = (await response.json()).task;
+    assert.equal(result.state, 'rejected');
+    assert.equal(result.verificationStatus, 'rejected');
+    assert.equal(result.consensus.decision, -1);
+    assert.equal(result.consensus.code, 'REPRODUCIBLE_COUNTEREXAMPLE');
+  });
 });
