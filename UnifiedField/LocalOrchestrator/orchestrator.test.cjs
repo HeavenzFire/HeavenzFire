@@ -2,14 +2,22 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
 const { createOrchestrator, readManifest, runBounded } = require('./orchestrator.cjs');
+const { createTaskLedger } = require('./task-ledger.cjs');
 
 async function withServer(options, fn) {
-  const app = createOrchestrator({ port: 0, invoke: async ({ agent }) => ({ agentId: agent.id, state: 'completed', output: 'verified-test-stub' }), ...options });
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'hf-orchestrator-test-'));
+  const app = createOrchestrator({ port: 0, ledgerPath: path.join(tempDir, 'tasks.jsonl'), invoke: async ({ agent }) => ({ agentId: agent.id, state: 'completed', output: 'verified-test-stub' }), ...options });
   await new Promise(resolve => app.server.listen(0, '127.0.0.1', resolve));
   const address = app.server.address();
   try { await fn('http://127.0.0.1:' + address.port); }
-  finally { await new Promise(resolve => app.server.close(resolve)); }
+  finally {
+    await new Promise(resolve => app.server.close(resolve));
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  }
 }
 
 test('manifest contains 16 unique named roles and caps parallelism at four', () => {
@@ -67,4 +75,45 @@ test('rejects oversized goals and invalid approval payload', async () => {
     const approval = await fetch(base + '/api/tasks/' + task.id + '/approve', { method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({approve:false}) });
     assert.equal(approval.status, 400);
   });
+});
+
+
+test('JSONL task ledger persists snapshots across instances and repairs a torn final record', () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'hf-ledger-test-'));
+  const filePath = path.join(directory, 'tasks.jsonl');
+  try {
+    const first = createTaskLedger({ filePath });
+    first.save({ id: 'task-1', state: 'proposed', goal: 'durability check' });
+    const second = createTaskLedger({ filePath });
+    assert.deepEqual(second.load(), [{ id: 'task-1', state: 'proposed', goal: 'durability check' }]);
+    fs.appendFileSync(filePath, '{"v":1,"task":');
+    assert.deepEqual(second.load(), [{ id: 'task-1', state: 'proposed', goal: 'durability check' }]);
+    assert.ok(fs.readFileSync(filePath, 'utf8').endsWith('\n'));
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test('orchestrator reloads durable task history after a process restart', async () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'hf-restart-test-'));
+  const ledgerPath = path.join(directory, 'tasks.jsonl');
+  const first = createOrchestrator({ port: 0, ledgerPath, invoke: async ({ agent }) => ({ agentId: agent.id, state: 'completed', output: 'ok' }) });
+  await new Promise(resolve => first.server.listen(0, '127.0.0.1', resolve));
+  const address = first.server.address();
+  let taskId;
+  try {
+    const created = await fetch('http://127.0.0.1:' + address.port + '/api/tasks', { method: 'POST', headers: {'content-type':'application/json'}, body: JSON.stringify({ goal: 'survive restart' }) });
+    taskId = (await created.json()).task.id;
+  } finally {
+    await new Promise(resolve => first.server.close(resolve));
+  }
+  const second = createOrchestrator({ port: 0, ledgerPath, invoke: async ({ agent }) => ({ agentId: agent.id, state: 'completed', output: 'ok' }) });
+  try {
+    const tasks = Array.from(second.tasks.values());
+    assert.equal(tasks.length, 1);
+    assert.equal(tasks[0].id, taskId);
+    assert.equal(tasks[0].state, 'proposed');
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
 });
