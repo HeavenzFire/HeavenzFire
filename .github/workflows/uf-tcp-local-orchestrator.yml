@@ -1,0 +1,33 @@
+name: UF-TCP and Local Orchestrator
+on:
+  push:
+    paths:
+      - 'UnifiedField/QuantumLab/uf-tcp-*'
+      - 'UnifiedField/QuantumLab/UF-TCP-*'
+      - 'UnifiedField/LocalOrchestrator/**'
+      - '.github/workflows/uf-tcp-local-orchestrator.yml'
+  pull_request:
+    paths:
+      - 'UnifiedField/QuantumLab/uf-tcp-*'
+      - 'UnifiedField/QuantumLab/UF-TCP-*'
+      - 'UnifiedField/LocalOrchestrator/**'
+      - '.github/workflows/uf-tcp-local-orchestrator.yml'
+permissions:
+  contents: read
+jobs:
+  deterministic-node-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Syntax-check policy and orchestrator
+        run: |
+          node --check UnifiedField/QuantumLab/uf-tcp-policy.cjs
+          node --check UnifiedField/LocalOrchestrator/orchestrator.cjs
+          node --check UnifiedField/LocalOrchestrator/task-ledger.cjs
+      - name: Test ternary policy
+        run: node --test UnifiedField/QuantumLab/uf-tcp-policy.test.cjs
+      - name: Test local orchestrator and durable ledger
+        run: node --test UnifiedField/LocalOrchestrator/orchestrator.test.cjs
