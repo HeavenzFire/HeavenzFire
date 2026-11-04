@@ -79,7 +79,7 @@ The evaluator returns one deterministic ternary result:
 
 Missing candidate SHA, revision drift, incomplete evidence, unresolved counterexamples, or verifier disagreement abstains. A reproduced counterexample rejects. The policy checks structural provenance fields; those fields are not cryptographic proof that separate processes actually ran. External attestation remains necessary for high-assurance independence claims.
 
-The endpoint does not authorize merges or deployments. Those remain separate human-approved operations. Existing tasks without a candidate SHA can still be executed for analysis, but cannot pass source-revision verification.
+The endpoint does not authorize merges or deployments. Those remain separate human-approved operations. The regression suite exercises ACCEPT, ABSTAIN, and REJECT through the HTTP task lifecycle, not only as isolated policy-function calls. Existing tasks without a candidate SHA can still be executed for analysis, but cannot pass source-revision verification.
 
 ## Durable ledger behavior
 
