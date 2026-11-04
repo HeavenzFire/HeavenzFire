@@ -28,14 +28,13 @@ function decodeEntities(value) {
 }
 
 function stripMarkup(html) {
-  return decodeEntities(String(html || '')
+  const text = decodeEntities(String(html || '')
     .replace(/<(script|style|noscript|svg|template)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, ' ')
     .replace(/<!--[\s\S]*?-->/g, ' ')
     .replace(/<(?:br|\/p|\/div|\/li|\/h[1-6]|\/tr)\b[^>]*>/gi, '\n')
     .replace(/<[^>]+>/g, ' '))
-    .replace(/[ \t\f\v]+/g, ' ')
-    .replace(/\n\s*\n+/g, '\n')
-    .trim();
+    .replace(/[ \t\f\v]+/g, ' ');
+  return text.split('\n').map(line => line.trim()).filter(Boolean).join('\n');
 }
 
 function isPrivateIp(address) {
