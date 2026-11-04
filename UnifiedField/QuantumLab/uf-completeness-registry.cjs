@@ -65,7 +65,7 @@ function validateRegistry(registry) {
           evidence.testResult !== 'pass' ||
           typeof evidence.revision !== 'string' || !VERIFIED_SHA.test(evidence.revision) ||
           typeof evidence.verifiedAt !== 'string' ||
-          !/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$/.test(evidence.verifiedAt) ||
+          !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/.test(evidence.verifiedAt) ||
           !Number.isFinite(Date.parse(evidence.verifiedAt))) {
         errors.push(prefix + ':verified_requires_reproducible_passing_evidence');
       }
