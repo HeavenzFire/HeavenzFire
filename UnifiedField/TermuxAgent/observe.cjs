@@ -137,8 +137,7 @@ async function fetchBounded(url, options = {}) {
     }
     const declared = Number(response.headers.get('content-length') || 0);
     if (declared > maxBytes) throw new Error('Page exceeds the configured response-size limit.');
-    const bytes = new Uint8Array(await response.arrayBuffer());
-    if (bytes.byteLength > maxBytes) throw new Error('Page exceeds the configured response-size limit.');
+    const bytes = await readBodyLimited(response, maxBytes);
     return { url: parsed.toString(), status: response.status, contentType: type, html: new TextDecoder().decode(bytes) };
   }
   throw new Error('Redirect limit exceeded.');
