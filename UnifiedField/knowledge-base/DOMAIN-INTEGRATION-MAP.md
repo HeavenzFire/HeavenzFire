@@ -5,6 +5,8 @@
 **Branch:** `feat/unified-domain-integration-registry-v0.1`  
 **Rule:** a repository name, README claim, simulation, or passing unit test is not proof of a working end-to-end integration.
 
+**Registry boundary:** this file and `UnifiedField/integrations/registry.json` catalogue concrete adapters and their source evidence. The cross-cutting completeness register in `UnifiedField/QuantumLab/unified-field-completeness.json` tracks whether the mechanisms needed to operate those adapters are complete. These are complementary views, not competing sources of truth. Capability lifecycle and evidence rules are defined by [PR #139](https://github.com/HeavenzFire/HeavenzFire/pull/139); adapter status must never be interpreted as end-to-end verification.
+
 ## Objective
 
 Turn the HeavenzFire repository ecosystem into a composable, local-first system. Each platform or research domain connects through a versioned adapter to shared identity, capability, task, evidence, and policy contracts. Components remain independently versioned; this repository coordinates them without blindly copying or merging upstream code.
