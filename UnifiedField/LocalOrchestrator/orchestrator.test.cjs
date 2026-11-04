@@ -5,7 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { createOrchestrator, readManifest, runBounded } = require('./orchestrator.cjs');
+const { createOrchestrator, readManifest, runBounded, invokeGatewayRuntime } = require('./orchestrator.cjs');
 const { createTaskLedger } = require('./task-ledger.cjs');
 
 async function withServer(options, fn) {
@@ -271,5 +271,92 @@ test('UF-TCP REJECT records a reproduced counterexample and rejects the task', a
     assert.equal(result.verificationStatus, 'rejected');
     assert.equal(result.consensus.decision, -1);
     assert.equal(result.consensus.code, 'REPRODUCIBLE_COUNTEREXAMPLE');
+  });
+});
+
+
+test('gateway provider is loopback-only and requires a bearer token', () => {
+  assert.throws(() => createOrchestrator({
+    provider: 'heavenzfire-api',
+    gatewayUrl: 'http://192.168.1.10:18796',
+    gatewayToken: 'x'.repeat(32)
+  }), /gateway_must_use_http_loopback/);
+  assert.throws(() => createOrchestrator({
+    provider: 'heavenzfire-api',
+    gatewayUrl: 'http://127.0.0.1:18796',
+    gatewayToken: ''
+  }), /gateway_bearer_token_required/);
+});
+
+test('gateway adapter sends authenticated provider/model provenance and captures request ID', async () => {
+  let captured;
+  const result = await invokeGatewayRuntime({
+    agent: { id: 'adversarial-reviewer', objective: 'Try to falsify the claim.' },
+    goal: 'Review commit abcdef.',
+    model: 'gpt-test-model',
+    gatewayUrl: 'http://127.0.0.1:18796',
+    gatewayToken: 'local-bearer-token-123456789',
+    gatewayProvider: 'openai',
+    fetchImpl: async (url, options) => {
+      captured = { url: String(url), options, body: JSON.parse(options.body) };
+      return {
+        ok: true,
+        json: async () => ({
+          id: 'hf-request-123',
+          model: 'gpt-test-model',
+          choices: [{ message: { content: 'Independent review proposal.' } }]
+        })
+      };
+    }
+  });
+
+  assert.equal(captured.url, 'http://127.0.0.1:18796/v1/chat/completions');
+  assert.equal(captured.options.headers.authorization, 'Bearer local-bearer-token-123456789');
+  assert.equal(captured.body.provider, 'openai');
+  assert.equal(captured.body.model, 'gpt-test-model');
+  assert.equal(result.state, 'completed');
+  assert.equal(result.provider, 'openai');
+  assert.equal(result.providerRequestId, 'hf-request-123');
+  assert.equal(result.output, 'Independent review proposal.');
+});
+
+test('gateway adapter fails closed on authentication and empty-response errors', async () => {
+  const base = {
+    agent: { id: 'builder', objective: 'Implement a scoped patch.' },
+    goal: 'Build.',
+    model: 'gpt-test-model',
+    gatewayUrl: 'http://127.0.0.1:18796',
+    gatewayToken: 'local-bearer-token-123456789',
+    gatewayProvider: 'openai'
+  };
+  const unauthorized = await invokeGatewayRuntime({
+    ...base,
+    fetchImpl: async () => ({ ok: false, status: 401 })
+  });
+  assert.equal(unauthorized.state, 'failed');
+  assert.equal(unauthorized.error, 'gateway_unauthorized');
+
+  const empty = await invokeGatewayRuntime({
+    ...base,
+    fetchImpl: async () => ({ ok: true, json: async () => ({ choices: [] }) })
+  });
+  assert.equal(empty.state, 'failed');
+  assert.equal(empty.error, 'gateway_empty_response');
+});
+
+test('health reports the selected authenticated gateway provider without exposing its token', async () => {
+  await withServer({
+    provider: 'heavenzfire-api',
+    gatewayUrl: 'http://127.0.0.1:18796',
+    gatewayToken: 'local-bearer-token-123456789',
+    gatewayProvider: 'openai',
+    model: 'gpt-test-model'
+  }, async base => {
+    const response = await fetch(base + '/health');
+    const health = await response.json();
+    assert.equal(health.provider, 'openai');
+    assert.equal(health.model, 'gpt-test-model');
+    assert.equal(health.execution, 'authenticated-loopback-heavenzfire-api');
+    assert.equal(JSON.stringify(health).includes('local-bearer-token'), false);
   });
 });
