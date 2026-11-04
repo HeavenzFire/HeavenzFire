@@ -101,9 +101,10 @@ function createTaskLedger({ filePath, lockTimeoutMs = 5000, staleLockMs = 30000 
     return withLock(() => {
       const fd = fs.openSync(target, 'a', 0o600);
       try {
+        const buffer = Buffer.from(line, 'utf8');
         let offset = 0;
-        while (offset < Buffer.byteLength(line)) {
-          offset += fs.writeSync(fd, line, offset, Buffer.byteLength(line) - offset, null);
+        while (offset < buffer.length) {
+          offset += fs.writeSync(fd, buffer, offset, buffer.length - offset, null);
         }
         fs.fsyncSync(fd);
       } finally { fs.closeSync(fd); }
