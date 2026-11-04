@@ -5,6 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const { createTaskLedger } = require('./task-ledger.cjs');
+const { evaluate: evaluateUfTcp } = require('../QuantumLab/uf-tcp-policy.cjs');
 
 const DEFAULT_HOST = '127.0.0.1';
 const DEFAULT_PORT = 18797;
@@ -115,7 +116,7 @@ function createOrchestrator(options = {}) {
     catch { throw Object.assign(new Error('invalid_json'), { statusCode: 400 }); }
   }
   function publicTask(task) {
-    return { id: task.id, goal: task.goal, state: task.state, createdAt: task.createdAt, updatedAt: task.updatedAt, approvedAt: task.approvedAt || null, completedAt: task.completedAt || null, error: task.error || null, results: task.results || null };
+    return { id: task.id, goal: task.goal, candidateCommit: task.candidateCommit || null, state: task.state, verificationStatus: task.verificationStatus || 'not_run', consensus: task.consensus || null, createdAt: task.createdAt, updatedAt: task.updatedAt, approvedAt: task.approvedAt || null, completedAt: task.completedAt || null, error: task.error || null, results: task.results || null };
   }
 
   const server = http.createServer(async (req, res) => {
@@ -132,11 +133,14 @@ function createOrchestrator(options = {}) {
       }
       if (req.method === 'POST' && url.pathname === '/api/tasks') {
         const input = await readBody(req);
-        if (typeof input.goal !== 'string' || !input.goal.trim() || input.goal.length > manifest.maxGoalChars) {
+        if (!input || typeof input !== 'object' || Array.isArray(input) || typeof input.goal !== 'string' || !input.goal.trim() || input.goal.length > manifest.maxGoalChars) {
           return json(res, 400, { error: 'goal_required_and_must_be_within_limit', maxGoalChars: manifest.maxGoalChars });
         }
+        if (input.candidateCommit !== undefined && (typeof input.candidateCommit !== 'string' || !/^[a-f0-9]{40}$/i.test(input.candidateCommit))) {
+          return json(res, 400, { error: 'candidate_commit_must_be_a_40_character_git_sha' });
+        }
         const timestamp = now();
-        const task = { id: crypto.randomUUID(), goal: input.goal.trim(), state: 'proposed', createdAt: timestamp, updatedAt: timestamp };
+        const task = { id: crypto.randomUUID(), goal: input.goal.trim(), candidateCommit: input.candidateCommit ? input.candidateCommit.toLowerCase() : null, state: 'proposed', verificationStatus: 'not_run', consensus: null, createdAt: timestamp, updatedAt: timestamp };
         tasks.set(task.id, task);
         ledger.save(task);
         return json(res, 201, { task: publicTask(task), executionStarted: false });
@@ -163,10 +167,37 @@ function createOrchestrator(options = {}) {
           });
           const failed = task.results.filter(result => result.state !== 'completed').length;
           task.state = failed === 0 ? 'completed' : 'failed';
+          task.verificationStatus = failed === 0 ? (task.candidateCommit ? 'pending' : 'not_applicable') : 'blocked';
+          task.consensus = { policy: 'UF-TCP/0.2', decision: 0, label: 'ABSTAIN', code: failed === 0 ? 'VERIFICATION_NOT_RUN' : 'EXECUTION_INCOMPLETE', reasons: [failed === 0 ? 'Role execution completed; independent evidence verification has not run.' : 'Execution was incomplete; no acceptance decision is available.'] };
           task.completedAt = now(); task.updatedAt = task.completedAt;
           ledger.save(task);
           return json(res, failed === 0 ? 200 : 502, { task: publicTask(task), completedRoles: 16 - failed, failedRoles: failed, executionStarted: true });
         } finally { active--; }
+      }
+      const verifyMatch = url.pathname.match(/^\\/api\\/tasks\\/([0-9a-f-]{36})\\/verify$/);
+      if (req.method === 'POST' && verifyMatch) {
+        const task = tasks.get(verifyMatch[1]);
+        if (!task) return json(res, 404, { error: 'task_not_found' });
+        if (task.state !== 'completed') return json(res, 409, { error: 'task_must_be_completed_before_verification', state: task.state });
+        const input = await readBody(req);
+        let outcome;
+        if (!task.candidateCommit) {
+          outcome = { policy: 'UF-TCP/0.2', decision: 0, label: 'ABSTAIN', code: 'CANDIDATE_COMMIT_MISSING', reasons: ['Task has no immutable candidate commit; source verification cannot be bound.'] };
+        } else if (!input || typeof input !== 'object' || Array.isArray(input) ||
+          input.candidate_commit !== task.candidateCommit ||
+          input.reviewed_commit !== task.candidateCommit ||
+          input.tested_commit !== task.candidateCommit) {
+          outcome = { policy: 'UF-TCP/0.2', decision: 0, label: 'ABSTAIN', code: 'REVISION_BINDING_MISMATCH', reasons: ['Candidate, reviewed, and tested revisions must all equal the task-bound commit SHA.'] };
+        } else {
+          outcome = evaluateUfTcp(input);
+        }
+        task.consensus = outcome;
+        task.verificationStatus = outcome.decision === 1 ? 'accepted' : outcome.decision === -1 ? 'rejected' : 'abstain';
+        if (outcome.decision === 1) task.state = 'verified';
+        else if (outcome.decision === -1) task.state = 'rejected';
+        task.updatedAt = now();
+        ledger.save(task);
+        return json(res, 200, { task: publicTask(task), executionStarted: false });
       }
       return json(res, 404, { error: 'not_found' });
     } catch (error) {
