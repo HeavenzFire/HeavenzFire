@@ -37,6 +37,25 @@ Invoke-RestMethod http://127.0.0.1:18797/health
 Invoke-RestMethod http://127.0.0.1:18797/api/agents
 ```
 
+## Hosted model adapter through the existing HeavenzFire API
+
+The orchestrator can keep its local scheduler, JSONL ledger, approvals, and UF-TCP gate while dispatching role calls through the existing authenticated HeavenzFire API. This reuses the provider adapters in `services/heavenzfire-api/server.cjs`; it does not create a second provider registry or expose provider credentials to the orchestrator.
+
+Start the API on loopback with `HF_API_KEYS` configured and the desired provider credential configured in that API process. Then set these variables in the orchestrator's PowerShell process:
+
+```powershell
+$env:HF_ORCHESTRATOR_PROVIDER = 'heavenzfire-api'
+$env:HF_GATEWAY_URL = 'http://127.0.0.1:18796'
+$env:HF_GATEWAY_API_KEY = '<same local bearer token configured in HF_API_KEYS>'
+$env:HF_GATEWAY_PROVIDER = 'openai'
+$env:HF_GATEWAY_MODEL = 'gpt-4.1-mini'
+node .\\UnifiedField\\LocalOrchestrator\\orchestrator.cjs
+```
+
+Use `HF_GATEWAY_PROVIDER` values supported by the API: `openai`, `gemini`, `ollama`, `anthropic`, `mistral`, `qwen`, `groq`, `openrouter`, or `custom`. Set `HF_GATEWAY_MODEL` to a model actually enabled for that provider. The gateway URL is restricted to HTTP loopback and the local bearer token is required. The orchestrator stores provider name, model, and returned request IDs with task execution metadata; it never stores the bearer token or provider API key.
+
+The API key for OpenAI (or another hosted provider) remains only in the API server's environment/secret store. ChatGPT subscription access is not converted into API access or billing. This adapter connects to the configured provider API through the local gateway; it does not attach this ChatGPT web session's private runtime.
+
 ## Task lifecycle
 
 1. Submit a proposal: `POST /api/tasks` with JSON `{"goal":"Review a local change" }`.
