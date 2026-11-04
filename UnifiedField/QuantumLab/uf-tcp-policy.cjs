@@ -47,8 +47,8 @@ function evaluate(input) {
     return result(-1, 'REPRODUCIBLE_COUNTEREXAMPLE',
       counterexamples.filter(x => x && x.status === 'reproduced').map(x => 'Reproducible counterexample: ' + String(x.id || 'unnamed')), input);
   }
-  if (counterexamples.some(x => !x || !['unresolved', 'refuted'].includes(x.status))) {
-    return result(0, 'COUNTEREXAMPLE_STATUS_UNKNOWN', ['A counterexample is malformed or unresolved.'], input);
+  if (counterexamples.some(x => !x || x.status !== 'refuted')) {
+    return result(0, 'COUNTEREXAMPLE_UNRESOLVED', ['Every recorded counterexample must be explicitly refuted before acceptance.'], input);
   }
 
   const mandatory = Array.isArray(input.mandatory_invariants) ? input.mandatory_invariants : [];
