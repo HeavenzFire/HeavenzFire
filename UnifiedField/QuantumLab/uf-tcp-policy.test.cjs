@@ -8,18 +8,20 @@ const digest = 'a'.repeat(64);
 function valid(overrides = {}) {
   const gates = Object.fromEntries(REQUIRED_GATES.map(k => [k, true]));
   return {
+    proposer_id: 'assistant-proposer',
     mandatory_invariants: [{ id: 'no-secret-leak', status: 'pass' }],
+    counterexamples: [],
     gates,
     evidence_sha256: digest,
     verifiers: [
-      { id: 'reviewer-a', independent: true, evidence_sha256: digest, decision: 1, rationale: 'Reviewed diff and test evidence.' },
-      { id: 'reviewer-b', independent: true, evidence_sha256: digest, decision: 1, rationale: 'Repeated checks independently.' }
+      { id: 'reviewer-a', identity: 'reviewer-process-a', execution_id: 'exec-a', isolation_id: 'sandbox-a', independent: true, evidence_sha256: digest, decision: 1, rationale: 'Reviewed diff and test evidence.' },
+      { id: 'reviewer-b', identity: 'reviewer-process-b', execution_id: 'exec-b', isolation_id: 'sandbox-b', independent: true, evidence_sha256: digest, decision: 1, rationale: 'Repeated checks independently.' }
     ],
     ...overrides
   };
 }
 
-test('accepts only when every gate and two unique verifiers pass', () => {
+test('accepts only when every gate and two structurally distinct verifiers pass', () => {
   assert.equal(evaluate(valid()).decision, DECISION.ACCEPT);
   assert.equal(evaluate(valid()).code, 'ALL_GATES_PASSED');
 });
@@ -30,8 +32,9 @@ test('mandatory invariant failure rejects regardless of verifier votes', () => {
   assert.equal(evaluate(input).code, 'MANDATORY_INVARIANT_FAILED');
 });
 
-test('unknown mandatory invariant abstains', () => {
+test('unknown or absent mandatory invariants abstain', () => {
   assert.equal(evaluate(valid({ mandatory_invariants: [{ id: 'x', status: 'unknown' }] })).decision, 0);
+  assert.equal(evaluate(valid({ mandatory_invariants: [] })).decision, 0);
 });
 
 test('failed required gate rejects', () => {
@@ -61,6 +64,31 @@ test('verifier disagreement abstains until a discriminating test resolves it', (
   const outcome = evaluate(valid({ verifiers: v }));
   assert.equal(outcome.decision, 0);
   assert.equal(outcome.code, 'VERIFIER_DISAGREEMENT');
+});
+
+test('a reproduced counterexample rejects even when all verifiers accept', () => {
+  const outcome = evaluate(valid({ counterexamples: [{ id: 'counterexample-1', status: 'reproduced' }] }));
+  assert.equal(outcome.decision, -1);
+  assert.equal(outcome.code, 'REPRODUCIBLE_COUNTEREXAMPLE');
+});
+
+test('unresolved or malformed counterexample evidence abstains', () => {
+  assert.equal(evaluate(valid({ counterexamples: [{ id: 'ce-1', status: 'unresolved' }] })).decision, 0);
+  assert.equal(evaluate(valid({ counterexamples: [{ id: 'ce-1', status: 'unknown' }] })).decision, 0);
+});
+
+test('proposer cannot verify own work', () => {
+  const v = valid().verifiers;
+  v[0] = { ...v[0], identity: 'assistant-proposer' };
+  assert.equal(evaluate(valid({ verifiers: v })).decision, 0);
+});
+
+test('verifier execution and isolation contexts must be distinct', () => {
+  const v = valid().verifiers;
+  v[1] = { ...v[1], execution_id: v[0].execution_id };
+  assert.equal(evaluate(valid({ verifiers: v })).decision, 0);
+  v[1] = { ...v[1], execution_id: 'exec-b', isolation_id: v[0].isolation_id };
+  assert.equal(evaluate(valid({ verifiers: v })).decision, 0);
 });
 
 test('verifier evidence must match the reviewed digest', () => {
