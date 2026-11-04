@@ -115,7 +115,7 @@ function createOrchestrator(options = {}) {
     catch { throw Object.assign(new Error('invalid_json'), { statusCode: 400 }); }
   }
   function publicTask(task) {
-    return { id: task.id, goal: task.goal, state: task.state, createdAt: task.createdAt, updatedAt: task.updatedAt, approvedAt: task.approvedAt || null, completedAt: task.completedAt || null, results: task.results || null };
+    return { id: task.id, goal: task.goal, state: task.state, createdAt: task.createdAt, updatedAt: task.updatedAt, approvedAt: task.approvedAt || null, completedAt: task.completedAt || null, error: task.error || null, results: task.results || null };
   }
 
   const server = http.createServer(async (req, res) => {
