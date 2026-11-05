@@ -9,6 +9,7 @@ const { execFileSync } = require('node:child_process');
 const { URL } = require('node:url');
 const github = require('./github.cjs');
 const githubWrite = require('./github-write.cjs');
+const { resolveTrustedApproval } = require('../FieldCore/trusted-approval.cjs');
 const { createTaskRecord } = require('../FieldCore/shared-task-contract.cjs');
 
 const HOST = '127.0.0.1';
@@ -44,16 +45,6 @@ async function bodyJson(req) {
   catch { throw Object.assign(new Error('invalid_json'), { statusCode: 400 }); }
 }
 
-function safeApproval(input) {
-  const approval = input && input.approval;
-  if (!approval || approval.approved !== true ||
-      typeof approval.approvedBy !== 'string' || !approval.approvedBy.trim() ||
-      typeof approval.reason !== 'string' || !approval.reason.trim()) {
-    throw Object.assign(new Error('explicit_approval_required: provide approval.approved=true, approvedBy, and reason'), { statusCode: 403 });
-  }
-  return { approvedBy: approval.approvedBy.trim().slice(0, 128), reason: approval.reason.trim().slice(0, 1000) };
-}
-
 function safeIdempotencyKey(value) {
   if (typeof value !== 'string' || !/^[A-Za-z0-9._:-]{12,128}$/.test(value)) {
     throw Object.assign(new Error('idempotencyKey must be 12-128 safe characters'), { statusCode: 400 });
@@ -71,6 +62,7 @@ function createGitHubBridgeServer(options = {}) {
   const fetchImpl = options.fetchImpl || fetch;
   const readApi = options.readApi || github;
   const writeApi = options.writeApi || githubWrite;
+  const approvalVerifier = typeof options.approvalVerifier === 'function' ? options.approvalVerifier : null;
   const tokenProvider = options.tokenProvider || (() => execFileSync('gh', ['auth', 'token', '--hostname', 'github.com'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], windowsHide: true }).trim());
   const ownerConfig = options.allowedOwners || process.env.HF_GITHUB_OWNERS || 'HeavenzFire';
   const allowedOwners = new Set((Array.isArray(ownerConfig) ? ownerConfig : String(ownerConfig).split(',')).map(x => String(x).trim().toLowerCase()).filter(Boolean));
@@ -142,12 +134,13 @@ function createGitHubBridgeServer(options = {}) {
   }
 
   async function writeOnce(input, action, operation) {
-    const approval = safeApproval(input);
     const key = safeIdempotencyKey(input.idempotencyKey);
-    const fingerprint = crypto.createHash('sha256').update(JSON.stringify({ action, input: { ...input, approval: undefined } })).digest('hex');
+    const fingerprintInput = { ...input, approval: undefined, approvalEvidence: undefined };
+    const fingerprint = crypto.createHash('sha256').update(JSON.stringify({ action, input: fingerprintInput })).digest('hex');
     const prior = idempotency.get(key);
+    if (prior && prior.fingerprint !== fingerprint) throw Object.assign(new Error('idempotency_key_conflict'), { statusCode: 409 });
+    const approval = await resolveTrustedApproval({ verifier: approvalVerifier, action, subject: { fingerprint }, evidence: input.approvalEvidence });
     if (prior) {
-      if (prior.fingerprint !== fingerprint) throw Object.assign(new Error('idempotency_key_conflict'), { statusCode: 409 });
       if (prior.type === 'write_completed') return { ...prior.result, idempotentReplay: true };
       throw Object.assign(new Error('idempotency_key_in_progress_or_outcome_unknown'), { statusCode: 409 });
     }
@@ -185,11 +178,14 @@ function createGitHubBridgeServer(options = {}) {
       if (req.method === 'GET' && url.pathname === '/health') {
         let auth = 'unverified';
         try { getToken(); auth = 'github-cli-authenticated'; } catch { auth = 'github-cli-auth-missing'; }
+        const approvalVerifierConfigured = typeof approvalVerifier === 'function';
+        const capabilities = ['repository-read', 'issues-read', 'pull-requests-read', 'commits-read', 'files-read', 'task-proposals', 'durable-audit', 'idempotency'];
+        if (approvalVerifierConfigured) capabilities.push('issues-write', 'pull-requests-write', 'feature-branches', 'branch-file-commits', 'task-execution');
         return send(res, 200, {
           ok: true, service: 'heavenzfire-unified-field-github-bridge',
           host, port: server.address()?.port || port,
           githubAuth: auth, allowedOwners: [...allowedOwners],
-          capabilities: ['repository-read', 'issues-read-write', 'pull-requests-read-write', 'feature-branches', 'branch-file-commits', 'durable-audit', 'idempotency', 'task-inbox', '16-role-orchestrator'],
+          approvalVerifierConfigured, writesEnabled: approvalVerifierConfigured, capabilities,
           defaultBranchWrites: false, merges: false, auditEvents: audit.length
         });
       }
@@ -211,9 +207,10 @@ function createGitHubBridgeServer(options = {}) {
       const taskRun = url.pathname.match(/^\/api\/tasks\/([0-9a-f-]{36})\/run$/);
       if (req.method === 'POST' && taskRun) {
         const input = await bodyJson(req);
-        const approval = safeApproval(input);
         const taskEvent = taskLinks.get(taskRun[1]);
         if (!taskEvent) throw Object.assign(new Error('task_not_found_in_bridge_ledger'), { statusCode: 404 });
+        const approvalContext = { taskId: taskRun[1], goalHash: taskEvent.goalHash };
+        const approval = await resolveTrustedApproval({ verifier: approvalVerifier, action: 'execute_task', subject: approvalContext, evidence: input.approvalEvidence });
         const priorRun = taskRuns.get(taskRun[1]);
         if (priorRun?.type === 'task_execution_completed') {
           return send(res, 200, { ok: true, idempotentReplay: true, result: priorRun.result });
@@ -224,7 +221,7 @@ function createGitHubBridgeServer(options = {}) {
         const created = await remoteJson(orchestratorUrl + '/api/tasks', 'POST', { goal: taskEvent.goal || 'Execute task ' + taskRun[1] + '; see durable inbox task record.' });
         const orchestratorTaskId = created.task?.id;
         if (!orchestratorTaskId) throw new Error('orchestrator_task_creation_failed');
-        await remoteJson(orchestratorUrl + '/api/tasks/' + orchestratorTaskId + '/approve', 'POST', { approve: true });
+        await remoteJson(orchestratorUrl + '/api/tasks/' + orchestratorTaskId + '/approve', 'POST', { approve: true, approvalEvidence: input.approvalEvidence, approvalContext });
         append({ type: 'task_execution_started', taskId: taskRun[1], orchestratorTaskId, approval });
         const result = await remoteJson(orchestratorUrl + '/api/tasks/' + orchestratorTaskId + '/run', 'POST', {}, options.orchestratorTimeoutMs || ORCHESTRATOR_TIMEOUT_MS);
         append({ type: 'task_execution_completed', taskId: taskRun[1], orchestratorTaskId, approval, result });
@@ -348,4 +345,4 @@ if (require.main === module) {
   server.listen(port, HOST, () => process.stdout.write('HeavenzFire GitHub bridge listening on http://' + HOST + ':' + port + '\n'));
 }
 
-module.exports = { createGitHubBridgeServer, safeApproval, safeIdempotencyKey, HOST, PORT, DEFAULT_AUDIT, ORCHESTRATOR_TIMEOUT_MS };
+module.exports = { createGitHubBridgeServer, safeIdempotencyKey, HOST, PORT, DEFAULT_AUDIT, ORCHESTRATOR_TIMEOUT_MS };

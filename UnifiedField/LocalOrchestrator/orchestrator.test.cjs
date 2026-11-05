@@ -7,10 +7,20 @@ const os = require('node:os');
 const path = require('node:path');
 const { createOrchestrator, readManifest, runBounded, invokeGatewayRuntime } = require('./orchestrator.cjs');
 const { createTaskLedger } = require('./task-ledger.cjs');
+const crypto = require('node:crypto');
+
+const TEST_APPROVAL_EVIDENCE = Object.freeze({ fixture: 'trusted-human-approval-test' });
+async function testApprovalVerifier({ action, subject, evidence }) {
+  if (!evidence || evidence.fixture !== TEST_APPROVAL_EVIDENCE.fixture || !subject || typeof subject !== 'object') throw new Error('test_approval_evidence_invalid');
+  return { approved: true, approvalId: 'test-approval-' + String(subject.taskId || action), approvedBy: 'verified-test-operator', reason: 'Deterministic test approval fixture.', method: 'injected-test-verifier', verifiedAt: '2026-11-05T08:00:00.000Z' };
+}
+function taskApprovalPayload(taskId, goal) {
+  return { approve: true, approvalContext: { taskId, goalHash: crypto.createHash('sha256').update(goal).digest('hex') }, approvalEvidence: TEST_APPROVAL_EVIDENCE };
+}
 
 async function withServer(options, fn) {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'hf-orchestrator-test-'));
-  const app = createOrchestrator({ port: 0, ledgerPath: path.join(tempDir, 'tasks.jsonl'), invoke: async ({ agent }) => ({ agentId: agent.id, state: 'completed', output: 'verified-test-stub' }), ...options });
+  const app = createOrchestrator({ port: 0, ledgerPath: path.join(tempDir, 'tasks.jsonl'), invoke: async ({ agent }) => ({ agentId: agent.id, state: 'completed', output: 'verified-test-stub' }), approvalVerifier: testApprovalVerifier, ...options });
   await new Promise(resolve => app.server.listen(0, '127.0.0.1', resolve));
   const address = app.server.address();
   try { await fn('http://127.0.0.1:' + address.port); }
@@ -34,7 +44,7 @@ async function createCompletedTask(base, candidateCommit) {
   const approved = await fetch(base + '/api/tasks/' + task.id + '/approve', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ approve: true })
+    body: JSON.stringify(taskApprovalPayload(task.id, body.goal))
   });
   assert.equal(approved.status, 200);
   const ran = await fetch(base + '/api/tasks/' + task.id + '/run', {
@@ -93,7 +103,7 @@ test('proposal cannot run until explicit approval and then fans out to all 16 ro
     const denied = await fetch(base + '/api/tasks/' + task.id + '/run', { method: 'POST', headers: {'content-type':'application/json'}, body: '{}' });
     assert.equal(denied.status, 409);
     assert.equal(calls, 0);
-    const approved = await fetch(base + '/api/tasks/' + task.id + '/approve', { method: 'POST', headers: {'content-type':'application/json'}, body: JSON.stringify({ approve: true }) });
+    const approved = await fetch(base + '/api/tasks/' + task.id + '/approve', { method: 'POST', headers: {'content-type':'application/json'}, body: JSON.stringify(taskApprovalPayload(task.id, 'Review the local orchestrator safely.')) });
     assert.equal(approved.status, 200);
     const ran = await fetch(base + '/api/tasks/' + task.id + '/run', { method: 'POST', headers: {'content-type':'application/json'}, body: '{}' });
     assert.equal(ran.status, 200);
@@ -101,9 +111,23 @@ test('proposal cannot run until explicit approval and then fans out to all 16 ro
     assert.equal(result.completedRoles, 16);
     assert.equal(result.task.results.length, 16);
     assert.equal(result.task.state, 'completed');
+    assert.equal(result.task.approval.approvedBy, 'verified-test-operator');
+    assert.ok(result.task.approval.evidenceSha256);
     assert.equal(result.task.consensus.decision, 0);
     assert.equal(result.task.consensus.code, 'VERIFICATION_NOT_RUN');
     assert.equal(calls, 16);
+  });
+});
+
+test('self-asserted request fields cannot approve a task without a trusted verifier', async () => {
+  await withServer({ approvalVerifier: null }, async base => {
+    const created = await fetch(base + '/api/tasks', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ goal: 'approval must be attributable' }) });
+    const task = (await created.json()).task;
+    const response = await fetch(base + '/api/tasks/' + task.id + '/approve', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ approve: true, approvedBy: 'operator', reason: 'self-asserted', approval: { approved: true } }) });
+    assert.equal(response.status, 503);
+    assert.equal((await response.json()).error, 'trusted_approval_verifier_not_configured');
+    const state = await fetch(base + '/api/tasks/' + task.id);
+    assert.equal((await state.json()).task.state, 'proposed');
   });
 });
 
@@ -368,6 +392,7 @@ test('task scheduler dispatches all role calls through the authenticated Heavenz
   const app = createOrchestrator({
     port: 0,
     ledgerPath: path.join(directory, 'tasks.jsonl'),
+    approvalVerifier: testApprovalVerifier,
     provider: 'heavenzfire-api',
     gatewayUrl: 'http://127.0.0.1:18796',
     gatewayToken: 'local-bearer-token-123456789',
@@ -402,7 +427,7 @@ test('task scheduler dispatches all role calls through the authenticated Heavenz
     await fetch(base + '/api/tasks/' + task.id + '/approve', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ approve: true })
+      body: JSON.stringify(taskApprovalPayload(task.id, 'Exercise the hosted model adapter.'))
     });
     const response = await fetch(base + '/api/tasks/' + task.id + '/run', {
       method: 'POST',

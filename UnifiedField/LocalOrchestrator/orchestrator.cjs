@@ -6,6 +6,7 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 const { createTaskLedger } = require('./task-ledger.cjs');
 const { evaluate: evaluateUfTcp } = require('../QuantumLab/uf-tcp-policy.cjs');
+const { resolveTrustedApproval } = require('../FieldCore/trusted-approval.cjs');
 
 const DEFAULT_HOST = '127.0.0.1';
 const DEFAULT_PORT = 18797;
@@ -152,6 +153,7 @@ function createOrchestrator(options = {}) {
     throw new Error('ollama_must_use_http_loopback_without_credentials');
   }
   const invoke = options.invoke || (provider === 'heavenzfire-api' ? invokeGatewayRuntime : invokeLocalRuntime);
+  const approvalVerifier = typeof options.approvalVerifier === 'function' ? options.approvalVerifier : null;
   const now = options.now || (() => new Date().toISOString());
   const ledger = options.ledger || createTaskLedger({ filePath: options.ledgerPath || process.env.HF_TASK_LEDGER_PATH || path.join(__dirname, 'data', 'tasks.jsonl') });
   const tasks = new Map(ledger.load().map(task => [task.id, task]));
@@ -180,14 +182,14 @@ function createOrchestrator(options = {}) {
     catch { throw Object.assign(new Error('invalid_json'), { statusCode: 400 }); }
   }
   function publicTask(task) {
-    return { id: task.id, goal: task.goal, candidateCommit: task.candidateCommit || null, state: task.state, verificationStatus: task.verificationStatus || 'not_run', consensus: task.consensus || null, createdAt: task.createdAt, updatedAt: task.updatedAt, approvedAt: task.approvedAt || null, completedAt: task.completedAt || null, error: task.error || null, execution: task.execution || null, results: task.results || null };
+    return { id: task.id, goal: task.goal, candidateCommit: task.candidateCommit || null, state: task.state, verificationStatus: task.verificationStatus || 'not_run', consensus: task.consensus || null, approval: task.approval || null, createdAt: task.createdAt, updatedAt: task.updatedAt, approvedAt: task.approvedAt || null, completedAt: task.completedAt || null, error: task.error || null, execution: task.execution || null, results: task.results || null };
   }
 
   const server = http.createServer(async (req, res) => {
     try {
       const url = new URL(req.url, 'http://127.0.0.1');
       if (req.method === 'GET' && url.pathname === '/health') {
-        return json(res, 200, { ok: true, service: 'heavenzfire-local-16-agent-orchestrator', bind: host, port, agentRoles: manifest.agents.length, maxParallel: manifest.maxParallel, activeRuns: active, provider: provider === 'heavenzfire-api' ? gatewayProvider : 'ollama', model, execution: provider === 'heavenzfire-api' ? 'authenticated-loopback-heavenzfire-api' : 'local-model-analysis-only', browserExtensionRequired: false });
+        return json(res, 200, { ok: true, service: 'heavenzfire-local-16-agent-orchestrator', bind: host, port, agentRoles: manifest.agents.length, maxParallel: manifest.maxParallel, activeRuns: active, provider: provider === 'heavenzfire-api' ? gatewayProvider : 'ollama', model, execution: provider === 'heavenzfire-api' ? 'authenticated-loopback-heavenzfire-api' : 'local-model-analysis-only', approvalVerifierConfigured: typeof approvalVerifier === 'function', browserExtensionRequired: false });
       }
       if (req.method === 'GET' && url.pathname === '/api/agents') {
         return json(res, 200, { count: manifest.agents.length, agents: manifest.agents.map(a => ({ id: a.id, objective: a.objective, state: 'AVAILABLE_ROLE_NOT_PROCESS_HEALTH' })) });
@@ -217,6 +219,11 @@ function createOrchestrator(options = {}) {
           const input = await readBody(req);
           if (input.approve !== true) return json(res, 400, { error: 'explicit_approve_true_required' });
           if (task.state !== 'proposed') return json(res, 409, { error: 'task_not_proposed', state: task.state });
+          const goalHash = crypto.createHash('sha256').update(task.goal).digest('hex');
+          const context = input.approvalContext;
+          if (!context || typeof context.taskId !== 'string' || !context.taskId.trim() || context.goalHash !== goalHash) return json(res, 403, { error: 'approval_context_mismatch' });
+          const approval = await resolveTrustedApproval({ verifier: approvalVerifier, action: 'execute_task', subject: { taskId: context.taskId, goalHash }, evidence: input.approvalEvidence });
+          task.approval = approval;
           task.state = 'approved'; task.approvedAt = now(); task.updatedAt = task.approvedAt;
           ledger.save(task);
           return json(res, 200, { task: publicTask(task), executionStarted: false });
