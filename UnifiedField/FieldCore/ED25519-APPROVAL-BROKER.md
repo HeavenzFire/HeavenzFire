@@ -44,12 +44,12 @@ Persist the private key outside the repository with restrictive OS permissions. 
 ## Release gates not satisfied by this library alone
 
 - No Windows OS-authenticated approval UI or operator identity enrollment is provided.
-- No production bridge/orchestrator entrypoint is wired to this verifier yet.
+- Bridge and LocalOrchestrator entrypoints now support opt-in verifier wiring through the public-key and replay-state environment variables; this path has not yet been validated on the actual Windows host.
 - Replay state directory permissions, backup/restore, multi-process locking and filesystem semantics must be validated on the actual Windows host.
 - The signer must run in an operator-controlled process, not an agent or model.
 - CI unit tests are not evidence of a real human approval ceremony or host deployment.
 
-Keep `approvalVerifier` unset in production until those gates are addressed. That preserves the current read-only / no-task-execution default.
+Keep `HF_APPROVAL_PUBLIC_KEY_FILE` unset in production until those gates are addressed. That preserves the current read-only / no-task-execution default. Configuring it opts both services into signature verification and should only happen after key custody and state-directory permissions have been reviewed.
 
 ## Operator key and signing CLI
 
