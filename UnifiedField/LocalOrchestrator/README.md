@@ -68,6 +68,25 @@ Use `HF_GATEWAY_PROVIDER` values supported by the API: `openai`, `gemini`, `olla
 
 The API key for OpenAI (or another hosted provider) remains only in the API server's environment/secret store. ChatGPT subscription access is not converted into API access or billing. This adapter connects to the configured provider API through the local gateway; it does not attach this ChatGPT web session's private runtime.
 
+### Secure ARM32-to-ARM64 transport with Tailscale Serve
+
+The orchestrator still binds only to `127.0.0.1`. Its gateway transport defaults to `loopback`; remote routing is opt-in and accepts only an HTTPS hostname under the `.ts.net` domain on the standard HTTPS port. TLS certificate validation remains enabled, redirects are rejected, and the existing gateway bearer token is required. This mode is intended for an ARM64 worker whose HeavenzFire API remains bound to its own loopback interface and is published only to the tailnet through Tailscale Serve. Do not set `HF_ALLOW_REMOTE_BIND=true` on the worker.
+
+On the ARM64 worker, configure `services/heavenzfire-api/server.cjs` on `127.0.0.1:18796` with a long random `HF_API_KEYS` token and the chosen inference provider. Publish that loopback service with Tailscale Serve using its HTTPS listener (for example, `tailscale serve --bg --https=443 http://127.0.0.1:18796`). Confirm the Serve status and tailnet ACLs permit only the intended coordinator device. Do not use Funnel or expose the service to the public internet.
+
+On the ARM32 coordinator, configure:
+
+```sh
+export HF_ORCHESTRATOR_PROVIDER=heavenzfire-api
+export HF_GATEWAY_TRANSPORT=tailnet-https
+export HF_GATEWAY_URL=https://ARM64-WORKER.TAILNET.ts.net
+export HF_GATEWAY_API_KEY='same-long-random-token-configured-in-worker-HF_API_KEYS'
+export HF_GATEWAY_PROVIDER=ollama
+export HF_GATEWAY_MODEL='the-exact-model-enabled-on-the-worker'
+```
+
+Keep the token in the Termux environment or a protected local secret file; never commit it or paste it into chat. The `.ts.net` hostname is a placeholder until the worker's actual Tailscale DNS name is confirmed. This code path has deterministic policy tests, but a successful handshake and real inference still require both devices to be online and the exact hostname/model to be supplied. Tailscale Serve command syntax and device ACLs must be confirmed on the installed Tailscale version before launch.
+
 ## Task lifecycle
 
 1. Submit a proposal: `POST /api/tasks` with JSON `{"goal":"Review a local change" }`.
