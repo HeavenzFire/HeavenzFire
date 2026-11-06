@@ -314,6 +314,11 @@ test('llama.cpp provider is restricted to an unauthenticated HTTP loopback endpo
     provider: 'llama-cpp',
     llamaCppUrl: 'http://127.0.0.1:18080'
   }));
+  assert.doesNotThrow(() => createOrchestrator({
+    provider: 'llama-cpp',
+    llamaCppUrl: 'http://127.0.0.1:18080',
+    ollamaUrl: 'https://unused-ollama.example'
+  }));
 });
 
 test('llama.cpp adapter sends OpenAI-compatible local chat requests without forwarding credentials', async () => {
