@@ -239,6 +239,12 @@ function createServer(options = {}) {
   if (tailnetOnly && (allowedClients.size === 0 || [...allowedClients].some(address => !isTailscaleIPv4(address)))) {
     throw new Error('tailnet_only_requires_exact_tailscale_ipv4_client_allowlist');
   }
+  if (tailnetOnly) {
+    const keys = (process.env.HF_API_KEYS || '').split(',').map(value => value.trim()).filter(Boolean);
+    if (!keys.length || keys.some(key => key.length < 32)) {
+      throw new Error('tailnet_only_requires_api_keys_minimum_32_characters');
+    }
+  }
   const remoteAddress = options.remoteAddressResolver || (req => req.socket.remoteAddress || '');
   return http.createServer(async (req, res) => {
     const peerAddress = normalizePeerIPv4(remoteAddress(req));
