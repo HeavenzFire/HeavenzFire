@@ -32,6 +32,7 @@ jobs:
           node --check UnifiedField/PeerLink/peerlink-hub.cjs
           node --check UnifiedField/PeerLink/peerlink-agent.cjs
           node --check UnifiedField/PeerLink/peerlink.cjs
+          node --check UnifiedField/PeerLink/peerlink-client.cjs
           node --check UnifiedField/PeerLink/peerlink.test.cjs
       - name: Run PeerLink and orchestrator integration tests
         run: |
