@@ -47,7 +47,9 @@ function signApproval({ privateKey, action, subject, approvedBy, reason, nonce =
 function createEd25519ApprovalVerifier({ publicKey, stateDir, now = () => Date.now() }) {
   if (!publicKey) throw new Error('approval_public_key_required');
   if (!stateDir) throw new Error('approval_state_dir_required');
-  const key = crypto.createPublicKey(publicKey);
+  let key;
+  try { key = crypto.createPublicKey(publicKey); }
+  catch { throw new Error('approval_public_key_invalid'); }
   if (key.asymmetricKeyType !== 'ed25519') throw new Error('approval_public_key_must_be_ed25519');
   fs.mkdirSync(stateDir, { recursive: true, mode: 0o700 });
   return async ({ action, subject, evidence }) => {
