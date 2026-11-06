@@ -1,0 +1,36 @@
+name: HeavenzFire PeerLink v0.1
+
+on:
+  pull_request:
+    paths:
+      - 'UnifiedField/PeerLink/**'
+      - '.github/workflows/peerlink.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'UnifiedField/PeerLink/**'
+      - '.github/workflows/peerlink.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  peerlink-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check PeerLink syntax
+        run: |
+          node --check UnifiedField/PeerLink/peerlink-protocol.cjs
+          node --check UnifiedField/PeerLink/peerlink-hub.cjs
+          node --check UnifiedField/PeerLink/peerlink-agent.cjs
+          node --check UnifiedField/PeerLink/peerlink.cjs
+          node --check UnifiedField/PeerLink/peerlink.test.cjs
+      - name: Run PeerLink integration tests
+        run: node --test UnifiedField/PeerLink/peerlink.test.cjs
