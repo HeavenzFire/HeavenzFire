@@ -6,7 +6,8 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 const { createTaskLedger } = require('./task-ledger.cjs');
 const { evaluate: evaluateUfTcp } = require('../QuantumLab/uf-tcp-policy.cjs');
-const { resolveTrustedApproval } = require('../FieldCore/trusted-approval.cjs');\nconst { createApprovalVerifierFromEnv } = require('../FieldCore/ed25519-approval-broker.cjs');
+const { resolveTrustedApproval } = require('../FieldCore/trusted-approval.cjs');
+const { createApprovalVerifierFromEnv } = require('../FieldCore/ed25519-approval-broker.cjs');
 
 const DEFAULT_HOST = '127.0.0.1';
 const DEFAULT_PORT = 18797;
@@ -357,7 +358,8 @@ if (require.main === module) {
       : process.env.HF_LOCAL_MODEL || DEFAULT_MODEL;
   const ollamaUrl = process.env.HF_OLLAMA_URL || DEFAULT_OLLAMA;
   const llamaCppUrl = process.env.HF_LLAMA_CPP_URL || DEFAULT_LLAMA_CPP;
-  const approvalVerifier = createApprovalVerifierFromEnv({ serviceId: 'local-orchestrator' });\n  const app = createOrchestrator({ host, port, model, ollamaUrl, llamaCppUrl, provider, approvalVerifier });
+  const approvalVerifier = createApprovalVerifierFromEnv({ serviceId: 'local-orchestrator' });
+  const app = createOrchestrator({ host, port, model, ollamaUrl, llamaCppUrl, provider, approvalVerifier });
   app.server.listen(port, host, () => {
     process.stdout.write(JSON.stringify({ event: 'listening', host, port, roles: app.manifest.agents.length, maxParallel: app.manifest.maxParallel, provider, model }) + '\n');
   });
