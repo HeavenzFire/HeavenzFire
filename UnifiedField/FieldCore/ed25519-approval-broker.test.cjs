@@ -6,7 +6,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const {
-  createEd25519ApprovalVerifier, signApproval, generateEd25519KeyPair
+  createEd25519ApprovalVerifier, createApprovalVerifierFromEnv, signApproval, generateEd25519KeyPair
 } = require('./ed25519-approval-broker.cjs');
 
 function fixture(t) {
@@ -73,4 +73,30 @@ test('invalid public keys and envelopes fail closed', async t => {
   const f = fixture(t);
   assert.throws(() => createEd25519ApprovalVerifier({ publicKey: 'not-a-key', stateDir: f.dir }), /public_key/);
   await assert.rejects(f.verifier({ action: 'execute_task', subject, evidence: { payload: {}, signature: 'x' } }));
+});
+
+test('environment configuration creates isolated replay stores per service', async t => {
+  const f = fixture(t);
+  const publicPath = path.join(f.dir, 'approval-public.pem');
+  fs.writeFileSync(publicPath, f.keys.publicKey);
+  const previousKey = process.env.HF_APPROVAL_PUBLIC_KEY_FILE;
+  const previousState = process.env.HF_APPROVAL_STATE_DIR;
+  t.after(() => {
+    if (previousKey === undefined) delete process.env.HF_APPROVAL_PUBLIC_KEY_FILE;
+    else process.env.HF_APPROVAL_PUBLIC_KEY_FILE = previousKey;
+    if (previousState === undefined) delete process.env.HF_APPROVAL_STATE_DIR;
+    else process.env.HF_APPROVAL_STATE_DIR = previousState;
+  });
+  delete process.env.HF_APPROVAL_PUBLIC_KEY_FILE;
+  delete process.env.HF_APPROVAL_STATE_DIR;
+  assert.equal(createApprovalVerifierFromEnv({ serviceId: 'github-bridge' }), null);
+  process.env.HF_APPROVAL_PUBLIC_KEY_FILE = publicPath;
+  process.env.HF_APPROVAL_STATE_DIR = path.join(f.dir, 'services');
+  const bridge = createApprovalVerifierFromEnv({ serviceId: 'github-bridge' });
+  const orchestrator = createApprovalVerifierFromEnv({ serviceId: 'local-orchestrator' });
+  const evidence = signed(f.keys);
+  await bridge({ action: 'execute_task', subject, evidence });
+  await orchestrator({ action: 'execute_task', subject, evidence });
+  await assert.rejects(bridge({ action: 'execute_task', subject, evidence }), /replay_rejected/);
+  await assert.rejects(orchestrator({ action: 'execute_task', subject, evidence }), /replay_rejected/);
 });
