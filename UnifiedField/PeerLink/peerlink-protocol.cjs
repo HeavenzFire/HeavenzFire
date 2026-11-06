@@ -24,7 +24,7 @@ function send(res, status, body) {
 
 function readJson(req, maxBytes = MAX_BODY_BYTES) {
   return new Promise((resolve, reject) => {
-    let raw = '';
+    const chunks = [];
     let bytes = 0;
     req.on('data', chunk => {
       bytes += chunk.length;
@@ -34,10 +34,11 @@ function readJson(req, maxBytes = MAX_BODY_BYTES) {
         req.destroy();
         return;
       }
-      raw += chunk.toString('utf8');
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
     });
     req.on('end', () => {
       try {
+        const raw = Buffer.concat(chunks).toString('utf8');
         const value = JSON.parse(raw || '{}');
         if (!value || typeof value !== 'object' || Array.isArray(value)) {
           reject(Object.assign(new Error('JSON object required'), { status: 400 }));
