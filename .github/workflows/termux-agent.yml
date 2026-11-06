@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'UnifiedField/TermuxAgent/**'
+      - 'UnifiedField/LocalOrchestrator/**'
       - 'UnifiedField/QuantumLab/uf-remote-task-client.cjs'
       - 'UnifiedField/QuantumLab/uf-handshake-client.cjs'
       - '.github/workflows/termux-agent.yml'
@@ -11,6 +12,7 @@ on:
     branches: [main]
     paths:
       - 'UnifiedField/TermuxAgent/**'
+      - 'UnifiedField/LocalOrchestrator/**'
       - 'UnifiedField/QuantumLab/uf-remote-task-client.cjs'
       - 'UnifiedField/QuantumLab/uf-handshake-client.cjs'
       - '.github/workflows/termux-agent.yml'
