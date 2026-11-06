@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+const net = require('node:net');
 const { createPeerLinkHub } = require('./peerlink-hub.cjs');
 const { createPeerLinkAgent, validateBaseUrl } = require('./peerlink-agent.cjs');
 
@@ -37,6 +38,29 @@ test('remote URLs require HTTPS while loopback development may use HTTP', () => 
   assert.equal(validateBaseUrl('https://peer.example/').hostname, 'peer.example');
   assert.throws(() => validateBaseUrl('http://peer.example/'), { code: 'https_required' });
   assert.throws(() => validateBaseUrl('https://user:pass@peer.example/'), { code: 'https_required' });
+});
+
+
+test('malformed unauthenticated request target returns 400 without stopping the hub', async t => {
+  const { base } = await setup(t);
+  const port = Number(new URL(base).port);
+  const response = await new Promise((resolve, reject) => {
+    const socket = net.createConnection({ host: '127.0.0.1', port });
+    let raw = '';
+    socket.setEncoding('utf8');
+    socket.on('connect', () => {
+      socket.write('GET // HTTP/1.1\\r\\nHost: 127.0.0.1\\r\\nConnection: close\\r\\n\\r\\n');
+    });
+    socket.on('data', chunk => { raw += chunk; });
+    socket.on('end', () => resolve(raw));
+    socket.on('error', reject);
+  });
+  assert.match(response, /^HTTP\\/1\\.1 400 /);
+  assert.match(response, /Invalid URL/);
+
+  const health = await fetch(new URL('/health', base));
+  assert.equal(health.status, 200);
+  assert.equal((await health.json()).ok, true);
 });
 
 test('hub refuses weak secrets and non-loopback plaintext binds', () => {
