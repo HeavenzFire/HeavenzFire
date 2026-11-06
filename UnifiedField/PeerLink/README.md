@@ -72,6 +72,22 @@ Agent:
 - `HF_PEERLINK_INFERENCE_URL`: local OpenAI-compatible inference origin; default `http://127.0.0.1:11800`.
 - `HF_PEERLINK_MODEL`: fallback model ID.
 
+## Unified Field orchestrator integration
+
+The existing 16-role LocalOrchestrator can dispatch each specialist request through PeerLink instead of directly calling a provider. On the ARM32 control node, start the PeerLink hub and configure the orchestrator in the same protected shell environment:
+
+```sh
+export HF_PEERLINK_TOKEN="<same 32+ character secret used by the worker>"
+export HF_PEERLINK_URL="http://127.0.0.1:18990"
+export HF_PEERLINK_MODEL="your-remote-model-id"
+export HF_ORCHESTRATOR_PROVIDER="peerlink"
+node UnifiedField/LocalOrchestrator/orchestrator.cjs
+```
+
+The orchestrator remains loopback-bound on port 18797. Each of its 16 specialist role calls becomes a bounded PeerLink inference task; the remote worker polls and executes tasks against its own loopback inference runtime. The orchestrator still requires explicit task approval before dispatch. Configure the worker's model ID to match the model installed on the compute node. The hub's task queue serializes work naturally when only one worker is connected.
+
+The API gateway at port 18796 is not required for this PeerLink path: PeerLink is the authenticated transport from the orchestrator to the remote worker's local inference adapter.
+
 ## Protocol v1
 
 1. Controller submits only `inference.chat` tasks with an idempotency key.
