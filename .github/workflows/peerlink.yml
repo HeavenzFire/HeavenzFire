@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'UnifiedField/PeerLink/**'
+      - 'UnifiedField/LocalOrchestrator/**'
       - '.github/workflows/peerlink.yml'
   push:
     branches: [main]
@@ -32,5 +33,7 @@ jobs:
           node --check UnifiedField/PeerLink/peerlink-agent.cjs
           node --check UnifiedField/PeerLink/peerlink.cjs
           node --check UnifiedField/PeerLink/peerlink.test.cjs
-      - name: Run PeerLink integration tests
-        run: node --test UnifiedField/PeerLink/peerlink.test.cjs
+      - name: Run PeerLink and orchestrator integration tests
+        run: |
+          node --test UnifiedField/PeerLink/peerlink.test.cjs
+          node --test UnifiedField/LocalOrchestrator/orchestrator.test.cjs
