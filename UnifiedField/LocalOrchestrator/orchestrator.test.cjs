@@ -445,6 +445,16 @@ test('gateway provider is loopback-only and requires a bearer token', () => {
   }), /gateway_bearer_token_required/);
 });
 
+test('gateway transport accepts only explicit HTTPS Tailscale Serve endpoints', () => {
+  const token = 'local-bearer-token-123456789';
+  assert.doesNotThrow(() => createOrchestrator({ provider: 'heavenzfire-api', gatewayTransport: 'tailnet-https', gatewayUrl: 'https://arm64-worker.example-tailnet.ts.net', gatewayToken: token }));
+  assert.throws(() => createOrchestrator({ provider: 'heavenzfire-api', gatewayTransport: 'tailnet-https', gatewayUrl: 'http://arm64-worker.example-tailnet.ts.net', gatewayToken: token }), /gateway_tailnet_transport_requires_https/);
+  assert.throws(() => createOrchestrator({ provider: 'heavenzfire-api', gatewayTransport: 'tailnet-https', gatewayUrl: 'https://example.com', gatewayToken: token }), /gateway_tailnet_transport_requires_https/);
+  assert.throws(() => createOrchestrator({ provider: 'heavenzfire-api', gatewayTransport: 'tailnet-https', gatewayUrl: 'https://arm64-worker.example-tailnet.ts.net:8443', gatewayToken: token }), /gateway_tailnet_transport_requires_https/);
+  assert.throws(() => createOrchestrator({ provider: 'heavenzfire-api', gatewayTransport: 'loopback', gatewayUrl: 'https://arm64-worker.example-tailnet.ts.net', gatewayToken: token }), /gateway_must_use_http_loopback/);
+  assert.throws(() => createOrchestrator({ provider: 'heavenzfire-api', gatewayTransport: 'public-https', gatewayUrl: 'https://example.com', gatewayToken: token }), /gateway_transport_unsupported/);
+});
+
 test('gateway adapter sends authenticated provider/model provenance and captures request ID', async () => {
   let captured;
   const result = await invokeGatewayRuntime({
@@ -469,6 +479,7 @@ test('gateway adapter sends authenticated provider/model provenance and captures
 
   assert.equal(captured.url, 'http://127.0.0.1:18796/v1/chat/completions');
   assert.equal(captured.options.headers.authorization, 'Bearer local-bearer-token-123456789');
+  assert.equal(captured.options.redirect, 'error');
   assert.equal(captured.body.provider, 'openai');
   assert.equal(captured.body.model, 'gpt-test-model');
   assert.equal(result.state, 'completed');
@@ -499,6 +510,23 @@ test('gateway adapter fails closed on authentication and empty-response errors',
   });
   assert.equal(empty.state, 'failed');
   assert.equal(empty.error, 'gateway_empty_response');
+});
+
+test('tailnet gateway health identifies HTTPS transport without exposing the bearer token', async () => {
+  await withServer({
+    provider: 'heavenzfire-api',
+    gatewayTransport: 'tailnet-https',
+    gatewayUrl: 'https://arm64-worker.example-tailnet.ts.net',
+    gatewayToken: 'local-bearer-token-123456789',
+    gatewayProvider: 'openai',
+    model: 'gpt-test-model'
+  }, async base => {
+    const response = await fetch(base + '/health');
+    const health = await response.json();
+    assert.equal(health.gatewayTransport, 'tailnet-https');
+    assert.equal(health.execution, 'authenticated-tailnet-https-heavenzfire-api');
+    assert.equal(JSON.stringify(health).includes('local-bearer-token'), false);
+  });
 });
 
 test('health reports the selected authenticated gateway provider without exposing its token', async () => {
