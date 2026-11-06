@@ -19,6 +19,15 @@ function createPeerLinkHub(options = {}) {
   const port = Number(options.port ?? process.env.HF_PEERLINK_PORT ?? 18990);
   if (!Number.isInteger(port) || port < 0 || port > 65535) throw new Error('port must be 0..65535');
   const tls = options.tls || null;
+  if (tls !== null) {
+    const validTlsMaterial = value =>
+      (typeof value === 'string' && value.length > 0) ||
+      (Buffer.isBuffer(value) && value.length > 0);
+    if (!tls || typeof tls !== 'object' ||
+        !validTlsMaterial(tls.key) || !validTlsMaterial(tls.cert)) {
+      throw new Error('TLS requires non-empty key and certificate');
+    }
+  }
   if (host !== '127.0.0.1' && host !== '::1' && host !== 'localhost' && !tls) {
     throw new Error('non-loopback hub binds require TLS key and certificate');
   }
@@ -115,6 +124,9 @@ function createPeerLinkHub(options = {}) {
         if (!validPeerId(body.peer_id) || !validNonce(body.client_nonce) ||
             body.protocol_version !== PROTOCOL_VERSION) {
           return send(res, 400, { ok: false, error: 'invalid_handshake' });
+        }
+        if (peers.has(body.peer_id)) {
+          return send(res, 409, { ok: false, error: 'peer_id_already_registered' });
         }
         const capabilities = validateCapabilities(body.capabilities || []);
         const peer = {
