@@ -96,6 +96,27 @@ test('tailnet-only mode fails closed without an exact Tailscale IPv4 allowlist',
   assert.throws(() => createServer({ tailnetOnly: true, allowedTailnetClients: ['192.168.1.20'] }), /exact_tailscale_ipv4_client_allowlist/);
 });
 
+test('tailnet-only mode enforces strong API keys at server construction', () => {
+  const oldKey = process.env.HF_API_KEYS;
+  try {
+    process.env.HF_API_KEYS = 'short-key';
+    assert.throws(
+      () => createServer({ tailnetOnly: true, allowedTailnetClients: ['100.64.0.2'] }),
+      /tailnet_only_requires_api_keys_minimum_32_characters/
+    );
+    process.env.HF_API_KEYS = 'a-valid-tailnet-key-that-is-at-least-32-characters';
+    assert.doesNotThrow(() => createServer({ tailnetOnly: true, allowedTailnetClients: ['100.64.0.2'] }));
+    process.env.HF_API_KEYS = 'a-valid-tailnet-key-that-is-at-least-32-characters,short-key';
+    assert.throws(
+      () => createServer({ tailnetOnly: true, allowedTailnetClients: ['100.64.0.2'] }),
+      /tailnet_only_requires_api_keys_minimum_32_characters/
+    );
+  } finally {
+    if (oldKey === undefined) delete process.env.HF_API_KEYS;
+    else process.env.HF_API_KEYS = oldKey;
+  }
+});
+
 test('OpenAI provider uses the Responses API and returns a compatible chat envelope', async t => {
   const oldFetch = global.fetch;
   const oldEnv = {
