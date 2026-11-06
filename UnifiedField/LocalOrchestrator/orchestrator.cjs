@@ -15,6 +15,7 @@ const DEFAULT_OLLAMA = 'http://127.0.0.1:11434';
 const DEFAULT_LLAMA_CPP = 'http://127.0.0.1:18080';
 const DEFAULT_PROVIDER = process.env.HF_ORCHESTRATOR_PROVIDER || 'ollama';
 const DEFAULT_GATEWAY = process.env.HF_GATEWAY_URL || 'http://127.0.0.1:18796';
+const DEFAULT_GATEWAY_TRANSPORT = process.env.HF_GATEWAY_TRANSPORT || 'loopback';
 const GATEWAY_PROVIDERS = Object.freeze(['gemini', 'ollama', 'openai', 'anthropic', 'mistral', 'qwen', 'groq', 'openrouter', 'custom']);
 const MANIFEST_PATH = path.join(__dirname, 'agent-manifest.json');
 
@@ -75,6 +76,7 @@ async function invokeGatewayRuntime({ agent, goal, model, gatewayUrl, gatewayTok
         authorization: 'Bearer ' + gatewayToken
       },
       signal: controller.signal,
+      redirect: 'error',
       body: JSON.stringify({
         provider: gatewayProvider,
         model,
@@ -168,6 +170,7 @@ function createOrchestrator(options = {}) {
   const ollamaUrl = options.ollamaUrl || DEFAULT_OLLAMA;
   const gatewayUrl = options.gatewayUrl || DEFAULT_GATEWAY;
   const gatewayToken = options.gatewayToken || process.env.HF_GATEWAY_API_KEY || '';
+  const gatewayTransport = options.gatewayTransport || DEFAULT_GATEWAY_TRANSPORT;
   const llamaCppUrl = options.llamaCppUrl || process.env.HF_LLAMA_CPP_URL || DEFAULT_LLAMA_CPP;
   if (provider === 'llama-cpp') {
     let localRuntime;
@@ -180,8 +183,17 @@ function createOrchestrator(options = {}) {
   if (provider === 'heavenzfire-api') {
     let gateway;
     try { gateway = new URL(gatewayUrl); } catch { throw new Error('gateway_url_invalid'); }
-    if (gateway.protocol !== 'http:' || !['127.0.0.1', 'localhost', '::1', '[::1]'].includes(gateway.hostname) || gateway.username || gateway.password) {
-      throw new Error('gateway_must_use_http_loopback_without_credentials');
+    if (gateway.username || gateway.password || gateway.search || gateway.hash) throw new Error('gateway_url_credentials_query_or_fragment_forbidden');
+    if (gatewayTransport === 'loopback') {
+      if (gateway.protocol !== 'http:' || !['127.0.0.1', 'localhost', '::1', '[::1]'].includes(gateway.hostname)) {
+        throw new Error('gateway_must_use_http_loopback_without_credentials');
+      }
+    } else if (gatewayTransport === 'tailnet-https') {
+      if (gateway.protocol !== 'https:' || !gateway.hostname.endsWith('.ts.net') || gateway.hostname.length <= '.ts.net'.length || (gateway.port && gateway.port !== '443')) {
+        throw new Error('gateway_tailnet_transport_requires_https_tailscale_serve_hostname');
+      }
+    } else {
+      throw new Error('gateway_transport_unsupported');
     }
     if (typeof gatewayToken !== 'string' || gatewayToken.length < 16) throw new Error('gateway_bearer_token_required');
     if (!GATEWAY_PROVIDERS.includes(gatewayProvider)) throw new Error('gateway_provider_unsupported');
@@ -230,7 +242,7 @@ function createOrchestrator(options = {}) {
     try {
       const url = new URL(req.url, 'http://127.0.0.1');
       if (req.method === 'GET' && url.pathname === '/health') {
-        return json(res, 200, { ok: true, service: 'heavenzfire-local-16-agent-orchestrator', bind: host, port, agentRoles: manifest.agents.length, maxParallel: manifest.maxParallel, activeRuns: active, provider: provider === 'heavenzfire-api' ? gatewayProvider : provider === 'llama-cpp' ? 'llama.cpp' : 'ollama', model, execution: provider === 'heavenzfire-api' ? 'authenticated-loopback-heavenzfire-api' : provider === 'llama-cpp' ? 'loopback-openai-compatible-llama.cpp' : 'local-model-analysis-only', approvalVerifierConfigured: typeof approvalVerifier === 'function', browserExtensionRequired: false });
+        return json(res, 200, { ok: true, service: 'heavenzfire-local-16-agent-orchestrator', bind: host, port, agentRoles: manifest.agents.length, maxParallel: manifest.maxParallel, activeRuns: active, provider: provider === 'heavenzfire-api' ? gatewayProvider : provider === 'llama-cpp' ? 'llama.cpp' : 'ollama', model, execution: provider === 'heavenzfire-api' ? (gatewayTransport === 'tailnet-https' ? 'authenticated-tailnet-https-heavenzfire-api' : 'authenticated-loopback-heavenzfire-api') : provider === 'llama-cpp' ? 'loopback-openai-compatible-llama.cpp' : 'local-model-analysis-only', approvalVerifierConfigured: typeof approvalVerifier === 'function', gatewayTransport: provider === 'heavenzfire-api' ? gatewayTransport : null, browserExtensionRequired: false });
       }
       if (req.method === 'GET' && url.pathname === '/api/agents') {
         return json(res, 200, { count: manifest.agents.length, agents: manifest.agents.map(a => ({ id: a.id, objective: a.objective, state: 'AVAILABLE_ROLE_NOT_PROCESS_HEALTH' })) });
