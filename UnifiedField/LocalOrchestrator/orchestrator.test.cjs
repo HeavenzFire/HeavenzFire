@@ -455,6 +455,15 @@ test('gateway transport accepts only explicit HTTPS Tailscale Serve endpoints', 
   assert.throws(() => createOrchestrator({ provider: 'heavenzfire-api', gatewayTransport: 'public-https', gatewayUrl: 'https://example.com', gatewayToken: token }), /gateway_transport_unsupported/);
 });
 
+test('gateway transport accepts only an explicit numeric Tailscale IPv4 endpoint for Android peers', () => {
+  const token = 'local-bearer-token-123456789';
+  assert.doesNotThrow(() => createOrchestrator({ provider: 'heavenzfire-api', gatewayTransport: 'tailnet-ip', gatewayUrl: 'http://100.64.0.10:18796', gatewayToken: token }));
+  assert.doesNotThrow(() => createOrchestrator({ provider: 'heavenzfire-api', gatewayTransport: 'tailnet-ip', gatewayUrl: 'http://100.127.255.254:18796', gatewayToken: token }));
+  for (const url of ['http://192.168.1.20:18796', 'http://100.128.0.1:18796', 'http://100.63.255.255:18796', 'https://100.64.0.10:18796', 'http://100.64.0.10:18797', 'http://worker.example.ts.net:18796']) {
+    assert.throws(() => createOrchestrator({ provider: 'heavenzfire-api', gatewayTransport: 'tailnet-ip', gatewayUrl: url, gatewayToken: token }), /gateway_tailnet_ip_requires_http_tailscale_ipv4/);
+  }
+});
+
 test('gateway adapter sends authenticated provider/model provenance and captures request ID', async () => {
   let captured;
   const result = await invokeGatewayRuntime({
@@ -510,6 +519,23 @@ test('gateway adapter fails closed on authentication and empty-response errors',
   });
   assert.equal(empty.state, 'failed');
   assert.equal(empty.error, 'gateway_empty_response');
+});
+
+test('tailnet IP gateway health identifies direct transport without exposing the bearer token', async () => {
+  await withServer({
+    provider: 'heavenzfire-api',
+    gatewayTransport: 'tailnet-ip',
+    gatewayUrl: 'http://100.64.0.10:18796',
+    gatewayToken: 'local-bearer-token-123456789',
+    gatewayProvider: 'openai',
+    model: 'gpt-test-model'
+  }, async base => {
+    const response = await fetch(base + '/health');
+    const health = await response.json();
+    assert.equal(health.gatewayTransport, 'tailnet-ip');
+    assert.equal(health.execution, 'authenticated-tailnet-ip-heavenzfire-api');
+    assert.equal(JSON.stringify(health).includes('local-bearer-token'), false);
+  });
 });
 
 test('tailnet gateway health identifies HTTPS transport without exposing the bearer token', async () => {
