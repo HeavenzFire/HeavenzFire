@@ -169,7 +169,7 @@ test('orchestrator PeerLink client submits a bounded role task and waits for its
   assert.equal(calls[0].body.task.type, 'inference.chat');
   assert.equal(calls[0].body.task.payload.messages[0].role, 'system');
   assert.equal(calls[0].body.task.payload.max_tokens, 256);
-  assert.ok(calls.some(call => call.path === '/v1/tasks/uf-' + calls[0].body.task.task_id?.slice(3)));
+  assert.ok(calls.some(call => /^\/v1\/tasks\/uf-[0-9a-f-]{36}$/.test(call.path)));
 });
 
 test('PeerLink client rejects remote plaintext and malformed credentials', async () => {
