@@ -83,6 +83,7 @@ const fs = require('node:fs');
 const health = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
 if (health.service !== 'heavenzfire-local-16-agent-orchestrator' ||
     health.provider !== 'llama.cpp' ||
+    health.model !== process.env.HF_EXPECTED_MODEL ||
     health.bind !== '127.0.0.1') {
   throw new Error('An unrelated or differently configured orchestrator is already using this port.');
 }
