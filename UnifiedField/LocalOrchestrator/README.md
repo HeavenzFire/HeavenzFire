@@ -85,7 +85,7 @@ export HF_GATEWAY_PROVIDER=ollama
 export HF_GATEWAY_MODEL='the-exact-model-enabled-on-the-worker'
 ```
 
-Keep the token in the Termux environment or a protected local secret file; never commit it or paste it into chat. The `.ts.net` hostname is a placeholder until the worker's actual Tailscale DNS name is confirmed. This code path has deterministic policy tests, but a successful handshake and real inference still require both devices to be online and the exact hostname/model to be supplied. Tailscale Serve command syntax and device ACLs must be confirmed on the installed Tailscale version before launch.
+Keep the token in the Termux environment or a protected local secret file; never commit it or paste it into chat. The `.ts.net` hostname is a placeholder until the worker's actual Tailscale DNS name is confirmed. This code path has deterministic policy tests, but a successful handshake and real inference still require both devices to be online and the exact hostname/model to be supplied. Tailscale Serve requires a supported Tailscale CLI host and HTTPS certificates enabled in the tailnet; current Tailscale documentation states there is no CLI support on Android. Therefore this Serve setup is for a Linux/Windows worker or a separate supported tailnet relay, **not a direct Android Termux worker**. For an Android-to-Android worker, use a dedicated authenticated peer listener bound to the device's Tailscale address and verify Android's inbound VPN routing before enabling it; do not substitute a public listener or Funnel. See the [Tailscale CLI support matrix](https://tailscale.com/docs/reference/tailscale-cli) and [Serve documentation](https://tailscale.com/docs/features/tailscale-serve).
 
 ## Task lifecycle
 
