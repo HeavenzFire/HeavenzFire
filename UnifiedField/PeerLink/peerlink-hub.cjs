@@ -136,7 +136,10 @@ function createPeerLinkHub(options = {}) {
           const body = await readJson(req, 4096);
           if (body.peer_id !== peer.peer_id) return send(res, 403, { ok: false, error: 'peer_identity_mismatch' });
           peer.last_seen = Date.now();
-          return send(res, 200, { ok: true, peer_id: peer.peer_id, at: new Date().toISOString() });
+          for (const task of tasks.values()) {
+            if (task.status === 'LEASED' && task.peer_id === peer.peer_id) task.lease_until = Date.now() + leaseMs;
+          }
+          return send(res, 200, { ok: true, peer_id: peer.peer_id, lease_extended: true, at: new Date().toISOString() });
         }
         if (req.method === 'POST' && url.pathname === '/v1/peers/poll') {
           const body = await readJson(req, 4096);
