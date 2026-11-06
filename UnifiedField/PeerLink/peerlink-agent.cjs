@@ -25,6 +25,13 @@ function createPeerLinkAgent(options = {}) {
   const token = options.token || process.env.HF_PEERLINK_TOKEN;
   const peerId = options.peerId || process.env.HF_PEERLINK_PEER_ID || 'heavenzfire-arm64';
   const inferenceUrl = options.inferenceUrl || process.env.HF_PEERLINK_INFERENCE_URL || 'http://127.0.0.1:11800';
+  let inferenceBase;
+  try { inferenceBase = new URL(inferenceUrl); } catch { fail('invalid_inference_url', 'A valid local inference URL is required'); }
+  if (!['127.0.0.1', 'localhost', '::1', '[::1]'].includes(inferenceBase.hostname.toLowerCase()) ||
+      !['http:', 'https:'].includes(inferenceBase.protocol) || inferenceBase.username || inferenceBase.password ||
+      inferenceBase.search || inferenceBase.hash) {
+    fail('inference_loopback_only', 'Inference endpoint must be a credential-free loopback URL');
+  }
   const model = options.model || process.env.HF_PEERLINK_MODEL || 'heavenzfire-qwen-0.5b';
   const fetchImpl = options.fetchImpl || globalThis.fetch;
   const timeoutMs = Math.max(1000, Math.min(Number(options.timeoutMs || 90000), 120000));
@@ -61,7 +68,7 @@ function createPeerLinkAgent(options = {}) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
-      const response = await fetchImpl(new URL('/v1/chat/completions', inferenceUrl), {
+      const response = await fetchImpl(new URL('/v1/chat/completions', inferenceBase), {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
