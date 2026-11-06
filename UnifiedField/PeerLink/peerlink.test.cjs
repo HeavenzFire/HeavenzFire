@@ -131,6 +131,4 @@ test('append-only journal restores queued work after hub restart', async t => {
   assert.equal(response.status, 200);
   assert.equal((await response.json()).task.status, 'QUEUED');
   await restarted.close();
-  // prevent setup cleanup from attempting to close an already-closed server twice
-  state.hub.close = async () => {};
 });
