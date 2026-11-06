@@ -115,3 +115,11 @@ The tests use loopback HTTP and a mocked inference runtime. They verify protocol
 - Remote deployment requires an HTTPS endpoint that the worker can reach. PeerLink does not provide public hosting, DNS, certificates, or NAT traversal.
 - Semantic quality of model responses is not certified by transport completion.
 - Privileged operations remain outside the protocol and require the Unified Field approval verifier.
+
+## Security limits and peer identity
+
+- Peer IDs are unique for the lifetime of a running hub. A second registration using an already-registered ID receives HTTP 409 peer_id_already_registered; it cannot replace the first session. Assign a new peer ID when starting a second worker. After a hub restart, workers register again and receive new session tokens.
+- Successful inference results are limited to 48 KiB of UTF-8 JSON serialization. Larger result submissions receive HTTP 413 result_payload_too_large; the task lease remains unresolved and can expire back to the queue.
+- Native TLS configuration requires both a non-empty private key and certificate. Non-loopback listeners continue to require TLS.
+- Request JSON is decoded only after all received byte buffers have been assembled, preserving UTF-8 characters split across network chunks.
+- The PeerLink CI fetches the public repository revision without recursive submodule handling. This avoids relying on the repository's currently incomplete planetary-mesh-global submodule mapping.
