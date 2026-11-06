@@ -227,6 +227,7 @@ function createPeerLinkHub(options = {}) {
       });
     },
     close() {
+      if (closed) return Promise.resolve();
       closed = true;
       return new Promise((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
     },
