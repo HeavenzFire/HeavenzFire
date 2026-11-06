@@ -112,6 +112,9 @@ function createPeerLinkAgent(options = {}) {
     if (!connected || !sessionToken) fail('not_connected', 'Connect before polling for tasks');
     const claim = await request('/v1/peers/poll', { peer_id: peerId }, sessionToken, 10000);
     if (!claim.task) return { status: 'IDLE' };
+    const heartbeat = setInterval(() => {
+      request('/v1/peers/heartbeat', { peer_id: peerId }, sessionToken, 5000).catch(() => {});
+    }, 10000);
     try {
       const result = await infer(claim.task);
       const saved = await request('/v1/peers/result', {
@@ -124,6 +127,8 @@ function createPeerLinkAgent(options = {}) {
         error: String(error.code || error.message || 'worker_failed').slice(0, 300)
       }, sessionToken);
       return { status: 'FAILED', task_id: claim.task.task_id, error: error.code || 'worker_failed' };
+    } finally {
+      clearInterval(heartbeat);
     }
   }
 
