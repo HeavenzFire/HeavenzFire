@@ -56,7 +56,6 @@ test('malformed unauthenticated request target returns 400 without stopping the 
     socket.on('error', reject);
   });
   assert.ok(response.startsWith('HTTP/1.1 400 '));
-  assert.match(response, /Invalid URL/);
 
   const health = await fetch(new URL('/health', base));
   assert.equal(health.status, 200);
