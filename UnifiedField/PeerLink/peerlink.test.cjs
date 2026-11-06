@@ -132,3 +132,52 @@ test('append-only journal restores queued work after hub restart', async t => {
   assert.equal((await response.json()).task.status, 'QUEUED');
   await restarted.close();
 });
+
+
+test('orchestrator PeerLink client submits a bounded role task and waits for its worker result', async () => {
+  const { invokePeerLinkRuntime } = require('./peerlink-client.cjs');
+  const calls = [];
+  let polls = 0;
+  const result = await invokePeerLinkRuntime({
+    agent: { id: 'security-reviewer', objective: 'Find concrete security failures.' },
+    goal: 'Review the current transport boundary.',
+    model: 'heavenzfire-qwen',
+    peerLinkUrl: 'http://127.0.0.1:18990',
+    peerLinkToken: TOKEN,
+    timeoutMs: 5000,
+    pollIntervalMs: 1,
+    fetchImpl: async (url, init) => {
+      const parsed = new URL(url);
+      calls.push({ path: parsed.pathname, authorization: init.headers.authorization, body: init.body && JSON.parse(init.body) });
+      if (parsed.pathname === '/v1/tasks') {
+        return Response.json({ ok: true, task: { task_id: 'uf-test' } }, { status: 202 });
+      }
+      polls++;
+      if (polls === 1) return Response.json({ ok: true, task: { status: 'QUEUED' } });
+      return Response.json({ ok: true, task: {
+        status: 'COMPLETED', peer_id: PEER,
+        result: { model: 'heavenzfire-qwen', response: 'Found one bounded risk.', usage: { total_tokens: 20 } }
+      } });
+    }
+  });
+  assert.equal(result.state, 'completed');
+  assert.equal(result.provider, 'peerlink');
+  assert.equal(result.output, 'Found one bounded risk.');
+  assert.equal(result.peerId, PEER);
+  assert.equal(calls[0].path, '/v1/tasks');
+  assert.equal(calls[0].authorization, 'Bearer ' + TOKEN);
+  assert.equal(calls[0].body.task.type, 'inference.chat');
+  assert.equal(calls[0].body.task.payload.messages[0].role, 'system');
+  assert.equal(calls[0].body.task.payload.max_tokens, 256);
+  assert.ok(calls.some(call => call.path === '/v1/tasks/uf-' + calls[0].body.task.task_id?.slice(3)));
+});
+
+test('PeerLink client rejects remote plaintext and malformed credentials', async () => {
+  const { validatePeerLinkUrl, invokePeerLinkRuntime } = require('./peerlink-client.cjs');
+  assert.throws(() => validatePeerLinkUrl('http://192.168.1.20:18990'), /https_or_loopback/);
+  assert.throws(() => validatePeerLinkUrl('https://user:pass@example.net/'), /https_or_loopback/);
+  await assert.rejects(() => invokePeerLinkRuntime({
+    agent: { id: 'reviewer', objective: 'review' }, goal: 'test', model: 'm',
+    peerLinkUrl: 'http://127.0.0.1:18990', peerLinkToken: 'short'
+  }), /peerlink_bearer_token_required/);
+});
