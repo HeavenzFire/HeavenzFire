@@ -219,6 +219,7 @@ function createOrchestrator(options = {}) {
           const input = await readBody(req);
           if (input.approve !== true) return json(res, 400, { error: 'explicit_approve_true_required' });
           if (task.state !== 'proposed') return json(res, 409, { error: 'task_not_proposed', state: task.state });
+          if (typeof approvalVerifier !== 'function') return json(res, 503, { error: 'trusted_approval_verifier_not_configured' });
           const goalHash = crypto.createHash('sha256').update(task.goal).digest('hex');
           const context = input.approvalContext;
           if (!context || typeof context.taskId !== 'string' || !context.taskId.trim() || context.goalHash !== goalHash) return json(res, 403, { error: 'approval_context_mismatch' });
