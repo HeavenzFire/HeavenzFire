@@ -362,6 +362,71 @@ test('llama.cpp health reports local provider and does not expose credentials', 
   });
 });
 
+
+test('task scheduler dispatches all 16 roles through the local llama.cpp adapter', async () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'hf-llama-scheduler-test-'));
+  let calls = 0;
+  const app = createOrchestrator({
+    port: 0,
+    ledgerPath: path.join(directory, 'tasks.jsonl'),
+    approvalVerifier: testApprovalVerifier,
+    provider: 'llama-cpp',
+    llamaCppUrl: 'http://127.0.0.1:18080',
+    model: 'qwen2.5-0.5b-instruct-q4_k_m.gguf',
+    fetchImpl: async (url, options) => {
+      calls += 1;
+      assert.equal(String(url), 'http://127.0.0.1:18080/v1/chat/completions');
+      assert.equal(options.headers.authorization, undefined);
+      const request = JSON.parse(options.body);
+      assert.equal(request.model, 'qwen2.5-0.5b-instruct-q4_k_m.gguf');
+      return {
+        ok: true,
+        json: async () => ({
+          id: 'llama-request-' + calls,
+          model: request.model,
+          choices: [{ message: { content: 'local-role-result-' + calls } }]
+        })
+      };
+    }
+  });
+  await new Promise(resolve => app.server.listen(0, '127.0.0.1', resolve));
+  const address = app.server.address();
+  const base = 'http://127.0.0.1:' + address.port;
+  try {
+    const goal = 'Exercise the 16-role local llama.cpp path.';
+    const created = await fetch(base + '/api/tasks', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ goal })
+    });
+    const task = (await created.json()).task;
+    const approved = await fetch(base + '/api/tasks/' + task.id + '/approve', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(taskApprovalPayload(task.id, goal))
+    });
+    assert.equal(approved.status, 200);
+    const response = await fetch(base + '/api/tasks/' + task.id + '/run', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: '{}'
+    });
+    assert.equal(response.status, 200);
+    const result = (await response.json()).task;
+    assert.equal(calls, 16);
+    assert.equal(result.results.length, 16);
+    assert.ok(result.results.every(item => item.provider === 'llama.cpp'));
+    assert.equal(result.execution.provider, 'llama.cpp');
+    assert.equal(result.execution.model, 'qwen2.5-0.5b-instruct-q4_k_m.gguf');
+    assert.equal(result.execution.providerRequestIds.length, 16);
+    assert.equal(result.consensus.decision, 0);
+    assert.equal(result.state, 'completed');
+  } finally {
+    await new Promise(resolve => app.server.close(resolve));
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test('gateway provider is loopback-only and requires a bearer token', () => {
   assert.throws(() => createOrchestrator({
     provider: 'heavenzfire-api',
