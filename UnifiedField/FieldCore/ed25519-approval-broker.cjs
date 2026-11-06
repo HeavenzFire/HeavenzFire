@@ -87,7 +87,16 @@ function createEd25519ApprovalVerifier({ publicKey, stateDir, now = () => Date.n
     };
   };
 }
-function createApprovalVerifierFromEnv({ serviceId }) {\n  if (!process.env.HF_APPROVAL_PUBLIC_KEY_FILE) return null;\n  if (typeof serviceId !== 'string' || !/^[a-z0-9-]{1,40}$/.test(serviceId)) throw new Error('approval_service_id_invalid');\n  const root = process.env.HF_APPROVAL_STATE_DIR;\n  if (!root) throw new Error('HF_APPROVAL_STATE_DIR_required_when_approval_key_is_configured');\n  const publicKey = fs.readFileSync(process.env.HF_APPROVAL_PUBLIC_KEY_FILE, 'utf8');\n  return createEd25519ApprovalVerifier({ publicKey, stateDir: path.join(root, serviceId) });\n}\n\nfunction generateEd25519KeyPair() {
+function createApprovalVerifierFromEnv({ serviceId }) {
+  if (!process.env.HF_APPROVAL_PUBLIC_KEY_FILE) return null;
+  if (typeof serviceId !== 'string' || !/^[a-z0-9-]{1,40}$/.test(serviceId)) throw new Error('approval_service_id_invalid');
+  const root = process.env.HF_APPROVAL_STATE_DIR;
+  if (!root) throw new Error('HF_APPROVAL_STATE_DIR_required_when_approval_key_is_configured');
+  const publicKey = fs.readFileSync(process.env.HF_APPROVAL_PUBLIC_KEY_FILE, 'utf8');
+  return createEd25519ApprovalVerifier({ publicKey, stateDir: path.join(root, serviceId) });
+}
+
+function generateEd25519KeyPair() {
   return crypto.generateKeyPairSync('ed25519', {
     publicKeyEncoding: { type: 'spki', format: 'pem' },
     privateKeyEncoding: { type: 'pkcs8', format: 'pem' }
