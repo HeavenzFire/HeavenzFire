@@ -67,23 +67,10 @@ test('agent claims bounded inference task, calls local runtime, and returns resu
   const fakeFetch = async (url, init) => {
     const parsed = new URL(url);
     calls.push({ url: parsed.href, init });
-    if (parsed.pathname === '/v1/peers/register') {
-      const body = JSON.parse(init.body);
-      return Response.json({
-        ok: true, protocol_version: 1, peer_id: PEER, client_nonce: body.client_nonce,
-        server_nonce: 'B'.repeat(32), session_token: 'S'.repeat(48)
-      });
-    }
-    if (parsed.pathname === '/v1/peers/poll') {
-      return request(base, '/v1/peers/poll', 'S'.repeat(48), JSON.parse(init.body));
-    }
-    if (parsed.pathname === '/v1/peers/result') {
-      return request(base, '/v1/peers/result', 'S'.repeat(48), JSON.parse(init.body));
-    }
     if (parsed.pathname === '/v1/chat/completions') {
       return Response.json({ model: 'hf-test-model', choices: [{ message: { content: 'PeerLink inference verified' } }], usage: { total_tokens: 9 } });
     }
-    throw new Error('unexpected route ' + parsed.pathname);
+    return fetch(url, init);
   };
   const agent = createPeerLinkAgent({
     hubUrl: base, token: TOKEN, peerId: PEER,
