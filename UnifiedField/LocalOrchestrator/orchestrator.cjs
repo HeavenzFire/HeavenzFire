@@ -6,6 +6,7 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 const { createTaskLedger } = require('./task-ledger.cjs');
 const { evaluate: evaluateUfTcp } = require('../QuantumLab/uf-tcp-policy.cjs');
+const { invokePeerLinkRuntime, validatePeerLinkUrl } = require('../PeerLink/peerlink-client.cjs');
 
 const DEFAULT_HOST = '127.0.0.1';
 const DEFAULT_PORT = 18797;
@@ -13,6 +14,7 @@ const DEFAULT_MODEL = process.env.HF_LOCAL_MODEL || 'heavenzfire-runtime:latest'
 const DEFAULT_OLLAMA = 'http://127.0.0.1:11434';
 const DEFAULT_PROVIDER = process.env.HF_ORCHESTRATOR_PROVIDER || 'ollama';
 const DEFAULT_GATEWAY = process.env.HF_GATEWAY_URL || 'http://127.0.0.1:18796';
+const DEFAULT_PEERLINK_URL = process.env.HF_PEERLINK_URL || 'http://127.0.0.1:18990';
 const GATEWAY_PROVIDERS = Object.freeze(['gemini', 'ollama', 'openai', 'anthropic', 'mistral', 'qwen', 'groq', 'openrouter', 'custom']);
 const MANIFEST_PATH = path.join(__dirname, 'agent-manifest.json');
 
@@ -131,12 +133,14 @@ function createOrchestrator(options = {}) {
   }
   const port = options.port ?? DEFAULT_PORT;
   const provider = options.provider || DEFAULT_PROVIDER;
-  if (!['ollama', 'heavenzfire-api'].includes(provider)) throw new Error('orchestrator_provider_unsupported');
-  const model = options.model || (provider === 'heavenzfire-api' ? process.env.HF_GATEWAY_MODEL || process.env.OPENAI_MODEL || 'gpt-4.1-mini' : DEFAULT_MODEL);
+  if (!['ollama', 'heavenzfire-api', 'peerlink'].includes(provider)) throw new Error('orchestrator_provider_unsupported');
+  const model = options.model || (provider === 'heavenzfire-api' ? process.env.HF_GATEWAY_MODEL || process.env.OPENAI_MODEL || 'gpt-4.1-mini' : provider === 'peerlink' ? process.env.HF_PEERLINK_MODEL || 'heavenzfire-runtime:latest' : DEFAULT_MODEL);
   const ollamaUrl = options.ollamaUrl || DEFAULT_OLLAMA;
   const gatewayUrl = options.gatewayUrl || DEFAULT_GATEWAY;
   const gatewayToken = options.gatewayToken || process.env.HF_GATEWAY_API_KEY || '';
   const gatewayProvider = options.gatewayProvider || process.env.HF_GATEWAY_PROVIDER || 'openai';
+  const peerLinkUrl = options.peerLinkUrl || DEFAULT_PEERLINK_URL;
+  const peerLinkToken = options.peerLinkToken || process.env.HF_PEERLINK_TOKEN || '';
   if (provider === 'heavenzfire-api') {
     let gateway;
     try { gateway = new URL(gatewayUrl); } catch { throw new Error('gateway_url_invalid'); }
@@ -146,12 +150,16 @@ function createOrchestrator(options = {}) {
     if (typeof gatewayToken !== 'string' || gatewayToken.length < 16) throw new Error('gateway_bearer_token_required');
     if (!GATEWAY_PROVIDERS.includes(gatewayProvider)) throw new Error('gateway_provider_unsupported');
   }
+  if (provider === 'peerlink') {
+    validatePeerLinkUrl(peerLinkUrl);
+    if (typeof peerLinkToken !== 'string' || peerLinkToken.length < 32) throw new Error('peerlink_bearer_token_required');
+  }
   let runtimeUrl;
   try { runtimeUrl = new URL(ollamaUrl); } catch { throw new Error('ollama_url_invalid'); }
   if (runtimeUrl.protocol !== 'http:' || !['127.0.0.1', 'localhost', '::1', '[::1]'].includes(runtimeUrl.hostname) || runtimeUrl.username || runtimeUrl.password) {
     throw new Error('ollama_must_use_http_loopback_without_credentials');
   }
-  const invoke = options.invoke || (provider === 'heavenzfire-api' ? invokeGatewayRuntime : invokeLocalRuntime);
+  const invoke = options.invoke || (provider === 'heavenzfire-api' ? invokeGatewayRuntime : provider === 'peerlink' ? invokePeerLinkRuntime : invokeLocalRuntime);
   const now = options.now || (() => new Date().toISOString());
   const ledger = options.ledger || createTaskLedger({ filePath: options.ledgerPath || process.env.HF_TASK_LEDGER_PATH || path.join(__dirname, 'data', 'tasks.jsonl') });
   const tasks = new Map(ledger.load().map(task => [task.id, task]));
@@ -187,7 +195,7 @@ function createOrchestrator(options = {}) {
     try {
       const url = new URL(req.url, 'http://127.0.0.1');
       if (req.method === 'GET' && url.pathname === '/health') {
-        return json(res, 200, { ok: true, service: 'heavenzfire-local-16-agent-orchestrator', bind: host, port, agentRoles: manifest.agents.length, maxParallel: manifest.maxParallel, activeRuns: active, provider: provider === 'heavenzfire-api' ? gatewayProvider : 'ollama', model, execution: provider === 'heavenzfire-api' ? 'authenticated-loopback-heavenzfire-api' : 'local-model-analysis-only', browserExtensionRequired: false });
+        return json(res, 200, { ok: true, service: 'heavenzfire-local-16-agent-orchestrator', bind: host, port, agentRoles: manifest.agents.length, maxParallel: manifest.maxParallel, activeRuns: active, provider: provider === 'heavenzfire-api' ? gatewayProvider : provider, model, execution: provider === 'heavenzfire-api' ? 'authenticated-loopback-heavenzfire-api' : provider === 'peerlink' ? 'authenticated-peerlink-remote-inference' : 'local-model-analysis-only', browserExtensionRequired: false });
       }
       if (req.method === 'GET' && url.pathname === '/api/agents') {
         return json(res, 200, { count: manifest.agents.length, agents: manifest.agents.map(a => ({ id: a.id, objective: a.objective, state: 'AVAILABLE_ROLE_NOT_PROCESS_HEALTH' })) });
@@ -226,12 +234,12 @@ function createOrchestrator(options = {}) {
         task.state = 'running'; task.updatedAt = now(); ledger.save(task); active++;
         try {
           task.results = await runBounded(manifest.agents, manifest.maxParallel, async agent => {
-            const result = await invoke({ agent, goal: task.goal, model, ollamaUrl, provider, gatewayUrl, gatewayToken, gatewayProvider, timeoutMs: options.timeoutMs || 90000, fetchImpl: options.fetchImpl });
+            const result = await invoke({ agent, goal: task.goal, model, ollamaUrl, provider, gatewayUrl, gatewayToken, gatewayProvider, peerLinkUrl, peerLinkToken, timeoutMs: options.timeoutMs || 90000, fetchImpl: options.fetchImpl });
             return { agentId: agent.id, state: result.state, output: result.output, error: result.error, model: result.model || model, provider: result.provider || (provider === 'heavenzfire-api' ? gatewayProvider : 'ollama'), providerRequestId: result.providerRequestId || null };
           });
           const failed = task.results.filter(result => result.state !== 'completed').length;
           task.state = failed === 0 ? 'completed' : 'failed';
-          task.execution = { provider: provider === 'heavenzfire-api' ? gatewayProvider : 'ollama', model, maxParallel: manifest.maxParallel, completedRoles: manifest.agents.length - failed, failedRoles: failed, providerRequestIds: task.results.map(result => result.providerRequestId).filter(Boolean) };
+          task.execution = { provider: provider === 'heavenzfire-api' ? gatewayProvider : provider, model, maxParallel: manifest.maxParallel, completedRoles: manifest.agents.length - failed, failedRoles: failed, providerRequestIds: task.results.map(result => result.providerRequestId).filter(Boolean) };
           task.verificationStatus = failed === 0 ? (task.candidateCommit ? 'pending' : 'not_applicable') : 'blocked';
           task.consensus = { policy: 'UF-TCP/0.2', decision: 0, label: 'ABSTAIN', code: failed === 0 ? 'VERIFICATION_NOT_RUN' : 'EXECUTION_INCOMPLETE', reasons: [failed === 0 ? 'Role execution completed; independent evidence verification has not run.' : 'Execution was incomplete; no acceptance decision is available.'] };
           task.completedAt = now(); task.updatedAt = task.completedAt;
@@ -279,7 +287,8 @@ if (require.main === module) {
   const provider = process.env.HF_ORCHESTRATOR_PROVIDER || DEFAULT_PROVIDER;
   const model = provider === 'heavenzfire-api'
     ? process.env.HF_GATEWAY_MODEL || process.env.OPENAI_MODEL || 'gpt-4.1-mini'
-    : process.env.HF_LOCAL_MODEL || DEFAULT_MODEL;
+    : provider === 'peerlink' ? process.env.HF_PEERLINK_MODEL || 'heavenzfire-runtime:latest'
+      : process.env.HF_LOCAL_MODEL || DEFAULT_MODEL;
   const ollamaUrl = process.env.HF_OLLAMA_URL || DEFAULT_OLLAMA;
   const app = createOrchestrator({ host, port, model, ollamaUrl, provider });
   app.server.listen(port, host, () => {
@@ -287,4 +296,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { createOrchestrator, readManifest, runBounded, invokeLocalRuntime, invokeGatewayRuntime };
+module.exports = { createOrchestrator, readManifest, runBounded, invokeLocalRuntime, invokeGatewayRuntime, invokePeerLinkRuntime };
