@@ -33,7 +33,7 @@ For direct LAN access, configure a TLS key and certificate and bind the hub to t
 
 The compute node initiates all connections outbound to the hub. Publish the hub behind a trusted HTTPS reverse proxy (or run the native TLS server) and give the worker the public HTTPS origin. The reverse proxy should forward only PeerLink paths to the loopback hub. Do not forward the hub's HTTP listener directly to the internet.
 
-The worker requires HTTPS for non-loopback hub URLs. No inbound port or remote shell is required on the worker. DNS, TLS termination, and remote reachability remain deployment responsibilities; PeerLink does not create a tunnel or bypass NAT by itself.
+Launch the worker with `node UnifiedField/PeerLink/peerlink.cjs agent`. The worker requires HTTPS for non-loopback hub URLs. Its inference endpoint is restricted to loopback so prompts are sent only to a runtime on the compute node itself. No inbound port or remote shell is required on the worker. DNS, TLS termination, and remote reachability remain deployment responsibilities; PeerLink does not create a tunnel or bypass NAT by itself.
 
 ## Configuration
 
