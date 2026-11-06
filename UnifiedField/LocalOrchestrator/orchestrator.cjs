@@ -186,10 +186,12 @@ function createOrchestrator(options = {}) {
     if (typeof gatewayToken !== 'string' || gatewayToken.length < 16) throw new Error('gateway_bearer_token_required');
     if (!GATEWAY_PROVIDERS.includes(gatewayProvider)) throw new Error('gateway_provider_unsupported');
   }
-  let runtimeUrl;
-  try { runtimeUrl = new URL(ollamaUrl); } catch { throw new Error('ollama_url_invalid'); }
-  if (runtimeUrl.protocol !== 'http:' || !['127.0.0.1', 'localhost', '::1', '[::1]'].includes(runtimeUrl.hostname) || runtimeUrl.username || runtimeUrl.password) {
-    throw new Error('ollama_must_use_http_loopback_without_credentials');
+  if (provider === 'ollama') {
+    let runtimeUrl;
+    try { runtimeUrl = new URL(ollamaUrl); } catch { throw new Error('ollama_url_invalid'); }
+    if (runtimeUrl.protocol !== 'http:' || !['127.0.0.1', 'localhost', '::1', '[::1]'].includes(runtimeUrl.hostname) || runtimeUrl.username || runtimeUrl.password) {
+      throw new Error('ollama_must_use_http_loopback_without_credentials');
+    }
   }
   const invoke = options.invoke || (provider === 'heavenzfire-api' ? invokeGatewayRuntime : provider === 'llama-cpp' ? invokeLlamaCppRuntime : invokeLocalRuntime);
   const approvalVerifier = typeof options.approvalVerifier === 'function' ? options.approvalVerifier : null;
