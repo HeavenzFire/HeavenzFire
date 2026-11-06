@@ -158,7 +158,7 @@ function createPeerLinkHub(options = {}) {
           return send(res, 200, { ok: true, task: { task_id: task.task_id, type: task.type, payload: task.payload }, lease_ms: leaseMs });
         }
         if (req.method === 'POST' && url.pathname === '/v1/peers/result') {
-          const body = await readJson(req, 16384);
+          const body = await readJson(req, 65536);
           if (body.peer_id !== peer.peer_id || typeof body.task_id !== 'string') {
             return send(res, 400, { ok: false, error: 'invalid_result_identity' });
           }
