@@ -204,7 +204,10 @@ function createOrchestrator(options = {}) {
     } else {
       throw new Error('gateway_transport_unsupported');
     }
-    if (typeof gatewayToken !== 'string' || gatewayToken.length < 16) throw new Error('gateway_bearer_token_required');
+    const minimumGatewayTokenLength = gatewayTransport === 'tailnet-ip' ? 32 : 16;
+    if (typeof gatewayToken !== 'string' || gatewayToken.length < minimumGatewayTokenLength) {
+      throw new Error(gatewayTransport === 'tailnet-ip' ? 'gateway_tailnet_token_minimum_32_characters_required' : 'gateway_bearer_token_required');
+    }
     if (!GATEWAY_PROVIDERS.includes(gatewayProvider)) throw new Error('gateway_provider_unsupported');
   }
   if (provider === 'ollama') {
