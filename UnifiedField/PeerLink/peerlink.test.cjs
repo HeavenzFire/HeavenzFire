@@ -252,3 +252,88 @@ test('real PeerLink hub, orchestrator client, and worker complete an end-to-end 
   assert.equal(result.peerId, PEER);
   assert.equal(result.output, 'End-to-end PeerLink inference passed.');
 });
+
+
+test('duplicate peer registration cannot replace an existing authenticated session', async t => {
+  const { base } = await setup(t);
+  const registration = {
+    protocol_version: 1, peer_id: 'unique-peer-node',
+    client_nonce: 'B'.repeat(32), capabilities: ['inference.chat']
+  };
+  const first = await request(base, '/v1/peers/register', TOKEN, registration);
+  assert.equal(first.status, 200);
+  const firstSession = await first.json();
+
+  const duplicate = await request(base, '/v1/peers/register', TOKEN, {
+    ...registration, client_nonce: 'C'.repeat(32)
+  });
+  assert.equal(duplicate.status, 409);
+  assert.equal((await duplicate.json()).error, 'peer_id_already_registered');
+
+  const heartbeat = await request(base, '/v1/peers/heartbeat', firstSession.session_token, {
+    peer_id: 'unique-peer-node'
+  });
+  assert.equal(heartbeat.status, 200);
+});
+
+test('hub constructor rejects incomplete TLS key or certificate configuration', () => {
+  assert.throws(() => createPeerLinkHub({
+    token: TOKEN, host: '0.0.0.0', tls: { key: 'non-empty-key' }
+  }), /TLS requires non-empty key and certificate/);
+  assert.throws(() => createPeerLinkHub({
+    token: TOKEN, host: '127.0.0.1', tls: { cert: 'non-empty-cert' }
+  }), /TLS requires non-empty key and certificate/);
+  assert.throws(() => createPeerLinkHub({
+    token: TOKEN, host: '127.0.0.1', tls: { key: '', cert: 'non-empty-cert' }
+  }), /TLS requires non-empty key and certificate/);
+});
+
+test('result endpoint rejects oversized serialized inference results without completing the lease', async t => {
+  const { base } = await setup(t);
+  const registration = await request(base, '/v1/peers/register', TOKEN, {
+    protocol_version: 1, peer_id: 'result-bound-peer',
+    client_nonce: 'D'.repeat(32), capabilities: ['inference.chat']
+  });
+  assert.equal(registration.status, 200);
+  const session = await registration.json();
+
+  const queued = await request(base, '/v1/tasks', TOKEN, {
+    task: {
+      task_id: 'result-bound-task', idempotency_key: 'result-bound-idem-01',
+      type: 'inference.chat',
+      payload: { model: 'model-x', messages: [{ role: 'user', content: 'bounded result test' }] }
+    }
+  });
+  assert.equal(queued.status, 202);
+
+  const claimed = await request(base, '/v1/peers/poll', session.session_token, {
+    peer_id: 'result-bound-peer'
+  });
+  assert.equal(claimed.status, 200);
+  assert.equal((await claimed.json()).task.task_id, 'result-bound-task');
+
+  const oversized = await request(base, '/v1/peers/result', session.session_token, {
+    peer_id: 'result-bound-peer', task_id: 'result-bound-task',
+    ok: true, result: { response: 'x'.repeat(49 * 1024) }
+  });
+  assert.equal(oversized.status, 413);
+  assert.equal((await oversized.json()).error, 'result_payload_too_large');
+
+  const status = await fetch(new URL('/v1/tasks/result-bound-task', base), {
+    headers: { authorization: 'Bearer ' + TOKEN }
+  });
+  assert.equal((await status.json()).task.status, 'LEASED');
+});
+
+test('request JSON decoder preserves multibyte UTF-8 split across TCP chunks', async () => {
+  const { EventEmitter } = require('node:events');
+  const { readJson } = require('./peerlink-protocol.cjs');
+  const requestStream = new EventEmitter();
+  const bytes = Buffer.from(JSON.stringify({ content: 'before-€-after-🧪' }), 'utf8');
+  const splitAt = bytes.indexOf(Buffer.from('€')) + 1;
+  const parsedPromise = readJson(requestStream);
+  requestStream.emit('data', bytes.subarray(0, splitAt));
+  requestStream.emit('data', bytes.subarray(splitAt));
+  requestStream.emit('end');
+  assert.deepEqual(await parsedPromise, { content: 'before-€-after-🧪' });
+});
