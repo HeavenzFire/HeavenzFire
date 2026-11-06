@@ -9,7 +9,8 @@ const { execFileSync } = require('node:child_process');
 const { URL } = require('node:url');
 const github = require('./github.cjs');
 const githubWrite = require('./github-write.cjs');
-const { resolveTrustedApproval } = require('../FieldCore/trusted-approval.cjs');\nconst { createApprovalVerifierFromEnv } = require('../FieldCore/ed25519-approval-broker.cjs');
+const { resolveTrustedApproval } = require('../FieldCore/trusted-approval.cjs');
+const { createApprovalVerifierFromEnv } = require('../FieldCore/ed25519-approval-broker.cjs');
 const { createTaskRecord } = require('../FieldCore/shared-task-contract.cjs');
 
 const HOST = '127.0.0.1';
@@ -341,7 +342,8 @@ function createGitHubBridgeServer(options = {}) {
 if (require.main === module) {
   const port = Number(process.env.HF_GITHUB_BRIDGE_PORT || PORT);
   if (!Number.isInteger(port) || port < 1024 || port > 65535) throw new Error('HF_GITHUB_BRIDGE_PORT_invalid');
-  const approvalVerifier = createApprovalVerifierFromEnv({ serviceId: 'github-bridge' });\n  const server = createGitHubBridgeServer({ port, approvalVerifier });
+  const approvalVerifier = createApprovalVerifierFromEnv({ serviceId: 'github-bridge' });
+  const server = createGitHubBridgeServer({ port, approvalVerifier });
   server.listen(port, HOST, () => process.stdout.write('HeavenzFire GitHub bridge listening on http://' + HOST + ':' + port + '\n'));
 }
 
