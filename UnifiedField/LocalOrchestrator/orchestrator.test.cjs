@@ -5,7 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { createOrchestrator, readManifest, runBounded, invokeGatewayRuntime } = require('./orchestrator.cjs');
+const { createOrchestrator, readManifest, runBounded, invokeGatewayRuntime, invokeLlamaCppRuntime } = require('./orchestrator.cjs');
 const { createTaskLedger } = require('./task-ledger.cjs');
 const crypto = require('node:crypto');
 
@@ -299,6 +299,68 @@ test('UF-TCP REJECT records a reproduced counterexample and rejects the task', a
   });
 });
 
+
+
+test('llama.cpp provider is restricted to an unauthenticated HTTP loopback endpoint', () => {
+  assert.throws(() => createOrchestrator({
+    provider: 'llama-cpp',
+    llamaCppUrl: 'http://192.168.1.20:18080'
+  }), /llama_cpp_must_use_http_loopback/);
+  assert.throws(() => createOrchestrator({
+    provider: 'llama-cpp',
+    llamaCppUrl: 'https://127.0.0.1:18080'
+  }), /llama_cpp_must_use_http_loopback/);
+  assert.doesNotThrow(() => createOrchestrator({
+    provider: 'llama-cpp',
+    llamaCppUrl: 'http://127.0.0.1:18080'
+  }));
+});
+
+test('llama.cpp adapter sends OpenAI-compatible local chat requests without forwarding credentials', async () => {
+  let captured;
+  const result = await invokeLlamaCppRuntime({
+    agent: { id: 'runtime-integrator', objective: 'Verify local runtime compatibility.' },
+    goal: 'Inspect the bounded local adapter.',
+    model: 'qwen2.5-0.5b-instruct-q4_k_m.gguf',
+    llamaCppUrl: 'http://127.0.0.1:18080',
+    fetchImpl: async (url, options) => {
+      captured = { url: String(url), options, body: JSON.parse(options.body) };
+      return {
+        ok: true,
+        json: async () => ({
+          id: 'chatcmpl-local-123',
+          model: 'qwen2.5-0.5b-instruct-q4_k_m.gguf',
+          choices: [{ message: { content: 'Local llama.cpp response.' } }]
+        })
+      };
+    }
+  });
+  assert.equal(captured.url, 'http://127.0.0.1:18080/v1/chat/completions');
+  assert.equal(captured.options.method, 'POST');
+  assert.equal(captured.options.headers.authorization, undefined);
+  assert.equal(captured.body.model, 'qwen2.5-0.5b-instruct-q4_k_m.gguf');
+  assert.equal(captured.body.stream, false);
+  assert.match(captured.body.messages[1].content, /runtime-integrator/);
+  assert.match(captured.body.messages[1].content, /Inspect the bounded local adapter/);
+  assert.equal(result.state, 'completed');
+  assert.equal(result.provider, 'llama.cpp');
+  assert.equal(result.providerRequestId, 'chatcmpl-local-123');
+  assert.equal(result.output, 'Local llama.cpp response.');
+});
+
+test('llama.cpp health reports local provider and does not expose credentials', async () => {
+  await withServer({
+    provider: 'llama-cpp',
+    llamaCppUrl: 'http://127.0.0.1:18080',
+    model: 'qwen2.5-0.5b-instruct-q4_k_m.gguf'
+  }, async base => {
+    const response = await fetch(base + '/health');
+    const health = await response.json();
+    assert.equal(health.provider, 'llama.cpp');
+    assert.equal(health.model, 'qwen2.5-0.5b-instruct-q4_k_m.gguf');
+    assert.equal(health.execution, 'loopback-openai-compatible-llama.cpp');
+  });
+});
 
 test('gateway provider is loopback-only and requires a bearer token', () => {
   assert.throws(() => createOrchestrator({
