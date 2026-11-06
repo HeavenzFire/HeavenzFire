@@ -343,13 +343,13 @@ if (require.main === module) {
       console.error('Tailnet-only mode requires HF_API_KEYS entries of at least 32 characters.');
       process.exit(1);
     }
-    try { createServer({ tailnetOnly: true }); }
-    catch (error) { console.error(error.message); process.exit(1); }
   } else if (host !== '127.0.0.1' && process.env.HF_ALLOW_REMOTE_BIND !== 'true') {
     console.error('Refusing non-loopback bind. Set HF_ALLOW_REMOTE_BIND=true only behind authenticated TLS/reverse proxy.');
     process.exit(1);
   }
-  const server = createServer({ tailnetOnly });
+  let server;
+  try { server = createServer({ tailnetOnly }); }
+  catch (error) { console.error(error.message); process.exit(1); }
   server.listen(port, host, () => console.log(`HeavenzFire API listening on http://${host}:${server.address().port}${tailnetOnly ? ' (Tailscale IPv4 allowlist enforced)' : ''}`));
 }
 
