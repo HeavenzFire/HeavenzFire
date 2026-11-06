@@ -95,8 +95,8 @@ function createPeerLinkHub(options = {}) {
   }
 
   const handler = async (req, res) => {
-    const url = new URL(req.url, 'http://127.0.0.1');
     try {
+      const url = new URL(req.url, 'http://127.0.0.1');
       if (req.method === 'GET' && url.pathname === '/health') {
         return send(res, 200, {
           ok: true, service: 'heavenzfire-peerlink-hub', protocol_version: PROTOCOL_VERSION,
