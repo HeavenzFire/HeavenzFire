@@ -79,11 +79,15 @@ async function invokePeerLinkRuntime({
       if (task.status === 'FAILED') throw new Error('peerlink_worker_' + String(task.error || 'failed').slice(0, 100));
       if (!['QUEUED', 'LEASED'].includes(task.status)) throw new Error('peerlink_unknown_task_state');
       await new Promise((resolve, reject) => {
-        const delay = setTimeout(resolve, Math.min(pollIntervalMs, Math.max(1, deadline - Date.now())));
-        controller.signal.addEventListener('abort', () => {
+        const onAbort = () => {
           clearTimeout(delay);
           reject(Object.assign(new Error('peerlink_timeout'), { name: 'AbortError' }));
-        }, { once: true });
+        };
+        const delay = setTimeout(() => {
+          controller.signal.removeEventListener('abort', onAbort);
+          resolve();
+        }, Math.min(pollIntervalMs, Math.max(1, deadline - Date.now())));
+        controller.signal.addEventListener('abort', onAbort, { once: true });
       });
     }
     throw Object.assign(new Error('peerlink_timeout'), { name: 'AbortError' });
