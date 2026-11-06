@@ -4,7 +4,7 @@
 set -eu
 
 SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
-REPO_ROOT="$(CDPATH= cd -- "$SCRIPT_DIR/../../.." && pwd)"
+REPO_ROOT="$(CDPATH= cd -- "$SCRIPT_DIR/../.." && pwd)"
 MODEL_PATH="${HF_MODEL_PATH:-$HOME/HeavenzFire/models/qwen2.5-0.5b-instruct-q4_k_m.gguf}"
 MODEL_LABEL="${HF_LLAMA_CPP_MODEL:-qwen2.5-0.5b-instruct-q4_k_m.gguf}"
 LLAMA_BIN="${HF_LLAMA_CPP_BIN:-$(command -v llama-server 2>/dev/null || true)}"
