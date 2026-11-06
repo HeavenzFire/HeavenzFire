@@ -1,6 +1,6 @@
 # HeavenzFire Local 16-Role Orchestrator
 
-A loopback-only, local-model analysis coordinator for sixteen named specialist roles. It uses the existing Ollama runtime and does not depend on browser extensions.
+A loopback-only, local-model analysis coordinator for sixteen named specialist roles. It supports Ollama, llama.cpp's OpenAI-compatible local endpoint, and the authenticated HeavenzFire API gateway; it does not depend on browser extensions.
 
 ## What it is (and is not)
 
@@ -10,13 +10,13 @@ A loopback-only, local-model analysis coordinator for sixteen named specialist r
 - Goals are proposals until a separate explicit approval request is received.
 - Task snapshots are appended to a local JSONL ledger (`UnifiedField/LocalOrchestrator/data/tasks.jsonl` by default); set `HF_TASK_LEDGER_PATH` to choose another path.
 - Ledger writes use an exclusive lock file, append-and-fsync, and torn-final-record recovery. A task found in `running` state at startup is marked failed with `process_interrupted_before_completion`; it is never silently rerun.
-- Running a task sends prompts only to the configured loopback runtime endpoint; the default source configuration is `http://127.0.0.1:11434`.
+- Running a task sends prompts only to the configured loopback runtime endpoint; Ollama defaults to `http://127.0.0.1:11434`, while llama.cpp defaults to `http://127.0.0.1:18080`.
 - The HTTP server refuses non-loopback bind addresses. Do not expose it directly to a LAN or Tailscale interface.
 
 ## Requirements
 
 - Node.js 18 or later
-- Local Ollama running on loopback with a model installed (default: `heavenzfire-runtime:latest`)
+- Either Ollama on loopback (default model: `heavenzfire-runtime:latest`) or llama.cpp `llama-server` on loopback with a GGUF model installed.
 
 ## PowerShell 5.1 launch
 
@@ -36,6 +36,18 @@ In a second PowerShell window, verify status:
 Invoke-RestMethod http://127.0.0.1:18797/health
 Invoke-RestMethod http://127.0.0.1:18797/api/agents
 ```
+
+## Android Termux: one-command local runtime
+
+From a complete repository checkout, install Node.js, curl, and the Termux `llama-server` package, and ensure the Qwen GGUF exists at the default model path. Then run:
+
+```sh
+bash UnifiedField/LocalOrchestrator/start-termux.sh
+```
+
+The launcher checks for an existing healthy llama.cpp endpoint before starting one, runs a real local chat-completions smoke test, starts the orchestrator on loopback, and verifies its provider/model health. It never kills an unrelated process or opens a network listener. Configure alternate paths with `HF_MODEL_PATH`, `HF_LLAMA_CPP_BIN`, and `HF_LLAMA_CPP_MODEL`; configure ports with `HF_LLAMA_CPP_PORT` and `HF_ORCHESTRATOR_PORT`.
+
+The launcher backgrounds both services and writes logs/PIDs under `~/.cache/heavenzfire/unified-field`. This is not an Android boot-persistence guarantee: Android may stop Termux processes, and Termux:Boot or a foreground service requires a separate device-side setup and validation.
 
 ## Hosted model adapter through the existing HeavenzFire API
 
@@ -59,9 +71,9 @@ The API key for OpenAI (or another hosted provider) remains only in the API serv
 ## Task lifecycle
 
 1. Submit a proposal: `POST /api/tasks` with JSON `{"goal":"Review a local change" }`.
-2. Explicitly approve it: `POST /api/tasks/{id}/approve` with JSON `{"approve":true}`.
-3. Run it: `POST /api/tasks/{id}/run`.
-4. Inspect results: `GET /api/tasks`.
+2. Approval is a separate server-side trust boundary. The production entrypoint does not configure a trusted `approvalVerifier`, so approval returns HTTP 503 and task execution remains disabled by default.
+3. After an independently reviewed OS-authenticated or signed approval verifier is configured by the operator, the approved task can be run with `POST /api/tasks/{id}/run`.
+4. Inspect task state and results: `GET /api/tasks`.
 
 PowerShell example:
 
