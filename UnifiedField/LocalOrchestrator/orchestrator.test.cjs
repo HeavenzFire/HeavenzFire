@@ -126,8 +126,9 @@ test('self-asserted request fields cannot approve a task without a trusted verif
     const response = await fetch(base + '/api/tasks/' + task.id + '/approve', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ approve: true, approvedBy: 'operator', reason: 'self-asserted', approval: { approved: true } }) });
     assert.equal(response.status, 503);
     assert.equal((await response.json()).error, 'trusted_approval_verifier_not_configured');
-    const state = await fetch(base + '/api/tasks/' + task.id);
-    assert.equal((await state.json()).task.state, 'proposed');
+    const state = await fetch(base + '/api/tasks');
+    const snapshot = await state.json();
+    assert.equal(snapshot.tasks.find(item => item.id === task.id)?.state, 'proposed');
   });
 });
 
