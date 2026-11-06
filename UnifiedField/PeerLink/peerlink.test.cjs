@@ -181,3 +181,51 @@ test('PeerLink client rejects remote plaintext and malformed credentials', async
     peerLinkUrl: 'http://127.0.0.1:18990', peerLinkToken: 'short'
   }), /peerlink_bearer_token_required/);
 });
+
+
+test('real PeerLink hub, orchestrator client, and worker complete an end-to-end inference task', async t => {
+  const { invokePeerLinkRuntime } = require('./peerlink-client.cjs');
+  const { base } = await setup(t);
+  const agentFetch = async (url, init) => {
+    const parsed = new URL(url);
+    if (parsed.port === '11800' && parsed.pathname === '/v1/chat/completions') {
+      return Response.json({
+        model: 'arm64-qwen-test',
+        choices: [{ message: { content: 'End-to-end PeerLink inference passed.' } }],
+        usage: { total_tokens: 17 }
+      });
+    }
+    return fetch(url, init);
+  };
+  const agent = createPeerLinkAgent({
+    hubUrl: base, token: TOKEN, peerId: PEER,
+    inferenceUrl: 'http://127.0.0.1:11800', model: 'arm64-qwen-test',
+    fetchImpl: agentFetch
+  });
+  await agent.connect();
+
+  const resultPromise = invokePeerLinkRuntime({
+    agent: { id: 'integration-reviewer', objective: 'Verify the actual transport round trip.' },
+    goal: 'Return the integration test result.',
+    model: 'arm64-qwen-test',
+    peerLinkUrl: base,
+    peerLinkToken: TOKEN,
+    timeoutMs: 5000,
+    pollIntervalMs: 5
+  });
+  const workerPromise = (async () => {
+    for (let attempt = 0; attempt < 100; attempt++) {
+      const outcome = await agent.runOnce();
+      if (outcome.status === 'COMPLETED') return outcome;
+      await new Promise(resolve => setTimeout(resolve, 5));
+    }
+    throw new Error('worker_task_not_received');
+  })();
+
+  const [result, worker] = await Promise.all([resultPromise, workerPromise]);
+  assert.equal(worker.status, 'COMPLETED');
+  assert.equal(result.state, 'completed');
+  assert.equal(result.provider, 'peerlink');
+  assert.equal(result.peerId, PEER);
+  assert.equal(result.output, 'End-to-end PeerLink inference passed.');
+});
