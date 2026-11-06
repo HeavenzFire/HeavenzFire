@@ -68,6 +68,52 @@ Use `HF_GATEWAY_PROVIDER` values supported by the API: `openai`, `gemini`, `olla
 
 The API key for OpenAI (or another hosted provider) remains only in the API server's environment/secret store. ChatGPT subscription access is not converted into API access or billing. This adapter connects to the configured provider API through the local gateway; it does not attach this ChatGPT web session's private runtime.
 
+### Secure ARM32-to-ARM64 transport with Tailscale Serve
+
+The orchestrator still binds only to `127.0.0.1`. Its gateway transport defaults to `loopback`; remote routing is opt-in and accepts only an HTTPS hostname under the `.ts.net` domain on the standard HTTPS port. TLS certificate validation remains enabled, redirects are rejected, and the existing gateway bearer token is required. This mode is intended for an ARM64 worker whose HeavenzFire API remains bound to its own loopback interface and is published only to the tailnet through Tailscale Serve. Do not set `HF_ALLOW_REMOTE_BIND=true` on the worker.
+
+On the ARM64 worker, configure `services/heavenzfire-api/server.cjs` on `127.0.0.1:18796` with a long random `HF_API_KEYS` token and the chosen inference provider. Publish that loopback service with Tailscale Serve using its HTTPS listener (for example, `tailscale serve --bg --https=443 http://127.0.0.1:18796`). Confirm the Serve status and tailnet ACLs permit only the intended coordinator device. Do not use Funnel or expose the service to the public internet.
+
+On the ARM32 coordinator, configure the Serve transport only when the worker is a supported Linux/Windows Serve host:
+
+```sh
+export HF_ORCHESTRATOR_PROVIDER=heavenzfire-api
+export HF_GATEWAY_TRANSPORT=tailnet-https
+export HF_GATEWAY_URL=https://ARM64-WORKER.TAILNET.ts.net
+export HF_GATEWAY_API_KEY='same-long-random-token-configured-in-worker-HF_API_KEYS'
+export HF_GATEWAY_PROVIDER=custom
+export HF_GATEWAY_MODEL='the-exact-model-enabled-on-the-worker'
+```
+
+### Direct Android-to-Android Tailscale transport
+
+Android's Tailscale app does not provide the `tailscale serve` CLI, but Tailscale devices can connect to services running on another device by its Tailscale IPv4 address and port. The API therefore has a separate `HF_TAILNET_ONLY=true` worker mode. It binds to `0.0.0.0` because Android's VPN interface may not be directly bindable from Termux, then rejects every non-loopback connection unless the source is an exact allowlisted Tailscale IPv4 address in `100.64.0.0/10`. Every non-loopback route, including `/health`, also requires the 32+ character bearer token. The Tailscale overlay provides WireGuard transport encryption; this mode must never be exposed through Funnel or a public port forward.
+
+On the ARM64 Termux worker, set the coordinator phone's Tailscale IPv4 address in the allowlist:
+
+```sh
+export HF_API_KEYS='use-a-random-secret-at-least-32-characters-long'
+export HF_TAILNET_ONLY=true
+export HF_TAILNET_ALLOWED_CLIENTS='100.x.y.z'
+export PORT=18796
+node services/heavenzfire-api/server.cjs
+```
+
+On the ARM32 coordinator, point the existing orchestrator gateway adapter at the ARM64 worker's Tailscale IPv4 address:
+
+```sh
+export HF_ORCHESTRATOR_PROVIDER=heavenzfire-api
+export HF_GATEWAY_TRANSPORT=tailnet-ip
+export HF_GATEWAY_URL=http://100.a.b.c:18796
+export HF_GATEWAY_API_KEY='same-secret-configured-on-the-worker'
+export HF_GATEWAY_PROVIDER=custom
+export HF_GATEWAY_MODEL='exact-model-served-by-the-worker-runtime'
+```
+
+The `100.x.y.z` values are placeholders: use the actual two device addresses shown in the Tailscale app/admin device list. The worker allowlist contains the ARM32 coordinator address; the coordinator URL contains the ARM64 worker address. Tailscale Android permits incoming connections by default, but the end-to-end TCP path must be verified from the coordinator before enabling inference. The worker runtime must separately expose an OpenAI-compatible `/v1/chat/completions` endpoint on its own loopback address; the API's `custom` provider can be configured with `HF_CUSTOM_API_BASE_URL=http://127.0.0.1:18888/v1`, `HF_CUSTOM_API_KEY`, and `HF_CUSTOM_MODEL` if port 18888 is confirmed to be that runtime. Do not assume port 18888 is healthy until `/v1/models` responds. The API gateway never executes shell commands on the worker.
+
+Keep the token in the Termux environment or a protected local secret file; never commit it or paste it into chat. The `.ts.net` hostname is a placeholder until the worker's actual Tailscale DNS name is confirmed. This code path has deterministic policy tests, but a successful handshake and real inference still require both devices to be online and the exact hostname/model to be supplied. Tailscale Serve requires a supported Tailscale CLI host and HTTPS certificates enabled in the tailnet; current Tailscale documentation states there is no CLI support on Android. Therefore this Serve setup is for a Linux/Windows worker or a separate supported tailnet relay, **not a direct Android Termux worker**. For an Android-to-Android worker, use a dedicated authenticated peer listener bound to the device's Tailscale address and verify Android's inbound VPN routing before enabling it; do not substitute a public listener or Funnel. See the [Tailscale CLI support matrix](https://tailscale.com/docs/reference/tailscale-cli) and [Serve documentation](https://tailscale.com/docs/features/tailscale-serve).
+
 ## Task lifecycle
 
 1. Submit a proposal: `POST /api/tasks` with JSON `{"goal":"Review a local change" }`.

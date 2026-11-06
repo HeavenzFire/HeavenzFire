@@ -79,6 +79,20 @@ npm start
 
 Tests exercise health redaction, authentication, model listing and request validation without calling a paid provider.
 
+## Android Termux worker over Tailscale IPv4
+
+For an Android worker that cannot host Tailscale Serve, `HF_TAILNET_ONLY=true` enables a narrow direct tailnet listener. The server binds to `0.0.0.0`, but every non-loopback request is rejected unless its source IPv4 address exactly matches `HF_TAILNET_ALLOWED_CLIENTS` and belongs to `100.64.0.0/10`. The bearer token is required for all non-loopback routes, including `/health`; every configured `HF_API_KEYS` value must be at least 32 characters. The mode does not use `HF_ALLOW_REMOTE_BIND`.
+
+```sh
+export HF_API_KEYS='random-secret-at-least-32-characters'
+export HF_TAILNET_ONLY=true
+export HF_TAILNET_ALLOWED_CLIENTS='100.x.y.z' # exact Tailscale IPv4 of the authorized coordinator
+export PORT=18796
+node server.cjs
+```
+
+Tailscale's WireGuard overlay encrypts traffic between the two tailnet devices. Do not expose this listener through a public port forward or Tailscale Funnel. The allowed-client address must be the coordinator's Tailscale IPv4, not the worker's. Verify the source address observed by the server with the regression tests and a real two-device connection before relying on this mode. Android Tailscale supports incoming device connections by default; the app does not provide the `tailscale serve` CLI, so use this direct-IP mode rather than a Serve command on Android.
+
 ## Security / current limitations
 
 - This is an initial single-process service, not yet production-deployed.
