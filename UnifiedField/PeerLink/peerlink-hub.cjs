@@ -179,7 +179,12 @@ function createPeerLinkHub(options = {}) {
             return send(res, 409, { ok: false, error: 'task_lease_not_owned' });
           }
           const ok = body.ok === true;
-          const result = ok && body.result && typeof body.result === 'object' ? body.result : null;
+          const result = ok && body.result && typeof body.result === 'object' && !Array.isArray(body.result)
+            ? body.result : null;
+          if (ok && !result) return send(res, 400, { ok: false, error: 'invalid_result_payload' });
+          if (result && Buffer.byteLength(JSON.stringify(result), 'utf8') > 48 * 1024) {
+            return send(res, 413, { ok: false, error: 'result_payload_too_large' });
+          }
           const error = ok ? null : String(body.error || 'worker_failed').slice(0, 500);
           append({ kind: 'task_result', task_id: task.task_id, peer_id: peer.peer_id, ok, result, error });
           task.status = ok ? 'COMPLETED' : 'FAILED';
