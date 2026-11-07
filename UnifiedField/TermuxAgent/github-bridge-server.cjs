@@ -219,9 +219,10 @@ function createGitHubBridgeServer(options = {}) {
         if (priorRun?.type === 'task_execution_started' || priorRun?.type === 'task_execution_failed') {
           throw Object.assign(new Error('task_execution_in_progress_or_outcome_unknown; inspect orchestrator task ' + (priorRun.orchestratorTaskId || 'unknown') + ' before retrying'), { statusCode: 409 });
         }
-        const created = await remoteJson(orchestratorUrl + '/api/tasks', 'POST', { goal: taskEvent.goal || 'Execute task ' + taskRun[1] + '; see durable inbox task record.' });
+        const created = await remoteJson(orchestratorUrl + '/api/tasks', 'POST', { taskId: taskRun[1], goal: taskEvent.goal || 'Execute task ' + taskRun[1] + '; see durable inbox task record.' });
         const orchestratorTaskId = created.task?.id;
         if (!orchestratorTaskId) throw new Error('orchestrator_task_creation_failed');
+        if (orchestratorTaskId !== taskRun[1]) throw Object.assign(new Error('orchestrator_task_id_binding_mismatch'), { statusCode: 502 });
         await remoteJson(orchestratorUrl + '/api/tasks/' + orchestratorTaskId + '/approve', 'POST', { approve: true, approvalEvidence: input.approvalEvidence, approvalContext });
         append({ type: 'task_execution_started', taskId: taskRun[1], orchestratorTaskId, approval });
         const result = await remoteJson(orchestratorUrl + '/api/tasks/' + orchestratorTaskId + '/run', 'POST', {}, options.orchestratorTimeoutMs || ORCHESTRATOR_TIMEOUT_MS);
