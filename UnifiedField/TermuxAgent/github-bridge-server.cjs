@@ -10,6 +10,7 @@ const { URL } = require('node:url');
 const github = require('./github.cjs');
 const githubWrite = require('./github-write.cjs');
 const { resolveTrustedApproval } = require('../FieldCore/trusted-approval.cjs');
+const { createApprovalVerifierFromEnv } = require('../FieldCore/ed25519-approval-broker.cjs');
 const { createTaskRecord } = require('../FieldCore/shared-task-contract.cjs');
 
 const HOST = '127.0.0.1';
@@ -218,9 +219,10 @@ function createGitHubBridgeServer(options = {}) {
         if (priorRun?.type === 'task_execution_started' || priorRun?.type === 'task_execution_failed') {
           throw Object.assign(new Error('task_execution_in_progress_or_outcome_unknown; inspect orchestrator task ' + (priorRun.orchestratorTaskId || 'unknown') + ' before retrying'), { statusCode: 409 });
         }
-        const created = await remoteJson(orchestratorUrl + '/api/tasks', 'POST', { goal: taskEvent.goal || 'Execute task ' + taskRun[1] + '; see durable inbox task record.' });
+        const created = await remoteJson(orchestratorUrl + '/api/tasks', 'POST', { taskId: taskRun[1], goal: taskEvent.goal || 'Execute task ' + taskRun[1] + '; see durable inbox task record.' });
         const orchestratorTaskId = created.task?.id;
         if (!orchestratorTaskId) throw new Error('orchestrator_task_creation_failed');
+        if (orchestratorTaskId !== taskRun[1]) throw Object.assign(new Error('orchestrator_task_id_binding_mismatch'), { statusCode: 502 });
         await remoteJson(orchestratorUrl + '/api/tasks/' + orchestratorTaskId + '/approve', 'POST', { approve: true, approvalEvidence: input.approvalEvidence, approvalContext });
         append({ type: 'task_execution_started', taskId: taskRun[1], orchestratorTaskId, approval });
         const result = await remoteJson(orchestratorUrl + '/api/tasks/' + orchestratorTaskId + '/run', 'POST', {}, options.orchestratorTimeoutMs || ORCHESTRATOR_TIMEOUT_MS);
@@ -341,7 +343,8 @@ function createGitHubBridgeServer(options = {}) {
 if (require.main === module) {
   const port = Number(process.env.HF_GITHUB_BRIDGE_PORT || PORT);
   if (!Number.isInteger(port) || port < 1024 || port > 65535) throw new Error('HF_GITHUB_BRIDGE_PORT_invalid');
-  const server = createGitHubBridgeServer({ port });
+  const approvalVerifier = createApprovalVerifierFromEnv({ serviceId: 'github-bridge' });
+  const server = createGitHubBridgeServer({ port, approvalVerifier });
   server.listen(port, HOST, () => process.stdout.write('HeavenzFire GitHub bridge listening on http://' + HOST + ':' + port + '\n'));
 }
 

@@ -132,6 +132,56 @@ test('self-asserted request fields cannot approve a task without a trusted verif
   });
 });
 
+test('approval context cannot be transferred to another task with the same goal', async () => {
+  await withServer({}, async base => {
+    const goal = 'approval must bind to one exact orchestrator task';
+    const created = await fetch(base + '/api/tasks', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ goal })
+    });
+    const task = (await created.json()).task;
+    const transferred = await fetch(base + '/api/tasks/' + task.id + '/approve', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(taskApprovalPayload('00000000-0000-4000-8000-000000000099', goal))
+    });
+    assert.equal(transferred.status, 403);
+    assert.equal((await transferred.json()).error, 'approval_context_mismatch');
+    assert.equal((await (await fetch(base + '/api/tasks')).json()).tasks.find(item => item.id === task.id).state, 'proposed');
+
+    const exact = await fetch(base + '/api/tasks/' + task.id + '/approve', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(taskApprovalPayload(task.id, goal))
+    });
+    assert.equal(exact.status, 200);
+  });
+});
+
+test('orchestrator accepts a canonical externally bound task ID once and rejects duplicates', async () => {
+  await withServer({}, async base => {
+    const taskId = '00000000-0000-4000-8000-000000000123';
+    const create = () => fetch(base + '/api/tasks', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ taskId, goal: 'bridge-bound task identity' })
+    });
+    const first = await create();
+    assert.equal(first.status, 201);
+    assert.equal((await first.json()).task.id, taskId);
+    const duplicate = await create();
+    assert.equal(duplicate.status, 409);
+    assert.equal((await duplicate.json()).error, 'task_id_already_exists');
+    const malformed = await fetch(base + '/api/tasks', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ taskId: 'not-a-uuid', goal: 'invalid task identity' })
+    });
+    assert.equal(malformed.status, 400);
+  });
+});
+
 test('bounded worker pool never exceeds declared concurrency', async () => {
   let active = 0, maximum = 0;
   const results = await runBounded(Array.from({length:16}, (_, i) => i), 4, async value => {

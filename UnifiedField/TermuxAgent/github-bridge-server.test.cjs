@@ -103,7 +103,7 @@ test('task intake persists to inbox and 16-role execution requires approval', as
   const fetchImpl = async (url, init = {}) => {
     calls.push({ url, method: init.method, body: init.body && JSON.parse(init.body) });
     if (url === 'http://127.0.0.1:18796/api/tasks') return new Response(JSON.stringify({ ok: true, taskId: calls.at(-1).body.taskRecord.taskId }), { status: 201 });
-    if (url === 'http://127.0.0.1:18797/api/tasks') return new Response(JSON.stringify({ task: { id: '00000000-0000-4000-8000-000000000001' } }), { status: 201 });
+    if (url === 'http://127.0.0.1:18797/api/tasks') return new Response(JSON.stringify({ task: { id: calls.at(-1).body.taskId } }), { status: 201 });
     if (url.endsWith('/approve')) return new Response(JSON.stringify({ task: { state: 'approved' } }), { status: 200 });
     if (url.endsWith('/run')) return new Response(JSON.stringify({ task: { state: 'completed' }, completedRoles: 16, failedRoles: 0 }), { status: 200 });
     return new Response('{}', { status: 404 });
@@ -118,10 +118,12 @@ test('task intake persists to inbox and 16-role execution requires approval', as
   assert.equal(run.status, 200);
   assert.equal((await run.json()).result.completedRoles, 16);
   assert.ok(calls.some(x => x.url === 'http://127.0.0.1:18796/api/tasks'));
-  assert.ok(calls.some(x => x.url === 'http://127.0.0.1:18797/api/tasks'));
+  const orchestratorCreate = calls.find(x => x.url === 'http://127.0.0.1:18797/api/tasks');
+  assert.equal(orchestratorCreate.body.taskId, task.taskId);
   const approvalCall = calls.find(x => x.url.endsWith('/approve'));
   assert.equal(approvalCall.body.approve, true);
   assert.equal(approvalCall.body.approvalContext.taskId, task.taskId);
+  assert.equal(calls.find(x => x.url === 'http://127.0.0.1:18797/api/tasks').body.taskId, approvalCall.body.approvalContext.taskId);
   assert.ok(approvalCall.body.approvalContext.goalHash);
 });
 

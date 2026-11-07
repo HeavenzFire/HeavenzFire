@@ -7,6 +7,7 @@ const crypto = require('node:crypto');
 const { createTaskLedger } = require('./task-ledger.cjs');
 const { evaluate: evaluateUfTcp } = require('../QuantumLab/uf-tcp-policy.cjs');
 const { resolveTrustedApproval } = require('../FieldCore/trusted-approval.cjs');
+const { createApprovalVerifierFromEnv } = require('../FieldCore/ed25519-approval-broker.cjs');
 
 const DEFAULT_HOST = '127.0.0.1';
 const DEFAULT_PORT = 18797;
@@ -271,7 +272,13 @@ function createOrchestrator(options = {}) {
           return json(res, 400, { error: 'candidate_commit_must_be_a_40_character_git_sha' });
         }
         const timestamp = now();
-        const task = { id: crypto.randomUUID(), goal: input.goal.trim(), candidateCommit: input.candidateCommit ? input.candidateCommit.toLowerCase() : null, state: 'proposed', verificationStatus: 'not_run', consensus: null, createdAt: timestamp, updatedAt: timestamp };
+        const requestedTaskId = input.taskId;
+        if (requestedTaskId !== undefined && (typeof requestedTaskId !== 'string' || !/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(requestedTaskId))) {
+          return json(res, 400, { error: 'task_id_must_be_a_canonical_uuid' });
+        }
+        const taskId = requestedTaskId || crypto.randomUUID();
+        if (tasks.has(taskId)) return json(res, 409, { error: 'task_id_already_exists' });
+        const task = { id: taskId, goal: input.goal.trim(), candidateCommit: input.candidateCommit ? input.candidateCommit.toLowerCase() : null, state: 'proposed', verificationStatus: 'not_run', consensus: null, createdAt: timestamp, updatedAt: timestamp };
         tasks.set(task.id, task);
         ledger.save(task);
         return json(res, 201, { task: publicTask(task), executionStarted: false });
@@ -287,7 +294,7 @@ function createOrchestrator(options = {}) {
           if (typeof approvalVerifier !== 'function') return json(res, 503, { error: 'trusted_approval_verifier_not_configured' });
           const goalHash = crypto.createHash('sha256').update(task.goal).digest('hex');
           const context = input.approvalContext;
-          if (!context || typeof context.taskId !== 'string' || !context.taskId.trim() || context.goalHash !== goalHash) return json(res, 403, { error: 'approval_context_mismatch' });
+          if (!context || context.taskId !== task.id || context.goalHash !== goalHash) return json(res, 403, { error: 'approval_context_mismatch' });
           const approval = await resolveTrustedApproval({ verifier: approvalVerifier, action: 'execute_task', subject: { taskId: context.taskId, goalHash }, evidence: input.approvalEvidence });
           task.approval = approval;
           task.state = 'approved'; task.approvedAt = now(); task.updatedAt = task.approvedAt;
@@ -357,7 +364,8 @@ if (require.main === module) {
       : process.env.HF_LOCAL_MODEL || DEFAULT_MODEL;
   const ollamaUrl = process.env.HF_OLLAMA_URL || DEFAULT_OLLAMA;
   const llamaCppUrl = process.env.HF_LLAMA_CPP_URL || DEFAULT_LLAMA_CPP;
-  const app = createOrchestrator({ host, port, model, ollamaUrl, llamaCppUrl, provider });
+  const approvalVerifier = createApprovalVerifierFromEnv({ serviceId: 'local-orchestrator' });
+  const app = createOrchestrator({ host, port, model, ollamaUrl, llamaCppUrl, provider, approvalVerifier });
   app.server.listen(port, host, () => {
     process.stdout.write(JSON.stringify({ event: 'listening', host, port, roles: app.manifest.agents.length, maxParallel: app.manifest.maxParallel, provider, model }) + '\n');
   });
