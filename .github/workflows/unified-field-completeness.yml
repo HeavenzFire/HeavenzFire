@@ -30,7 +30,7 @@ jobs:
           persist-credentials: false
       - name: Assert checkout credentials are not persisted
         run: |
-          if git config --local --get-regexp '^http\\..*\\.extraheader$' >/dev/null 2>&1; then
+          if git config --local --get-regexp '^http\..*\.extraheader$' >/dev/null 2>&1; then
             echo "::error::Checkout credentials unexpectedly persisted in local Git config"
             exit 1
           fi
