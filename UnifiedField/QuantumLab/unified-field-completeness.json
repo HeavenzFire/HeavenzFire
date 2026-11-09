@@ -685,6 +685,63 @@
         "no-secret-leakage",
         "matrix-coverage"
       ]
+    },
+    {
+      "id": "ci.attestation-verifier",
+      "name": "GitHub Actions run, job, and artifact attestation verifier",
+      "layer": "evidence",
+      "status": "verified",
+      "owner": "UnifiedField",
+      "implementation": "UnifiedField/QuantumLab/verify-ci-attestation.cjs",
+      "substrates": [
+        "GitHub Actions",
+        "Node.js 22",
+        "GitHub REST API"
+      ],
+      "triggers": [
+        "completeness-workflow"
+      ],
+      "integrations": [
+        "unified-field-completeness.json",
+        "GitHub Actions workflow-run API",
+        "GitHub Actions job API",
+        "GitHub Actions artifact API"
+      ],
+      "permissions": [
+        "contents:read",
+        "actions:read",
+        "no-secret-write"
+      ],
+      "evidence": {
+        "testCommand": "node --test --test-reporter=tap UnifiedField/QuantumLab/uf-completeness-registry.test.cjs UnifiedField/QuantumLab/verify-ci-attestation.test.cjs",
+        "testResult": "pass",
+        "revision": "f17d5699cb02beecaac1e121b4576c7ea359b73d",
+        "verifiedAt": "2026-11-09T19:47:23Z",
+        "repository": "HeavenzFire/HeavenzFire",
+        "workflowRunId": 42686660441,
+        "workflowRunAttempt": 1,
+        "workflowId": 406811791,
+        "workflowName": "Unified Field Completeness Registry",
+        "workflowPath": ".github/workflows/unified-field-completeness.yml",
+        "workflowJob": "completeness",
+        "requiredSteps": [
+          "Validate capability registry",
+          "Test registry enforcement",
+          "Upload registry test evidence",
+          "Verify existing GitHub Actions attestations",
+          "Publish current CI evidence locator"
+        ],
+        "artifactName": "uf-completeness-tests",
+        "artifactDigest": "sha256:e97d8c63a3baacd7718eddd03b6f6e8f6ac59e1a8e9a6a5f2f266b2750189503"
+      },
+      "acceptance": [
+        "exact-run-head-sha",
+        "workflow-identity-and-path",
+        "successful-job-and-required-steps",
+        "retained-artifact-digest-match",
+        "read-only-github-token",
+        "expired-artifact-rejected"
+      ]
     }
   ]
 }
