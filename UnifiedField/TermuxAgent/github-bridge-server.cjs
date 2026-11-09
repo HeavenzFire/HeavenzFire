@@ -140,11 +140,13 @@ function createGitHubBridgeServer(options = {}) {
     const fingerprint = crypto.createHash('sha256').update(JSON.stringify({ action, input: fingerprintInput })).digest('hex');
     const prior = idempotency.get(key);
     if (prior && prior.fingerprint !== fingerprint) throw Object.assign(new Error('idempotency_key_conflict'), { statusCode: 409 });
-    const approval = await resolveTrustedApproval({ verifier: approvalVerifier, action, subject: { fingerprint }, evidence: input.approvalEvidence });
+    // A matching completed operation is a replay of an already-authorized write.
+    // Return its durable result before verifying the one-time approval envelope again.
     if (prior) {
       if (prior.type === 'write_completed') return { ...prior.result, idempotentReplay: true };
       throw Object.assign(new Error('idempotency_key_in_progress_or_outcome_unknown'), { statusCode: 409 });
     }
+    const approval = await resolveTrustedApproval({ verifier: approvalVerifier, action, subject: { fingerprint }, evidence: input.approvalEvidence });
     append({ type: 'write_started', action, idempotencyKey: key, fingerprint, approval });
     try {
       const result = await operation();
