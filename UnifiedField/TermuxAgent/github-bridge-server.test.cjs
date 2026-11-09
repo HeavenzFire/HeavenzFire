@@ -68,7 +68,14 @@ test('write action uses real branch adapter with durable idempotency and audit',
       return { branch, base: 'main', sha: 'abc123' };
     }
   };
-  const { base, auditPath } = await withServer(t, { writeApi });
+  let approvalCalls = 0;
+  const approvalVerifier = async input => {
+    if (!input.evidence) throw new Error('test_approval_evidence_required');
+    approvalCalls += 1;
+    if (approvalCalls > 1) throw new Error('approval_replay_rejected');
+    return testApprovalVerifier(input);
+  };
+  const { base, auditPath } = await withServer(t, { writeApi, approvalVerifier });
   const input = {
     repo: 'HeavenzFire/HeavenzFire', branch: 'hf-agent/bridge-test',
     idempotencyKey: 'branch-create-0001',
@@ -81,6 +88,7 @@ test('write action uses real branch adapter with durable idempotency and audit',
   const replay = await fetch(base + '/api/github/branches', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(input) });
   assert.equal(replay.status, 201);
   assert.equal((await replay.json()).idempotentReplay, true);
+  assert.equal(approvalCalls, 1, 'completed write replay must not consume the one-time approval twice');
   assert.equal(calls.length, 1);
   assert.equal(calls[0].writeEnabled, true);
   const events = fs.readFileSync(auditPath, 'utf8').trim().split(/\r?\n/).map(JSON.parse);
