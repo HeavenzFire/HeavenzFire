@@ -687,3 +687,21 @@ test('task scheduler dispatches all role calls through the authenticated Heavenz
     fs.rmSync(directory, { recursive: true, force: true });
   }
 });
+
+test('PeerLink provider requires authenticated hub configuration and reports remote inference mode', async () => {
+  assert.throws(() => createOrchestrator({ provider: 'peerlink', peerLinkUrl: 'http://192.168.1.2:18990', peerLinkToken: 'x'.repeat(40) }), /peerlink_url_must_be_https/);
+  assert.throws(() => createOrchestrator({ provider: 'peerlink', peerLinkUrl: 'http://127.0.0.1:18990', peerLinkToken: 'short' }), /peerlink_bearer_token_required/);
+  await withServer({
+    provider: 'peerlink',
+    peerLinkUrl: 'http://127.0.0.1:18990',
+    peerLinkToken: 'peerlink-test-token-12345678901234567890',
+    model: 'heavenzfire-qwen'
+  }, async base => {
+    const response = await fetch(base + '/health');
+    const health = await response.json();
+    assert.equal(health.provider, 'peerlink');
+    assert.equal(health.model, 'heavenzfire-qwen');
+    assert.equal(health.execution, 'authenticated-peerlink-remote-inference');
+    assert.equal(JSON.stringify(health).includes('peerlink-test-token'), false);
+  });
+});
