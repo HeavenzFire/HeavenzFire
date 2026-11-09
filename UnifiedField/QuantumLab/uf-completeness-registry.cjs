@@ -86,11 +86,30 @@ function validateRegistry(registry) {
       errors.push(prefix + ':evidence_must_be_object');
     } else if (item.status === 'verified') {
       const evidence = item.evidence;
+      const validRepository = typeof evidence.repository === 'string' &&
+        /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(evidence.repository);
+      const validWorkflow = typeof evidence.workflowPath === 'string' &&
+        /^\.github\/workflows\/[^/]+\.ya?ml$/.test(evidence.workflowPath);
+      const validSteps = Array.isArray(evidence.requiredSteps) &&
+        evidence.requiredSteps.length > 0 &&
+        evidence.requiredSteps.every(step => typeof step === 'string' && step.trim());
       if (typeof evidence.testCommand !== 'string' || !evidence.testCommand.trim() ||
           evidence.testResult !== 'pass' ||
           typeof evidence.revision !== 'string' || !VERIFIED_SHA.test(evidence.revision) ||
           !isValidUtcTimestamp(evidence.verifiedAt)) {
         errors.push(prefix + ':verified_requires_reproducible_passing_evidence');
+      }
+      if (!validRepository ||
+          !Number.isSafeInteger(evidence.workflowRunId) || evidence.workflowRunId < 1 ||
+          !Number.isSafeInteger(evidence.workflowRunAttempt) || evidence.workflowRunAttempt < 1 ||
+          !Number.isSafeInteger(evidence.workflowId) || evidence.workflowId < 1 ||
+          typeof evidence.workflowName !== 'string' || !evidence.workflowName.trim() ||
+          !validWorkflow ||
+          typeof evidence.workflowJob !== 'string' || !evidence.workflowJob.trim() ||
+          !validSteps ||
+          typeof evidence.artifactName !== 'string' || !evidence.artifactName.trim() ||
+          typeof evidence.artifactDigest !== 'string' || !/^sha256:[a-f0-9]{64}$/i.test(evidence.artifactDigest)) {
+        errors.push(prefix + ':verified_requires_github_actions_run_job_and_artifact_attestation');
       }
     }
   }
