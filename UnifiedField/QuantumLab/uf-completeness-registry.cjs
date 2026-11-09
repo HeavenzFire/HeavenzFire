@@ -13,7 +13,32 @@ const STATUSES = new Set([
 
 const REQUIRED_STRINGS = ['id', 'name', 'layer', 'owner', 'implementation'];
 const REQUIRED_ARRAYS = ['substrates', 'triggers', 'integrations', 'permissions', 'acceptance'];
-const VERIFIED_SHA = /^(?:[a-f0-9]{7,40})$/i;
+const VERIFIED_SHA = /^[a-f0-9]{40}$/i;
+
+/**
+ * Validate a UTC timestamp without accepting Date.parse calendar normalization.
+ * @param {unknown} value Timestamp to validate.
+ * @returns {boolean} True only for a real UTC calendar date and clock time.
+ */
+function isValidUtcTimestamp(value) {
+  if (typeof value !== 'string') return false;
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?Z$/.exec(value);
+  if (!match) return false;
+
+  const [year, month, day, hour, minute, second] = match.slice(1, 7).map(Number);
+  if (month < 1 || month > 12 || day < 1 || hour > 23 || minute > 59 || second > 59) {
+    return false;
+  }
+
+  const date = new Date(0);
+  date.setUTCFullYear(year, month - 1, day);
+  date.setUTCHours(hour, minute, second, 0);
+
+  return date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day &&
+    Number.isFinite(Date.parse(value));
+}
 
 function validateRegistry(registry) {
   const errors = [];
@@ -64,9 +89,7 @@ function validateRegistry(registry) {
       if (typeof evidence.testCommand !== 'string' || !evidence.testCommand.trim() ||
           evidence.testResult !== 'pass' ||
           typeof evidence.revision !== 'string' || !VERIFIED_SHA.test(evidence.revision) ||
-          typeof evidence.verifiedAt !== 'string' ||
-          !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/.test(evidence.verifiedAt) ||
-          !Number.isFinite(Date.parse(evidence.verifiedAt))) {
+          !isValidUtcTimestamp(evidence.verifiedAt)) {
         errors.push(prefix + ':verified_requires_reproducible_passing_evidence');
       }
     }
