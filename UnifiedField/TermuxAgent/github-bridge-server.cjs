@@ -211,14 +211,17 @@ function createGitHubBridgeServer(options = {}) {
         const taskEvent = taskLinks.get(taskRun[1]);
         if (!taskEvent) throw Object.assign(new Error('task_not_found_in_bridge_ledger'), { statusCode: 404 });
         const approvalContext = { taskId: taskRun[1], goalHash: taskEvent.goalHash };
-        const approval = await resolveTrustedApproval({ verifier: approvalVerifier, action: 'execute_task', subject: approvalContext, evidence: input.approvalEvidence });
         const priorRun = taskRuns.get(taskRun[1]);
+        // A completed task is a read-only replay of an already-authorized result.
+        // Check this before verifying the one-time envelope, whose nonce was consumed
+        // during the original execution.
         if (priorRun?.type === 'task_execution_completed') {
           return send(res, 200, { ok: true, idempotentReplay: true, result: priorRun.result });
         }
         if (priorRun?.type === 'task_execution_started' || priorRun?.type === 'task_execution_failed') {
           throw Object.assign(new Error('task_execution_in_progress_or_outcome_unknown; inspect orchestrator task ' + (priorRun.orchestratorTaskId || 'unknown') + ' before retrying'), { statusCode: 409 });
         }
+        const approval = await resolveTrustedApproval({ verifier: approvalVerifier, action: 'execute_task', subject: approvalContext, evidence: input.approvalEvidence });
         const created = await remoteJson(orchestratorUrl + '/api/tasks', 'POST', { taskId: taskRun[1], goal: taskEvent.goal || 'Execute task ' + taskRun[1] + '; see durable inbox task record.' });
         const orchestratorTaskId = created.task?.id;
         if (!orchestratorTaskId) throw new Error('orchestrator_task_creation_failed');
