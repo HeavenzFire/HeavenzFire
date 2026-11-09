@@ -105,8 +105,8 @@ test('accepts verified only with command, passing result, commit SHA, and UTC ti
       evidence: {
         testCommand: 'node --test example.test.cjs',
         testResult: 'pass',
-        revision: '0123456789abcdef',
-        verifiedAt: '2026-11-04T00:00:00Z'
+        revision: '0123456789abcdef0123456789abcdef01234567',
+        verifiedAt: '2024-02-29T23:59:59Z'
       }
     })]
   });
@@ -122,3 +122,53 @@ test('rejects empty trigger, integration, substrate, permission, or acceptance l
   assert.equal(result.ok, false);
   assert.ok(result.errors.length >= 5);
 });
+
+test('rejects impossible UTC calendar dates and out-of-range clock components', () => {
+  const invalidTimestamps = [
+    '2026-02-30T00:00:00Z',
+    '2025-02-29T00:00:00Z',
+    '2026-04-31T00:00:00Z',
+    '2026-13-01T00:00:00Z',
+    '2026-01-00T00:00:00Z',
+    '2026-01-01T24:00:00Z',
+    '2026-01-01T23:60:00Z',
+    '2026-01-01T23:59:60Z',
+    '2026-01-01T00:00:00+00:00'
+  ];
+
+  for (const verifiedAt of invalidTimestamps) {
+    const result = validateRegistry({
+      schemaVersion: 1,
+      capabilities: [capability({
+        status: 'verified',
+        evidence: {
+          testCommand: 'node --test example.test.cjs',
+          testResult: 'pass',
+          revision: 'a'.repeat(40),
+          verifiedAt
+        }
+      })]
+    });
+    assert.equal(result.ok, false, verifiedAt);
+    assert.ok(result.errors.includes('capabilities[0]:verified_requires_reproducible_passing_evidence'));
+  }
+});
+
+test('requires a full 40-character commit SHA for verified evidence', () => {
+  for (const revision of ['deadbee', 'a'.repeat(39), 'a'.repeat(41)]) {
+    const result = validateRegistry({
+      schemaVersion: 1,
+      capabilities: [capability({
+        status: 'verified',
+        evidence: {
+          testCommand: 'node --test example.test.cjs',
+          testResult: 'pass',
+          revision,
+          verifiedAt: '2026-11-04T00:00:00Z'
+        }
+      })]
+    });
+    assert.equal(result.ok, false, revision);
+  }
+});
+
