@@ -40,7 +40,7 @@ jobs:
           git checkout --detach FETCH_HEAD
       - name: Assert no local Git authentication is configured
         run: |
-          if git config --local --get-regexp '^http\\..*\\.extraheader$' >/dev/null 2>&1; then
+          if git config --local --get-regexp '^http\..*\.extraheader$' >/dev/null 2>&1; then
             echo "::error::Unexpected Git authentication persisted in local config"
             exit 1
           fi
@@ -52,9 +52,9 @@ jobs:
         run: node UnifiedField/QuantumLab/uf-completeness-registry.cjs
       - name: Test registry enforcement
         run: |
-          node --test --test-reporter=tap \\
-            UnifiedField/QuantumLab/uf-completeness-registry.test.cjs \\
-            UnifiedField/QuantumLab/verify-ci-attestation.test.cjs \\
+          node --test --test-reporter=tap \
+            UnifiedField/QuantumLab/uf-completeness-registry.test.cjs \
+            UnifiedField/QuantumLab/verify-ci-attestation.test.cjs \
             > "$RUNNER_TEMP/uf-completeness.tap"
           cat "$RUNNER_TEMP/uf-completeness.tap"
       - name: Upload registry test evidence
