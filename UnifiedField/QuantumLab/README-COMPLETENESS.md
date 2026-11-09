@@ -16,8 +16,8 @@ A configured endpoint is not a live service. A passing unit test is not an end-t
 From this directory:
 
 ```powershell
-node .\uf-completeness-registry.cjs
-node --test .\uf-completeness-registry.test.cjs
+node .\\uf-completeness-registry.cjs
+node --test .\\uf-completeness-registry.test.cjs
 ```
 
 Use `--strict` in release qualification to return exit code 3 while any capability is not verified. Normal CI validates registry structure without treating known open integration work as a CI failure.
@@ -37,7 +37,6 @@ The first register covers host inventory, service discovery, task contracts, per
 
 This register is a control mechanism for closing gaps, not a claim that all listed capabilities are complete.
 
-
 ## GitHub Actions attestation
 
 A registry entry may be marked `verified` only when its evidence binds the claim to a completed GitHub Actions run and an immutable test artifact. In addition to the test command, passing result, full commit SHA, and UTC completion time, record:
@@ -47,9 +46,14 @@ A registry entry may be marked `verified` only when its evidence binds the claim
 - successful `workflowJob` and the exact successful `requiredSteps`;
 - `artifactName` and the GitHub artifact's SHA-256 `artifactDigest`.
 
-The structural registry validator checks that these fields are present and well-formed. The separate `verify-ci-attestation.cjs` verifier queries GitHub's Actions API and checks that the run belongs to this repository, tested the exact recorded commit, used the recorded workflow and attempt, completed successfully, passed every required job step, and retained the named artifact with the recorded digest. CI supplies a read-only `GITHUB_TOKEN` with `actions: read` permission.
+The structural registry validator checks that these fields are present and well-formed. The separate `verify-ci-attestation.cjs` verifier queries GitHub's Actions API and checks that the run belongs to this repository, tested the exact recorded commit, used the recorded workflow and attempt, completed successfully, passed every required job step, and retained the named artifact with the recorded digest.
 
-The workflow uploads the TAP test report as `uf-completeness-tests` and publishes the run URL, tested revision, attempt, workflow ref, and artifact digest in the Actions job summary. After a run completes, use its Actions API metadata and artifact digest to populate evidence fields. Do not copy a run ID or digest from a different commit or attempt.
+The workflow separates trust domains:
+- Pull-request and manual-dispatch runs validate the registry and tests with `contents: read` only. They do not receive Actions API permission.
+- The remote attestation job runs only after a push to `main`, uses the trusted main revision, and receives the narrowly scoped `actions: read` permission.
+- No pull-request-controlled code runs in the job that holds the Actions API token.
+
+The validation job uploads the TAP test report as `uf-completeness-tests` and publishes the run URL, tested revision, attempt, workflow ref, and artifact digest in the Actions job summary. After a run completes, use its Actions API metadata and artifact digest to populate evidence fields. Do not copy a run ID or digest from a different commit or attempt.
 
 Run the remote attestation check locally with a read-only GitHub token:
 
