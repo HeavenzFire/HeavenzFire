@@ -36,3 +36,27 @@ When implementation changes:
 The first register covers host inventory, service discovery, task contracts, persistence, approval enforcement, capability registry, event triggers, dispatch, adapter framework, model runtimes, agent consensus, evidence, observability, recovery, security posture, browser integration, and CI quality gates.
 
 This register is a control mechanism for closing gaps, not a claim that all listed capabilities are complete.
+
+
+## GitHub Actions attestation
+
+A registry entry may be marked `verified` only when its evidence binds the claim to a completed GitHub Actions run and an immutable test artifact. In addition to the test command, passing result, full commit SHA, and UTC completion time, record:
+
+- `repository`, `workflowRunId`, and `workflowRunAttempt`;
+- `workflowId`, `workflowName`, and exact `workflowPath`;
+- successful `workflowJob` and the exact successful `requiredSteps`;
+- `artifactName` and the GitHub artifact's SHA-256 `artifactDigest`.
+
+The structural registry validator checks that these fields are present and well-formed. The separate `verify-ci-attestation.cjs` verifier queries GitHub's Actions API and checks that the run belongs to this repository, tested the exact recorded commit, used the recorded workflow and attempt, completed successfully, passed every required job step, and retained the named artifact with the recorded digest. CI supplies a read-only `GITHUB_TOKEN` with `actions: read` permission.
+
+The workflow uploads the TAP test report as `uf-completeness-tests` and publishes the run URL, tested revision, attempt, workflow ref, and artifact digest in the Actions job summary. After a run completes, use its Actions API metadata and artifact digest to populate evidence fields. Do not copy a run ID or digest from a different commit or attempt.
+
+Run the remote attestation check locally with a read-only GitHub token:
+
+```powershell
+$env:GITHUB_REPOSITORY = 'HeavenzFire/HeavenzFire'
+$env:GITHUB_TOKEN = 'your-read-only-token'
+node .\\verify-ci-attestation.cjs
+```
+
+The verifier does not promote capabilities automatically. Host deployment, cross-device behavior, Windows ACLs, and live inference remain separate acceptance gates.
