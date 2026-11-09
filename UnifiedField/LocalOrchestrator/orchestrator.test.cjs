@@ -705,3 +705,76 @@ test('PeerLink provider requires authenticated hub configuration and reports rem
     assert.equal(JSON.stringify(health).includes('peerlink-test-token'), false);
   });
 });
+
+test('task scheduler dispatches all 16 roles through the authenticated PeerLink provider', async () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'hf-peerlink-scheduler-test-'));
+  let submissions = 0;
+  const app = createOrchestrator({
+    port: 0,
+    ledgerPath: path.join(directory, 'tasks.jsonl'),
+    approvalVerifier: testApprovalVerifier,
+    provider: 'peerlink',
+    peerLinkUrl: 'http://127.0.0.1:18990',
+    peerLinkToken: 'peerlink-test-token-12345678901234567890',
+    model: 'heavenzfire-qwen',
+    fetchImpl: async (url, options) => {
+      const parsed = new URL(url);
+      assert.equal(options.headers.authorization, 'Bearer peerlink-test-token-12345678901234567890');
+      if (parsed.pathname === '/v1/tasks' && options.method === 'POST') {
+        submissions += 1;
+        const body = JSON.parse(options.body);
+        assert.equal(body.task.type, 'inference.chat');
+        assert.equal(body.task.payload.model, 'heavenzfire-qwen');
+        return Response.json({ ok: true, task: { task_id: body.task.task_id } }, { status: 202 });
+      }
+      if (/^\/v1\/tasks\/uf-[0-9a-f-]{36}$/.test(parsed.pathname) && options.method === 'GET') {
+        return Response.json({
+          ok: true,
+          task: {
+            status: 'COMPLETED',
+            peer_id: 'arm64-test-node',
+            result: { model: 'heavenzfire-qwen', response: 'peerlink-role-result-' + submissions }
+          }
+        });
+      }
+      throw new Error('unexpected_peerlink_test_route:' + parsed.pathname);
+    }
+  });
+  await new Promise(resolve => app.server.listen(0, '127.0.0.1', resolve));
+  const address = app.server.address();
+  const base = 'http://127.0.0.1:' + address.port;
+  try {
+    const goal = 'Exercise all 16 orchestrator roles through authenticated PeerLink.';
+    const created = await fetch(base + '/api/tasks', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ goal })
+    });
+    const task = (await created.json()).task;
+    const approved = await fetch(base + '/api/tasks/' + task.id + '/approve', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(taskApprovalPayload(task.id, goal))
+    });
+    assert.equal(approved.status, 200);
+    const response = await fetch(base + '/api/tasks/' + task.id + '/run', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: '{}'
+    });
+    assert.equal(response.status, 200);
+    const result = (await response.json()).task;
+    assert.equal(submissions, 16);
+    assert.equal(result.results.length, 16);
+    assert.ok(result.results.every(item => item.provider === 'peerlink'));
+    assert.equal(result.execution.provider, 'peerlink');
+    assert.equal(result.execution.model, 'heavenzfire-qwen');
+    assert.equal(result.execution.providerRequestIds.length, 16);
+    assert.equal(result.consensus.decision, 0);
+    assert.equal(result.state, 'completed');
+  } finally {
+    await new Promise(resolve => app.server.close(resolve));
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
