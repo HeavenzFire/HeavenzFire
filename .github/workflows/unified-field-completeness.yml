@@ -6,6 +6,8 @@ on:
       - 'UnifiedField/QuantumLab/unified-field-completeness.json'
       - 'UnifiedField/QuantumLab/uf-completeness-registry.cjs'
       - 'UnifiedField/QuantumLab/uf-completeness-registry.test.cjs'
+      - 'UnifiedField/QuantumLab/verify-ci-attestation.cjs'
+      - 'UnifiedField/QuantumLab/verify-ci-attestation.test.cjs'
       - '.github/workflows/unified-field-completeness.yml'
   push:
     branches: [main]
@@ -13,11 +15,14 @@ on:
       - 'UnifiedField/QuantumLab/unified-field-completeness.json'
       - 'UnifiedField/QuantumLab/uf-completeness-registry.cjs'
       - 'UnifiedField/QuantumLab/uf-completeness-registry.test.cjs'
+      - 'UnifiedField/QuantumLab/verify-ci-attestation.cjs'
+      - 'UnifiedField/QuantumLab/verify-ci-attestation.test.cjs'
       - '.github/workflows/unified-field-completeness.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   completeness:
@@ -46,4 +51,45 @@ jobs:
       - name: Validate capability registry
         run: node UnifiedField/QuantumLab/uf-completeness-registry.cjs
       - name: Test registry enforcement
-        run: node --test UnifiedField/QuantumLab/uf-completeness-registry.test.cjs
+        run: |
+          node --test --test-reporter=tap \
+            UnifiedField/QuantumLab/uf-completeness-registry.test.cjs \
+            UnifiedField/QuantumLab/verify-ci-attestation.test.cjs \
+            > "$RUNNER_TEMP/uf-completeness.tap"
+          cat "$RUNNER_TEMP/uf-completeness.tap"
+      - name: Upload registry test evidence
+        id: upload-tests
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: uf-completeness-tests
+          path: ${{ runner.temp }}/uf-completeness.tap
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Verify existing GitHub Actions attestations
+        if: success()
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: node UnifiedField/QuantumLab/verify-ci-attestation.cjs
+      - name: Publish current CI evidence locator
+        if: always()
+        env:
+          REPOSITORY: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+          REVISION: ${{ github.sha }}
+          WORKFLOW_REF: ${{ github.workflow_ref }}
+          ARTIFACT_DIGEST: ${{ steps.upload-tests.outputs.artifact-digest }}
+        run: |
+          {
+            echo "## Unified Field CI evidence"
+            echo "- Repository: ${REPOSITORY}"
+            echo "- Run: https://github.com/${REPOSITORY}/actions/runs/${RUN_ID}"
+            echo "- Attempt: ${RUN_ATTEMPT}"
+            echo "- Tested revision: ${REVISION}"
+            echo "- Workflow ref: ${WORKFLOW_REF}"
+            echo "- Job: completeness"
+            echo "- Artifact: uf-completeness-tests"
+            echo "- Artifact digest: ${ARTIFACT_DIGEST:-unavailable}"
+          } >> "$GITHUB_STEP_SUMMARY"
