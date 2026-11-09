@@ -97,7 +97,7 @@ test('rejects verified evidence with failed result, invalid revision, or invalid
   assert.ok(result.errors.some(error => error.includes('verified_requires_reproducible_passing_evidence')));
 });
 
-test('accepts verified only with command, passing result, commit SHA, and UTC timestamp', () => {
+test('accepts verified only with command, commit, UTC time, workflow job, and artifact attestation', () => {
   const result = validateRegistry({
     schemaVersion: 1,
     capabilities: [capability({
@@ -106,12 +106,40 @@ test('accepts verified only with command, passing result, commit SHA, and UTC ti
         testCommand: 'node --test example.test.cjs',
         testResult: 'pass',
         revision: '0123456789abcdef0123456789abcdef01234567',
-        verifiedAt: '2024-02-29T23:59:59Z'
+        verifiedAt: '2024-02-29T23:59:59Z',
+        repository: 'HeavenzFire/HeavenzFire',
+        workflowRunId: 123,
+        workflowRunAttempt: 1,
+        workflowId: 456,
+        workflowName: 'Unified Field Completeness Registry',
+        workflowPath: '.github/workflows/unified-field-completeness.yml',
+        workflowJob: 'completeness',
+        requiredSteps: ['Validate capability registry', 'Test registry enforcement'],
+        artifactName: 'uf-completeness-tests',
+        artifactDigest: 'sha256:' + 'a'.repeat(64)
       }
     })]
   });
   assert.equal(result.ok, true);
   assert.equal(result.summary.verified, 1);
+});
+
+
+test('rejects verified claims without GitHub Actions run, job, and artifact binding', () => {
+  const result = validateRegistry({
+    schemaVersion: 1,
+    capabilities: [capability({
+      status: 'verified',
+      evidence: {
+        testCommand: 'node --test example.test.cjs',
+        testResult: 'pass',
+        revision: 'a'.repeat(40),
+        verifiedAt: '2026-11-09T00:00:00Z'
+      }
+    })]
+  });
+  assert.equal(result.ok, false);
+  assert.ok(result.errors.includes('capabilities[0]:verified_requires_github_actions_run_job_and_artifact_attestation'));
 });
 
 test('rejects empty trigger, integration, substrate, permission, or acceptance lists', () => {
