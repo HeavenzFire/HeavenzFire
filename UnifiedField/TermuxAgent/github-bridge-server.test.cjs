@@ -108,7 +108,14 @@ test('task intake persists to inbox and 16-role execution requires approval', as
     if (url.endsWith('/run')) return new Response(JSON.stringify({ task: { state: 'completed' }, completedRoles: 16, failedRoles: 0 }), { status: 200 });
     return new Response('{}', { status: 404 });
   };
-  const { base } = await withServer(t, { fetchImpl });
+  let approvalCalls = 0;
+  const approvalVerifier = async input => {
+    if (!input.evidence) throw new Error('test_approval_evidence_required');
+    approvalCalls += 1;
+    if (approvalCalls > 1) throw new Error('approval_replay_rejected');
+    return testApprovalVerifier(input);
+  };
+  const { base } = await withServer(t, { fetchImpl, approvalVerifier });
   const submitted = await fetch(base + '/api/tasks', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ goal: 'Review the GitHub integration' }) });
   assert.equal(submitted.status, 201);
   const task = await submitted.json();
@@ -116,7 +123,14 @@ test('task intake persists to inbox and 16-role execution requires approval', as
   assert.equal(denied.status, 403);
   const run = await fetch(base + '/api/tasks/' + task.taskId + '/run', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ approvalEvidence: TEST_APPROVAL_EVIDENCE }) });
   assert.equal(run.status, 200);
-  assert.equal((await run.json()).result.completedRoles, 16);
+  const runResult = await run.json();
+  assert.equal(runResult.result.completedRoles, 16);
+  const replay = await fetch(base + '/api/tasks/' + task.taskId + '/run', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ approvalEvidence: TEST_APPROVAL_EVIDENCE }) });
+  assert.equal(replay.status, 200);
+  const replayResult = await replay.json();
+  assert.equal(replayResult.idempotentReplay, true);
+  assert.deepEqual(replayResult.result, runResult.result);
+  assert.equal(approvalCalls, 1, 'completed replay must not consume the one-time approval twice');
   assert.ok(calls.some(x => x.url === 'http://127.0.0.1:18796/api/tasks'));
   const orchestratorCreate = calls.find(x => x.url === 'http://127.0.0.1:18797/api/tasks');
   assert.equal(orchestratorCreate.body.taskId, task.taskId);
