@@ -314,6 +314,52 @@ test('task intake is idempotent for a stable task UUID and rejects conflicting r
   assert.equal(inboxPosts, 1);
 });
 
+test('accepted task replay repairs a missing inbox record instead of reporting stale acceptance', async t => {
+  const taskId = '00000000-0000-4000-8000-000000000785';
+  const goal = 'Recreate an inbox record lost after the bridge audit was fsynced';
+  const goalHash = crypto.createHash('sha256').update(goal, 'utf8').digest('hex');
+  let storedTaskRecord = null;
+  let inboxPosts = 0;
+  const fetchImpl = async (url, init = {}) => {
+    if (url === 'http://127.0.0.1:18796/api/tasks' && init.method === 'POST') {
+      inboxPosts++;
+      storedTaskRecord = JSON.parse(init.body).taskRecord;
+      return new Response(JSON.stringify({ ok: true, taskId }), { status: 201 });
+    }
+    if (url === 'http://127.0.0.1:18796/api/tasks/' + taskId) {
+      return storedTaskRecord
+        ? new Response(JSON.stringify({ ok: true, taskRecord: storedTaskRecord }), { status: 200 })
+        : new Response('{}', { status: 404 });
+    }
+    return new Response('{}', { status: 404 });
+  };
+  const { base, auditPath } = await withServer(t, {
+    fetchImpl,
+    initialAuditEvents: [{ type: 'task_submitted', taskId, goalHash, goalBytes: Buffer.byteLength(goal, 'utf8'), inboxAccepted: true }]
+  });
+  const response = await fetch(base + '/api/tasks', {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ taskId, goal })
+  });
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).idempotentReplay, true);
+  assert.equal(inboxPosts, 1);
+  assert.equal(storedTaskRecord.taskId, taskId);
+  const events = fs.readFileSync(auditPath, 'utf8').split('\n').filter(Boolean).map(JSON.parse);
+  assert.ok(events.some(event => event.type === 'task_submission_reserved' && event.reconciledMissingInboxRecord === true));
+  assert.ok(events.some(event => event.type === 'task_submitted' && event.taskId === taskId));
+});
+
+test('task intake rejects goals larger than the orchestrator execution limit', async t => {
+  const { base } = await withServer(t, { fetchImpl: async () => new Response('{}', { status: 404 }) });
+  const response = await fetch(base + '/api/tasks', {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ goal: 'x'.repeat(4001) })
+  });
+  assert.equal(response.status, 400);
+  assert.match((await response.json()).error, /goal_required_max_4000/);
+});
+
 test('bridge refuses task execution before side effects when orchestrator lacks recovery capability', async t => {
   const taskId = '00000000-0000-4000-8000-000000000783';
   let storedTaskRecord = null;
