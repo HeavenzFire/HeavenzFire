@@ -11,7 +11,7 @@ const { createTaskInboxServer } = require('./task-inbox-server.cjs');
 async function withInbox(t, callback) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'heavenzfire-task-inbox-'));
   const inboxPath = path.join(dir, 'inbox.jsonl');
-  const server = createTaskInboxServer({ inboxPath, port: 0 });
+  const server = createTaskInboxServer({ inboxPath, port: 0, readToken: 'test-inbox-read-token-that-is-at-least-32-chars' });
   await new Promise((resolve, reject) => {
     server.once('error', reject);
     server.listen(0, '127.0.0.1', resolve);
@@ -27,6 +27,8 @@ async function withInbox(t, callback) {
 function proposal(taskId = 'proposal-1', goal = 'Test proposal intake') {
   return createTaskRecord({ taskId, source: 'continuous-rd-pipeline', goal, metadata: { cycle: 1 } });
 }
+
+const readHeaders = { authorization: 'Bearer test-inbox-read-token-that-is-at-least-32-chars' };
 
 async function post(baseUrl, taskRecord) {
   return fetch(baseUrl + '/api/tasks', {
@@ -44,7 +46,7 @@ test('loopback inbox accepts proposed/pending tasks and persists task evidence',
     assert.equal(response.status, 201);
     assert.equal(body.ok, true);
     assert.equal(body.taskId, task.taskId);
-    const lookup = await fetch(baseUrl + '/api/tasks/' + encodeURIComponent(task.taskId));
+    const lookup = await fetch(baseUrl + '/api/tasks/' + encodeURIComponent(task.taskId), { headers: readHeaders });
     const detail = await lookup.json();
     assert.equal(lookup.status, 200);
     assert.equal(detail.taskRecord.approvalState, 'pending');
@@ -86,7 +88,7 @@ test('task inbox lists newest pending proposals with a bounded limit', async t =
   await withInbox(t, async ({ baseUrl }) => {
     assert.equal((await post(baseUrl, proposal('list-1', 'First proposal'))).status, 201);
     assert.equal((await post(baseUrl, proposal('list-2', 'Second proposal'))).status, 201);
-    const response = await fetch(baseUrl + '/api/tasks?limit=1');
+    const response = await fetch(baseUrl + '/api/tasks?limit=1', { headers: readHeaders });
     const body = await response.json();
     assert.equal(response.status, 200);
     assert.equal(body.total, 2);
@@ -94,8 +96,20 @@ test('task inbox lists newest pending proposals with a bounded limit', async t =
     assert.equal(body.tasks[0].taskId, 'list-2');
     assert.equal(body.tasks[0].status, 'proposed');
     assert.equal(body.tasks[0].approvalState, 'pending');
-    const invalid = await fetch(baseUrl + '/api/tasks?limit=101');
+    const invalid = await fetch(baseUrl + '/api/tasks?limit=101', { headers: readHeaders });
     assert.equal(invalid.status, 400);
+  });
+});
+
+test('task inbox denies direct task reads without bearer authentication', async t => {
+  await withInbox(t, async ({ baseUrl }) => {
+    const unauthenticatedList = await fetch(baseUrl + '/api/tasks');
+    assert.equal(unauthenticatedList.status, 401);
+    assert.equal((await unauthenticatedList.json()).error, 'task_inbox_read_authorization_required');
+    const unauthenticatedDetail = await fetch(baseUrl + '/api/tasks/missing');
+    assert.equal(unauthenticatedDetail.status, 401);
+    const authorizedList = await fetch(baseUrl + '/api/tasks', { headers: readHeaders });
+    assert.equal(authorizedList.status, 200);
   });
 });
 
@@ -105,6 +119,7 @@ test('task inbox reports health and returns 404 for unknown task IDs', async t =
     assert.equal(health.ok, true);
     assert.equal(health.host, '127.0.0.1');
     assert.equal(health.storedTaskCount, 0);
-    assert.equal((await fetch(baseUrl + '/api/tasks/missing')).status, 404);
+    assert.equal(health.readAuthorizationConfigured, true);
+    assert.equal((await fetch(baseUrl + '/api/tasks/missing', { headers: readHeaders })).status, 404);
   });
 });
