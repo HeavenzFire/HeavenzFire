@@ -578,6 +578,30 @@ test('reconciles a completed orchestrator task when the bridge lost the run resp
   assert.equal(runCalls, 1, 'bridge restart replay must retrieve stored results, not rerun inference');
 });
 
+test('durable failed execution is replayed as a known failure, not an unknown conflict', async t => {
+  const taskId = '00000000-0000-4000-8000-000000000784';
+  const goal = 'A previously failed task must report its known terminal outcome';
+  const goalHash = crypto.createHash('sha256').update(goal, 'utf8').digest('hex');
+  let upstreamCalls = 0;
+  const fetchImpl = async () => { upstreamCalls++; return new Response('{}', { status: 500 }); };
+  const { base } = await withServer(t, {
+    fetchImpl,
+    initialAuditEvents: [
+      { type: 'task_submitted', taskId, goalHash, inboxAccepted: true },
+      { type: 'task_execution_failed', taskId, orchestratorTaskId: taskId, error: 'persisted_execution_failure' }
+    ]
+  });
+  const response = await fetch(base + '/api/tasks/' + taskId + '/run', {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ approvalEvidence: TEST_APPROVAL_EVIDENCE })
+  });
+  assert.equal(response.status, 502);
+  const body = await response.json();
+  assert.equal(body.idempotentReplay, true);
+  assert.equal(body.failure.error, 'persisted_execution_failure');
+  assert.equal(upstreamCalls, 0, 'known terminal failure replay must not call upstream services');
+});
+
 test('sanitizes legacy audit records without restoring raw results to replay cache', async t => {
   const taskId = '00000000-0000-4000-8000-000000000101';
   const goalSentinel = 'LEGACY_GOAL_SENTINEL_20261110';
