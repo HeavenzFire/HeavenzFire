@@ -111,7 +111,7 @@ test('write action uses real branch adapter with durable idempotency and audit',
   assert.equal(approvalCalls, 1, 'completed write replay must not consume the one-time approval twice');
   assert.equal(calls.length, 1);
   assert.equal(calls[0].writeEnabled, true);
-  const events = fs.readFileSync(auditPath, 'utf8').trim().split(/\r?\n/).map(JSON.parse);
+  const events = fs.readFileSync(auditPath, 'utf8').split('\n').filter(Boolean).map(JSON.parse);
   assert.deepEqual(events.map(x => x.type), ['write_started', 'write_completed']);
   assert.equal(events[0].approval.approvedBy, 'verified-test-operator');
   assert.equal(events[0].approval.method, 'injected-test-verifier');
