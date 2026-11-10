@@ -123,8 +123,6 @@ test('write action uses real branch adapter with durable idempotency and audit',
   assert.equal(replay.status, 201);
   const replayBody = await replay.json();
   assert.equal(replayBody.idempotentReplay, true);
-  assert.equal(replayBody.status, 'approved');
-  assert.equal(replayBody.approvalState, 'approved');
   assert.equal(approvalCalls, 1, 'completed write replay must not consume the one-time approval twice');
   assert.equal(calls.length, 1);
   assert.equal(calls[0].writeEnabled, true);
@@ -302,7 +300,10 @@ test('task intake is idempotent for a stable task UUID and rejects conflicting r
   storedTaskRecord.approvalState = 'approved';
   const replay = await submit('Stable task intake identity');
   assert.equal(replay.status, 200);
-  assert.equal((await replay.json()).idempotentReplay, true);
+  const replayBody = await replay.json();
+  assert.equal(replayBody.idempotentReplay, true);
+  assert.equal(replayBody.status, 'approved');
+  assert.equal(replayBody.approvalState, 'approved');
   assert.equal(inboxPosts, 1, 'same task ID and goal must not create a second inbox record');
   const uppercaseLookup = await fetch(base + '/api/tasks/' + taskId.toUpperCase());
   assert.equal(uppercaseLookup.status, 200);
@@ -564,7 +565,7 @@ test('reconciles a completed orchestrator task when the bridge lost the run resp
   assert.equal(recovered.status, 200);
   assert.equal((await recovered.json()).recovered, true);
   assert.equal(runCalls, 1, 'terminal recovery must not re-execute the orchestrator task');
-  const events = fs.readFileSync(auditPath, 'utf8').trim().split(/\\r?\\n/).map(JSON.parse);
+  const events = fs.readFileSync(auditPath, 'utf8').split('\n').filter(Boolean).map(JSON.parse);
   assert.ok(events.some(event => event.type === 'task_execution_completed' && event.taskId === taskId));
   const restartedBase = await restart();
   const replay = await fetch(restartedBase + '/api/tasks/' + taskId + '/run', {
