@@ -288,7 +288,8 @@ function createGitHubBridgeServer(options = {}) {
           ok: true, service: 'heavenzfire-unified-field-github-bridge',
           host, port: server.address()?.port || port,
           githubAuth: auth, allowedOwners: [...allowedOwners],
-          approvalVerifierConfigured, writesEnabled: approvalVerifierConfigured, capabilities,
+          approvalVerifierConfigured, writesEnabled: approvalVerifierConfigured,
+          localReadAuthenticatorConfigured: typeof readAuthVerifier === 'function', capabilities,
           defaultBranchWrites: false, merges: false,
           auditEvents: auditTotalEvents, recentAuditEvents: audit.length
         });
