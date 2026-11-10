@@ -383,162 +383,163 @@ function createGitHubBridgeServer(options = {}) {
         }
         taskRunLocks.add(taskId);
         try {
-        const taskEvent = taskLinks.get(taskId);
-        if (!taskEvent) throw Object.assign(new Error('task_not_found_in_bridge_ledger'), { statusCode: 404 });
-        if (!/^[a-f0-9]{64}$/i.test(taskEvent.goalHash || '')) {
-          throw Object.assign(new Error('task_goal_hash_missing_from_bridge_audit'), { statusCode: 409 });
-        }
-        const approvalContext = { taskId, goalHash: taskEvent.goalHash };
-        const priorRun = taskRuns.get(taskId);
-        if (priorRun?.type === 'task_execution_completed') {
-          const cached = taskResults.get(taskId);
-          if (cached) return send(res, 200, { ok: true, idempotentReplay: true, result: cached.value });
-          try {
-            const recoveredResult = await remoteJson(
-              orchestratorUrl + '/api/tasks/' + taskId + '/result',
-              'GET', undefined, 20000,
-              orchestratorResultReadToken ? { authorization: 'Bearer ' + orchestratorResultReadToken } : {}
-            );
-            if (recoveredResult?.task?.id === taskId) {
-              rememberTaskResult(taskId, recoveredResult);
-              return send(res, 200, { ok: true, idempotentReplay: true, recovered: true, result: recoveredResult });
-            }
-          } catch {}
-          return send(res, 409, { ok: false, error: 'task_completed_result_not_cached', taskId, orchestratorTaskId: priorRun.orchestratorTaskId || null, resultSha256: priorRun.resultSha256 || null });
-        }
-        if (priorRun?.type === 'task_execution_failed') {
-          return send(res, 502, { ok: false, taskId, orchestratorTaskId: priorRun.orchestratorTaskId || taskId, failure: { error: priorRun.error || 'orchestrator_task_failed' }, idempotentReplay: true });
-        }
+          const taskEvent = taskLinks.get(taskId);
+          if (!taskEvent) throw Object.assign(new Error('task_not_found_in_bridge_ledger'), { statusCode: 404 });
+          if (!/^[a-f0-9]{64}$/i.test(taskEvent.goalHash || '')) {
+            throw Object.assign(new Error('task_goal_hash_missing_from_bridge_audit'), { statusCode: 409 });
+          }
+          const approvalContext = { taskId, goalHash: taskEvent.goalHash };
+          const priorRun = taskRuns.get(taskId);
+          const approvalReference = priorRun?.approvalVerified === true && /^[a-f0-9]{64}$/i.test(priorRun.approvalDigest || '')
+            ? { approvalVerified: true, approvalDigest: priorRun.approvalDigest }
+            : null;
 
-        // A durable reservation means the orchestrator may already contain the task.
-        // Reconcile its persisted state before considering any create/approve/run call.
-        if (priorRun?.type === 'task_execution_reserved' || priorRun?.type === 'task_execution_started') {
+          const getInboxTask = async () => {
+            const response = await remoteJson(inboxUrl + '/api/tasks/' + taskId, 'GET', undefined, 20000,
+              inboxReadToken ? { authorization: 'Bearer ' + inboxReadToken } : {});
+            const record = response && response.taskRecord;
+            if (!record || record.taskId !== taskId ||
+                crypto.createHash('sha256').update(String(record.goal || ''), 'utf8').digest('hex') !== taskEvent.goalHash) {
+              throw Object.assign(new Error('authoritative_inbox_task_goal_hash_mismatch'), { statusCode: 409 });
+            }
+            return record;
+          };
+          const getOrchestratorState = async () => remoteJson(orchestratorUrl + '/api/tasks/' + taskId + '/state', 'GET');
+          const getOrchestratorResult = async () => remoteJson(
+            orchestratorUrl + '/api/tasks/' + taskId + '/result',
+            'GET', undefined, 20000,
+            orchestratorResultReadToken ? { authorization: 'Bearer ' + orchestratorResultReadToken } : {}
+          );
+          const verifyAndRecordApproval = async existingReference => {
+            if (existingReference) return existingReference;
+            let verified;
+            try {
+              verified = await resolveTrustedApproval({ verifier: approvalVerifier, action: 'execute_task', subject: approvalContext, evidence: input.approvalEvidence });
+            } catch (error) {
+              throw Object.assign(new Error('fresh_task_execution_approval_required_after_interrupted_verification'), { statusCode: 403, cause: error });
+            }
+            const reference = approvalAuditReference(verified, taskId, taskEvent.goalHash);
+            append({ type: 'task_execution_authorized', taskId, orchestratorTaskId: taskId, goalHash: taskEvent.goalHash, ...reference });
+            return reference;
+          };
+          const startAndRun = async reference => {
+            append({ type: 'task_execution_started', taskId, orchestratorTaskId: taskId, ...reference });
+            const result = await remoteJson(orchestratorUrl + '/api/tasks/' + taskId + '/run', 'POST', {}, options.orchestratorTimeoutMs || ORCHESTRATOR_TIMEOUT_MS);
+            append({ type: 'task_execution_completed', taskId, orchestratorTaskId: taskId, ...reference, result });
+            return send(res, 200, { ok: true, taskId, orchestratorTaskId: taskId, result });
+          };
+          const replayCompleted = async (event, recovered) => {
+            const cached = taskResults.get(taskId);
+            if (cached) return send(res, 200, { ok: true, idempotentReplay: true, result: cached.value });
+            try {
+              const result = await getOrchestratorResult();
+              if (result?.task?.id === taskId) {
+                if (recovered) append({ type: 'task_execution_completed', taskId, orchestratorTaskId: taskId, approvalVerified: true, approvalDigest: event.approvalDigest, verificationStatus: result.task.verificationStatus, result });
+                else rememberTaskResult(taskId, result);
+                return send(res, 200, { ok: true, idempotentReplay: true, recovered: true, result });
+              }
+            } catch {}
+            return send(res, 409, { ok: false, error: 'task_completed_result_not_cached', taskId, orchestratorTaskId: event.orchestratorTaskId || taskId, resultSha256: event.resultSha256 || null });
+          };
+
+          if (priorRun?.type === 'task_execution_completed') return await replayCompleted(priorRun, false);
+          if (priorRun?.type === 'task_execution_failed') {
+            return send(res, 502, { ok: false, taskId, orchestratorTaskId: priorRun.orchestratorTaskId || taskId, failure: { error: priorRun.error || 'orchestrator_task_failed' }, idempotentReplay: true });
+          }
+
           await assertOrchestratorRecoverySupport();
-          let existing;
+          if (priorRun?.type === 'task_execution_reserved' ||
+              priorRun?.type === 'task_execution_authorized' ||
+              priorRun?.type === 'task_execution_started') {
+            let existing;
+            try {
+              existing = await getOrchestratorState();
+            } catch (error) {
+              if (error.statusCode !== 404 || priorRun.type === 'task_execution_started') {
+                throw Object.assign(new Error('task_execution_recovery_requires_orchestrator_reconciliation'), { statusCode: 409 });
+              }
+            }
+            const state = existing?.task?.state;
+            if (existing?.task && existing.task.goalHash !== taskEvent.goalHash) {
+              throw Object.assign(new Error('orchestrator_task_goal_hash_mismatch'), { statusCode: 409 });
+            }
+            if (state === 'running') {
+              throw Object.assign(new Error('task_execution_still_running; refusing duplicate execution'), { statusCode: 409 });
+            }
+            if (state === 'completed' || state === 'verified' || (state === 'rejected' && existing.task.completedAt)) {
+              if (!approvalReference) throw Object.assign(new Error('completed_task_missing_durable_approval_reference'), { statusCode: 409 });
+              const result = await getOrchestratorResult();
+              if (!result?.task || result.task.id !== taskId) throw Object.assign(new Error('completed_task_result_unavailable_after_restart'), { statusCode: 503 });
+              append({ type: 'task_execution_completed', taskId, orchestratorTaskId: taskId, ...approvalReference, verificationStatus: result.task.verificationStatus, result });
+              return send(res, 200, { ok: true, taskId, orchestratorTaskId: taskId, recovered: true, verificationStatus: result.task.verificationStatus, result });
+            }
+            if (state === 'failed') {
+              if (!approvalReference) throw Object.assign(new Error('failed_task_missing_durable_approval_reference'), { statusCode: 409 });
+              const failure = { error: 'orchestrator_task_failed', state };
+              append({ type: 'task_execution_failed', taskId, orchestratorTaskId: taskId, ...approvalReference, error: failure.error });
+              return send(res, 502, { ok: false, taskId, orchestratorTaskId: taskId, recovered: true, failure });
+            }
+            if (state === 'rejected') {
+              throw Object.assign(new Error('orchestrator_task_rejected_before_execution; manual review required'), { statusCode: 409 });
+            }
+            if (state === 'approved') {
+              const reference = await verifyAndRecordApproval(approvalReference);
+              return await startAndRun(reference);
+            }
+            if (state === 'proposed' || state === undefined) {
+              if (priorRun.type === 'task_execution_started') {
+                throw Object.assign(new Error('task_execution_started_but_orchestrator_not_running_or_terminal; manual reconciliation required'), { statusCode: 409 });
+              }
+              await getInboxTask();
+              const reference = await verifyAndRecordApproval(approvalReference);
+              if (state === undefined) {
+                try {
+                  await remoteJson(orchestratorUrl + '/api/tasks', 'POST', { taskId, goal: (await getInboxTask()).goal });
+                } catch (error) {
+                  if (error.statusCode !== 409) throw error;
+                }
+                existing = await getOrchestratorState();
+                if (existing?.task?.id !== taskId || existing.task.goalHash !== taskEvent.goalHash) {
+                  throw Object.assign(new Error('orchestrator_task_id_or_goal_hash_binding_mismatch'), { statusCode: 409 });
+                }
+              }
+              if (existing?.task?.state !== 'approved') {
+                await remoteJson(orchestratorUrl + '/api/tasks/' + taskId + '/approve', 'POST', { approve: true, approvalEvidence: input.approvalEvidence, approvalContext });
+              }
+              return await startAndRun(reference);
+            }
+            throw Object.assign(new Error('orchestrator_task_state_unrecognized'), { statusCode: 409 });
+          }
+
+          const taskRecord = await getInboxTask();
+          await assertOrchestratorRecoverySupport();
+          const racedRun = taskRuns.get(taskId);
+          if (racedRun) throw Object.assign(new Error('task_execution_reservation_already_exists; retry to reconcile'), { statusCode: 409 });
+          append({ type: 'task_execution_reserved', taskId, orchestratorTaskId: taskId, goalHash: taskEvent.goalHash });
+          const reference = await verifyAndRecordApproval(null);
+          let orchestratorTask;
           try {
-            existing = await remoteJson(orchestratorUrl + '/api/tasks/' + taskId + '/state', 'GET');
+            orchestratorTask = await getOrchestratorState();
           } catch (error) {
-            if (error.statusCode !== 404 || priorRun.type !== 'task_execution_reserved') {
-              throw Object.assign(new Error('task_execution_recovery_requires_orchestrator_reconciliation'), { statusCode: 409 });
-            }
+            if (error.statusCode !== 404) throw error;
           }
-          const state = existing?.task?.state;
-          if (existing?.task && existing.task.goalHash !== taskEvent.goalHash) {
-            throw Object.assign(new Error('orchestrator_task_goal_hash_mismatch'), { statusCode: 409 });
+          if (!orchestratorTask?.task) {
+            try {
+              await remoteJson(orchestratorUrl + '/api/tasks', 'POST', { taskId, goal: taskRecord.goal });
+            } catch (error) {
+              if (error.statusCode !== 409) throw error;
+            }
+            orchestratorTask = await getOrchestratorState();
           }
-          if (state === undefined && priorRun.type === 'task_execution_reserved') {
-            const inboxResponse = await remoteJson(inboxUrl + '/api/tasks/' + taskId, 'GET', undefined, 20000, inboxReadToken ? { authorization: 'Bearer ' + inboxReadToken } : {});
-            const taskRecord = inboxResponse && inboxResponse.taskRecord;
-            if (!taskRecord || taskRecord.taskId !== taskId ||
-                crypto.createHash('sha256').update(String(taskRecord.goal || ''), 'utf8').digest('hex') !== taskEvent.goalHash) {
-              throw Object.assign(new Error('reserved_task_missing_or_goal_binding_mismatch'), { statusCode: 409 });
-            }
-            const approval = priorRun.approval || await resolveTrustedApproval({ verifier: approvalVerifier, action: 'execute_task', subject: approvalContext, evidence: input.approvalEvidence });
-            const created = await remoteJson(orchestratorUrl + '/api/tasks', 'POST', { taskId, goal: taskRecord.goal });
-            if (created.task?.id !== taskId) throw Object.assign(new Error('orchestrator_task_id_binding_mismatch'), { statusCode: 502 });
-            const createdState = await remoteJson(orchestratorUrl + '/api/tasks/' + taskId + '/state', 'GET');
-            if (createdState.task?.goalHash !== taskEvent.goalHash) {
-              throw Object.assign(new Error('orchestrator_task_goal_hash_binding_mismatch'), { statusCode: 409 });
-            }
+          if (orchestratorTask?.task?.id !== taskId || orchestratorTask?.task?.goalHash !== taskEvent.goalHash) {
+            throw Object.assign(new Error('orchestrator_task_id_or_goal_hash_binding_mismatch'), { statusCode: 409 });
+          }
+          if (orchestratorTask.task.state === 'proposed') {
             await remoteJson(orchestratorUrl + '/api/tasks/' + taskId + '/approve', 'POST', { approve: true, approvalEvidence: input.approvalEvidence, approvalContext });
-            append({ type: 'task_execution_started', taskId, orchestratorTaskId: taskId, approval, recovered: true });
-            const result = await remoteJson(orchestratorUrl + '/api/tasks/' + taskId + '/run', 'POST', {}, options.orchestratorTimeoutMs || ORCHESTRATOR_TIMEOUT_MS);
-            append({ type: 'task_execution_completed', taskId, orchestratorTaskId: taskId, approval, result });
-            return send(res, 200, { ok: true, taskId, orchestratorTaskId: taskId, recovered: true, result });
+          } else if (orchestratorTask.task.state !== 'approved') {
+            throw Object.assign(new Error('orchestrator_task_not_ready_for_execution:' + orchestratorTask.task.state), { statusCode: 409 });
           }
-          if (state === 'completed' || state === 'verified' || (state === 'rejected' && existing.task.completedAt)) {
-            const recoveredResult = await remoteJson(
-              orchestratorUrl + '/api/tasks/' + taskId + '/result',
-              'GET', undefined, 20000,
-              orchestratorResultReadToken ? { authorization: 'Bearer ' + orchestratorResultReadToken } : {}
-            );
-            if (!recoveredResult?.task || recoveredResult.task.id !== taskId) {
-              throw Object.assign(new Error('completed_task_result_unavailable_after_restart'), { statusCode: 503 });
-            }
-            append({ type: 'task_execution_completed', taskId, orchestratorTaskId: taskId, approval: priorRun.approval || null, verificationStatus: recoveredResult.task.verificationStatus, result: recoveredResult });
-            return send(res, 200, { ok: true, taskId, orchestratorTaskId: taskId, recovered: true, verificationStatus: recoveredResult.task.verificationStatus, result: recoveredResult });
-          }
-          if (state === 'rejected') {
-            throw Object.assign(new Error('orchestrator_task_rejected_before_execution; manual review required'), { statusCode: 409 });
-          }
-          if (state === 'failed') {
-            const failure = { error: 'orchestrator_task_failed', state };
-            append({ type: 'task_execution_failed', taskId, orchestratorTaskId: taskId, error: failure.error });
-            return send(res, 502, { ok: false, taskId, orchestratorTaskId: taskId, recovered: true, failure });
-          }
-          if (state === 'running') {
-            throw Object.assign(new Error('task_execution_still_running; refusing duplicate execution'), { statusCode: 409 });
-          }
-          if (state === 'approved') {
-            append({ type: 'task_execution_started', taskId, orchestratorTaskId: taskId, approval: priorRun.approval || null, recovered: true });
-            const result = await remoteJson(orchestratorUrl + '/api/tasks/' + taskId + '/run', 'POST', {}, options.orchestratorTimeoutMs || ORCHESTRATOR_TIMEOUT_MS);
-            append({ type: 'task_execution_completed', taskId, orchestratorTaskId: taskId, approval: priorRun.approval || null, result });
-            return send(res, 200, { ok: true, taskId, orchestratorTaskId: taskId, recovered: true, result });
-          }
-          if (state === 'proposed' && priorRun.type === 'task_execution_started') {
-            throw Object.assign(new Error('task_execution_started_but_orchestrator_returned_to_proposed; manual reconciliation required'), { statusCode: 409 });
-          }
-          if (state === 'proposed') {
-            const approval = priorRun.approval || await resolveTrustedApproval({ verifier: approvalVerifier, action: 'execute_task', subject: approvalContext, evidence: input.approvalEvidence });
-            await remoteJson(orchestratorUrl + '/api/tasks/' + taskId + '/approve', 'POST', { approve: true, approvalEvidence: input.approvalEvidence, approvalContext });
-            append({ type: 'task_execution_started', taskId, orchestratorTaskId: taskId, approval, recovered: true });
-            const result = await remoteJson(orchestratorUrl + '/api/tasks/' + taskId + '/run', 'POST', {}, options.orchestratorTimeoutMs || ORCHESTRATOR_TIMEOUT_MS);
-            append({ type: 'task_execution_completed', taskId, orchestratorTaskId: taskId, approval, result });
-            return send(res, 200, { ok: true, taskId, orchestratorTaskId: taskId, recovered: true, result });
-          }
-          if (state !== undefined) throw Object.assign(new Error('orchestrator_task_state_unrecognized'), { statusCode: 409 });
-        }
-
-        if (priorRun?.type === 'task_execution_started') {
-          throw Object.assign(new Error('task_execution_outcome_unknown; refusing duplicate execution'), { statusCode: 409 });
-        }
-        const inboxResponse = await remoteJson(inboxUrl + '/api/tasks/' + taskId, 'GET', undefined, 20000, inboxReadToken ? { authorization: 'Bearer ' + inboxReadToken } : {});
-        const taskRecord = inboxResponse && inboxResponse.taskRecord;
-        if (!taskRecord || taskRecord.taskId !== taskId || typeof taskRecord.goal !== 'string' || !taskRecord.goal.trim()) {
-          throw Object.assign(new Error('authoritative_inbox_task_record_unavailable'), { statusCode: 409 });
-        }
-        const actualGoalHash = crypto.createHash('sha256').update(taskRecord.goal, 'utf8').digest('hex');
-        if (actualGoalHash !== taskEvent.goalHash) throw Object.assign(new Error('authoritative_inbox_task_goal_hash_mismatch'), { statusCode: 409 });
-        await assertOrchestratorRecoverySupport();
-        const approval = await resolveTrustedApproval({ verifier: approvalVerifier, action: 'execute_task', subject: approvalContext, evidence: input.approvalEvidence });
-
-        // Re-check after asynchronous approval verification so concurrent requests
-        // cannot both pass the initial empty-state check and create the same task.
-        const racedRun = taskRuns.get(taskId);
-        if (racedRun) throw Object.assign(new Error('task_execution_reservation_already_exists; retry to reconcile'), { statusCode: 409 });
-        append({ type: 'task_execution_reserved', taskId, orchestratorTaskId: taskId, goalHash: taskEvent.goalHash, approval });
-
-        let orchestratorTask;
-        try {
-          orchestratorTask = await remoteJson(orchestratorUrl + '/api/tasks/' + taskId + '/state', 'GET');
-        } catch (error) {
-          if (error.statusCode !== 404) throw error;
-        }
-        if (!orchestratorTask?.task) {
-          try {
-            const created = await remoteJson(orchestratorUrl + '/api/tasks', 'POST', { taskId, goal: taskRecord.goal });
-            if (created.task?.id !== taskId) throw Object.assign(new Error('orchestrator_task_id_binding_mismatch'), { statusCode: 502 });
-            orchestratorTask = await remoteJson(orchestratorUrl + '/api/tasks/' + taskId + '/state', 'GET');
-          } catch (error) {
-            if (error.statusCode !== 409) throw error;
-            orchestratorTask = await remoteJson(orchestratorUrl + '/api/tasks/' + taskId + '/state', 'GET');
-          }
-        }
-        if (orchestratorTask?.task?.id !== taskId || orchestratorTask?.task?.goalHash !== taskEvent.goalHash) {
-          throw Object.assign(new Error('orchestrator_task_id_or_goal_hash_binding_mismatch'), { statusCode: 409 });
-        }
-        let orchestratorState = orchestratorTask?.task?.state;
-        if (orchestratorState === 'proposed') {
-          await remoteJson(orchestratorUrl + '/api/tasks/' + taskId + '/approve', 'POST', { approve: true, approvalEvidence: input.approvalEvidence, approvalContext });
-          orchestratorState = 'approved';
-        }
-        if (orchestratorState !== 'approved') {
-          throw Object.assign(new Error('orchestrator_task_not_ready_for_execution:' + (orchestratorState || 'unknown')), { statusCode: 409 });
-        }
-        append({ type: 'task_execution_started', taskId, orchestratorTaskId: taskId, approval });
-        const result = await remoteJson(orchestratorUrl + '/api/tasks/' + taskId + '/run', 'POST', {}, options.orchestratorTimeoutMs || ORCHESTRATOR_TIMEOUT_MS);
-        append({ type: 'task_execution_completed', taskId, orchestratorTaskId: taskId, approval, result });
-        return send(res, 200, { ok: true, taskId, orchestratorTaskId: taskId, result });
+          return await startAndRun(reference);
         } finally {
           taskRunLocks.delete(taskId);
         }
