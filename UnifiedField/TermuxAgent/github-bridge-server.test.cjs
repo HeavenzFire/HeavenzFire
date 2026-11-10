@@ -226,7 +226,7 @@ test('task intake minimizes durable audit data and keeps replay results bounded 
 
 
 
-test('sanitizes legacy task audit records in memory without rewriting the JSONL file', async t => {
+test('sanitizes legacy audit records without restoring raw results to replay cache', async t => {
   const taskId = '00000000-0000-4000-8000-000000000101';
   const goalSentinel = 'LEGACY_GOAL_SENTINEL_20261110';
   const result = { privateResult: 'LEGACY_RESULT_SENTINEL_20261110' };
@@ -263,8 +263,11 @@ test('sanitizes legacy task audit records in memory without rewriting the JSONL 
   const replay = await fetch(base + '/api/tasks/' + taskId + '/run', {
     method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}'
   });
-  assert.equal(replay.status, 200);
-  assert.deepEqual((await replay.json()).result, result);
+  assert.equal(replay.status, 409);
+  const replayBody = await replay.json();
+  assert.equal(replayBody.error, 'task_completed_result_not_cached');
+  assert.equal(replayBody.resultSha256, crypto.createHash('sha256').update(JSON.stringify(result), 'utf8').digest('hex'));
+  assert.ok(!JSON.stringify(replayBody).includes(result.privateResult));
   assert.equal(fs.readFileSync(auditPath, 'utf8'), originalAudit, 'legacy audit bytes must remain unchanged');
 });
 
