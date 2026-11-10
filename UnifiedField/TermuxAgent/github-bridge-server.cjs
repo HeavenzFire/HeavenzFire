@@ -314,7 +314,7 @@ function createGitHubBridgeServer(options = {}) {
       if (req.method === 'POST' && url.pathname === '/api/tasks') {
         if (!(await authorizeSensitiveRead(req))) return send(res, 401, { ok: false, error: 'bridge_read_authorization_required' });
         const input = await bodyJson(req);
-        if (typeof input.goal !== 'string' || !input.goal.trim() || input.goal.length > 12000) throw Object.assign(new Error('goal_required_max_12000'), { statusCode: 400 });
+        if (typeof input.goal !== 'string' || !input.goal.trim() || input.goal.length > 4000) throw Object.assign(new Error('goal_required_max_4000'), { statusCode: 400 });
         if (input.taskId !== undefined && (typeof input.taskId !== 'string' || !/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(input.taskId))) {
           throw Object.assign(new Error('task_id_must_be_a_canonical_uuid_for_idempotent_intake'), { statusCode: 400 });
         }
@@ -325,13 +325,22 @@ function createGitHubBridgeServer(options = {}) {
           throw Object.assign(new Error('task_id_conflicts_with_different_goal'), { statusCode: 409 });
         }
         if (priorSubmission?.type === 'task_submitted' && priorSubmission.inboxAccepted) {
-          const existing = await remoteJson(inboxUrl + '/api/tasks/' + task.taskId, 'GET', undefined, 20000, inboxReadToken ? { authorization: 'Bearer ' + inboxReadToken } : {});
-          const existingRecord = existing && existing.taskRecord;
-          if (existingRecord?.taskId !== task.taskId ||
-              crypto.createHash('sha256').update(String(existingRecord.goal || ''), 'utf8').digest('hex') !== goalHash) {
-            throw Object.assign(new Error('task_id_conflicts_with_existing_inbox_record'), { statusCode: 409 });
+          let existing;
+          try {
+            existing = await remoteJson(inboxUrl + '/api/tasks/' + task.taskId, 'GET', undefined, 20000, inboxReadToken ? { authorization: 'Bearer ' + inboxReadToken } : {});
+          } catch (error) {
+            if (error.statusCode !== 404) throw error;
+            // A previous machine crash may have lost the inbox append after the bridge audit fsync.
+            append({ type: 'task_submission_reserved', taskId: task.taskId, goalHash, goalBytes: Buffer.byteLength(task.goal, 'utf8'), reconciledMissingInboxRecord: true });
           }
-          return send(res, 200, { ok: true, idempotentReplay: true, taskId: task.taskId, status: existingRecord.status, approvalState: existingRecord.approvalState });
+          if (existing) {
+            const existingRecord = existing && existing.taskRecord;
+            if (existingRecord?.taskId !== task.taskId ||
+                crypto.createHash('sha256').update(String(existingRecord.goal || ''), 'utf8').digest('hex') !== goalHash) {
+              throw Object.assign(new Error('task_id_conflicts_with_existing_inbox_record'), { statusCode: 409 });
+            }
+            return send(res, 200, { ok: true, idempotentReplay: true, taskId: task.taskId, status: existingRecord.status, approvalState: existingRecord.approvalState });
+          }
         }
         if (!priorSubmission) {
           append({ type: 'task_submission_reserved', taskId: task.taskId, goalHash, goalBytes: Buffer.byteLength(task.goal, 'utf8') });
