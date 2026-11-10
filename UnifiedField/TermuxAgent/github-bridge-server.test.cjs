@@ -203,6 +203,93 @@ test('task intake minimizes durable audit data and keeps replay results bounded 
 });
 
 
+
+test('sanitizes legacy task audit records in memory without rewriting the JSONL file', async t => {
+  const taskId = '00000000-0000-4000-8000-000000000101';
+  const goalSentinel = 'LEGACY_GOAL_SENTINEL_20261110';
+  const result = { privateResult: 'LEGACY_RESULT_SENTINEL_20261110' };
+  const initialAuditEvents = [
+    {
+      timestamp: '2026-11-09T00:00:00.000Z',
+      type: 'task_submitted',
+      taskId,
+      goal: goalSentinel,
+      inbox: { taskRecord: { taskId, goal: goalSentinel } },
+      goalHash: crypto.createHash('sha256').update(goalSentinel, 'utf8').digest('hex')
+    },
+    {
+      timestamp: '2026-11-09T00:01:00.000Z',
+      type: 'task_execution_completed',
+      taskId,
+      orchestratorTaskId: taskId,
+      approval: { approvalId: 'legacy-approval' },
+      result
+    }
+  ];
+  const { base, auditPath } = await withServer(t, { initialAuditEvents });
+  const originalAudit = fs.readFileSync(auditPath, 'utf8');
+  assert.ok(originalAudit.includes(goalSentinel));
+  assert.ok(originalAudit.includes(result.privateResult));
+
+  const recent = await (await fetch(base + '/api/audit/recent')).json();
+  const recentJson = JSON.stringify(recent);
+  assert.ok(!recentJson.includes(goalSentinel));
+  assert.ok(!recentJson.includes(result.privateResult));
+  assert.equal(recent.events.find(event => event.type === 'task_submitted').goalHash,
+    crypto.createHash('sha256').update(goalSentinel, 'utf8').digest('hex'));
+
+  const replay = await fetch(base + '/api/tasks/' + taskId + '/run', {
+    method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}'
+  });
+  assert.equal(replay.status, 200);
+  assert.deepEqual((await replay.json()).result, result);
+  assert.equal(fs.readFileSync(auditPath, 'utf8'), originalAudit, 'legacy audit bytes must remain unchanged');
+});
+
+test('bounds task result replay cache by entry count and serialized bytes', async t => {
+  const taskId = index => '00000000-0000-4000-8000-' + String(index).padStart(12, '0');
+  const goalHash = 'a'.repeat(64);
+  const initialAuditEvents = [];
+  for (let index = 1; index <= 102; index++) {
+    initialAuditEvents.push({ timestamp: '2026-11-10T00:00:00.000Z', type: 'task_submitted', taskId: taskId(index), goalHash });
+  }
+  for (let index = 1; index <= 101; index++) {
+    initialAuditEvents.push({
+      timestamp: '2026-11-10T00:01:00.000Z',
+      type: 'task_execution_completed',
+      taskId: taskId(index),
+      orchestratorTaskId: taskId(index),
+      result: { value: 'cached-result-' + index }
+    });
+  }
+  initialAuditEvents.push({
+    timestamp: '2026-11-10T00:02:00.000Z',
+    type: 'task_execution_completed',
+    taskId: taskId(102),
+    orchestratorTaskId: taskId(102),
+    result: { value: 'x'.repeat(1_000_001) }
+  });
+  const { base } = await withServer(t, { initialAuditEvents });
+
+  const evicted = await fetch(base + '/api/tasks/' + taskId(1) + '/run', {
+    method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}'
+  });
+  assert.equal(evicted.status, 409);
+  assert.equal((await evicted.json()).error, 'task_completed_result_not_cached');
+
+  const retained = await fetch(base + '/api/tasks/' + taskId(101) + '/run', {
+    method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}'
+  });
+  assert.equal(retained.status, 200);
+  assert.deepEqual((await retained.json()).result, { value: 'cached-result-101' });
+
+  const oversized = await fetch(base + '/api/tasks/' + taskId(102) + '/run', {
+    method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}'
+  });
+  assert.equal(oversized.status, 409);
+  assert.equal((await oversized.json()).error, 'task_completed_result_not_cached');
+});
+
 test('bounds in-memory recent audit history without changing the persisted event count', async t => {
   const initialAuditEvents = Array.from({ length: 520 }, (_, index) => ({
     timestamp: '2026-11-10T00:00:00.000Z',
