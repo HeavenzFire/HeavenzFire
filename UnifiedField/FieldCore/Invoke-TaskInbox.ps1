@@ -29,6 +29,9 @@ $NodePath = $Node.Source
 $NodeVersionText = (& $NodePath --version | Select-Object -First 1).Trim()
 if ($NodeVersionText -notmatch '^v(\d+)\.') { throw "Unable to parse Node.js version: $NodeVersionText" }
 if ([int]$Matches[1] -lt 18) { throw "Node.js 18 or later is required; found $NodeVersionText" }
+if ([string]::IsNullOrWhiteSpace($env:HF_GITHUB_BRIDGE_READ_TOKEN) -or $env:HF_GITHUB_BRIDGE_READ_TOKEN.Length -lt 32) {
+    throw 'HF_GITHUB_BRIDGE_READ_TOKEN must be configured with at least 32 characters before starting the task inbox.'
+}
 if ([string]::IsNullOrWhiteSpace($env:LOCALAPPDATA)) {
     throw 'LOCALAPPDATA is not set; refusing to choose a nonstandard persistence location.'
 }
@@ -54,7 +57,8 @@ function Get-HfTaskInboxHealth {
         $health = Invoke-RestMethod -Uri ($script:BaseUrl + '/health') -TimeoutSec 1
         if ($health.ok -eq $true -and
             $health.service -eq 'heavenzfire-unified-field-task-inbox' -and
-            [int]$health.port -eq $script:Port) {
+            [int]$health.port -eq $script:Port -and
+            $health.readAuthorizationConfigured -eq $true) {
             return $health
         }
     } catch {
@@ -95,6 +99,7 @@ if ($Action -eq 'Status') {
         pid = $processId
         ownedByLauncher = $owned
         storedTaskCount = if ($health) { $health.storedTaskCount } else { $null }
+        readAuthorizationConfigured = if ($health) { $health.readAuthorizationConfigured } else { $false }
         modelWorkersStarted = $false
         taskExecutionEnabled = $false
     } | ConvertTo-Json -Depth 5
@@ -163,6 +168,7 @@ if ($existingHealth) {
         pid = $existingPid
         ownedByLauncher = $owned
         storedTaskCount = $existingHealth.storedTaskCount
+        readAuthorizationConfigured = $existingHealth.readAuthorizationConfigured
         modelWorkersStarted = $false
         taskExecutionEnabled = $false
     } | ConvertTo-Json -Depth 5
@@ -203,6 +209,7 @@ if (-not $health) {
     pid = $process.Id
     ownedByLauncher = $true
     storedTaskCount = $health.storedTaskCount
+    readAuthorizationConfigured = $health.readAuthorizationConfigured
     modelWorkersStarted = $false
     taskExecutionEnabled = $false
     inboxPath = $InboxPath
