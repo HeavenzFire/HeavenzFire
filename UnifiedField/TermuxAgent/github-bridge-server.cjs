@@ -149,10 +149,7 @@ function createGitHubBridgeServer(options = {}) {
   if (fs.existsSync(auditPath)) {
     for (const line of fs.readFileSync(auditPath, 'utf8').split(/\r?\n/).filter(Boolean)) {
       const rawEvent = JSON.parse(line);
-      if (rawEvent.type === 'task_execution_completed' &&
-          Object.prototype.hasOwnProperty.call(rawEvent, 'result')) {
-        rememberTaskResult(rawEvent.taskId, rawEvent.result);
-      }
+      // Legacy raw results are deliberately not rehydrated into the replay cache.
       const event = sanitizeAuditEvent(rawEvent);
       auditTotalEvents++;
       rememberAudit(event);
