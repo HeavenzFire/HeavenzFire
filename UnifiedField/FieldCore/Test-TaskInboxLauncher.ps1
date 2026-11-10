@@ -4,6 +4,7 @@ $Launcher = Join-Path $PSScriptRoot '..\Invoke-UnifiedFieldTaskInbox.ps1'
 $TempRoot = Join-Path $env:RUNNER_TEMP ('hf-launcher-smoke-' + [guid]::NewGuid().ToString('N'))
 $OriginalLocalAppData = $env:LOCALAPPDATA
 $OriginalStateRoot = $env:HF_UNIFIED_FIELD_STATE_ROOT
+$OriginalReadToken = $env:HF_GITHUB_BRIDGE_READ_TOKEN
 $StateRoot = Join-Path $TempRoot 'isolated-state'
 $null = New-Item -ItemType Directory -Path $TempRoot -Force
 $listener = New-Object System.Net.Sockets.TcpListener([System.Net.IPAddress]::Loopback, 0)
@@ -12,6 +13,8 @@ $Port = $listener.LocalEndpoint.Port
 $listener.Stop()
 
 try {
+    # Test-only ephemeral credential; never persist or print this value.
+    $env:HF_GITHUB_BRIDGE_READ_TOKEN = [guid]::NewGuid().ToString('N') + [guid]::NewGuid().ToString('N')
     $env:LOCALAPPDATA = $TempRoot
     $env:HF_UNIFIED_FIELD_STATE_ROOT = $StateRoot
     $start = & $Launcher -Action Start -Port $Port -StateRoot $StateRoot | ConvertFrom-Json
@@ -68,6 +71,8 @@ finally {
     else { Remove-Item Env:LOCALAPPDATA -ErrorAction SilentlyContinue }
     if ($null -ne $OriginalStateRoot) { $env:HF_UNIFIED_FIELD_STATE_ROOT = $OriginalStateRoot }
     else { Remove-Item Env:HF_UNIFIED_FIELD_STATE_ROOT -ErrorAction SilentlyContinue }
+    if ($null -ne $OriginalReadToken) { $env:HF_GITHUB_BRIDGE_READ_TOKEN = $OriginalReadToken }
+    else { Remove-Item Env:HF_GITHUB_BRIDGE_READ_TOKEN -ErrorAction SilentlyContinue }
     if (Test-Path -LiteralPath $TempRoot) {
         Get-ChildItem -LiteralPath $TempRoot -Recurse -File -ErrorAction SilentlyContinue | Out-Null
         Remove-Item -LiteralPath $TempRoot -Recurse -Force -ErrorAction SilentlyContinue
