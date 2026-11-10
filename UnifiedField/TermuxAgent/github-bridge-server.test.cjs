@@ -150,6 +150,7 @@ test('sensitive task and audit routes fail closed without an authenticated reade
 test('task intake minimizes durable audit data and keeps replay results bounded to process memory', async t => {
   const calls = [];
   let storedTaskRecord = null;
+  let orchestratorCreated = false;
   const goalSentinel = 'PRIVATE_GOAL_SENTINEL_20261110';
   const resultSentinel = 'PRIVATE_RESULT_SENTINEL_20261110';
   const fetchImpl = async (url, init = {}) => {
@@ -164,12 +165,16 @@ test('task intake minimizes durable audit data and keeps replay results bounded 
         : new Response('{}', { status: 404 });
     }
     if (url === 'http://127.0.0.1:18797/api/tasks/' + storedTaskRecord.taskId + '/state') {
+      if (!orchestratorCreated) return new Response(JSON.stringify({ error: 'task_not_found' }), { status: 404 });
       return new Response(JSON.stringify({ task: {
         id: storedTaskRecord.taskId, state: 'proposed',
         goalHash: require('node:crypto').createHash('sha256').update(storedTaskRecord.goal, 'utf8').digest('hex')
       } }), { status: 200 });
     }
-    if (url === 'http://127.0.0.1:18797/api/tasks') return new Response(JSON.stringify({ task: { id: calls.at(-1).body.taskId, state: 'proposed' } }), { status: 201 });
+    if (url === 'http://127.0.0.1:18797/api/tasks') {
+      orchestratorCreated = true;
+      return new Response(JSON.stringify({ task: { id: calls.at(-1).body.taskId, state: 'proposed' } }), { status: 201 });
+    }
     if (url.endsWith('/approve')) return new Response(JSON.stringify({ task: { state: 'approved' } }), { status: 200 });
     if (url.endsWith('/run')) return new Response(JSON.stringify({
       task: { state: 'completed' }, completedRoles: 16, failedRoles: 0, privateResult: resultSentinel
