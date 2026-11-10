@@ -632,6 +632,47 @@ test('reconciles a completed orchestrator task when the bridge lost the run resp
   assert.equal(runCalls, 1, 'bridge restart replay must retrieve stored results, not rerun inference');
 });
 
+test('verification rejection after execution is recovered as completed execution', async t => {
+  const taskId = '00000000-0000-4000-8000-000000000786';
+  const goalHash = crypto.createHash('sha256').update('Execution completed but verification rejected it', 'utf8').digest('hex');
+  let runCalls = 0;
+  const fetchImpl = async url => {
+    if (url === 'http://127.0.0.1:18797/health') return new Response(JSON.stringify({ ok: true, taskStateLookup: true }), { status: 200 });
+    if (url === 'http://127.0.0.1:18797/api/tasks/' + taskId + '/state') {
+      return new Response(JSON.stringify({ task: {
+        id: taskId, state: 'rejected', verificationStatus: 'rejected',
+        goalHash, completedAt: '2026-11-10T12:00:00.000Z'
+      } }), { status: 200 });
+    }
+    if (url === 'http://127.0.0.1:18797/api/tasks/' + taskId + '/result') {
+      return new Response(JSON.stringify({ task: {
+        id: taskId, state: 'rejected', verificationStatus: 'rejected',
+        results: [{ agentId: 'reviewer', state: 'completed', output: 'execution-output-preserved' }]
+      } }), { status: 200 });
+    }
+    if (url.endsWith('/run')) runCalls++;
+    return new Response('{}', { status: 404 });
+  };
+  const { base } = await withServer(t, {
+    fetchImpl,
+    initialAuditEvents: [
+      { type: 'task_submitted', taskId, goalHash, inboxAccepted: true },
+      { type: 'task_execution_authorized', taskId, approvalVerified: true, approvalDigest: 'a'.repeat(64) },
+      { type: 'task_execution_started', taskId, approvalVerified: true, approvalDigest: 'a'.repeat(64) }
+    ]
+  });
+  const response = await fetch(base + '/api/tasks/' + taskId + '/run', {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ approvalEvidence: TEST_APPROVAL_EVIDENCE })
+  });
+  assert.equal(response.status, 200);
+  const body = await response.json();
+  assert.equal(body.recovered, true);
+  assert.equal(body.verificationStatus, 'rejected');
+  assert.equal(body.result.task.results[0].output, 'execution-output-preserved');
+  assert.equal(runCalls, 0, 'verification rejection must not re-run completed execution');
+});
+
 test('durable failed execution is replayed as a known failure, not an unknown conflict', async t => {
   const taskId = '00000000-0000-4000-8000-000000000784';
   const goal = 'A previously failed task must report its known terminal outcome';
