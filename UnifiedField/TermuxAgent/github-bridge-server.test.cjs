@@ -237,7 +237,7 @@ test('task intake minimizes durable audit data and keeps replay results bounded 
   assert.ok(approvalCall.body.approvalContext.goalHash);
 
   const auditText = fs.readFileSync(auditPath, 'utf8');
-  const auditEvents = auditText.trim().split(/\r?\n/).map(JSON.parse);
+  const auditEvents = auditText.trim().split('\n').filter(Boolean).map(JSON.parse);
   const submittedEvent = auditEvents.find(event => event.type === 'task_submitted');
   const completedEvent = auditEvents.find(event => event.type === 'task_execution_completed');
   assert.ok(!auditText.includes(goalSentinel), 'raw task goals must not be written to bridge audit');
