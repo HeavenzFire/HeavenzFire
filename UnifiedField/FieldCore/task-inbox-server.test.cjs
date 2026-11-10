@@ -51,7 +51,7 @@ test('loopback inbox accepts proposed/pending tasks and persists task evidence',
     assert.equal(lookup.status, 200);
     assert.equal(detail.taskRecord.approvalState, 'pending');
     assert.equal(detail.taskRecord.status, 'proposed');
-    assert.equal(fs.readFileSync(inboxPath, 'utf8').trim().split(/\r?\n/).length, 1);
+    assert.equal(fs.readFileSync(inboxPath, 'utf8').trim().split('\n').length, 1);
   });
 });
 
