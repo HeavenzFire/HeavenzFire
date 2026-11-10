@@ -260,9 +260,9 @@ test('task intake minimizes durable audit data and keeps replay results bounded 
       method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ approvalEvidence: TEST_APPROVAL_EVIDENCE })
     });
-    assert.equal(replayAfterRestart.status, 409);
+    assert.equal(replayAfterRestart.status, 503);
     const restartBody = await replayAfterRestart.json();
-    assert.equal(restartBody.error, 'task_completed_result_not_cached');
+    assert.equal(restartBody.error, 'task_completed_result_read_unavailable');
     assert.equal(restartBody.resultSha256, completedEvent.resultSha256);
     assert.ok(!JSON.stringify(restartBody).includes(resultSentinel));
   } finally {
