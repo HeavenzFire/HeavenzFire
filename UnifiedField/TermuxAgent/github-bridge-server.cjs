@@ -373,9 +373,7 @@ function createGitHubBridgeServer(options = {}) {
           return send(res, 409, { ok: false, error: 'task_execution_request_already_in_flight', taskId });
         }
         taskRunLocks.add(taskId);
-        const releaseTaskRunLock = () => taskRunLocks.delete(taskId);
-        res.once('finish', releaseTaskRunLock);
-        res.once('close', releaseTaskRunLock);
+        try {
         const taskEvent = taskLinks.get(taskId);
         if (!taskEvent) throw Object.assign(new Error('task_not_found_in_bridge_ledger'), { statusCode: 404 });
         if (!/^[a-f0-9]{64}$/i.test(taskEvent.goalHash || '')) {
@@ -532,6 +530,9 @@ function createGitHubBridgeServer(options = {}) {
         const result = await remoteJson(orchestratorUrl + '/api/tasks/' + taskId + '/run', 'POST', {}, options.orchestratorTimeoutMs || ORCHESTRATOR_TIMEOUT_MS);
         append({ type: 'task_execution_completed', taskId, orchestratorTaskId: taskId, approval, result });
         return send(res, 200, { ok: true, taskId, orchestratorTaskId: taskId, result });
+        } finally {
+          taskRunLocks.delete(taskId);
+        }
       }
 
       if (req.method === 'GET' && url.pathname === '/api/github/repository') {
