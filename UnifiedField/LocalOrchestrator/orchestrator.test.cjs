@@ -159,6 +159,26 @@ test('approval context cannot be transferred to another task with the same goal'
   });
 });
 
+test('orchestrator exposes one task by ID for crash recovery reconciliation', async () => {
+  await withServer({}, async base => {
+    const taskId = '00000000-0000-4000-8000-000000000779';
+    const created = await fetch(base + '/api/tasks', {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ taskId, goal: 'reconcile task state after bridge restart' })
+    });
+    assert.equal(created.status, 201);
+    const detail = await fetch(base + '/api/tasks/' + taskId + '/state');
+    assert.equal(detail.status, 200);
+    const detailBody = await detail.json();
+    assert.equal(detailBody.task.id, taskId);
+    assert.equal(detailBody.task.goalHash, require('node:crypto').createHash('sha256').update('reconcile task state after bridge restart').digest('hex'));
+    assert.equal(Object.prototype.hasOwnProperty.call(detailBody.task, 'goal'), false);
+    assert.equal(Object.prototype.hasOwnProperty.call(detailBody.task, 'results'), false);
+    const missing = await fetch(base + '/api/tasks/00000000-0000-4000-8000-000000000780/state');
+    assert.equal(missing.status, 404);
+  });
+});
+
 test('orchestrator accepts a canonical externally bound task ID once and rejects duplicates', async () => {
   await withServer({}, async base => {
     const taskId = '00000000-0000-4000-8000-000000000123';
