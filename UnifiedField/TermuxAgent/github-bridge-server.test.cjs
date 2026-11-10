@@ -313,6 +313,50 @@ test('task intake is idempotent for a stable task UUID and rejects conflicting r
   assert.equal(inboxPosts, 1);
 });
 
+test('bridge refuses task execution before side effects when orchestrator lacks recovery capability', async t => {
+  const taskId = '00000000-0000-4000-8000-000000000783';
+  let storedTaskRecord = null;
+  let orchestratorCreates = 0;
+  let approvalCalls = 0;
+  const fetchImpl = async (url, init = {}) => {
+    if (url === 'http://127.0.0.1:18797/health') return new Response(JSON.stringify({ ok: true }), { status: 200 });
+    if (url === 'http://127.0.0.1:18796/api/tasks' && init.method === 'POST') {
+      storedTaskRecord = JSON.parse(init.body).taskRecord;
+      return new Response(JSON.stringify({ ok: true, taskId }), { status: 201 });
+    }
+    if (url === 'http://127.0.0.1:18796/api/tasks/' + taskId) {
+      return storedTaskRecord
+        ? new Response(JSON.stringify({ ok: true, taskRecord: storedTaskRecord }), { status: 200 })
+        : new Response('{}', { status: 404 });
+    }
+    if (url === 'http://127.0.0.1:18797/api/tasks' && init.method === 'POST') {
+      orchestratorCreates++;
+      return new Response('{}', { status: 201 });
+    }
+    return new Response('{}', { status: 404 });
+  };
+  const approvalVerifier = async input => {
+    approvalCalls++;
+    return testApprovalVerifier(input);
+  };
+  const { base, auditPath } = await withServer(t, { fetchImpl, approvalVerifier });
+  const submitted = await fetch(base + '/api/tasks', {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ taskId, goal: 'Require a recovery-capable orchestrator before execution' })
+  });
+  assert.equal(submitted.status, 201);
+  const response = await fetch(base + '/api/tasks/' + taskId + '/run', {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ approvalEvidence: TEST_APPROVAL_EVIDENCE })
+  });
+  assert.equal(response.status, 503);
+  assert.match((await response.json()).error, /task_state_recovery_not_supported/);
+  assert.equal(orchestratorCreates, 0);
+  assert.equal(approvalCalls, 0, 'capability preflight must happen before consuming human approval');
+  const events = fs.readFileSync(auditPath, 'utf8').split('\n').filter(Boolean).map(JSON.parse);
+  assert.equal(events.some(event => event.type === 'task_execution_reserved'), false);
+});
+
 test('reserved task execution recovers after crash between orchestrator creation and approval', async t => {
   const taskId = '00000000-0000-4000-8000-000000000778';
   let storedTaskRecord = null;
