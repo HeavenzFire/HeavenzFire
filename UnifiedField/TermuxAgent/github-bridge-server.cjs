@@ -315,7 +315,13 @@ function createGitHubBridgeServer(options = {}) {
           throw Object.assign(new Error('task_id_conflicts_with_different_goal'), { statusCode: 409 });
         }
         if (priorSubmission?.type === 'task_submitted' && priorSubmission.inboxAccepted) {
-          return send(res, 200, { ok: true, idempotentReplay: true, taskId: task.taskId, status: 'proposed', approvalState: 'pending' });
+          const existing = await remoteJson(inboxUrl + '/api/tasks/' + task.taskId, 'GET', undefined, 20000, inboxReadToken ? { authorization: 'Bearer ' + inboxReadToken } : {});
+          const existingRecord = existing && existing.taskRecord;
+          if (existingRecord?.taskId !== task.taskId ||
+              crypto.createHash('sha256').update(String(existingRecord.goal || ''), 'utf8').digest('hex') !== goalHash) {
+            throw Object.assign(new Error('task_id_conflicts_with_existing_inbox_record'), { statusCode: 409 });
+          }
+          return send(res, 200, { ok: true, idempotentReplay: true, taskId: task.taskId, status: existingRecord.status, approvalState: existingRecord.approvalState });
         }
         if (!priorSubmission) {
           append({ type: 'task_submission_reserved', taskId: task.taskId, goalHash, goalBytes: Buffer.byteLength(task.goal, 'utf8') });
@@ -328,7 +334,7 @@ function createGitHubBridgeServer(options = {}) {
             if (existingRecord?.taskId === task.taskId &&
                 crypto.createHash('sha256').update(String(existingRecord.goal || ''), 'utf8').digest('hex') === goalHash) {
               append({ type: 'task_submitted', taskId: task.taskId, goalHash, goalBytes: Buffer.byteLength(task.goal, 'utf8'), inboxAccepted: true });
-              return send(res, 200, { ok: true, idempotentReplay: true, taskId: task.taskId, status: 'proposed', approvalState: 'pending' });
+              return send(res, 200, { ok: true, idempotentReplay: true, taskId: task.taskId, status: existingRecord.status, approvalState: existingRecord.approvalState });
             }
           } catch (error) {
             if (error.statusCode !== 404) throw error;
