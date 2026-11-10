@@ -271,6 +271,20 @@ function createOrchestrator(options = {}) {
       if (req.method === 'GET' && url.pathname === '/api/tasks') {
         return json(res, 200, { tasks: Array.from(tasks.values()).map(publicTask).slice(-100) });
       }
+      const taskState = url.pathname.match(new RegExp('^/api/tasks/([0-9a-f-]{36})/state$'));
+      if (req.method === 'GET' && taskState) {
+        const task = tasks.get(taskState[1]);
+        if (!task) return json(res, 404, { error: 'task_not_found' });
+        return json(res, 200, {
+          task: {
+            id: task.id,
+            state: task.state,
+            goalHash: crypto.createHash('sha256').update(task.goal, 'utf8').digest('hex'),
+            updatedAt: task.updatedAt,
+            completedAt: task.completedAt || null
+          }
+        });
+      }
       if (req.method === 'POST' && url.pathname === '/api/tasks') {
         const input = await readBody(req);
         if (!input || typeof input !== 'object' || Array.isArray(input) || typeof input.goal !== 'string' || !input.goal.trim() || input.goal.length > manifest.maxGoalChars) {
