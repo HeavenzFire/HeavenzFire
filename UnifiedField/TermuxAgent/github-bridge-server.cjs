@@ -519,7 +519,7 @@ function createGitHubBridgeServer(options = {}) {
               if (existing?.task?.state !== 'approved') {
                 await remoteJson(orchestratorUrl + '/api/tasks/' + taskId + '/approve', 'POST', { approve: true, approvalEvidence: input.approvalEvidence, approvalContext });
               }
-              return await startAndRun(reference);
+              return await startAndRun(reference, true);
             }
             throw Object.assign(new Error('orchestrator_task_state_unrecognized'), { statusCode: 409 });
           }
