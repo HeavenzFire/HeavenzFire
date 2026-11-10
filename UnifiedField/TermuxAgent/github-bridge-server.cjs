@@ -74,12 +74,15 @@ function createGitHubBridgeServer(options = {}) {
   const port = options.port ?? PORT;
   const auditPath = options.auditPath || DEFAULT_AUDIT;
   const inboxUrl = options.inboxUrl || DEFAULT_INBOX;
+  const inboxHost = new URL(inboxUrl).hostname;
+  if (!['127.0.0.1', 'localhost', '[::1]'].includes(inboxHost)) throw new Error('task_inbox_must_use_loopback');
   const orchestratorUrl = options.orchestratorUrl || DEFAULT_ORCHESTRATOR;
   const fetchImpl = options.fetchImpl || fetch;
   const readApi = options.readApi || github;
   const writeApi = options.writeApi || githubWrite;
   const approvalVerifier = typeof options.approvalVerifier === 'function' ? options.approvalVerifier : null;
   const readAuthorizer = typeof options.readAuthorizer === 'function' ? options.readAuthorizer : (() => false);
+  const inboxReadToken = options.inboxReadToken || process.env.HF_GITHUB_BRIDGE_READ_TOKEN || '';
   const tokenProvider = options.tokenProvider || (() => execFileSync('gh', ['auth', 'token', '--hostname', 'github.com'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], windowsHide: true }).trim());
   const ownerConfig = options.allowedOwners || process.env.HF_GITHUB_OWNERS || 'HeavenzFire';
   const allowedOwners = new Set((Array.isArray(ownerConfig) ? ownerConfig : String(ownerConfig).split(',')).map(x => String(x).trim().toLowerCase()).filter(Boolean));
@@ -252,10 +255,10 @@ function createGitHubBridgeServer(options = {}) {
     }
   }
 
-  async function remoteJson(url, method, payload, timeoutMs = 20000) {
+  async function remoteJson(url, method, payload, timeoutMs = 20000, extraHeaders = {}) {
     const response = await fetchImpl(url, {
       method, redirect: 'error',
-      headers: { 'content-type': 'application/json', accept: 'application/json' },
+      headers: { 'content-type': 'application/json', accept: 'application/json', ...extraHeaders },
       body: payload === undefined ? undefined : JSON.stringify(payload),
       signal: AbortSignal.timeout(timeoutMs)
     });
@@ -307,7 +310,8 @@ function createGitHubBridgeServer(options = {}) {
       const taskLookup = url.pathname.match(/^\/api\/tasks\/([0-9a-f-]{36})$/);
       if (req.method === 'GET' && taskLookup) {
         if (!(await authorizeSensitiveRead(req))) return send(res, 401, { ok: false, error: 'bridge_read_authorization_required' });
-        const inbox = await remoteJson(inboxUrl + '/api/tasks/' + taskLookup[1], 'GET');
+        const inbox = await remoteJson(inboxUrl + '/api/tasks/' + taskLookup[1], 'GET', undefined, 20000,
+          inboxReadToken ? { authorization: 'Bearer ' + inboxReadToken } : {});
         return send(res, 200, { ok: true, taskRecord: inbox.taskRecord, execution: taskRuns.get(taskLookup[1]) || null });
       }
       const taskRun = url.pathname.match(/^\/api\/tasks\/([0-9a-f-]{36})\/run$/);
@@ -338,7 +342,8 @@ function createGitHubBridgeServer(options = {}) {
         if (priorRun?.type === 'task_execution_started' || priorRun?.type === 'task_execution_failed') {
           throw Object.assign(new Error('task_execution_in_progress_or_outcome_unknown; inspect orchestrator task ' + (priorRun.orchestratorTaskId || 'unknown') + ' before retrying'), { statusCode: 409 });
         }
-        const inboxResponse = await remoteJson(inboxUrl + '/api/tasks/' + taskRun[1], 'GET');
+        const inboxResponse = await remoteJson(inboxUrl + '/api/tasks/' + taskRun[1], 'GET', undefined, 20000,
+          inboxReadToken ? { authorization: 'Bearer ' + inboxReadToken } : {});
         const taskRecord = inboxResponse && inboxResponse.taskRecord;
         if (!taskRecord || taskRecord.taskId !== taskRun[1] ||
             typeof taskRecord.goal !== 'string' || !taskRecord.goal.trim()) {
@@ -484,6 +489,7 @@ if (require.main === module) {
   if (!Number.isInteger(port) || port < 1024 || port > 65535) throw new Error('HF_GITHUB_BRIDGE_PORT_invalid');
   const approvalVerifier = createApprovalVerifierFromEnv({ serviceId: 'github-bridge' });
   const readToken = process.env.HF_GITHUB_BRIDGE_READ_TOKEN || '';
+  if (readToken.length < 32) throw new Error('HF_GITHUB_BRIDGE_READ_TOKEN must contain at least 32 characters before starting the GitHub bridge');
   const readAuthorizer = createBearerTokenAuthorizer(readToken);
   const server = createGitHubBridgeServer({ port, approvalVerifier, readAuthorizer });
   server.listen(port, HOST, () => process.stdout.write('HeavenzFire GitHub bridge listening on http://' + HOST + ':' + port + '\n'));

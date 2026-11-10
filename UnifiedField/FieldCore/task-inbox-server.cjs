@@ -56,11 +56,18 @@ function sendJson(res, status, body) {
   res.end(JSON.stringify(body));
 }
 
-function createTaskInboxServer({ inboxPath = DEFAULT_INBOX_PATH, port = DEFAULT_PORT } = {}) {
+function createTaskInboxServer({ inboxPath = DEFAULT_INBOX_PATH, port = DEFAULT_PORT, readToken = process.env.HF_GITHUB_BRIDGE_READ_TOKEN || '' } = {}) {
   if (typeof inboxPath !== 'string' || !inboxPath.trim()) throw new TypeError('inboxPath must be a non-empty path');
   if (!Number.isInteger(port) || port < 0 || port > 65535) throw new RangeError('port must be an integer from 0 to 65535');
   fs.mkdirSync(path.dirname(inboxPath), { recursive: true });
   const records = readExistingInbox(inboxPath);
+  const readAuthorizationConfigured = typeof readToken === 'string' && readToken.length >= 32;
+  function authorizeRead(req) {
+    if (!readAuthorizationConfigured) return 'not_configured';
+    const match = String(req.headers.authorization || '').match(/^Bearer\s+(.+)$/i);
+    if (!match || Buffer.byteLength(match[1], 'utf8') !== Buffer.byteLength(readToken, 'utf8')) return 'denied';
+    return require('node:crypto').timingSafeEqual(Buffer.from(match[1]), Buffer.from(readToken)) ? 'authorized' : 'denied';
+  }
 
   const server = http.createServer(async (req, res) => {
     try {
@@ -69,7 +76,8 @@ function createTaskInboxServer({ inboxPath = DEFAULT_INBOX_PATH, port = DEFAULT_
         return sendJson(res, 200, {
           ok: true, service: 'heavenzfire-unified-field-task-inbox',
           host: HOST, port: server.address() ? server.address().port : port,
-          storedTaskCount: records.size
+          storedTaskCount: records.size,
+          readAuthorizationConfigured
         });
       }
       if (req.method === 'POST' && url.pathname === '/api/tasks') {
@@ -105,6 +113,8 @@ function createTaskInboxServer({ inboxPath = DEFAULT_INBOX_PATH, port = DEFAULT_
         return sendJson(res, 201, { ok: true, duplicate: false, taskId: task.taskId, status: 'proposed' });
       }
       if (req.method === 'GET' && url.pathname === '/api/tasks') {
+        const authorization = authorizeRead(req);
+        if (authorization !== 'authorized') return sendJson(res, authorization === 'not_configured' ? 503 : 401, { ok: false, error: authorization === 'not_configured' ? 'task_inbox_read_auth_not_configured' : 'task_inbox_read_authorization_required' });
         const rawLimit = url.searchParams.get('limit');
         const limit = rawLimit === null ? 50 : Number(rawLimit);
         if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
@@ -119,6 +129,8 @@ function createTaskInboxServer({ inboxPath = DEFAULT_INBOX_PATH, port = DEFAULT_
         });
       }
       if (req.method === 'GET' && url.pathname.startsWith('/api/tasks/')) {
+        const authorization = authorizeRead(req);
+        if (authorization !== 'authorized') return sendJson(res, authorization === 'not_configured' ? 503 : 401, { ok: false, error: authorization === 'not_configured' ? 'task_inbox_read_auth_not_configured' : 'task_inbox_read_authorization_required' });
         const taskId = decodeURIComponent(url.pathname.slice('/api/tasks/'.length));
         const task = records.get(taskId);
         if (!task) return sendJson(res, 404, { ok: false, error: 'task_not_found' });
@@ -138,7 +150,9 @@ if (require.main === module) {
     throw new Error('HF_UNIFIED_FIELD_TASK_PORT must be an integer from 1024 to 65535');
   }
   const inboxPath = process.env.HF_UNIFIED_FIELD_INBOX_FILE || DEFAULT_INBOX_PATH;
-  const server = createTaskInboxServer({ inboxPath, port });
+  const readToken = process.env.HF_GITHUB_BRIDGE_READ_TOKEN || '';
+  if (readToken.length < 32) throw new Error('HF_GITHUB_BRIDGE_READ_TOKEN must contain at least 32 characters before starting the task inbox');
+  const server = createTaskInboxServer({ inboxPath, port, readToken });
   server.listen(port, HOST, () => process.stdout.write('Unified Field task inbox listening on http://' + HOST + ':' + port + '\n'));
 }
 

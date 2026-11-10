@@ -16,6 +16,11 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $baseUrl = 'http://127.0.0.1:' + $Port
+$readToken = $env:HF_GITHUB_BRIDGE_READ_TOKEN
+if ([string]::IsNullOrWhiteSpace($readToken) -or $readToken.Length -lt 32) {
+    throw 'HF_GITHUB_BRIDGE_READ_TOKEN must be configured with at least 32 characters before reading task records.'
+}
+$headers = @{ Authorization = 'Bearer ' + $readToken }
 try {
     $health = Invoke-RestMethod -Uri ($baseUrl + '/health') -TimeoutSec 3
 } catch {
@@ -24,12 +29,13 @@ try {
 if ($health.ok -ne $true -or
     $health.service -ne 'heavenzfire-unified-field-task-inbox' -or
     $health.host -ne '127.0.0.1' -or
-    [int]$health.port -ne $Port) {
+    [int]$health.port -ne $Port -or
+    $health.readAuthorizationConfigured -ne $true) {
     throw 'Health response does not identify the expected loopback task inbox; refusing to display untrusted endpoint data.'
 }
 
 try {
-    $listing = Invoke-RestMethod -Uri ($baseUrl + '/api/tasks?limit=' + $Limit) -TimeoutSec 3
+    $listing = Invoke-RestMethod -Uri ($baseUrl + '/api/tasks?limit=' + $Limit) -Headers $headers -TimeoutSec 3
 } catch {
     throw 'Task inbox listing request failed: ' + $_.Exception.Message
 }

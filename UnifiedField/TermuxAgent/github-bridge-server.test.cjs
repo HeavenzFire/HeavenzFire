@@ -41,6 +41,7 @@ async function withServer(t, options = {}) {
     allowedOwners: ['HeavenzFire'],
     approvalVerifier: testApprovalVerifier,
     readAuthorizer: () => true,
+    inboxReadToken: 'test-inbox-read-token-that-is-at-least-32-chars',
     ...serverOptions
   });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
@@ -152,7 +153,7 @@ test('task intake minimizes durable audit data and keeps replay results bounded 
   const goalSentinel = 'PRIVATE_GOAL_SENTINEL_20261110';
   const resultSentinel = 'PRIVATE_RESULT_SENTINEL_20261110';
   const fetchImpl = async (url, init = {}) => {
-    calls.push({ url, method: init.method, body: init.body && JSON.parse(init.body) });
+    calls.push({ url, method: init.method, headers: init.headers, body: init.body && JSON.parse(init.body) });
     if (url === 'http://127.0.0.1:18796/api/tasks' && init.method === 'POST') {
       storedTaskRecord = calls.at(-1).body.taskRecord;
       return new Response(JSON.stringify({ ok: true, taskId: storedTaskRecord.taskId }), { status: 201 });
@@ -186,6 +187,8 @@ test('task intake minimizes durable audit data and keeps replay results bounded 
   assert.equal(run.status, 200);
   const runResult = await run.json();
   assert.equal(runResult.result.completedRoles, 16);
+  const inboxRead = calls.find(call => call.url === 'http://127.0.0.1:18796/api/tasks/' + task.taskId && call.method === 'GET');
+  assert.equal(inboxRead.headers.authorization, 'Bearer test-inbox-read-token-that-is-at-least-32-chars');
   const replay = await fetch(base + '/api/tasks/' + task.taskId + '/run', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ approvalEvidence: TEST_APPROVAL_EVIDENCE }) });
   assert.equal(replay.status, 200);
   const replayResult = await replay.json();
@@ -195,6 +198,9 @@ test('task intake minimizes durable audit data and keeps replay results bounded 
   assert.ok(calls.some(x => x.url === 'http://127.0.0.1:18796/api/tasks'));
   assert.ok(calls.some(x => x.url === 'http://127.0.0.1:18796/api/tasks/' + task.taskId));
   const orchestratorCreate = calls.find(x => x.url === 'http://127.0.0.1:18797/api/tasks');
+  assert.equal(orchestratorCreate.headers.authorization, undefined, 'inbox read credential must not be forwarded to the orchestrator');
+  const inboxWrite = calls.find(x => x.url === 'http://127.0.0.1:18796/api/tasks' && x.method === 'POST');
+  assert.equal(inboxWrite.headers.authorization, undefined, 'inbox read credential must not be sent on task intake');
   assert.equal(orchestratorCreate.body.taskId, task.taskId);
   assert.equal(orchestratorCreate.body.goal, goalSentinel);
   const approvalCall = calls.find(x => x.url.endsWith('/approve'));
