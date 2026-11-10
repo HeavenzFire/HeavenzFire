@@ -6,7 +6,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const crypto = require('node:crypto');
-const { createGitHubBridgeServer, ORCHESTRATOR_TIMEOUT_MS } = require('./github-bridge-server.cjs');
+const { createGitHubBridgeServer, createBearerTokenAuthorizer, ORCHESTRATOR_TIMEOUT_MS } = require('./github-bridge-server.cjs');
 
 const TEST_APPROVAL_EVIDENCE = Object.freeze({ fixture: 'trusted-human-approval-test' });
 async function testApprovalVerifier({ action, subject, evidence }) {
@@ -14,6 +14,19 @@ async function testApprovalVerifier({ action, subject, evidence }) {
   return { approved: true, approvalId: 'test-approval-' + String(subject.taskId || subject.fingerprint || action), approvedBy: 'verified-test-operator', reason: 'Deterministic test approval fixture.', method: 'injected-test-verifier', verifiedAt: '2026-11-05T08:00:00.000Z' };
 }
 test('orchestrator task requests allow full 16-role execution window', () => { assert.equal(ORCHESTRATOR_TIMEOUT_MS, 180000); });
+
+test('production bearer authorization requires the explicit Bearer scheme and a single token', () => {
+  const token = '0123456789abcdef0123456789abcdef';
+  const authorize = createBearerTokenAuthorizer(token);
+  assert.equal(authorize({ headers: { authorization: 'Bearer ' + token } }), true);
+  assert.equal(authorize({ headers: { authorization: 'bearer ' + token } }), true);
+  assert.equal(authorize({ headers: { authorization: token } }), false);
+  assert.equal(authorize({ headers: { authorization: 'Basic ' + token } }), false);
+  assert.equal(authorize({ headers: { authorization: 'Bearer ' + token + ' extra' } }), false);
+  assert.equal(authorize({ headers: {} }), false);
+  assert.equal(createBearerTokenAuthorizer('short')({ headers: { authorization: 'Bearer short' } }), false);
+});
+
 
 async function withServer(t, options = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'hf-gh-bridge-'));
