@@ -360,6 +360,71 @@ test('reserved task execution recovers after crash between orchestrator creation
 
 
 
+test('concurrent run requests for one task cannot start duplicate orchestrator executions', async t => {
+  const taskId = '00000000-0000-4000-8000-000000000781';
+  let storedTaskRecord = null;
+  let orchestratorTask = null;
+  let releaseRun;
+  let signalRunStarted;
+  const runGate = new Promise(resolve => { releaseRun = resolve; });
+  const runStarted = new Promise(resolve => { signalRunStarted = resolve; });
+  let runCalls = 0;
+  const fetchImpl = async (url, init = {}) => {
+    const body = init.body ? JSON.parse(init.body) : null;
+    if (url === 'http://127.0.0.1:18796/api/tasks' && init.method === 'POST') {
+      storedTaskRecord = body.taskRecord;
+      return new Response(JSON.stringify({ ok: true, taskId }), { status: 201 });
+    }
+    if (url === 'http://127.0.0.1:18796/api/tasks/' + taskId) {
+      return storedTaskRecord
+        ? new Response(JSON.stringify({ ok: true, taskRecord: storedTaskRecord }), { status: 200 })
+        : new Response('{}', { status: 404 });
+    }
+    if (url === 'http://127.0.0.1:18797/api/tasks/' + taskId + '/state') {
+      return orchestratorTask
+        ? new Response(JSON.stringify({ task: {
+            id: taskId, state: orchestratorTask.state,
+            goalHash: require('node:crypto').createHash('sha256').update(storedTaskRecord.goal, 'utf8').digest('hex')
+          } }), { status: 200 })
+        : new Response('{}', { status: 404 });
+    }
+    if (url === 'http://127.0.0.1:18797/api/tasks' && init.method === 'POST') {
+      orchestratorTask = { id: taskId, state: 'proposed' };
+      return new Response(JSON.stringify({ task: orchestratorTask }), { status: 201 });
+    }
+    if (url.endsWith('/approve')) {
+      orchestratorTask.state = 'approved';
+      return new Response(JSON.stringify({ task: orchestratorTask }), { status: 200 });
+    }
+    if (url.endsWith('/run')) {
+      runCalls++;
+      signalRunStarted();
+      await runGate;
+      orchestratorTask.state = 'completed';
+      return new Response(JSON.stringify({ task: orchestratorTask, completedRoles: 16, failedRoles: 0 }), { status: 200 });
+    }
+    return new Response('{}', { status: 404 });
+  };
+  const { base } = await withServer(t, { fetchImpl });
+  const submitted = await fetch(base + '/api/tasks', {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ taskId, goal: 'Do not execute one approved task twice' })
+  });
+  assert.equal(submitted.status, 201);
+  const run = () => fetch(base + '/api/tasks/' + taskId + '/run', {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ approvalEvidence: TEST_APPROVAL_EVIDENCE })
+  });
+  const firstRun = run();
+  await runStarted;
+  const duplicate = await run();
+  assert.equal(duplicate.status, 409);
+  assert.equal((await duplicate.json()).error, 'task_execution_request_already_in_flight');
+  releaseRun();
+  assert.equal((await firstRun).status, 200);
+  assert.equal(runCalls, 1);
+});
+
 test('sanitizes legacy audit records without restoring raw results to replay cache', async t => {
   const taskId = '00000000-0000-4000-8000-000000000101';
   const goalSentinel = 'LEGACY_GOAL_SENTINEL_20261110';
