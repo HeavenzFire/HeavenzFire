@@ -296,6 +296,7 @@ function createGitHubBridgeServer(options = {}) {
           host, port: server.address()?.port || port,
           githubAuth: auth, allowedOwners: [...allowedOwners],
           approvalVerifierConfigured, writesEnabled: approvalVerifierConfigured, capabilities,
+          orchestratorResultReadAuthorizationConfigured: orchestratorResultReadToken.length >= 32,
           defaultBranchWrites: false, merges: false,
           auditEvents: auditTotalEvents, recentAuditEvents: audit.length
         });
@@ -467,7 +468,7 @@ function createGitHubBridgeServer(options = {}) {
           if (state !== undefined) throw Object.assign(new Error('orchestrator_task_state_unrecognized'), { statusCode: 409 });
         }
 
-        if (priorRun?.type === 'task_execution_failed' || priorRun?.type === 'task_execution_started') {
+        if (priorRun?.type === 'task_execution_started') {
           throw Object.assign(new Error('task_execution_outcome_unknown; refusing duplicate execution'), { statusCode: 409 });
         }
         const inboxResponse = await remoteJson(inboxUrl + '/api/tasks/' + taskId, 'GET', undefined, 20000, inboxReadToken ? { authorization: 'Bearer ' + inboxReadToken } : {});
