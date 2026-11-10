@@ -67,6 +67,7 @@ function createGitHubBridgeServer(options = {}) {
   const readApi = options.readApi || github;
   const writeApi = options.writeApi || githubWrite;
   const approvalVerifier = typeof options.approvalVerifier === 'function' ? options.approvalVerifier : null;
+  const readAuthVerifier = typeof options.readAuthVerifier === 'function' ? options.readAuthVerifier : null;
   const tokenProvider = options.tokenProvider || (() => execFileSync('gh', ['auth', 'token', '--hostname', 'github.com'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], windowsHide: true }).trim());
   const ownerConfig = options.allowedOwners || process.env.HF_GITHUB_OWNERS || 'HeavenzFire';
   const allowedOwners = new Set((Array.isArray(ownerConfig) ? ownerConfig : String(ownerConfig).split(',')).map(x => String(x).trim().toLowerCase()).filter(Boolean));
@@ -79,6 +80,28 @@ function createGitHubBridgeServer(options = {}) {
   const taskResults = new Map();
   let taskResultCacheBytes = 0;
   let auditTotalEvents = 0;
+
+  async function requireReadAuthorization(req, resource) {
+    if (!readAuthVerifier) {
+      throw Object.assign(new Error('local_read_authenticator_not_configured'), { statusCode: 503 });
+    }
+    let decision;
+    try {
+      decision = await readAuthVerifier({
+        resource,
+        method: req.method,
+        path: new URL(req.url, 'http://' + host).pathname,
+        authorization: req.headers.authorization || null
+      });
+    } catch {
+      throw Object.assign(new Error('local_read_authorization_denied'), { statusCode: 403 });
+    }
+    if (!decision || decision.authorized !== true ||
+        typeof decision.principal !== 'string' || !decision.principal.trim()) {
+      throw Object.assign(new Error('local_read_authorization_denied'), { statusCode: 403 });
+    }
+    return decision.principal;
+  }
 
   function rememberAudit(record) {
     audit.push(record);
@@ -148,10 +171,8 @@ function createGitHubBridgeServer(options = {}) {
   if (fs.existsSync(auditPath)) {
     for (const line of fs.readFileSync(auditPath, 'utf8').split(/\r?\n/).filter(Boolean)) {
       const rawEvent = JSON.parse(line);
-      if (rawEvent.type === 'task_execution_completed' &&
-          Object.prototype.hasOwnProperty.call(rawEvent, 'result')) {
-        rememberTaskResult(rawEvent.taskId, rawEvent.result);
-      }
+      // Legacy completion results are never rehydrated into the unauthenticated
+      // process-local replay cache. A post-restart replay must fail closed.
       const event = sanitizeAuditEvent(rawEvent);
       auditTotalEvents++;
       rememberAudit(event);
@@ -267,7 +288,8 @@ function createGitHubBridgeServer(options = {}) {
           ok: true, service: 'heavenzfire-unified-field-github-bridge',
           host, port: server.address()?.port || port,
           githubAuth: auth, allowedOwners: [...allowedOwners],
-          approvalVerifierConfigured, writesEnabled: approvalVerifierConfigured, capabilities,
+          approvalVerifierConfigured, writesEnabled: approvalVerifierConfigured,
+          localReadAuthenticatorConfigured: typeof readAuthVerifier === 'function', capabilities,
           defaultBranchWrites: false, merges: false,
           auditEvents: auditTotalEvents, recentAuditEvents: audit.length
         });
@@ -290,6 +312,7 @@ function createGitHubBridgeServer(options = {}) {
 
       const taskLookup = url.pathname.match(/^\/api\/tasks\/([0-9a-f-]{36})$/);
       if (req.method === 'GET' && taskLookup) {
+        await requireReadAuthorization(req, 'task-record');
         const inbox = await remoteJson(inboxUrl + '/api/tasks/' + taskLookup[1], 'GET');
         return send(res, 200, { ok: true, taskRecord: inbox.taskRecord, execution: taskRuns.get(taskLookup[1]) || null });
       }
@@ -307,6 +330,7 @@ function createGitHubBridgeServer(options = {}) {
         // Raw results are retained only in a bounded process-local cache, never in
         // new durable bridge audit records.
         if (priorRun?.type === 'task_execution_completed') {
+          await requireReadAuthorization(req, 'task-result-replay');
           const cached = taskResults.get(taskRun[1]);
           if (cached) return send(res, 200, { ok: true, idempotentReplay: true, result: cached.value });
           return send(res, 409, {
@@ -442,6 +466,7 @@ function createGitHubBridgeServer(options = {}) {
       }
 
       if (req.method === 'GET' && url.pathname === '/api/audit/recent') {
+        await requireReadAuthorization(req, 'audit-recent');
         return send(res, 200, {
           events: audit.slice(-100).map(({
             timestamp, type, action, taskId, idempotencyKey, error, result,
