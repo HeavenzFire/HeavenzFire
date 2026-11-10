@@ -291,7 +291,7 @@ function createOrchestrator(options = {}) {
       if (req.method === 'GET' && taskResult) {
         if (resultReadToken.length < 32) return json(res, 503, { error: 'orchestrator_result_read_auth_not_configured' });
         const authorization = String(req.headers.authorization || '');
-        const match = authorization.match(/^Bearer\\s+(.+)$/i);
+        const match = authorization.match(/^Bearer\s+(.+)$/i);
         const supplied = match ? match[1].trim() : '';
         const expectedBytes = Buffer.from(resultReadToken, 'utf8');
         const suppliedBytes = Buffer.from(supplied, 'utf8');
