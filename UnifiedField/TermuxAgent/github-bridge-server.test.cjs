@@ -541,6 +541,7 @@ test('reconciles a completed orchestrator task when the bridge lost the run resp
       return new Response(JSON.stringify({ error: 'response_lost_after_completion' }), { status: 503 });
     }
     if (url === 'http://127.0.0.1:18797/api/tasks/' + taskId + '/result') {
+      if (init.headers?.authorization !== 'Bearer test-orchestrator-result-read-token-32chars') return new Response('{}', { status: 401 });
       return new Response(JSON.stringify({ task: {
         id: taskId, state: 'completed', verificationStatus: 'not_run',
         results: [{ agentId: 'safety-auditor', state: 'completed', output: 'persisted-result' }]
@@ -548,7 +549,7 @@ test('reconciles a completed orchestrator task when the bridge lost the run resp
     }
     return new Response('{}', { status: 404 });
   };
-  const { base, auditPath } = await withServer(t, { fetchImpl });
+  const { base, auditPath, restart } = await withServer(t, { fetchImpl });
   const submitted = await fetch(base + '/api/tasks', {
     method: 'POST', headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ taskId, goal: 'Recover completion when the bridge lost the response' })
@@ -565,6 +566,16 @@ test('reconciles a completed orchestrator task when the bridge lost the run resp
   assert.equal(runCalls, 1, 'terminal recovery must not re-execute the orchestrator task');
   const events = fs.readFileSync(auditPath, 'utf8').trim().split(/\\r?\\n/).map(JSON.parse);
   assert.ok(events.some(event => event.type === 'task_execution_completed' && event.taskId === taskId));
+  const restartedBase = await restart();
+  const replay = await fetch(restartedBase + '/api/tasks/' + taskId + '/run', {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ approvalEvidence: TEST_APPROVAL_EVIDENCE })
+  });
+  assert.equal(replay.status, 200);
+  const replayBody = await replay.json();
+  assert.equal(replayBody.idempotentReplay, true);
+  assert.equal(replayBody.recovered, true);
+  assert.equal(runCalls, 1, 'bridge restart replay must retrieve stored results, not rerun inference');
 });
 
 test('sanitizes legacy audit records without restoring raw results to replay cache', async t => {
