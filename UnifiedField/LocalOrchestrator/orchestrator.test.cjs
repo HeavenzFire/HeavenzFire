@@ -159,6 +159,24 @@ test('approval context cannot be transferred to another task with the same goal'
   });
 });
 
+test('orchestrator result recovery endpoint requires a separate bearer token and omits the prompt', async t => {
+  const token = '0123456789abcdef0123456789abcdef';
+  await withServer({ resultReadToken: token }, async base => {
+    const task = await createCompletedTask(base);
+    const denied = await fetch(base + '/api/tasks/' + task.id + '/result');
+    assert.equal(denied.status, 401);
+    const authorized = await fetch(base + '/api/tasks/' + task.id + '/result', {
+      headers: { authorization: 'Bearer ' + token }
+    });
+    assert.equal(authorized.status, 200);
+    const payload = await authorized.json();
+    assert.equal(payload.task.id, task.id);
+    assert.equal(payload.task.state, 'completed');
+    assert.equal(payload.task.results.length, 16);
+    assert.equal(Object.prototype.hasOwnProperty.call(payload.task, 'goal'), false);
+  });
+});
+
 test('orchestrator exposes one task by ID for crash recovery reconciliation', async () => {
   await withServer({}, async base => {
     const taskId = '00000000-0000-4000-8000-000000000779';
@@ -171,9 +189,17 @@ test('orchestrator exposes one task by ID for crash recovery reconciliation', as
     assert.equal(detail.status, 200);
     const detailBody = await detail.json();
     assert.equal(detailBody.task.id, taskId);
+    assert.equal(detailBody.task.state, 'proposed');
     assert.equal(detailBody.task.goalHash, require('node:crypto').createHash('sha256').update('reconcile task state after bridge restart').digest('hex'));
     assert.equal(Object.prototype.hasOwnProperty.call(detailBody.task, 'goal'), false);
     assert.equal(Object.prototype.hasOwnProperty.call(detailBody.task, 'results'), false);
+    const approved = await fetch(base + '/api/tasks/' + taskId + '/approve', {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(taskApprovalPayload(taskId, 'reconcile task state after bridge restart'))
+    });
+    assert.equal(approved.status, 200);
+    const approvedState = await fetch(base + '/api/tasks/' + taskId + '/state');
+    assert.equal((await approvedState.json()).task.state, 'approved');
     const missing = await fetch(base + '/api/tasks/00000000-0000-4000-8000-000000000780/state');
     assert.equal(missing.status, 404);
   });
