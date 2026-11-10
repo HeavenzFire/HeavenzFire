@@ -252,6 +252,20 @@ test('sanitizes legacy task audit records in memory without rewriting the JSONL 
   assert.equal(fs.readFileSync(auditPath, 'utf8'), originalAudit, 'legacy audit bytes must remain unchanged');
 });
 
+test('completed task result replay fails closed without a trusted local read authenticator', async t => {
+  const taskId = '00000000-0000-4000-8000-000000000204';
+  const initialAuditEvents = [
+    { timestamp: '2026-11-10T00:00:00.000Z', type: 'task_submitted', taskId, goalHash: 'a'.repeat(64) },
+    { timestamp: '2026-11-10T00:01:00.000Z', type: 'task_execution_completed', taskId, orchestratorTaskId: taskId, resultSha256: 'b'.repeat(64) }
+  ];
+  const { base } = await withServer(t, { initialAuditEvents });
+  const replay = await fetch(base + '/api/tasks/' + taskId + '/run', {
+    method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}'
+  });
+  assert.equal(replay.status, 503);
+  assert.equal((await replay.json()).error, 'local_read_authenticator_not_configured');
+});
+
 test('task and audit read endpoints fail closed without a trusted local read authenticator', async t => {
   const taskId = '00000000-0000-4000-8000-000000000202';
   const { base } = await withServer(t, {
