@@ -200,6 +200,9 @@ test('orchestrator exposes one task by ID for crash recovery reconciliation', as
     assert.equal(approved.status, 200);
     const approvedState = await fetch(base + '/api/tasks/' + taskId + '/state');
     assert.equal((await approvedState.json()).task.state, 'approved');
+    const completedTask = await createCompletedTask(base);
+    const completedState = await fetch(base + '/api/tasks/' + completedTask.id + '/state');
+    assert.equal((await completedState.json()).task.state, 'completed');
     const missing = await fetch(base + '/api/tasks/00000000-0000-4000-8000-000000000780/state');
     assert.equal(missing.status, 404);
   });
