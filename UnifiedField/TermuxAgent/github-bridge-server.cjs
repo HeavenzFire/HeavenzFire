@@ -386,7 +386,18 @@ function createGitHubBridgeServer(options = {}) {
         if (priorRun?.type === 'task_execution_completed') {
           const cached = taskResults.get(taskId);
           if (cached) return send(res, 200, { ok: true, idempotentReplay: true, result: cached.value });
-          return send(res, 409, { ok: false, error: 'task_completed_result_not_cached', taskId, orchestratorTaskId: priorRun.orchestratorTaskId || null, resultSha256: priorRun.resultSha256 || null });
+          try {
+            const recoveredResult = await remoteJson(
+              orchestratorUrl + '/api/tasks/' + taskId + '/result',
+              'GET', undefined, 20000,
+              orchestratorResultReadToken ? { authorization: 'Bearer ' + orchestratorResultReadToken } : {}
+            );
+            if (recoveredResult?.task?.id === taskId) {
+              rememberTaskResult(taskId, recoveredResult);
+              return send(res, 200, { ok: true, idempotentReplay: true, recovered: true, result: recoveredResult });
+            }
+          } catch {}
+          return send(res, 409, { ok: false, error: 'task_completed_result_not_cached_or_recoverable', taskId, orchestratorTaskId: priorRun.orchestratorTaskId || null, resultSha256: priorRun.resultSha256 || null });
         }
         if (priorRun?.type === 'task_execution_failed') {
           return send(res, 502, { ok: false, taskId, orchestratorTaskId: priorRun.orchestratorTaskId || taskId, failure: { error: priorRun.error || 'orchestrator_task_failed' }, idempotentReplay: true });
@@ -428,7 +439,7 @@ function createGitHubBridgeServer(options = {}) {
             append({ type: 'task_execution_completed', taskId, orchestratorTaskId: taskId, approval, result });
             return send(res, 200, { ok: true, taskId, orchestratorTaskId: taskId, recovered: true, result });
           }
-          if (state === 'completed' || state === 'verified' || state === 'rejected') {
+          if (state === 'completed' || state === 'verified' || (state === 'rejected' && existing.task.completedAt)) {
             const recoveredResult = await remoteJson(
               orchestratorUrl + '/api/tasks/' + taskId + '/result',
               'GET', undefined, 20000,
@@ -439,6 +450,9 @@ function createGitHubBridgeServer(options = {}) {
             }
             append({ type: 'task_execution_completed', taskId, orchestratorTaskId: taskId, approval: priorRun.approval || null, verificationStatus: recoveredResult.task.verificationStatus, result: recoveredResult });
             return send(res, 200, { ok: true, taskId, orchestratorTaskId: taskId, recovered: true, verificationStatus: recoveredResult.task.verificationStatus, result: recoveredResult });
+          }
+          if (state === 'rejected') {
+            throw Object.assign(new Error('orchestrator_task_rejected_before_execution; manual review required'), { statusCode: 409 });
           }
           if (state === 'failed') {
             const failure = { error: 'orchestrator_task_failed', state };
