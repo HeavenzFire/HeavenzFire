@@ -425,7 +425,14 @@ test('reserved task execution recovers after crash between orchestrator creation
   assert.equal(interrupted.status, 503);
   const eventsAfterInterruption = fs.readFileSync(auditPath, 'utf8').split('\n').filter(Boolean).map(JSON.parse);
   assert.ok(eventsAfterInterruption.some(event => event.type === 'task_execution_reserved'));
+  assert.ok(eventsAfterInterruption.some(event => event.type === 'task_execution_authorized'));
   assert.equal(eventsAfterInterruption.some(event => event.type === 'task_execution_started'), false);
+  const reservationText = JSON.stringify(eventsAfterInterruption);
+  assert.equal(reservationText.includes('verified-test-operator'), false, 'approver identity must not enter the task audit');
+  assert.equal(reservationText.includes('reason'), false, 'free-form approval reasons must not enter the task audit');
+  const authorization = eventsAfterInterruption.find(event => event.type === 'task_execution_authorized');
+  assert.equal(authorization.approvalVerified, true);
+  assert.match(authorization.approvalDigest, /^[a-f0-9]{64}$/);
   const restartedBase = await restart();
   const recovered = await run(restartedBase);
   assert.equal(recovered.status, 200);
