@@ -332,9 +332,9 @@ function createOrchestrator(options = {}) {
         ledger.save(task);
         return json(res, 201, { task: publicTask(task), executionStarted: false });
       }
-      const match = url.pathname.match(/^\/api\/tasks\/([0-9a-f-]{36})\/(approve|run)$/);
+      const match = url.pathname.match(/^\/api\/tasks\/([0-9a-f-]{36})\/(approve|run)$/i);
       if (req.method === 'POST' && match) {
-        const task = tasks.get(match[1]);
+        const task = tasks.get(match[1].toLowerCase());
         if (!task) return json(res, 404, { error: 'task_not_found' });
         if (match[2] === 'approve') {
           const input = await readBody(req);
@@ -368,9 +368,9 @@ function createOrchestrator(options = {}) {
           return json(res, failed === 0 ? 200 : 502, { task: publicTask(task), completedRoles: 16 - failed, failedRoles: failed, executionStarted: true });
         } finally { active--; }
       }
-      const verifyMatch = url.pathname.match(/^\/api\/tasks\/([0-9a-f-]{36})\/verify$/);
+      const verifyMatch = url.pathname.match(/^\/api\/tasks\/([0-9a-f-]{36})\/verify$/i);
       if (req.method === 'POST' && verifyMatch) {
-        const task = tasks.get(verifyMatch[1]);
+        const task = tasks.get(verifyMatch[1].toLowerCase());
         if (!task) return json(res, 404, { error: 'task_not_found' });
         if (task.state !== 'completed') return json(res, 409, { error: 'task_must_be_completed_before_verification', state: task.state });
         const input = await readBody(req);
