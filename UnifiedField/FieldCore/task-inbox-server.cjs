@@ -64,7 +64,7 @@ function createTaskInboxServer({ inboxPath = DEFAULT_INBOX_PATH, port = DEFAULT_
   const readAuthorizationConfigured = typeof readToken === 'string' && readToken.length >= 32;
   function authorizeRead(req) {
     if (!readAuthorizationConfigured) return 'not_configured';
-    const match = String(req.headers.authorization || '').match(/^Bearer\\s+(.+)$/i);
+    const match = String(req.headers.authorization || '').match(/^Bearer\s+(.+)$/i);
     if (!match || Buffer.byteLength(match[1], 'utf8') !== Buffer.byteLength(readToken, 'utf8')) return 'denied';
     return require('node:crypto').timingSafeEqual(Buffer.from(match[1]), Buffer.from(readToken)) ? 'authorized' : 'denied';
   }
