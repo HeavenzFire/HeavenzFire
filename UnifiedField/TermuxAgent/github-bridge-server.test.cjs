@@ -315,6 +315,12 @@ test('reserved task execution recovers after crash between orchestrator creation
   let failFirstApproval = true;
   let createCalls = 0;
   let runCalls = 0;
+  let bridgeApprovalCalls = 0;
+  const oneTimeApprovalVerifier = async input => {
+    bridgeApprovalCalls++;
+    if (bridgeApprovalCalls > 1) throw new Error('bridge_approval_replay_rejected');
+    return testApprovalVerifier(input);
+  };
   const fetchImpl = async (url, init = {}) => {
     if (url === 'http://127.0.0.1:18797/health') return new Response(JSON.stringify({ ok: true, taskStateLookup: true }), { status: 200 });
     const body = init.body ? JSON.parse(init.body) : null;
@@ -355,7 +361,7 @@ test('reserved task execution recovers after crash between orchestrator creation
     }
     return new Response('{}', { status: 404 });
   };
-  const { base, auditPath, restart } = await withServer(t, { fetchImpl });
+  const { base, auditPath, restart } = await withServer(t, { fetchImpl, approvalVerifier: oneTimeApprovalVerifier });
   const submitted = await fetch(base + '/api/tasks', {
     method: 'POST', headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ taskId, goal: 'Recover an interrupted approved task' })
@@ -376,6 +382,7 @@ test('reserved task execution recovers after crash between orchestrator creation
   assert.equal((await recovered.json()).recovered, true);
   assert.equal(createCalls, 1, 'recovery must reuse the already-created orchestrator task');
   assert.equal(runCalls, 1, 'recovery must execute the orchestrator task once');
+  assert.equal(bridgeApprovalCalls, 1, 'durable bridge approval must not be re-verified after restart');
 });
 
 
