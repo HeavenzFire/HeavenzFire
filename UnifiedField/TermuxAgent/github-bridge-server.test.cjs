@@ -50,6 +50,7 @@ test('health reports verifier-backed write capability state', async t => {
   assert.equal(data.githubAuth, 'github-cli-authenticated');
   assert.equal(data.approvalVerifierConfigured, true);
   assert.equal(data.writesEnabled, true);
+  assert.equal(data.localReadAuthenticatorConfigured, false);
   assert.equal(data.defaultBranchWrites, false);
   assert.ok(data.capabilities.includes('issues-write'));
 });
