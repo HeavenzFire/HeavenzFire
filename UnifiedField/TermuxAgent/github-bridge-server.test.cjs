@@ -425,6 +425,64 @@ test('concurrent run requests for one task cannot start duplicate orchestrator e
   assert.equal(runCalls, 1);
 });
 
+test('reconciles a completed orchestrator task when the bridge lost the run response', async t => {
+  const taskId = '00000000-0000-4000-8000-000000000782';
+  let storedTaskRecord = null;
+  let orchestratorTask = null;
+  let runCalls = 0;
+  const fetchImpl = async (url, init = {}) => {
+    const body = init.body ? JSON.parse(init.body) : null;
+    if (url === 'http://127.0.0.1:18796/api/tasks' && init.method === 'POST') {
+      storedTaskRecord = body.taskRecord;
+      return new Response(JSON.stringify({ ok: true, taskId }), { status: 201 });
+    }
+    if (url === 'http://127.0.0.1:18796/api/tasks/' + taskId) {
+      return storedTaskRecord
+        ? new Response(JSON.stringify({ ok: true, taskRecord: storedTaskRecord }), { status: 200 })
+        : new Response('{}', { status: 404 });
+    }
+    if (url === 'http://127.0.0.1:18797/api/tasks/' + taskId + '/state') {
+      return orchestratorTask
+        ? new Response(JSON.stringify({ task: {
+            id: taskId, state: orchestratorTask.state,
+            goalHash: require('node:crypto').createHash('sha256').update(storedTaskRecord.goal, 'utf8').digest('hex')
+          } }), { status: 200 })
+        : new Response('{}', { status: 404 });
+    }
+    if (url === 'http://127.0.0.1:18797/api/tasks' && init.method === 'POST') {
+      orchestratorTask = { id: taskId, state: 'proposed' };
+      return new Response(JSON.stringify({ task: orchestratorTask }), { status: 201 });
+    }
+    if (url.endsWith('/approve')) {
+      orchestratorTask.state = 'approved';
+      return new Response(JSON.stringify({ task: orchestratorTask }), { status: 200 });
+    }
+    if (url.endsWith('/run')) {
+      runCalls++;
+      orchestratorTask.state = 'completed';
+      return new Response(JSON.stringify({ error: 'response_lost_after_completion' }), { status: 503 });
+    }
+    return new Response('{}', { status: 404 });
+  };
+  const { base, auditPath } = await withServer(t, { fetchImpl });
+  const submitted = await fetch(base + '/api/tasks', {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ taskId, goal: 'Recover completion when the bridge lost the response' })
+  });
+  assert.equal(submitted.status, 201);
+  const run = () => fetch(base + '/api/tasks/' + taskId + '/run', {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ approvalEvidence: TEST_APPROVAL_EVIDENCE })
+  });
+  assert.equal((await run()).status, 503);
+  const recovered = await run();
+  assert.equal(recovered.status, 200);
+  assert.equal((await recovered.json()).recovered, true);
+  assert.equal(runCalls, 1, 'terminal recovery must not re-execute the orchestrator task');
+  const events = fs.readFileSync(auditPath, 'utf8').trim().split(/\\r?\\n/).map(JSON.parse);
+  assert.ok(events.some(event => event.type === 'task_execution_completed' && event.taskId === taskId));
+});
+
 test('sanitizes legacy audit records without restoring raw results to replay cache', async t => {
   const taskId = '00000000-0000-4000-8000-000000000101';
   const goalSentinel = 'LEGACY_GOAL_SENTINEL_20261110';
