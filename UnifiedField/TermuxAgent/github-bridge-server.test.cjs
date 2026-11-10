@@ -289,16 +289,19 @@ test('task intake is idempotent for a stable task UUID and rejects conflicting r
     return new Response('{}', { status: 404 });
   };
   const { base } = await withServer(t, { fetchImpl });
-  const submit = goal => fetch(base + '/api/tasks', {
+  const submit = (goal, suppliedTaskId = taskId) => fetch(base + '/api/tasks', {
     method: 'POST', headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ taskId, goal })
+    body: JSON.stringify({ taskId: suppliedTaskId, goal })
   });
-  const first = await submit('Stable task intake identity');
+  const first = await submit('Stable task intake identity', taskId.toUpperCase());
   assert.equal(first.status, 201);
   const replay = await submit('Stable task intake identity');
   assert.equal(replay.status, 200);
   assert.equal((await replay.json()).idempotentReplay, true);
   assert.equal(inboxPosts, 1, 'same task ID and goal must not create a second inbox record');
+  const uppercaseLookup = await fetch(base + '/api/tasks/' + taskId.toUpperCase());
+  assert.equal(uppercaseLookup.status, 200);
+  assert.equal((await uppercaseLookup.json()).taskRecord.taskId, taskId);
   const conflict = await submit('Different goal under the same task ID');
   assert.equal(conflict.status, 409);
   assert.equal((await conflict.json()).error, 'task_id_conflicts_with_different_goal');
