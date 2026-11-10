@@ -35,22 +35,36 @@ async function withServer(t, options = {}) {
   if (Array.isArray(initialAuditEvents)) {
     fs.writeFileSync(auditPath, initialAuditEvents.map(event => JSON.stringify(event)).join('\n') + '\n', 'utf8');
   }
-  const server = createGitHubBridgeServer({
+  const createServer = () => createGitHubBridgeServer({
     port: 0, auditPath,
     tokenProvider: () => 'test-token-that-is-long-enough',
     allowedOwners: ['HeavenzFire'],
     approvalVerifier: testApprovalVerifier,
     readAuthorizer: () => true,
     inboxReadToken: 'test-inbox-read-token-that-is-at-least-32-chars',
+    orchestratorResultReadToken: 'test-orchestrator-result-read-token-32chars',
     ...serverOptions
   });
-  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
-  const address = server.address();
+  let server = createServer();
+  const listen = async () => {
+    await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+    return 'http://127.0.0.1:' + server.address().port;
+  };
+  const close = async () => {
+    if (server.listening) await new Promise(resolve => server.close(resolve));
+  };
+  let base = await listen();
+  const restart = async () => {
+    await close();
+    server = createServer();
+    base = await listen();
+    return base;
+  };
   t.after(async () => {
-    await new Promise(resolve => server.close(resolve));
+    await close();
     fs.rmSync(dir, { recursive: true, force: true });
   });
-  return { base: 'http://127.0.0.1:' + address.port, auditPath };
+  return { base, auditPath, restart };
 }
 
 test('bridge binds loopback only', () => {
@@ -107,11 +121,12 @@ test('write action uses real branch adapter with durable idempotency and audit',
   assert.equal((await first.json()).sha, 'abc123');
   const replay = await fetch(base + '/api/github/branches', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(input) });
   assert.equal(replay.status, 201);
-  assert.equal((await replay.json()).idempotentReplay, true);
+  const replayBody = await replay.json();
+  assert.equal(replayBody.idempotentReplay, true);
   assert.equal(approvalCalls, 1, 'completed write replay must not consume the one-time approval twice');
   assert.equal(calls.length, 1);
   assert.equal(calls[0].writeEnabled, true);
-  const events = fs.readFileSync(auditPath, 'utf8').trim().split(/\r?\n/).map(JSON.parse);
+  const events = fs.readFileSync(auditPath, 'utf8').split('\n').filter(Boolean).map(JSON.parse);
   assert.deepEqual(events.map(x => x.type), ['write_started', 'write_completed']);
   assert.equal(events[0].approval.approvedBy, 'verified-test-operator');
   assert.equal(events[0].approval.method, 'injected-test-verifier');
@@ -150,9 +165,11 @@ test('sensitive task and audit routes fail closed without an authenticated reade
 test('task intake minimizes durable audit data and keeps replay results bounded to process memory', async t => {
   const calls = [];
   let storedTaskRecord = null;
+  let orchestratorCreated = false;
   const goalSentinel = 'PRIVATE_GOAL_SENTINEL_20261110';
   const resultSentinel = 'PRIVATE_RESULT_SENTINEL_20261110';
   const fetchImpl = async (url, init = {}) => {
+    if (url === 'http://127.0.0.1:18797/health') return new Response(JSON.stringify({ ok: true, taskStateLookup: true }), { status: 200 });
     calls.push({ url, method: init.method, headers: init.headers, body: init.body && JSON.parse(init.body) });
     if (url === 'http://127.0.0.1:18796/api/tasks' && init.method === 'POST') {
       storedTaskRecord = calls.at(-1).body.taskRecord;
@@ -163,7 +180,17 @@ test('task intake minimizes durable audit data and keeps replay results bounded 
         ? new Response(JSON.stringify({ ok: true, taskRecord: storedTaskRecord }), { status: 200 })
         : new Response('{}', { status: 404 });
     }
-    if (url === 'http://127.0.0.1:18797/api/tasks') return new Response(JSON.stringify({ task: { id: calls.at(-1).body.taskId } }), { status: 201 });
+    if (url === 'http://127.0.0.1:18797/api/tasks/' + storedTaskRecord.taskId + '/state') {
+      if (!orchestratorCreated) return new Response(JSON.stringify({ error: 'task_not_found' }), { status: 404 });
+      return new Response(JSON.stringify({ task: {
+        id: storedTaskRecord.taskId, state: 'proposed',
+        goalHash: require('node:crypto').createHash('sha256').update(storedTaskRecord.goal, 'utf8').digest('hex')
+      } }), { status: 200 });
+    }
+    if (url === 'http://127.0.0.1:18797/api/tasks') {
+      orchestratorCreated = true;
+      return new Response(JSON.stringify({ task: { id: calls.at(-1).body.taskId, state: 'proposed' } }), { status: 201 });
+    }
     if (url.endsWith('/approve')) return new Response(JSON.stringify({ task: { state: 'approved' } }), { status: 200 });
     if (url.endsWith('/run')) return new Response(JSON.stringify({
       task: { state: 'completed' }, completedRoles: 16, failedRoles: 0, privateResult: resultSentinel
@@ -210,7 +237,7 @@ test('task intake minimizes durable audit data and keeps replay results bounded 
   assert.ok(approvalCall.body.approvalContext.goalHash);
 
   const auditText = fs.readFileSync(auditPath, 'utf8');
-  const auditEvents = auditText.trim().split(/\r?\n/).map(JSON.parse);
+  const auditEvents = auditText.trim().split('\n').filter(Boolean).map(JSON.parse);
   const submittedEvent = auditEvents.find(event => event.type === 'task_submitted');
   const completedEvent = auditEvents.find(event => event.type === 'task_execution_completed');
   assert.ok(!auditText.includes(goalSentinel), 'raw task goals must not be written to bridge audit');
@@ -233,9 +260,9 @@ test('task intake minimizes durable audit data and keeps replay results bounded 
       method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ approvalEvidence: TEST_APPROVAL_EVIDENCE })
     });
-    assert.equal(replayAfterRestart.status, 409);
+    assert.equal(replayAfterRestart.status, 503);
     const restartBody = await replayAfterRestart.json();
-    assert.equal(restartBody.error, 'task_completed_result_not_cached');
+    assert.equal(restartBody.error, 'task_completed_result_read_unavailable');
     assert.equal(restartBody.resultSha256, completedEvent.resultSha256);
     assert.ok(!JSON.stringify(restartBody).includes(resultSentinel));
   } finally {
@@ -244,6 +271,431 @@ test('task intake minimizes durable audit data and keeps replay results bounded 
 });
 
 
+
+test('task intake is idempotent for a stable task UUID and rejects conflicting reuse', async t => {
+  const taskId = '00000000-0000-4000-8000-000000000777';
+  let storedTaskRecord = null;
+  let inboxPosts = 0;
+  const fetchImpl = async (url, init = {}) => {
+    if (url === 'http://127.0.0.1:18796/api/tasks' && init.method === 'POST') {
+      inboxPosts++;
+      storedTaskRecord = JSON.parse(init.body).taskRecord;
+      return new Response(JSON.stringify({ ok: true, taskId }), { status: 201 });
+    }
+    if (url === 'http://127.0.0.1:18796/api/tasks/' + taskId) {
+      return storedTaskRecord
+        ? new Response(JSON.stringify({ ok: true, taskRecord: storedTaskRecord }), { status: 200 })
+        : new Response(JSON.stringify({ error: 'task_not_found' }), { status: 404 });
+    }
+    return new Response('{}', { status: 404 });
+  };
+  const { base } = await withServer(t, { fetchImpl });
+  const submit = (goal, suppliedTaskId = taskId) => fetch(base + '/api/tasks', {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ taskId: suppliedTaskId, goal })
+  });
+  const first = await submit('Stable task intake identity', taskId.toUpperCase());
+  assert.equal(first.status, 201);
+  storedTaskRecord.status = 'approved';
+  storedTaskRecord.approvalState = 'approved';
+  const replay = await submit('Stable task intake identity');
+  assert.equal(replay.status, 200);
+  const replayBody = await replay.json();
+  assert.equal(replayBody.idempotentReplay, true);
+  assert.equal(replayBody.status, 'approved');
+  assert.equal(replayBody.approvalState, 'approved');
+  assert.equal(inboxPosts, 1, 'same task ID and goal must not create a second inbox record');
+  const uppercaseLookup = await fetch(base + '/api/tasks/' + taskId.toUpperCase());
+  assert.equal(uppercaseLookup.status, 200);
+  assert.equal((await uppercaseLookup.json()).taskRecord.taskId, taskId);
+  const conflict = await submit('Different goal under the same task ID');
+  assert.equal(conflict.status, 409);
+  assert.equal((await conflict.json()).error, 'task_id_conflicts_with_different_goal');
+  assert.equal(inboxPosts, 1);
+});
+
+test('accepted task replay repairs a missing inbox record instead of reporting stale acceptance', async t => {
+  const taskId = '00000000-0000-4000-8000-000000000785';
+  const goal = 'Recreate an inbox record lost after the bridge audit was fsynced';
+  const goalHash = crypto.createHash('sha256').update(goal, 'utf8').digest('hex');
+  let storedTaskRecord = null;
+  let inboxPosts = 0;
+  const fetchImpl = async (url, init = {}) => {
+    if (url === 'http://127.0.0.1:18796/api/tasks' && init.method === 'POST') {
+      inboxPosts++;
+      storedTaskRecord = JSON.parse(init.body).taskRecord;
+      return new Response(JSON.stringify({ ok: true, taskId }), { status: 201 });
+    }
+    if (url === 'http://127.0.0.1:18796/api/tasks/' + taskId) {
+      return storedTaskRecord
+        ? new Response(JSON.stringify({ ok: true, taskRecord: storedTaskRecord }), { status: 200 })
+        : new Response('{}', { status: 404 });
+    }
+    return new Response('{}', { status: 404 });
+  };
+  const { base, auditPath } = await withServer(t, {
+    fetchImpl,
+    initialAuditEvents: [{ type: 'task_submitted', taskId, goalHash, goalBytes: Buffer.byteLength(goal, 'utf8'), inboxAccepted: true }]
+  });
+  const response = await fetch(base + '/api/tasks', {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ taskId, goal })
+  });
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).idempotentReplay, true);
+  assert.equal(inboxPosts, 1);
+  assert.equal(storedTaskRecord.taskId, taskId);
+  const events = fs.readFileSync(auditPath, 'utf8').split('\n').filter(Boolean).map(JSON.parse);
+  assert.ok(events.some(event => event.type === 'task_submission_reserved' && event.reconciledMissingInboxRecord === true));
+  assert.ok(events.some(event => event.type === 'task_submitted' && event.taskId === taskId));
+});
+
+test('task intake rejects goals larger than the orchestrator execution limit', async t => {
+  const { base } = await withServer(t, { fetchImpl: async () => new Response('{}', { status: 404 }) });
+  const response = await fetch(base + '/api/tasks', {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ goal: 'x'.repeat(4001) })
+  });
+  assert.equal(response.status, 400);
+  assert.match((await response.json()).error, /goal_required_max_4000/);
+});
+
+test('bridge refuses task execution before side effects when orchestrator lacks recovery capability', async t => {
+  const taskId = '00000000-0000-4000-8000-000000000783';
+  let storedTaskRecord = null;
+  let orchestratorCreates = 0;
+  let approvalCalls = 0;
+  const fetchImpl = async (url, init = {}) => {
+    if (url === 'http://127.0.0.1:18797/health') return new Response(JSON.stringify({ ok: true }), { status: 200 });
+    if (url === 'http://127.0.0.1:18796/api/tasks' && init.method === 'POST') {
+      storedTaskRecord = JSON.parse(init.body).taskRecord;
+      return new Response(JSON.stringify({ ok: true, taskId }), { status: 201 });
+    }
+    if (url === 'http://127.0.0.1:18796/api/tasks/' + taskId) {
+      return storedTaskRecord
+        ? new Response(JSON.stringify({ ok: true, taskRecord: storedTaskRecord }), { status: 200 })
+        : new Response('{}', { status: 404 });
+    }
+    if (url === 'http://127.0.0.1:18797/api/tasks' && init.method === 'POST') {
+      orchestratorCreates++;
+      return new Response('{}', { status: 201 });
+    }
+    return new Response('{}', { status: 404 });
+  };
+  const approvalVerifier = async input => {
+    approvalCalls++;
+    return testApprovalVerifier(input);
+  };
+  const { base, auditPath } = await withServer(t, { fetchImpl, approvalVerifier });
+  const submitted = await fetch(base + '/api/tasks', {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ taskId, goal: 'Require a recovery-capable orchestrator before execution' })
+  });
+  assert.equal(submitted.status, 201);
+  const response = await fetch(base + '/api/tasks/' + taskId + '/run', {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ approvalEvidence: TEST_APPROVAL_EVIDENCE })
+  });
+  assert.equal(response.status, 503);
+  assert.match((await response.json()).error, /task_state_recovery_not_supported/);
+  assert.equal(orchestratorCreates, 0);
+  assert.equal(approvalCalls, 0, 'capability preflight must happen before consuming human approval');
+  const events = fs.readFileSync(auditPath, 'utf8').split('\n').filter(Boolean).map(JSON.parse);
+  assert.equal(events.some(event => event.type === 'task_execution_reserved'), false);
+});
+
+test('reserved task execution recovers after crash between orchestrator creation and approval', async t => {
+  const taskId = '00000000-0000-4000-8000-000000000778';
+  let storedTaskRecord = null;
+  let orchestratorTask = null;
+  let failFirstApproval = true;
+  let createCalls = 0;
+  let runCalls = 0;
+  let bridgeApprovalCalls = 0;
+  const oneTimeApprovalVerifier = async input => {
+    bridgeApprovalCalls++;
+    if (bridgeApprovalCalls > 1) throw new Error('bridge_approval_replay_rejected');
+    return testApprovalVerifier(input);
+  };
+  const fetchImpl = async (url, init = {}) => {
+    if (url === 'http://127.0.0.1:18797/health') return new Response(JSON.stringify({ ok: true, taskStateLookup: true }), { status: 200 });
+    const body = init.body ? JSON.parse(init.body) : null;
+    if (url === 'http://127.0.0.1:18796/api/tasks' && init.method === 'POST') {
+      storedTaskRecord = body.taskRecord;
+      return new Response(JSON.stringify({ ok: true, taskId }), { status: 201 });
+    }
+    if (url === 'http://127.0.0.1:18796/api/tasks/' + taskId) {
+      return storedTaskRecord
+        ? new Response(JSON.stringify({ ok: true, taskRecord: storedTaskRecord }), { status: 200 })
+        : new Response('{}', { status: 404 });
+    }
+    if (url === 'http://127.0.0.1:18797/api/tasks/' + taskId + '/state' && init.method === 'GET') {
+      return orchestratorTask
+        ? new Response(JSON.stringify({ task: {
+            id: orchestratorTask.id, state: orchestratorTask.state,
+            goalHash: crypto.createHash('sha256').update(storedTaskRecord.goal, 'utf8').digest('hex')
+          } }), { status: 200 })
+        : new Response(JSON.stringify({ error: 'task_not_found' }), { status: 404 });
+    }
+    if (url === 'http://127.0.0.1:18797/api/tasks' && init.method === 'POST') {
+      createCalls++;
+      orchestratorTask = { id: body.taskId, state: 'proposed' };
+      return new Response(JSON.stringify({ task: orchestratorTask }), { status: 201 });
+    }
+    if (url.endsWith('/approve')) {
+      if (failFirstApproval) {
+        failFirstApproval = false;
+        return new Response(JSON.stringify({ error: 'simulated_interruption' }), { status: 503 });
+      }
+      orchestratorTask.state = 'approved';
+      return new Response(JSON.stringify({ task: orchestratorTask }), { status: 200 });
+    }
+    if (url.endsWith('/run')) {
+      runCalls++;
+      orchestratorTask.state = 'completed';
+      return new Response(JSON.stringify({ task: orchestratorTask, completedRoles: 16, failedRoles: 0 }), { status: 200 });
+    }
+    return new Response('{}', { status: 404 });
+  };
+  const { base, auditPath, restart } = await withServer(t, { fetchImpl, approvalVerifier: oneTimeApprovalVerifier });
+  const submitted = await fetch(base + '/api/tasks', {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ taskId, goal: 'Recover an interrupted approved task' })
+  });
+  assert.equal(submitted.status, 201);
+  const run = serverBase => fetch((serverBase || base) + '/api/tasks/' + taskId + '/run', {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ approvalEvidence: TEST_APPROVAL_EVIDENCE })
+  });
+  const interrupted = await run();
+  assert.equal(interrupted.status, 503);
+  const eventsAfterInterruption = fs.readFileSync(auditPath, 'utf8').split('\n').filter(Boolean).map(JSON.parse);
+  assert.ok(eventsAfterInterruption.some(event => event.type === 'task_execution_reserved'));
+  assert.ok(eventsAfterInterruption.some(event => event.type === 'task_execution_authorized'));
+  assert.equal(eventsAfterInterruption.some(event => event.type === 'task_execution_started'), false);
+  const reservationText = JSON.stringify(eventsAfterInterruption);
+  assert.equal(reservationText.includes('verified-test-operator'), false, 'approver identity must not enter the task audit');
+  assert.equal(reservationText.includes('reason'), false, 'free-form approval reasons must not enter the task audit');
+  const authorization = eventsAfterInterruption.find(event => event.type === 'task_execution_authorized');
+  assert.equal(authorization.approvalVerified, true);
+  assert.match(authorization.approvalDigest, /^[a-f0-9]{64}$/);
+  const restartedBase = await restart();
+  const recovered = await run(restartedBase);
+  assert.equal(recovered.status, 200);
+  assert.equal((await recovered.json()).recovered, true);
+  assert.equal(createCalls, 1, 'recovery must reuse the already-created orchestrator task');
+  assert.equal(runCalls, 1, 'recovery must execute the orchestrator task once');
+  assert.equal(bridgeApprovalCalls, 1, 'durable bridge approval must not be re-verified after restart');
+});
+
+
+
+test('concurrent run requests for one task cannot start duplicate orchestrator executions', async t => {
+  const taskId = '00000000-0000-4000-8000-000000000781';
+  let storedTaskRecord = null;
+  let orchestratorTask = null;
+  let releaseRun;
+  let signalRunStarted;
+  const runGate = new Promise(resolve => { releaseRun = resolve; });
+  const runStarted = new Promise(resolve => { signalRunStarted = resolve; });
+  let runCalls = 0;
+  const fetchImpl = async (url, init = {}) => {
+    if (url === 'http://127.0.0.1:18797/health') return new Response(JSON.stringify({ ok: true, taskStateLookup: true }), { status: 200 });
+    const body = init.body ? JSON.parse(init.body) : null;
+    if (url === 'http://127.0.0.1:18796/api/tasks' && init.method === 'POST') {
+      storedTaskRecord = body.taskRecord;
+      return new Response(JSON.stringify({ ok: true, taskId }), { status: 201 });
+    }
+    if (url === 'http://127.0.0.1:18796/api/tasks/' + taskId) {
+      return storedTaskRecord
+        ? new Response(JSON.stringify({ ok: true, taskRecord: storedTaskRecord }), { status: 200 })
+        : new Response('{}', { status: 404 });
+    }
+    if (url === 'http://127.0.0.1:18797/api/tasks/' + taskId + '/state') {
+      return orchestratorTask
+        ? new Response(JSON.stringify({ task: {
+            id: taskId, state: orchestratorTask.state,
+            goalHash: require('node:crypto').createHash('sha256').update(storedTaskRecord.goal, 'utf8').digest('hex')
+          } }), { status: 200 })
+        : new Response('{}', { status: 404 });
+    }
+    if (url === 'http://127.0.0.1:18797/api/tasks' && init.method === 'POST') {
+      orchestratorTask = { id: taskId, state: 'proposed' };
+      return new Response(JSON.stringify({ task: orchestratorTask }), { status: 201 });
+    }
+    if (url.endsWith('/approve')) {
+      orchestratorTask.state = 'approved';
+      return new Response(JSON.stringify({ task: orchestratorTask }), { status: 200 });
+    }
+    if (url.endsWith('/run')) {
+      runCalls++;
+      signalRunStarted();
+      await runGate;
+      orchestratorTask.state = 'completed';
+      return new Response(JSON.stringify({ task: orchestratorTask, completedRoles: 16, failedRoles: 0 }), { status: 200 });
+    }
+    return new Response('{}', { status: 404 });
+  };
+  const { base } = await withServer(t, { fetchImpl });
+  const submitted = await fetch(base + '/api/tasks', {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ taskId, goal: 'Do not execute one approved task twice' })
+  });
+  assert.equal(submitted.status, 201);
+  const run = () => fetch(base + '/api/tasks/' + taskId + '/run', {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ approvalEvidence: TEST_APPROVAL_EVIDENCE })
+  });
+  const firstRun = run();
+  await runStarted;
+  const duplicate = await run();
+  assert.equal(duplicate.status, 409);
+  assert.equal((await duplicate.json()).error, 'task_execution_request_already_in_flight');
+  releaseRun();
+  assert.equal((await firstRun).status, 200);
+  assert.equal(runCalls, 1);
+});
+
+test('reconciles a completed orchestrator task when the bridge lost the run response', async t => {
+  const taskId = '00000000-0000-4000-8000-000000000782';
+  let storedTaskRecord = null;
+  let orchestratorTask = null;
+  let runCalls = 0;
+  const fetchImpl = async (url, init = {}) => {
+    if (url === 'http://127.0.0.1:18797/health') return new Response(JSON.stringify({ ok: true, taskStateLookup: true }), { status: 200 });
+    const body = init.body ? JSON.parse(init.body) : null;
+    if (url === 'http://127.0.0.1:18796/api/tasks' && init.method === 'POST') {
+      storedTaskRecord = body.taskRecord;
+      return new Response(JSON.stringify({ ok: true, taskId }), { status: 201 });
+    }
+    if (url === 'http://127.0.0.1:18796/api/tasks/' + taskId) {
+      return storedTaskRecord
+        ? new Response(JSON.stringify({ ok: true, taskRecord: storedTaskRecord }), { status: 200 })
+        : new Response('{}', { status: 404 });
+    }
+    if (url === 'http://127.0.0.1:18797/api/tasks/' + taskId + '/state') {
+      return orchestratorTask
+        ? new Response(JSON.stringify({ task: {
+            id: taskId, state: orchestratorTask.state,
+            goalHash: require('node:crypto').createHash('sha256').update(storedTaskRecord.goal, 'utf8').digest('hex')
+          } }), { status: 200 })
+        : new Response('{}', { status: 404 });
+    }
+    if (url === 'http://127.0.0.1:18797/api/tasks' && init.method === 'POST') {
+      orchestratorTask = { id: taskId, state: 'proposed' };
+      return new Response(JSON.stringify({ task: orchestratorTask }), { status: 201 });
+    }
+    if (url.endsWith('/approve')) {
+      orchestratorTask.state = 'approved';
+      return new Response(JSON.stringify({ task: orchestratorTask }), { status: 200 });
+    }
+    if (url.endsWith('/run')) {
+      runCalls++;
+      orchestratorTask.state = 'completed';
+      return new Response(JSON.stringify({ error: 'response_lost_after_completion' }), { status: 503 });
+    }
+    if (url === 'http://127.0.0.1:18797/api/tasks/' + taskId + '/result') {
+      if (init.headers?.authorization !== 'Bearer test-orchestrator-result-read-token-32chars') return new Response('{}', { status: 401 });
+      return new Response(JSON.stringify({ task: {
+        id: taskId, state: 'completed', verificationStatus: 'not_run',
+        results: [{ agentId: 'safety-auditor', state: 'completed', output: 'persisted-result' }]
+      } }), { status: 200 });
+    }
+    return new Response('{}', { status: 404 });
+  };
+  const { base, auditPath, restart } = await withServer(t, { fetchImpl });
+  const submitted = await fetch(base + '/api/tasks', {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ taskId, goal: 'Recover completion when the bridge lost the response' })
+  });
+  assert.equal(submitted.status, 201);
+  const run = () => fetch(base + '/api/tasks/' + taskId + '/run', {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ approvalEvidence: TEST_APPROVAL_EVIDENCE })
+  });
+  assert.equal((await run()).status, 503);
+  const recovered = await run();
+  assert.equal(recovered.status, 200);
+  assert.equal((await recovered.json()).recovered, true);
+  assert.equal(runCalls, 1, 'terminal recovery must not re-execute the orchestrator task');
+  const events = fs.readFileSync(auditPath, 'utf8').split('\n').filter(Boolean).map(JSON.parse);
+  assert.ok(events.some(event => event.type === 'task_execution_completed' && event.taskId === taskId));
+  const restartedBase = await restart();
+  const replay = await fetch(restartedBase + '/api/tasks/' + taskId + '/run', {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ approvalEvidence: TEST_APPROVAL_EVIDENCE })
+  });
+  assert.equal(replay.status, 200);
+  const replayBody = await replay.json();
+  assert.equal(replayBody.idempotentReplay, true);
+  assert.equal(replayBody.recovered, true);
+  assert.equal(runCalls, 1, 'bridge restart replay must retrieve stored results, not rerun inference');
+});
+
+test('verification rejection after execution is recovered as completed execution', async t => {
+  const taskId = '00000000-0000-4000-8000-000000000786';
+  const goalHash = crypto.createHash('sha256').update('Execution completed but verification rejected it', 'utf8').digest('hex');
+  let runCalls = 0;
+  const fetchImpl = async url => {
+    if (url === 'http://127.0.0.1:18797/health') return new Response(JSON.stringify({ ok: true, taskStateLookup: true }), { status: 200 });
+    if (url === 'http://127.0.0.1:18797/api/tasks/' + taskId + '/state') {
+      return new Response(JSON.stringify({ task: {
+        id: taskId, state: 'rejected', verificationStatus: 'rejected',
+        goalHash, completedAt: '2026-11-10T12:00:00.000Z'
+      } }), { status: 200 });
+    }
+    if (url === 'http://127.0.0.1:18797/api/tasks/' + taskId + '/result') {
+      return new Response(JSON.stringify({ task: {
+        id: taskId, state: 'rejected', verificationStatus: 'rejected',
+        results: [{ agentId: 'reviewer', state: 'completed', output: 'execution-output-preserved' }]
+      } }), { status: 200 });
+    }
+    if (url.endsWith('/run')) runCalls++;
+    return new Response('{}', { status: 404 });
+  };
+  const { base } = await withServer(t, {
+    fetchImpl,
+    initialAuditEvents: [
+      { type: 'task_submitted', taskId, goalHash, inboxAccepted: true },
+      { type: 'task_execution_authorized', taskId, approvalVerified: true, approvalDigest: 'a'.repeat(64) },
+      { type: 'task_execution_started', taskId, approvalVerified: true, approvalDigest: 'a'.repeat(64) }
+    ]
+  });
+  const response = await fetch(base + '/api/tasks/' + taskId + '/run', {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ approvalEvidence: TEST_APPROVAL_EVIDENCE })
+  });
+  assert.equal(response.status, 200);
+  const body = await response.json();
+  assert.equal(body.recovered, true);
+  assert.equal(body.verificationStatus, 'rejected');
+  assert.equal(body.result.task.results[0].output, 'execution-output-preserved');
+  assert.equal(runCalls, 0, 'verification rejection must not re-run completed execution');
+});
+
+test('durable failed execution is replayed as a known failure, not an unknown conflict', async t => {
+  const taskId = '00000000-0000-4000-8000-000000000784';
+  const goal = 'A previously failed task must report its known terminal outcome';
+  const goalHash = crypto.createHash('sha256').update(goal, 'utf8').digest('hex');
+  let upstreamCalls = 0;
+  const fetchImpl = async () => { upstreamCalls++; return new Response('{}', { status: 500 }); };
+  const { base } = await withServer(t, {
+    fetchImpl,
+    initialAuditEvents: [
+      { type: 'task_submitted', taskId, goalHash, inboxAccepted: true },
+      { type: 'task_execution_failed', taskId, orchestratorTaskId: taskId, error: 'persisted_execution_failure' }
+    ]
+  });
+  const response = await fetch(base + '/api/tasks/' + taskId + '/run', {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ approvalEvidence: TEST_APPROVAL_EVIDENCE })
+  });
+  assert.equal(response.status, 502);
+  const body = await response.json();
+  assert.equal(body.idempotentReplay, true);
+  assert.equal(body.failure.error, 'persisted_execution_failure');
+  assert.equal(upstreamCalls, 0, 'known terminal failure replay must not call upstream services');
+});
 
 test('sanitizes legacy audit records without restoring raw results to replay cache', async t => {
   const taskId = '00000000-0000-4000-8000-000000000101';

@@ -104,10 +104,15 @@ function createTaskInboxServer({ inboxPath = DEFAULT_INBOX_PATH, port = DEFAULT_
           taskId: task.taskId,
           taskRecord: task
         };
+        let fd;
         try {
-          fs.appendFileSync(inboxPath, JSON.stringify(event) + '\n', { encoding: 'utf8', mode: 0o600 });
+          fd = fs.openSync(inboxPath, 'a', 0o600);
+          fs.writeSync(fd, Buffer.from(JSON.stringify(event) + '\n', 'utf8'));
+          fs.fsyncSync(fd);
         } catch (error) {
           return sendJson(res, 500, { ok: false, error: 'task_persistence_failed', detail: error.message });
+        } finally {
+          if (fd !== undefined) fs.closeSync(fd);
         }
         records.set(task.taskId, task);
         return sendJson(res, 201, { ok: true, duplicate: false, taskId: task.taskId, status: 'proposed' });
