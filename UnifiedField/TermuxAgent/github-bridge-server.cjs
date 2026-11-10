@@ -92,6 +92,7 @@ function createGitHubBridgeServer(options = {}) {
   const idempotency = new Map();
   const taskLinks = new Map();
   const taskRuns = new Map();
+  const taskRunLocks = new Set();
   const taskResults = new Map();
   let taskResultCacheBytes = 0;
   let auditTotalEvents = 0;
@@ -353,6 +354,13 @@ function createGitHubBridgeServer(options = {}) {
         if (!(await authorizeSensitiveRead(req))) return send(res, 401, { ok: false, error: 'bridge_read_authorization_required' });
         const input = await bodyJson(req);
         const taskId = taskRun[1];
+        if (taskRunLocks.has(taskId)) {
+          return send(res, 409, { ok: false, error: 'task_execution_request_already_in_flight', taskId });
+        }
+        taskRunLocks.add(taskId);
+        const releaseTaskRunLock = () => taskRunLocks.delete(taskId);
+        res.once('finish', releaseTaskRunLock);
+        res.once('close', releaseTaskRunLock);
         const taskEvent = taskLinks.get(taskId);
         if (!taskEvent) throw Object.assign(new Error('task_not_found_in_bridge_ledger'), { statusCode: 404 });
         if (!/^[a-f0-9]{64}$/i.test(taskEvent.goalHash || '')) {
