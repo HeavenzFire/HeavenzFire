@@ -206,7 +206,7 @@ test('task intake minimizes durable audit data and keeps replay results bounded 
 
   const restarted = createGitHubBridgeServer({
     port: 0, auditPath, tokenProvider: () => 'test-token-that-is-long-enough',
-    allowedOwners: ['HeavenzFire'], approvalVerifier, fetchImpl
+    allowedOwners: ['HeavenzFire'], approvalVerifier, readAuthorizer: () => true, fetchImpl
   });
   await new Promise(resolve => restarted.listen(0, '127.0.0.1', resolve));
   try {
@@ -271,7 +271,7 @@ test('sanitizes legacy audit records without restoring raw results to replay cac
   assert.equal(fs.readFileSync(auditPath, 'utf8'), originalAudit, 'legacy audit bytes must remain unchanged');
 });
 
-test('bounds task result replay cache by entry count and serialized bytes', async t => {
+test('does not restore any legacy raw result into the replay cache after restart', async t => {
   const taskId = index => '00000000-0000-4000-8000-' + String(index).padStart(12, '0');
   const goalHash = 'a'.repeat(64);
   const initialAuditEvents = [];
@@ -305,8 +305,11 @@ test('bounds task result replay cache by entry count and serialized bytes', asyn
   const retained = await fetch(base + '/api/tasks/' + taskId(101) + '/run', {
     method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}'
   });
-  assert.equal(retained.status, 200);
-  assert.deepEqual((await retained.json()).result, { value: 'cached-result-101' });
+  assert.equal(retained.status, 409);
+  const retainedBody = await retained.json();
+  assert.equal(retainedBody.error, 'task_completed_result_not_cached');
+  assert.equal(retainedBody.resultSha256, crypto.createHash('sha256').update(JSON.stringify({ value: 'cached-result-101' }), 'utf8').digest('hex'));
+  assert.ok(!JSON.stringify(retainedBody).includes('cached-result-101'));
 
   const oversized = await fetch(base + '/api/tasks/' + taskId(102) + '/run', {
     method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}'
