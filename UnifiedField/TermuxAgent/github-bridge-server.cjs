@@ -157,6 +157,7 @@ function createGitHubBridgeServer(options = {}) {
       taskLinks.set(event.taskId, { taskId: event.taskId, goalHash: event.goalHash, type: event.type, inboxAccepted: event.inboxAccepted === true });
     }
     if (event.type === 'task_execution_reserved' ||
+        event.type === 'task_execution_authorized' ||
         event.type === 'task_execution_started' ||
         event.type === 'task_execution_completed' ||
         event.type === 'task_execution_failed') {
@@ -256,6 +257,14 @@ function createGitHubBridgeServer(options = {}) {
       append({ type: 'write_failed', action, idempotencyKey: key, fingerprint, approval, error: String(error.message || error).slice(0, 500) });
       throw error;
     }
+  }
+
+  function approvalAuditReference(approval, taskId, goalHash) {
+    const evidenceDigest = typeof approval?.evidenceSha256 === 'string' ? approval.evidenceSha256 : '';
+    const approvalDigest = crypto.createHash('sha256')
+      .update([taskId, goalHash, 'execute_task', evidenceDigest].join(':'))
+      .digest('hex');
+    return { approvalVerified: true, approvalDigest };
   }
 
   async function assertOrchestratorRecoverySupport() {
