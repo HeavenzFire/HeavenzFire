@@ -198,6 +198,9 @@ test('task intake minimizes durable audit data and keeps replay results bounded 
   assert.ok(calls.some(x => x.url === 'http://127.0.0.1:18796/api/tasks'));
   assert.ok(calls.some(x => x.url === 'http://127.0.0.1:18796/api/tasks/' + task.taskId));
   const orchestratorCreate = calls.find(x => x.url === 'http://127.0.0.1:18797/api/tasks');
+  assert.equal(orchestratorCreate.headers.authorization, undefined, 'inbox read credential must not be forwarded to the orchestrator');
+  const inboxWrite = calls.find(x => x.url === 'http://127.0.0.1:18796/api/tasks' && x.method === 'POST');
+  assert.equal(inboxWrite.headers.authorization, undefined, 'inbox read credential must not be sent on task intake');
   assert.equal(orchestratorCreate.body.taskId, task.taskId);
   assert.equal(orchestratorCreate.body.goal, goalSentinel);
   const approvalCall = calls.find(x => x.url.endsWith('/approve'));
