@@ -330,6 +330,7 @@ function createGitHubBridgeServer(options = {}) {
         // Raw results are retained only in a bounded process-local cache, never in
         // new durable bridge audit records.
         if (priorRun?.type === 'task_execution_completed') {
+          await requireReadAuthorization(req, 'task-result-replay');
           const cached = taskResults.get(taskRun[1]);
           if (cached) return send(res, 200, { ok: true, idempotentReplay: true, result: cached.value });
           return send(res, 409, {
