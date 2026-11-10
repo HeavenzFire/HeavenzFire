@@ -352,10 +352,10 @@ function createGitHubBridgeServer(options = {}) {
               crypto.createHash('sha256').update(String(existingRecord.goal || ''), 'utf8').digest('hex') !== goalHash) {
             throw Object.assign(new Error('task_id_conflicts_with_existing_inbox_record'), { statusCode: 409 });
           }
-          inbox = { ok: true, duplicate: true, taskId: task.taskId };
+          inbox = { ok: true, duplicate: true, taskId: task.taskId, taskRecord: existingRecord };
         }
         append({ type: 'task_submitted', taskId: task.taskId, goalHash, goalBytes: Buffer.byteLength(task.goal, 'utf8'), inboxAccepted: inbox?.ok === true });
-        return send(res, priorSubmission ? 200 : 201, { ok: true, idempotentReplay: Boolean(priorSubmission), taskId: task.taskId, status: 'proposed', approvalState: 'pending', inbox });
+        return send(res, priorSubmission ? 200 : 201, { ok: true, idempotentReplay: Boolean(priorSubmission), taskId: task.taskId, status: inbox?.taskRecord?.status || task.status, approvalState: inbox?.taskRecord?.approvalState || task.approvalState, inbox });
       }
 
       const taskLookup = url.pathname.match(/^\/api\/tasks\/([0-9a-f-]{36})$/i);
