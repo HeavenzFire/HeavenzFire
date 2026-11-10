@@ -6,7 +6,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const crypto = require('node:crypto');
-const { createGitHubBridgeServer, ORCHESTRATOR_TIMEOUT_MS } = require('./github-bridge-server.cjs');
+const { createGitHubBridgeServer, createBearerTokenAuthorizer, ORCHESTRATOR_TIMEOUT_MS } = require('./github-bridge-server.cjs');
 
 const TEST_APPROVAL_EVIDENCE = Object.freeze({ fixture: 'trusted-human-approval-test' });
 async function testApprovalVerifier({ action, subject, evidence }) {
@@ -14,6 +14,19 @@ async function testApprovalVerifier({ action, subject, evidence }) {
   return { approved: true, approvalId: 'test-approval-' + String(subject.taskId || subject.fingerprint || action), approvedBy: 'verified-test-operator', reason: 'Deterministic test approval fixture.', method: 'injected-test-verifier', verifiedAt: '2026-11-05T08:00:00.000Z' };
 }
 test('orchestrator task requests allow full 16-role execution window', () => { assert.equal(ORCHESTRATOR_TIMEOUT_MS, 180000); });
+
+test('production bearer authorization requires the explicit Bearer scheme and a single token', () => {
+  const token = '0123456789abcdef0123456789abcdef';
+  const authorize = createBearerTokenAuthorizer(token);
+  assert.equal(authorize({ headers: { authorization: 'Bearer ' + token } }), true);
+  assert.equal(authorize({ headers: { authorization: 'bearer ' + token } }), true);
+  assert.equal(authorize({ headers: { authorization: token } }), false);
+  assert.equal(authorize({ headers: { authorization: 'Basic ' + token } }), false);
+  assert.equal(authorize({ headers: { authorization: 'Bearer ' + token + ' extra' } }), false);
+  assert.equal(authorize({ headers: {} }), false);
+  assert.equal(createBearerTokenAuthorizer('short')({ headers: { authorization: 'Bearer short' } }), false);
+});
+
 
 async function withServer(t, options = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'hf-gh-bridge-'));
@@ -27,6 +40,7 @@ async function withServer(t, options = {}) {
     tokenProvider: () => 'test-token-that-is-long-enough',
     allowedOwners: ['HeavenzFire'],
     approvalVerifier: testApprovalVerifier,
+    readAuthorizer: () => true,
     ...serverOptions
   });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
@@ -111,6 +125,27 @@ test('repository allowlist blocks other owners', async t => {
   assert.equal(r.status, 403);
 });
 
+
+test('sensitive task and audit routes fail closed without an authenticated reader', async t => {
+  let upstreamCalls = 0;
+  const { base } = await withServer(t, {
+    readAuthorizer: () => false,
+    fetchImpl: async () => { upstreamCalls++; return new Response('{}', { status: 200 }); }
+  });
+  const taskId = '00000000-0000-4000-8000-000000000111';
+  const requests = [
+    fetch(base + '/api/tasks', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ goal: 'private task' }) }),
+    fetch(base + '/api/tasks/' + taskId),
+    fetch(base + '/api/tasks/' + taskId + '/run', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' }),
+    fetch(base + '/api/audit/recent')
+  ];
+  for (const response of await Promise.all(requests)) {
+    assert.equal(response.status, 401);
+    assert.equal((await response.json()).error, 'bridge_read_authorization_required');
+  }
+  assert.equal(upstreamCalls, 0, 'unauthorized requests must not reach inbox or orchestrator services');
+});
+
 test('task intake minimizes durable audit data and keeps replay results bounded to process memory', async t => {
   const calls = [];
   let storedTaskRecord = null;
@@ -184,7 +219,7 @@ test('task intake minimizes durable audit data and keeps replay results bounded 
 
   const restarted = createGitHubBridgeServer({
     port: 0, auditPath, tokenProvider: () => 'test-token-that-is-long-enough',
-    allowedOwners: ['HeavenzFire'], approvalVerifier, fetchImpl
+    allowedOwners: ['HeavenzFire'], approvalVerifier, readAuthorizer: () => true, fetchImpl
   });
   await new Promise(resolve => restarted.listen(0, '127.0.0.1', resolve));
   try {
@@ -204,7 +239,7 @@ test('task intake minimizes durable audit data and keeps replay results bounded 
 
 
 
-test('sanitizes legacy task audit records in memory without rewriting the JSONL file', async t => {
+test('sanitizes legacy audit records without restoring raw results to replay cache', async t => {
   const taskId = '00000000-0000-4000-8000-000000000101';
   const goalSentinel = 'LEGACY_GOAL_SENTINEL_20261110';
   const result = { privateResult: 'LEGACY_RESULT_SENTINEL_20261110' };
@@ -241,12 +276,15 @@ test('sanitizes legacy task audit records in memory without rewriting the JSONL 
   const replay = await fetch(base + '/api/tasks/' + taskId + '/run', {
     method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}'
   });
-  assert.equal(replay.status, 200);
-  assert.deepEqual((await replay.json()).result, result);
+  assert.equal(replay.status, 409);
+  const replayBody = await replay.json();
+  assert.equal(replayBody.error, 'task_completed_result_not_cached');
+  assert.equal(replayBody.resultSha256, crypto.createHash('sha256').update(JSON.stringify(result), 'utf8').digest('hex'));
+  assert.ok(!JSON.stringify(replayBody).includes(result.privateResult));
   assert.equal(fs.readFileSync(auditPath, 'utf8'), originalAudit, 'legacy audit bytes must remain unchanged');
 });
 
-test('bounds task result replay cache by entry count and serialized bytes', async t => {
+test('does not restore any legacy raw result into the replay cache after restart', async t => {
   const taskId = index => '00000000-0000-4000-8000-' + String(index).padStart(12, '0');
   const goalHash = 'a'.repeat(64);
   const initialAuditEvents = [];
@@ -280,8 +318,11 @@ test('bounds task result replay cache by entry count and serialized bytes', asyn
   const retained = await fetch(base + '/api/tasks/' + taskId(101) + '/run', {
     method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}'
   });
-  assert.equal(retained.status, 200);
-  assert.deepEqual((await retained.json()).result, { value: 'cached-result-101' });
+  assert.equal(retained.status, 409);
+  const retainedBody = await retained.json();
+  assert.equal(retainedBody.error, 'task_completed_result_not_cached');
+  assert.equal(retainedBody.resultSha256, crypto.createHash('sha256').update(JSON.stringify({ value: 'cached-result-101' }), 'utf8').digest('hex'));
+  assert.ok(!JSON.stringify(retainedBody).includes('cached-result-101'));
 
   const oversized = await fetch(base + '/api/tasks/' + taskId(102) + '/run', {
     method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}'

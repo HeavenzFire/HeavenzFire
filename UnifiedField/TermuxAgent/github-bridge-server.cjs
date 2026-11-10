@@ -56,6 +56,18 @@ function safeIdempotencyKey(value) {
   return value;
 }
 
+function createBearerTokenAuthorizer(readToken) {
+  const configuredToken = typeof readToken === 'string' ? readToken : '';
+  return req => {
+    const header = String(req.headers.authorization || '');
+    const match = /^Bearer\s+([^\s]+)$/i.exec(header);
+    if (!match || configuredToken.length < 32) return false;
+    const supplied = match[1];
+    if (supplied.length !== configuredToken.length) return false;
+    return crypto.timingSafeEqual(Buffer.from(supplied), Buffer.from(configuredToken));
+  };
+}
+
 function createGitHubBridgeServer(options = {}) {
   const host = options.host || HOST;
   if (host !== '127.0.0.1' && host !== '::1' && host !== 'localhost') throw new Error('github_bridge_must_bind_loopback');
@@ -67,6 +79,7 @@ function createGitHubBridgeServer(options = {}) {
   const readApi = options.readApi || github;
   const writeApi = options.writeApi || githubWrite;
   const approvalVerifier = typeof options.approvalVerifier === 'function' ? options.approvalVerifier : null;
+  const readAuthorizer = typeof options.readAuthorizer === 'function' ? options.readAuthorizer : (() => false);
   const tokenProvider = options.tokenProvider || (() => execFileSync('gh', ['auth', 'token', '--hostname', 'github.com'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], windowsHide: true }).trim());
   const ownerConfig = options.allowedOwners || process.env.HF_GITHUB_OWNERS || 'HeavenzFire';
   const allowedOwners = new Set((Array.isArray(ownerConfig) ? ownerConfig : String(ownerConfig).split(',')).map(x => String(x).trim().toLowerCase()).filter(Boolean));
@@ -148,10 +161,7 @@ function createGitHubBridgeServer(options = {}) {
   if (fs.existsSync(auditPath)) {
     for (const line of fs.readFileSync(auditPath, 'utf8').split(/\r?\n/).filter(Boolean)) {
       const rawEvent = JSON.parse(line);
-      if (rawEvent.type === 'task_execution_completed' &&
-          Object.prototype.hasOwnProperty.call(rawEvent, 'result')) {
-        rememberTaskResult(rawEvent.taskId, rawEvent.result);
-      }
+      // Legacy raw results are deliberately not rehydrated into the replay cache.
       const event = sanitizeAuditEvent(rawEvent);
       auditTotalEvents++;
       rememberAudit(event);
@@ -172,6 +182,11 @@ function createGitHubBridgeServer(options = {}) {
     rememberAudit(record);
     indexAuditEvent(record);
     return record;
+  }
+
+  async function authorizeSensitiveRead(req) {
+    try { return await readAuthorizer(req) === true; }
+    catch { return false; }
   }
 
   function validateRepo(repo) {
@@ -274,6 +289,7 @@ function createGitHubBridgeServer(options = {}) {
       }
 
       if (req.method === 'POST' && url.pathname === '/api/tasks') {
+        if (!(await authorizeSensitiveRead(req))) return send(res, 401, { ok: false, error: 'bridge_read_authorization_required' });
         const input = await bodyJson(req);
         if (typeof input.goal !== 'string' || !input.goal.trim() || input.goal.length > 12000) throw Object.assign(new Error('goal_required_max_12000'), { statusCode: 400 });
         const task = createTaskRecord({ taskId: input.taskId, source: input.source || 'github-bridge', goal: input.goal, metadata: input.metadata || {} });
@@ -290,11 +306,13 @@ function createGitHubBridgeServer(options = {}) {
 
       const taskLookup = url.pathname.match(/^\/api\/tasks\/([0-9a-f-]{36})$/);
       if (req.method === 'GET' && taskLookup) {
+        if (!(await authorizeSensitiveRead(req))) return send(res, 401, { ok: false, error: 'bridge_read_authorization_required' });
         const inbox = await remoteJson(inboxUrl + '/api/tasks/' + taskLookup[1], 'GET');
         return send(res, 200, { ok: true, taskRecord: inbox.taskRecord, execution: taskRuns.get(taskLookup[1]) || null });
       }
       const taskRun = url.pathname.match(/^\/api\/tasks\/([0-9a-f-]{36})\/run$/);
       if (req.method === 'POST' && taskRun) {
+        if (!(await authorizeSensitiveRead(req))) return send(res, 401, { ok: false, error: 'bridge_read_authorization_required' });
         const input = await bodyJson(req);
         const taskEvent = taskLinks.get(taskRun[1]);
         if (!taskEvent) throw Object.assign(new Error('task_not_found_in_bridge_ledger'), { statusCode: 404 });
@@ -442,6 +460,7 @@ function createGitHubBridgeServer(options = {}) {
       }
 
       if (req.method === 'GET' && url.pathname === '/api/audit/recent') {
+        if (!(await authorizeSensitiveRead(req))) return send(res, 401, { ok: false, error: 'bridge_read_authorization_required' });
         return send(res, 200, {
           events: audit.slice(-100).map(({
             timestamp, type, action, taskId, idempotencyKey, error, result,
@@ -464,8 +483,10 @@ if (require.main === module) {
   const port = Number(process.env.HF_GITHUB_BRIDGE_PORT || PORT);
   if (!Number.isInteger(port) || port < 1024 || port > 65535) throw new Error('HF_GITHUB_BRIDGE_PORT_invalid');
   const approvalVerifier = createApprovalVerifierFromEnv({ serviceId: 'github-bridge' });
-  const server = createGitHubBridgeServer({ port, approvalVerifier });
+  const readToken = process.env.HF_GITHUB_BRIDGE_READ_TOKEN || '';
+  const readAuthorizer = createBearerTokenAuthorizer(readToken);
+  const server = createGitHubBridgeServer({ port, approvalVerifier, readAuthorizer });
   server.listen(port, HOST, () => process.stdout.write('HeavenzFire GitHub bridge listening on http://' + HOST + ':' + port + '\n'));
 }
 
-module.exports = { createGitHubBridgeServer, safeIdempotencyKey, HOST, PORT, DEFAULT_AUDIT, ORCHESTRATOR_TIMEOUT_MS };
+module.exports = { createGitHubBridgeServer, createBearerTokenAuthorizer, safeIdempotencyKey, HOST, PORT, DEFAULT_AUDIT, ORCHESTRATOR_TIMEOUT_MS };

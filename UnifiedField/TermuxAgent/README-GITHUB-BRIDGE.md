@@ -35,6 +35,10 @@ New bridge audit records do not duplicate full task prompts or inference results
 
 **Legacy and retention boundary:** existing JSONL records are not rewritten or deleted and may still contain full goals, inbox responses, or results from earlier versions. The durable JSONL file remains append-only and has no automatic rotation or retention limit. This patch does not establish Windows ACLs or a retention policy. Do not place child, patient, or identifiable family-case data in the system until those host-level controls are independently validated.
 
+## Local task and audit API authentication
+
+The production bridge requires a separate bearer token for task intake, task lookup, task execution/replay, and audit-history reads. Set `HF_GITHUB_BRIDGE_READ_TOKEN` in the bridge process environment to a randomly generated secret of at least 32 characters. Send it as `Authorization: Bearer <token>` on those routes. If the token is missing or invalid, these routes fail closed with HTTP 401; `/health` remains available and does not disclose the token. Do not commit the token, place it in task payloads, or print it in logs. The `gh auth` token is for GitHub API access and is not a substitute for this local API credential. Legacy raw results are never rehydrated into the replay cache; after restart, replay returns HTTP 409 with only a digest. Existing JSONL bytes are preserved and are not automatically erased.
+
 ## Routes
 
 `GET /health`; `GET /api/github/repository`; `GET /api/github/issues`; `GET /api/github/pulls`; `GET /api/github/commits`; `GET /api/github/files`; `POST /api/github/branches`; `PUT /api/github/files`; `POST /api/github/pulls`; `POST /api/github/issues`; `POST /api/tasks`; `POST /api/tasks/:id/run`; `GET /api/tasks/:id`; `GET /api/audit/recent`.
