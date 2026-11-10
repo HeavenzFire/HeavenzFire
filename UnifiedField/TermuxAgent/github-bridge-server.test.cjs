@@ -168,6 +168,7 @@ test('task intake minimizes durable audit data and keeps replay results bounded 
   const goalSentinel = 'PRIVATE_GOAL_SENTINEL_20261110';
   const resultSentinel = 'PRIVATE_RESULT_SENTINEL_20261110';
   const fetchImpl = async (url, init = {}) => {
+    if (url === 'http://127.0.0.1:18797/health') return new Response(JSON.stringify({ ok: true, taskStateLookup: true }), { status: 200 });
     calls.push({ url, method: init.method, headers: init.headers, body: init.body && JSON.parse(init.body) });
     if (url === 'http://127.0.0.1:18796/api/tasks' && init.method === 'POST') {
       storedTaskRecord = calls.at(-1).body.taskRecord;
