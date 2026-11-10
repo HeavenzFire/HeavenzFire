@@ -55,6 +55,26 @@ test('loopback inbox accepts proposed/pending tasks and persists task evidence',
   });
 });
 
+test('inbox fsyncs the accepted JSONL record before returning success', async t => {
+  await withInbox(t, async ({ baseUrl, inboxPath }) => {
+    const originalFsync = fs.fsyncSync;
+    let fsyncCalls = 0;
+    fs.fsyncSync = function(fd) {
+      fsyncCalls++;
+      return originalFsync.call(fs, fd);
+    };
+    let response;
+    try {
+      response = await post(baseUrl, proposal('durable-inbox-1', 'Durably persist before acknowledgement'));
+    } finally {
+      fs.fsyncSync = originalFsync;
+    }
+    assert.equal(response.status, 201);
+    assert.equal(fsyncCalls, 1);
+    assert.equal(fs.readFileSync(inboxPath, 'utf8').trim().split(/\\r?\\n/).length, 1);
+  });
+});
+
 test('duplicate delivery is idempotent and conflicting task ID is rejected', async t => {
   await withInbox(t, async ({ baseUrl, inboxPath }) => {
     const task = proposal();
