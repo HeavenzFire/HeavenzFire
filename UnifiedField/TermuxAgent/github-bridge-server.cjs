@@ -447,7 +447,11 @@ function createGitHubBridgeServer(options = {}) {
                 else rememberTaskResult(taskId, result);
                 return send(res, 200, { ok: true, idempotentReplay: true, recovered: true, result });
               }
-            } catch {}
+            } catch (error) {
+              if (error.statusCode === 401 || error.statusCode === 503 || error.statusCode === 404) {
+                return send(res, error.statusCode === 401 ? 401 : 503, { ok: false, error: 'task_completed_result_read_unavailable', detail: error.message });
+              }
+            }
             return send(res, 409, { ok: false, error: 'task_completed_result_not_cached', taskId, orchestratorTaskId: event.orchestratorTaskId || taskId, resultSha256: event.resultSha256 || null });
           };
 
