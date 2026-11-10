@@ -27,6 +27,7 @@ async function withServer(t, options = {}) {
     tokenProvider: () => 'test-token-that-is-long-enough',
     allowedOwners: ['HeavenzFire'],
     approvalVerifier: testApprovalVerifier,
+    readAuthorizer: () => true,
     ...serverOptions
   });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
@@ -109,6 +110,27 @@ test('repository allowlist blocks other owners', async t => {
   const { base } = await withServer(t);
   const r = await fetch(base + '/api/github/repository?repo=other/repo');
   assert.equal(r.status, 403);
+});
+
+
+test('sensitive task and audit routes fail closed without an authenticated reader', async t => {
+  let upstreamCalls = 0;
+  const { base } = await withServer(t, {
+    readAuthorizer: () => false,
+    fetchImpl: async () => { upstreamCalls++; return new Response('{}', { status: 200 }); }
+  });
+  const taskId = '00000000-0000-4000-8000-000000000111';
+  const requests = [
+    fetch(base + '/api/tasks', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ goal: 'private task' }) }),
+    fetch(base + '/api/tasks/' + taskId),
+    fetch(base + '/api/tasks/' + taskId + '/run', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' }),
+    fetch(base + '/api/audit/recent')
+  ];
+  for (const response of await Promise.all(requests)) {
+    assert.equal(response.status, 401);
+    assert.equal((await response.json()).error, 'bridge_read_authorization_required');
+  }
+  assert.equal(upstreamCalls, 0, 'unauthorized requests must not reach inbox or orchestrator services');
 });
 
 test('task intake minimizes durable audit data and keeps replay results bounded to process memory', async t => {
