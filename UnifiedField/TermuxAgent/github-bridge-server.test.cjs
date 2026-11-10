@@ -35,7 +35,7 @@ async function withServer(t, options = {}) {
   if (Array.isArray(initialAuditEvents)) {
     fs.writeFileSync(auditPath, initialAuditEvents.map(event => JSON.stringify(event)).join('\n') + '\n', 'utf8');
   }
-  const server = createGitHubBridgeServer({
+  const createServer = () => createGitHubBridgeServer({
     port: 0, auditPath,
     tokenProvider: () => 'test-token-that-is-long-enough',
     allowedOwners: ['HeavenzFire'],
@@ -44,13 +44,26 @@ async function withServer(t, options = {}) {
     inboxReadToken: 'test-inbox-read-token-that-is-at-least-32-chars',
     ...serverOptions
   });
-  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
-  const address = server.address();
+  let server = createServer();
+  const listen = async () => {
+    await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+    return 'http://127.0.0.1:' + server.address().port;
+  };
+  const close = async () => {
+    if (server.listening) await new Promise(resolve => server.close(resolve));
+  };
+  let base = await listen();
+  const restart = async () => {
+    await close();
+    server = createServer();
+    base = await listen();
+    return base;
+  };
   t.after(async () => {
-    await new Promise(resolve => server.close(resolve));
+    await close();
     fs.rmSync(dir, { recursive: true, force: true });
   });
-  return { base: 'http://127.0.0.1:' + address.port, auditPath };
+  return { base, auditPath, restart };
 }
 
 test('bridge binds loopback only', () => {
@@ -336,22 +349,23 @@ test('reserved task execution recovers after crash between orchestrator creation
     }
     return new Response('{}', { status: 404 });
   };
-  const { base, auditPath } = await withServer(t, { fetchImpl });
+  const { base, auditPath, restart } = await withServer(t, { fetchImpl });
   const submitted = await fetch(base + '/api/tasks', {
     method: 'POST', headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ taskId, goal: 'Recover an interrupted approved task' })
   });
   assert.equal(submitted.status, 201);
-  const run = () => fetch(base + '/api/tasks/' + taskId + '/run', {
+  const run = serverBase => fetch((serverBase || base) + '/api/tasks/' + taskId + '/run', {
     method: 'POST', headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ approvalEvidence: TEST_APPROVAL_EVIDENCE })
   });
   const interrupted = await run();
   assert.equal(interrupted.status, 503);
-  const eventsAfterInterruption = fs.readFileSync(auditPath, 'utf8').trim().split(/\r?\n/).map(JSON.parse);
+  const eventsAfterInterruption = fs.readFileSync(auditPath, 'utf8').split('\n').filter(Boolean).map(JSON.parse);
   assert.ok(eventsAfterInterruption.some(event => event.type === 'task_execution_reserved'));
   assert.equal(eventsAfterInterruption.some(event => event.type === 'task_execution_started'), false);
-  const recovered = await run();
+  const restartedBase = await restart();
+  const recovered = await run(restartedBase);
   assert.equal(recovered.status, 200);
   assert.equal((await recovered.json()).recovered, true);
   assert.equal(createCalls, 1, 'recovery must reuse the already-created orchestrator task');
