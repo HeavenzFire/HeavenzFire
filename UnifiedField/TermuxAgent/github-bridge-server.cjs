@@ -351,13 +351,13 @@ function createGitHubBridgeServer(options = {}) {
         return send(res, priorSubmission ? 200 : 201, { ok: true, idempotentReplay: Boolean(priorSubmission), taskId: task.taskId, status: 'proposed', approvalState: 'pending', inbox });
       }
 
-      const taskLookup = url.pathname.match(/^\/api\/tasks\/([0-9a-f-]{36})$/);
+      const taskLookup = url.pathname.match(/^\/api\/tasks\/([0-9a-f-]{36})$/i);
       if (req.method === 'GET' && taskLookup) {
         if (!(await authorizeSensitiveRead(req))) return send(res, 401, { ok: false, error: 'bridge_read_authorization_required' });
-        const inbox = await remoteJson(inboxUrl + '/api/tasks/' + taskLookup[1], 'GET', undefined, 20000, inboxReadToken ? { authorization: 'Bearer ' + inboxReadToken } : {});
-        return send(res, 200, { ok: true, taskRecord: inbox.taskRecord, execution: taskRuns.get(taskLookup[1]) || null });
+        const inbox = await remoteJson(inboxUrl + '/api/tasks/' + taskLookup[1].toLowerCase(), 'GET', undefined, 20000, inboxReadToken ? { authorization: 'Bearer ' + inboxReadToken } : {});
+        return send(res, 200, { ok: true, taskRecord: inbox.taskRecord, execution: taskRuns.get(taskLookup[1].toLowerCase()) || null });
       }
-      const taskRun = url.pathname.match(/^\/api\/tasks\/([0-9a-f-]{36})\/run$/);
+      const taskRun = url.pathname.match(/^\/api\/tasks\/([0-9a-f-]{36})\/run$/i);
       if (req.method === 'POST' && taskRun) {
         if (!(await authorizeSensitiveRead(req))) return send(res, 401, { ok: false, error: 'bridge_read_authorization_required' });
         const input = await bodyJson(req);
