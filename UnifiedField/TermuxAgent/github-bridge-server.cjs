@@ -431,11 +431,11 @@ function createGitHubBridgeServer(options = {}) {
             append({ type: 'task_execution_authorized', taskId, orchestratorTaskId: taskId, goalHash: taskEvent.goalHash, ...reference });
             return reference;
           };
-          const startAndRun = async reference => {
+          const startAndRun = async (reference, recovered = false) => {
             append({ type: 'task_execution_started', taskId, orchestratorTaskId: taskId, ...reference });
             const result = await remoteJson(orchestratorUrl + '/api/tasks/' + taskId + '/run', 'POST', {}, options.orchestratorTimeoutMs || ORCHESTRATOR_TIMEOUT_MS);
             append({ type: 'task_execution_completed', taskId, orchestratorTaskId: taskId, ...reference, result });
-            return send(res, 200, { ok: true, taskId, orchestratorTaskId: taskId, result });
+            return send(res, 200, { ok: true, taskId, orchestratorTaskId: taskId, ...(recovered ? { recovered: true } : {}), result });
           };
           const replayCompleted = async (event, recovered) => {
             const cached = taskResults.get(taskId);
@@ -497,7 +497,7 @@ function createGitHubBridgeServer(options = {}) {
             }
             if (state === 'approved') {
               const reference = await verifyAndRecordApproval(approvalReference);
-              return await startAndRun(reference);
+              return await startAndRun(reference, true);
             }
             if (state === 'proposed' || state === undefined) {
               if (priorRun.type === 'task_execution_started') {
