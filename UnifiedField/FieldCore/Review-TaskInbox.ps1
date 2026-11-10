@@ -29,7 +29,8 @@ try {
 if ($health.ok -ne $true -or
     $health.service -ne 'heavenzfire-unified-field-task-inbox' -or
     $health.host -ne '127.0.0.1' -or
-    [int]$health.port -ne $Port) {
+    [int]$health.port -ne $Port -or
+    $health.readAuthorizationConfigured -ne $true) {
     throw 'Health response does not identify the expected loopback task inbox; refusing to display untrusted endpoint data.'
 }
 
