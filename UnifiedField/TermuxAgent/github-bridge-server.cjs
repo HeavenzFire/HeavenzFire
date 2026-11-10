@@ -56,6 +56,18 @@ function safeIdempotencyKey(value) {
   return value;
 }
 
+function createBearerTokenAuthorizer(readToken) {
+  const configuredToken = typeof readToken === 'string' ? readToken : '';
+  return req => {
+    const header = String(req.headers.authorization || '');
+    const match = /^Bearer\s+([^\s]+)$/i.exec(header);
+    if (!match || configuredToken.length < 32) return false;
+    const supplied = match[1];
+    if (supplied.length !== configuredToken.length) return false;
+    return crypto.timingSafeEqual(Buffer.from(supplied), Buffer.from(configuredToken));
+  };
+}
+
 function createGitHubBridgeServer(options = {}) {
   const host = options.host || HOST;
   if (host !== '127.0.0.1' && host !== '::1' && host !== 'localhost') throw new Error('github_bridge_must_bind_loopback');
@@ -472,13 +484,9 @@ if (require.main === module) {
   if (!Number.isInteger(port) || port < 1024 || port > 65535) throw new Error('HF_GITHUB_BRIDGE_PORT_invalid');
   const approvalVerifier = createApprovalVerifierFromEnv({ serviceId: 'github-bridge' });
   const readToken = process.env.HF_GITHUB_BRIDGE_READ_TOKEN || '';
-  const readAuthorizer = req => {
-    const supplied = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
-    if (readToken.length < 32 || supplied.length !== readToken.length) return false;
-    return crypto.timingSafeEqual(Buffer.from(supplied), Buffer.from(readToken));
-  };
+  const readAuthorizer = createBearerTokenAuthorizer(readToken);
   const server = createGitHubBridgeServer({ port, approvalVerifier, readAuthorizer });
   server.listen(port, HOST, () => process.stdout.write('HeavenzFire GitHub bridge listening on http://' + HOST + ':' + port + '\n'));
 }
 
-module.exports = { createGitHubBridgeServer, safeIdempotencyKey, HOST, PORT, DEFAULT_AUDIT, ORCHESTRATOR_TIMEOUT_MS };
+module.exports = { createGitHubBridgeServer, createBearerTokenAuthorizer, safeIdempotencyKey, HOST, PORT, DEFAULT_AUDIT, ORCHESTRATOR_TIMEOUT_MS };
