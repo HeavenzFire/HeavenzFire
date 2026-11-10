@@ -13,6 +13,9 @@ printf '%s\n' '== Trusted approval broker checks =='
 node --check UnifiedField/FieldCore/ed25519-approval-broker.cjs
 node --check UnifiedField/FieldCore/approval-cli.cjs
 node --test UnifiedField/FieldCore/ed25519-approval-broker.test.cjs UnifiedField/FieldCore/trusted-approval.test.cjs
+printf '%s\n' '== GitHub bridge checks =='
+node --check UnifiedField/TermuxAgent/github-bridge-server.cjs
+node --test UnifiedField/TermuxAgent/github-bridge-server.test.cjs
 printf '%s\n' '== Unified Field orchestrator checks =='
 bash -n UnifiedField/LocalOrchestrator/start-termux.sh
 node --check UnifiedField/LocalOrchestrator/orchestrator.cjs
