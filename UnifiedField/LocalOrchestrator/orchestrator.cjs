@@ -228,6 +228,7 @@ function createOrchestrator(options = {}) {
   }
   const invoke = options.invoke || (provider === 'heavenzfire-api' ? invokeGatewayRuntime : provider === 'llama-cpp' ? invokeLlamaCppRuntime : provider === 'peerlink' ? invokePeerLinkRuntime : invokeLocalRuntime);
   const approvalVerifier = typeof options.approvalVerifier === 'function' ? options.approvalVerifier : null;
+  const resultReadToken = options.resultReadToken || process.env.HF_ORCHESTRATOR_RESULT_READ_TOKEN || '';
   const now = options.now || (() => new Date().toISOString());
   const ledger = options.ledger || createTaskLedger({ filePath: options.ledgerPath || process.env.HF_TASK_LEDGER_PATH || path.join(__dirname, 'data', 'tasks.jsonl') });
   const tasks = new Map(ledger.load().map(task => [task.id, task]));
@@ -263,7 +264,7 @@ function createOrchestrator(options = {}) {
     try {
       const url = new URL(req.url, 'http://127.0.0.1');
       if (req.method === 'GET' && url.pathname === '/health') {
-        return json(res, 200, { ok: true, service: 'heavenzfire-local-16-agent-orchestrator', bind: host, port, agentRoles: manifest.agents.length, maxParallel: manifest.maxParallel, activeRuns: active, provider: provider === 'heavenzfire-api' ? gatewayProvider : provider === 'llama-cpp' ? 'llama.cpp' : provider === 'peerlink' ? 'peerlink' : 'ollama', model, execution: provider === 'heavenzfire-api' ? (gatewayTransport === 'tailnet-https' ? 'authenticated-tailnet-https-heavenzfire-api' : gatewayTransport === 'tailnet-ip' ? 'authenticated-tailnet-ip-heavenzfire-api' : 'authenticated-loopback-heavenzfire-api') : provider === 'llama-cpp' ? 'loopback-openai-compatible-llama.cpp' : provider === 'peerlink' ? 'authenticated-peerlink-remote-inference' : 'local-model-analysis-only', approvalVerifierConfigured: typeof approvalVerifier === 'function', gatewayTransport: provider === 'heavenzfire-api' ? gatewayTransport : null, browserExtensionRequired: false });
+        return json(res, 200, { ok: true, service: 'heavenzfire-local-16-agent-orchestrator', bind: host, port, agentRoles: manifest.agents.length, maxParallel: manifest.maxParallel, activeRuns: active, provider: provider === 'heavenzfire-api' ? gatewayProvider : provider === 'llama-cpp' ? 'llama.cpp' : provider === 'peerlink' ? 'peerlink' : 'ollama', model, execution: provider === 'heavenzfire-api' ? (gatewayTransport === 'tailnet-https' ? 'authenticated-tailnet-https-heavenzfire-api' : gatewayTransport === 'tailnet-ip' ? 'authenticated-tailnet-ip-heavenzfire-api' : 'authenticated-loopback-heavenzfire-api') : provider === 'llama-cpp' ? 'loopback-openai-compatible-llama.cpp' : provider === 'peerlink' ? 'authenticated-peerlink-remote-inference' : 'local-model-analysis-only', approvalVerifierConfigured: typeof approvalVerifier === 'function', gatewayTransport: provider === 'heavenzfire-api' ? gatewayTransport : null, browserExtensionRequired: false, taskStateLookup: true, resultReadAuthorizationConfigured: resultReadToken.length >= 32 });
       }
       if (req.method === 'GET' && url.pathname === '/api/agents') {
         return json(res, 200, { count: manifest.agents.length, agents: manifest.agents.map(a => ({ id: a.id, objective: a.objective, state: 'AVAILABLE_ROLE_NOT_PROCESS_HEALTH' })) });
@@ -271,17 +272,43 @@ function createOrchestrator(options = {}) {
       if (req.method === 'GET' && url.pathname === '/api/tasks') {
         return json(res, 200, { tasks: Array.from(tasks.values()).map(publicTask).slice(-100) });
       }
-      const taskState = url.pathname.match(new RegExp('^/api/tasks/([0-9a-f-]{36})/state$'));
+      const taskState = url.pathname.match(new RegExp('^/api/tasks/([0-9a-f-]{36})/state$', 'i'));
       if (req.method === 'GET' && taskState) {
-        const task = tasks.get(taskState[1]);
+        const task = tasks.get(taskState[1].toLowerCase());
         if (!task) return json(res, 404, { error: 'task_not_found' });
         return json(res, 200, {
           task: {
             id: task.id,
             state: task.state,
+            verificationStatus: task.verificationStatus || 'not_run',
             goalHash: crypto.createHash('sha256').update(task.goal, 'utf8').digest('hex'),
             updatedAt: task.updatedAt,
             completedAt: task.completedAt || null
+          }
+        });
+      }
+      const taskResult = url.pathname.match(new RegExp('^/api/tasks/([0-9a-f-]{36})/result$', 'i'));
+      if (req.method === 'GET' && taskResult) {
+        if (resultReadToken.length < 32) return json(res, 503, { error: 'orchestrator_result_read_auth_not_configured' });
+        const authorization = String(req.headers.authorization || '');
+        const match = authorization.match(/^Bearer\\s+(.+)$/i);
+        const supplied = match ? match[1].trim() : '';
+        const expectedBytes = Buffer.from(resultReadToken, 'utf8');
+        const suppliedBytes = Buffer.from(supplied, 'utf8');
+        if (expectedBytes.length !== suppliedBytes.length || !crypto.timingSafeEqual(expectedBytes, suppliedBytes)) {
+          return json(res, 401, { error: 'orchestrator_result_read_authorization_required' });
+        }
+        const task = tasks.get(taskResult[1].toLowerCase());
+        if (!task) return json(res, 404, { error: 'task_not_found' });
+        return json(res, 200, {
+          task: {
+            id: task.id,
+            state: task.state,
+            verificationStatus: task.verificationStatus || 'not_run',
+            consensus: task.consensus || null,
+            execution: task.execution || null,
+            results: task.results || null,
+            error: task.error || null
           }
         });
       }
@@ -298,7 +325,7 @@ function createOrchestrator(options = {}) {
         if (requestedTaskId !== undefined && (typeof requestedTaskId !== 'string' || !/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(requestedTaskId))) {
           return json(res, 400, { error: 'task_id_must_be_a_canonical_uuid' });
         }
-        const taskId = requestedTaskId || crypto.randomUUID();
+        const taskId = requestedTaskId ? requestedTaskId.toLowerCase() : crypto.randomUUID();
         if (tasks.has(taskId)) return json(res, 409, { error: 'task_id_already_exists' });
         const task = { id: taskId, goal: input.goal.trim(), candidateCommit: input.candidateCommit ? input.candidateCommit.toLowerCase() : null, state: 'proposed', verificationStatus: 'not_run', consensus: null, createdAt: timestamp, updatedAt: timestamp };
         tasks.set(task.id, task);
