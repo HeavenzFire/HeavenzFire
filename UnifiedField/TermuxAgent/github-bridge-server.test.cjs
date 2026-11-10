@@ -42,6 +42,7 @@ async function withServer(t, options = {}) {
     approvalVerifier: testApprovalVerifier,
     readAuthorizer: () => true,
     inboxReadToken: 'test-inbox-read-token-that-is-at-least-32-chars',
+    orchestratorResultReadToken: 'test-orchestrator-result-read-token-32chars',
     ...serverOptions
   });
   let server = createServer();
@@ -311,6 +312,7 @@ test('reserved task execution recovers after crash between orchestrator creation
   let createCalls = 0;
   let runCalls = 0;
   const fetchImpl = async (url, init = {}) => {
+    if (url === 'http://127.0.0.1:18797/health') return new Response(JSON.stringify({ ok: true, taskStateLookup: true }), { status: 200 });
     const body = init.body ? JSON.parse(init.body) : null;
     if (url === 'http://127.0.0.1:18796/api/tasks' && init.method === 'POST') {
       storedTaskRecord = body.taskRecord;
@@ -384,6 +386,7 @@ test('concurrent run requests for one task cannot start duplicate orchestrator e
   const runStarted = new Promise(resolve => { signalRunStarted = resolve; });
   let runCalls = 0;
   const fetchImpl = async (url, init = {}) => {
+    if (url === 'http://127.0.0.1:18797/health') return new Response(JSON.stringify({ ok: true, taskStateLookup: true }), { status: 200 });
     const body = init.body ? JSON.parse(init.body) : null;
     if (url === 'http://127.0.0.1:18796/api/tasks' && init.method === 'POST') {
       storedTaskRecord = body.taskRecord;
@@ -445,6 +448,7 @@ test('reconciles a completed orchestrator task when the bridge lost the run resp
   let orchestratorTask = null;
   let runCalls = 0;
   const fetchImpl = async (url, init = {}) => {
+    if (url === 'http://127.0.0.1:18797/health') return new Response(JSON.stringify({ ok: true, taskStateLookup: true }), { status: 200 });
     const body = init.body ? JSON.parse(init.body) : null;
     if (url === 'http://127.0.0.1:18796/api/tasks' && init.method === 'POST') {
       storedTaskRecord = body.taskRecord;
@@ -475,6 +479,12 @@ test('reconciles a completed orchestrator task when the bridge lost the run resp
       runCalls++;
       orchestratorTask.state = 'completed';
       return new Response(JSON.stringify({ error: 'response_lost_after_completion' }), { status: 503 });
+    }
+    if (url === 'http://127.0.0.1:18797/api/tasks/' + taskId + '/result') {
+      return new Response(JSON.stringify({ task: {
+        id: taskId, state: 'completed', verificationStatus: 'not_run',
+        results: [{ agentId: 'safety-auditor', state: 'completed', output: 'persisted-result' }]
+      } }), { status: 200 });
     }
     return new Response('{}', { status: 404 });
   };
