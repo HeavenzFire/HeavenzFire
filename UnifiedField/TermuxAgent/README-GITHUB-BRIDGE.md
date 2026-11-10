@@ -23,6 +23,18 @@ Windows-local GitHub integration for the Unified Field task inbox and 16-role or
 
 The second command registers a limited-privilege current-user scheduled task. It does not add firewall rules or store credentials.
 
+
+## Audit data minimization
+
+New bridge audit records do not duplicate full task prompts or inference results:
+
+- `task_submitted` records contain the task ID, SHA-256 goal digest, UTF-8 byte count, and inbox acceptance flag; the raw goal and inbox response are not persisted in the bridge audit.
+- `task_execution_completed` records contain the result SHA-256 digest and UTF-8 byte count, not the raw result. The full task result remains in the local orchestrator's task history, where it is needed for task retrieval.
+- The bridge keeps at most 100 recent results and 1,000,000 UTF-8 bytes in a process-local cache for same-process idempotent replay. After restart or cache eviction, replay returns HTTP 409 with the task ID, orchestrator task ID, and result digest; retrieve the result from the local orchestrator task history.
+- The in-memory recent audit buffer is capped at 500 events; `GET /api/audit/recent` returns the latest 100.
+
+**Legacy and retention boundary:** existing JSONL records are not rewritten or deleted and may still contain full goals, inbox responses, or results from earlier versions. The durable JSONL file remains append-only and has no automatic rotation or retention limit. This patch does not establish Windows ACLs or a retention policy. Do not place child, patient, or identifiable family-case data in the system until those host-level controls are independently validated.
+
 ## Routes
 
 `GET /health`; `GET /api/github/repository`; `GET /api/github/issues`; `GET /api/github/pulls`; `GET /api/github/commits`; `GET /api/github/files`; `POST /api/github/branches`; `PUT /api/github/files`; `POST /api/github/pulls`; `POST /api/github/issues`; `POST /api/tasks`; `POST /api/tasks/:id/run`; `GET /api/tasks/:id`; `GET /api/audit/recent`.
