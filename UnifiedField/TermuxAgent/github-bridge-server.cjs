@@ -21,6 +21,9 @@ const DEFAULT_INBOX = 'http://127.0.0.1:18796';
 const DEFAULT_ORCHESTRATOR = 'http://127.0.0.1:18797';
 const MAX_BODY = 1_100_000;
 const ORCHESTRATOR_TIMEOUT_MS = 180000;
+const MAX_AUDIT_MEMORY_EVENTS = 500;
+const MAX_TASK_RESULT_CACHE_ENTRIES = 100;
+const MAX_TASK_RESULT_CACHE_BYTES = 1_000_000;
 
 function send(res, status, value) {
   const body = JSON.stringify(value);
@@ -73,25 +76,101 @@ function createGitHubBridgeServer(options = {}) {
   const idempotency = new Map();
   const taskLinks = new Map();
   const taskRuns = new Map();
+  const taskResults = new Map();
+  let taskResultCacheBytes = 0;
+  let auditTotalEvents = 0;
+
+  function rememberAudit(record) {
+    audit.push(record);
+    if (audit.length > MAX_AUDIT_MEMORY_EVENTS) {
+      audit.splice(0, audit.length - MAX_AUDIT_MEMORY_EVENTS);
+    }
+  }
+
+  function rememberTaskResult(taskId, result) {
+    if (typeof taskId !== 'string') return;
+    let encoded;
+    try { encoded = JSON.stringify(result); } catch { return; }
+    if (encoded === undefined) return;
+    const bytes = Buffer.byteLength(encoded, 'utf8');
+    if (bytes > MAX_TASK_RESULT_CACHE_BYTES) return;
+    if (taskResults.has(taskId)) {
+      taskResultCacheBytes -= taskResults.get(taskId).bytes;
+      taskResults.delete(taskId);
+    }
+    taskResults.set(taskId, { value: result, bytes });
+    taskResultCacheBytes += bytes;
+    while (taskResults.size > MAX_TASK_RESULT_CACHE_ENTRIES ||
+           taskResultCacheBytes > MAX_TASK_RESULT_CACHE_BYTES) {
+      const oldest = taskResults.keys().next().value;
+      const removed = taskResults.get(oldest);
+      taskResultCacheBytes -= removed.bytes;
+      taskResults.delete(oldest);
+    }
+  }
+
+  function sanitizeAuditEvent(event) {
+    const record = { ...event };
+    if (record.type === 'task_submitted') {
+      if (typeof record.goal === 'string') {
+        record.goalBytes = Buffer.byteLength(record.goal, 'utf8');
+        if (typeof record.goalHash !== 'string' || !/^[a-f0-9]{64}$/i.test(record.goalHash)) {
+          record.goalHash = crypto.createHash('sha256').update(record.goal, 'utf8').digest('hex');
+        }
+      }
+      delete record.goal;
+      delete record.inbox;
+    }
+    if (record.type === 'task_execution_completed' &&
+        Object.prototype.hasOwnProperty.call(record, 'result')) {
+      const encoded = JSON.stringify(record.result);
+      if (encoded !== undefined) {
+        record.resultBytes = Buffer.byteLength(encoded, 'utf8');
+        record.resultSha256 = crypto.createHash('sha256').update(encoded, 'utf8').digest('hex');
+      }
+      delete record.result;
+    }
+    return record;
+  }
+
+  function indexAuditEvent(event) {
+    if (event.idempotencyKey) idempotency.set(event.idempotencyKey, event);
+    if (event.type === 'task_submitted') {
+      taskLinks.set(event.taskId, { taskId: event.taskId, goalHash: event.goalHash });
+    }
+    if (event.type === 'task_execution_started' ||
+        event.type === 'task_execution_completed' ||
+        event.type === 'task_execution_failed') {
+      taskRuns.set(event.taskId, event);
+    }
+  }
+
   if (fs.existsSync(auditPath)) {
     for (const line of fs.readFileSync(auditPath, 'utf8').split(/\r?\n/).filter(Boolean)) {
-      const event = JSON.parse(line);
-      audit.push(event);
-      if (event.idempotencyKey) idempotency.set(event.idempotencyKey, event);
-      if (event.type === 'task_submitted') taskLinks.set(event.taskId, event);
-      if (event.type === 'task_execution_started' || event.type === 'task_execution_completed' || event.type === 'task_execution_failed') taskRuns.set(event.taskId, event);
+      const rawEvent = JSON.parse(line);
+      if (rawEvent.type === 'task_execution_completed' &&
+          Object.prototype.hasOwnProperty.call(rawEvent, 'result')) {
+        rememberTaskResult(rawEvent.taskId, rawEvent.result);
+      }
+      const event = sanitizeAuditEvent(rawEvent);
+      auditTotalEvents++;
+      rememberAudit(event);
+      indexAuditEvent(event);
     }
   }
 
   function append(event) {
-    const record = { timestamp: new Date().toISOString(), ...event };
+    if (event.type === 'task_execution_completed' &&
+        Object.prototype.hasOwnProperty.call(event, 'result')) {
+      rememberTaskResult(event.taskId, event.result);
+    }
+    const record = { timestamp: new Date().toISOString(), ...sanitizeAuditEvent(event) };
     const fd = fs.openSync(auditPath, 'a');
     try { fs.writeSync(fd, JSON.stringify(record) + '\n'); fs.fsyncSync(fd); }
     finally { fs.closeSync(fd); }
-    audit.push(record);
-    if (record.idempotencyKey) idempotency.set(record.idempotencyKey, record);
-    if (record.type === 'task_submitted') taskLinks.set(record.taskId, record);
-    if (record.type === 'task_execution_started' || record.type === 'task_execution_completed' || record.type === 'task_execution_failed') taskRuns.set(record.taskId, record);
+    auditTotalEvents++;
+    rememberAudit(record);
+    indexAuditEvent(record);
     return record;
   }
 
@@ -189,7 +268,8 @@ function createGitHubBridgeServer(options = {}) {
           host, port: server.address()?.port || port,
           githubAuth: auth, allowedOwners: [...allowedOwners],
           approvalVerifierConfigured, writesEnabled: approvalVerifierConfigured, capabilities,
-          defaultBranchWrites: false, merges: false, auditEvents: audit.length
+          defaultBranchWrites: false, merges: false,
+          auditEvents: auditTotalEvents, recentAuditEvents: audit.length
         });
       }
 
@@ -198,7 +278,13 @@ function createGitHubBridgeServer(options = {}) {
         if (typeof input.goal !== 'string' || !input.goal.trim() || input.goal.length > 12000) throw Object.assign(new Error('goal_required_max_12000'), { statusCode: 400 });
         const task = createTaskRecord({ taskId: input.taskId, source: input.source || 'github-bridge', goal: input.goal, metadata: input.metadata || {} });
         const inbox = await remoteJson(inboxUrl + '/api/tasks', 'POST', { taskRecord: task });
-        append({ type: 'task_submitted', taskId: task.taskId, goal: task.goal, inbox, goalHash: crypto.createHash('sha256').update(task.goal).digest('hex') });
+        append({
+          type: 'task_submitted',
+          taskId: task.taskId,
+          goalHash: crypto.createHash('sha256').update(task.goal, 'utf8').digest('hex'),
+          goalBytes: Buffer.byteLength(task.goal, 'utf8'),
+          inboxAccepted: inbox?.ok === true
+        });
         return send(res, 201, { ok: true, taskId: task.taskId, status: 'proposed', approvalState: 'pending', inbox });
       }
 
@@ -212,19 +298,40 @@ function createGitHubBridgeServer(options = {}) {
         const input = await bodyJson(req);
         const taskEvent = taskLinks.get(taskRun[1]);
         if (!taskEvent) throw Object.assign(new Error('task_not_found_in_bridge_ledger'), { statusCode: 404 });
+        if (!/^[a-f0-9]{64}$/i.test(taskEvent.goalHash || '')) {
+          throw Object.assign(new Error('task_goal_hash_missing_from_bridge_audit'), { statusCode: 409 });
+        }
         const approvalContext = { taskId: taskRun[1], goalHash: taskEvent.goalHash };
         const priorRun = taskRuns.get(taskRun[1]);
         // A completed task is a read-only replay of an already-authorized result.
-        // Check this before verifying the one-time envelope, whose nonce was consumed
-        // during the original execution.
+        // Raw results are retained only in a bounded process-local cache, never in
+        // new durable bridge audit records.
         if (priorRun?.type === 'task_execution_completed') {
-          return send(res, 200, { ok: true, idempotentReplay: true, result: priorRun.result });
+          const cached = taskResults.get(taskRun[1]);
+          if (cached) return send(res, 200, { ok: true, idempotentReplay: true, result: cached.value });
+          return send(res, 409, {
+            ok: false,
+            error: 'task_completed_result_not_cached',
+            taskId: taskRun[1],
+            orchestratorTaskId: priorRun.orchestratorTaskId || null,
+            resultSha256: priorRun.resultSha256 || null
+          });
         }
         if (priorRun?.type === 'task_execution_started' || priorRun?.type === 'task_execution_failed') {
           throw Object.assign(new Error('task_execution_in_progress_or_outcome_unknown; inspect orchestrator task ' + (priorRun.orchestratorTaskId || 'unknown') + ' before retrying'), { statusCode: 409 });
         }
+        const inboxResponse = await remoteJson(inboxUrl + '/api/tasks/' + taskRun[1], 'GET');
+        const taskRecord = inboxResponse && inboxResponse.taskRecord;
+        if (!taskRecord || taskRecord.taskId !== taskRun[1] ||
+            typeof taskRecord.goal !== 'string' || !taskRecord.goal.trim()) {
+          throw Object.assign(new Error('authoritative_inbox_task_record_unavailable'), { statusCode: 409 });
+        }
+        const actualGoalHash = crypto.createHash('sha256').update(taskRecord.goal, 'utf8').digest('hex');
+        if (actualGoalHash !== taskEvent.goalHash) {
+          throw Object.assign(new Error('authoritative_inbox_task_goal_hash_mismatch'), { statusCode: 409 });
+        }
         const approval = await resolveTrustedApproval({ verifier: approvalVerifier, action: 'execute_task', subject: approvalContext, evidence: input.approvalEvidence });
-        const created = await remoteJson(orchestratorUrl + '/api/tasks', 'POST', { taskId: taskRun[1], goal: taskEvent.goal || 'Execute task ' + taskRun[1] + '; see durable inbox task record.' });
+        const created = await remoteJson(orchestratorUrl + '/api/tasks', 'POST', { taskId: taskRun[1], goal: taskRecord.goal });
         const orchestratorTaskId = created.task?.id;
         if (!orchestratorTaskId) throw new Error('orchestrator_task_creation_failed');
         if (orchestratorTaskId !== taskRun[1]) throw Object.assign(new Error('orchestrator_task_id_binding_mismatch'), { statusCode: 502 });
@@ -335,7 +442,15 @@ function createGitHubBridgeServer(options = {}) {
       }
 
       if (req.method === 'GET' && url.pathname === '/api/audit/recent') {
-        return send(res, 200, { events: audit.slice(-100).map(({ timestamp, type, action, taskId, idempotencyKey, error, result }) => ({ timestamp, type, action, taskId, idempotencyKey, error, result })) });
+        return send(res, 200, {
+          events: audit.slice(-100).map(({
+            timestamp, type, action, taskId, idempotencyKey, error, result,
+            goalHash, goalBytes, inboxAccepted, resultSha256, resultBytes
+          }) => ({
+            timestamp, type, action, taskId, idempotencyKey, error, result,
+            goalHash, goalBytes, inboxAccepted, resultSha256, resultBytes
+          }))
+        });
       }
       return send(res, 404, { ok: false, error: 'not_found' });
     } catch (error) {
