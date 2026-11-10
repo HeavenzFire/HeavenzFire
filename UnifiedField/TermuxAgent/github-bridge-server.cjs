@@ -151,8 +151,6 @@ function createGitHubBridgeServer(options = {}) {
 
   function indexAuditEvent(event) {
     if (event.idempotencyKey) idempotency.set(event.idempotencyKey, event);
-  function indexAuditEvent(event) {
-    if (event.idempotencyKey) idempotency.set(event.idempotencyKey, event);
     if (event.type === 'task_submission_reserved' || event.type === 'task_submitted') {
       taskLinks.set(event.taskId, { taskId: event.taskId, goalHash: event.goalHash, type: event.type, inboxAccepted: event.inboxAccepted === true });
     }
@@ -162,7 +160,6 @@ function createGitHubBridgeServer(options = {}) {
         event.type === 'task_execution_failed') {
       taskRuns.set(event.taskId, event);
     }
-  }
   }
 
   if (fs.existsSync(auditPath)) {
