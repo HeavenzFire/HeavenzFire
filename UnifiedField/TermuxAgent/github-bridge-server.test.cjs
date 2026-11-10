@@ -121,7 +121,10 @@ test('write action uses real branch adapter with durable idempotency and audit',
   assert.equal((await first.json()).sha, 'abc123');
   const replay = await fetch(base + '/api/github/branches', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(input) });
   assert.equal(replay.status, 201);
-  assert.equal((await replay.json()).idempotentReplay, true);
+  const replayBody = await replay.json();
+  assert.equal(replayBody.idempotentReplay, true);
+  assert.equal(replayBody.status, 'approved');
+  assert.equal(replayBody.approvalState, 'approved');
   assert.equal(approvalCalls, 1, 'completed write replay must not consume the one-time approval twice');
   assert.equal(calls.length, 1);
   assert.equal(calls[0].writeEnabled, true);
@@ -295,6 +298,8 @@ test('task intake is idempotent for a stable task UUID and rejects conflicting r
   });
   const first = await submit('Stable task intake identity', taskId.toUpperCase());
   assert.equal(first.status, 201);
+  storedTaskRecord.status = 'approved';
+  storedTaskRecord.approvalState = 'approved';
   const replay = await submit('Stable task intake identity');
   assert.equal(replay.status, 200);
   assert.equal((await replay.json()).idempotentReplay, true);
