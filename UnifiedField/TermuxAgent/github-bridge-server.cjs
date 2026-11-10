@@ -314,7 +314,7 @@ function createGitHubBridgeServer(options = {}) {
           // The prior reservation may represent a crash after the inbox accepted
           // the POST but before the bridge recorded task_submitted.
           try {
-            const existing = await remoteJson(inboxUrl + '/api/tasks/' + task.taskId, 'GET');
+            const existing = await remoteJson(inboxUrl + '/api/tasks/' + task.taskId, 'GET', undefined, 20000, inboxReadToken ? { authorization: 'Bearer ' + inboxReadToken } : {});
             const existingRecord = existing && existing.taskRecord;
             if (existingRecord?.taskId === task.taskId &&
                 crypto.createHash('sha256').update(String(existingRecord.goal || ''), 'utf8').digest('hex') === goalHash) {
@@ -330,7 +330,7 @@ function createGitHubBridgeServer(options = {}) {
           inbox = await remoteJson(inboxUrl + '/api/tasks', 'POST', { taskRecord: task });
         } catch (error) {
           if (error.statusCode !== 409) throw error;
-          const existing = await remoteJson(inboxUrl + '/api/tasks/' + task.taskId, 'GET');
+          const existing = await remoteJson(inboxUrl + '/api/tasks/' + task.taskId, 'GET', undefined, 20000, inboxReadToken ? { authorization: 'Bearer ' + inboxReadToken } : {});
           const existingRecord = existing && existing.taskRecord;
           if (existingRecord?.taskId !== task.taskId ||
               crypto.createHash('sha256').update(String(existingRecord.goal || ''), 'utf8').digest('hex') !== goalHash) {
