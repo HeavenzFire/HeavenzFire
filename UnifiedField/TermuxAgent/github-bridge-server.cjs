@@ -476,7 +476,7 @@ if (require.main === module) {
   const approvalVerifier = createApprovalVerifierFromEnv({ serviceId: 'github-bridge' });
   const readToken = process.env.HF_GITHUB_BRIDGE_READ_TOKEN || '';
   const readAuthorizer = req => {
-    const supplied = String(req.headers.authorization || '').replace(/^Bearer\\s+/i, '');
+    const supplied = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
     if (readToken.length < 32 || supplied.length !== readToken.length) return false;
     return crypto.timingSafeEqual(Buffer.from(supplied), Buffer.from(readToken));
   };
