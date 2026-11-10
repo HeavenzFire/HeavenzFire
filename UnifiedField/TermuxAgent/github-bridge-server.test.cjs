@@ -163,7 +163,13 @@ test('task intake minimizes durable audit data and keeps replay results bounded 
         ? new Response(JSON.stringify({ ok: true, taskRecord: storedTaskRecord }), { status: 200 })
         : new Response('{}', { status: 404 });
     }
-    if (url === 'http://127.0.0.1:18797/api/tasks') return new Response(JSON.stringify({ task: { id: calls.at(-1).body.taskId } }), { status: 201 });
+    if (url === 'http://127.0.0.1:18797/api/tasks/' + storedTaskRecord.taskId + '/state') {
+      return new Response(JSON.stringify({ task: {
+        id: storedTaskRecord.taskId, state: 'proposed',
+        goalHash: require('node:crypto').createHash('sha256').update(storedTaskRecord.goal, 'utf8').digest('hex')
+      } }), { status: 200 });
+    }
+    if (url === 'http://127.0.0.1:18797/api/tasks') return new Response(JSON.stringify({ task: { id: calls.at(-1).body.taskId, state: 'proposed' } }), { status: 201 });
     if (url.endsWith('/approve')) return new Response(JSON.stringify({ task: { state: 'approved' } }), { status: 200 });
     if (url.endsWith('/run')) return new Response(JSON.stringify({
       task: { state: 'completed' }, completedRoles: 16, failedRoles: 0, privateResult: resultSentinel
@@ -241,6 +247,110 @@ test('task intake minimizes durable audit data and keeps replay results bounded 
   } finally {
     await new Promise(resolve => restarted.close(resolve));
   }
+});
+
+
+
+test('task intake is idempotent for a stable task UUID and rejects conflicting reuse', async t => {
+  const taskId = '00000000-0000-4000-8000-000000000777';
+  let storedTaskRecord = null;
+  let inboxPosts = 0;
+  const fetchImpl = async (url, init = {}) => {
+    if (url === 'http://127.0.0.1:18796/api/tasks' && init.method === 'POST') {
+      inboxPosts++;
+      storedTaskRecord = JSON.parse(init.body).taskRecord;
+      return new Response(JSON.stringify({ ok: true, taskId }), { status: 201 });
+    }
+    if (url === 'http://127.0.0.1:18796/api/tasks/' + taskId) {
+      return storedTaskRecord
+        ? new Response(JSON.stringify({ ok: true, taskRecord: storedTaskRecord }), { status: 200 })
+        : new Response(JSON.stringify({ error: 'task_not_found' }), { status: 404 });
+    }
+    return new Response('{}', { status: 404 });
+  };
+  const { base } = await withServer(t, { fetchImpl });
+  const submit = goal => fetch(base + '/api/tasks', {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ taskId, goal })
+  });
+  const first = await submit('Stable task intake identity');
+  assert.equal(first.status, 201);
+  const replay = await submit('Stable task intake identity');
+  assert.equal(replay.status, 200);
+  assert.equal((await replay.json()).idempotentReplay, true);
+  assert.equal(inboxPosts, 1, 'same task ID and goal must not create a second inbox record');
+  const conflict = await submit('Different goal under the same task ID');
+  assert.equal(conflict.status, 409);
+  assert.equal((await conflict.json()).error, 'task_id_conflicts_with_different_goal');
+  assert.equal(inboxPosts, 1);
+});
+
+test('reserved task execution recovers after crash between orchestrator creation and approval', async t => {
+  const taskId = '00000000-0000-4000-8000-000000000778';
+  let storedTaskRecord = null;
+  let orchestratorTask = null;
+  let failFirstApproval = true;
+  let createCalls = 0;
+  let runCalls = 0;
+  const fetchImpl = async (url, init = {}) => {
+    const body = init.body ? JSON.parse(init.body) : null;
+    if (url === 'http://127.0.0.1:18796/api/tasks' && init.method === 'POST') {
+      storedTaskRecord = body.taskRecord;
+      return new Response(JSON.stringify({ ok: true, taskId }), { status: 201 });
+    }
+    if (url === 'http://127.0.0.1:18796/api/tasks/' + taskId) {
+      return storedTaskRecord
+        ? new Response(JSON.stringify({ ok: true, taskRecord: storedTaskRecord }), { status: 200 })
+        : new Response('{}', { status: 404 });
+    }
+    if (url === 'http://127.0.0.1:18797/api/tasks/' + taskId + '/state' && init.method === 'GET') {
+      return orchestratorTask
+        ? new Response(JSON.stringify({ task: {
+            id: orchestratorTask.id, state: orchestratorTask.state,
+            goalHash: crypto.createHash('sha256').update(storedTaskRecord.goal, 'utf8').digest('hex')
+          } }), { status: 200 })
+        : new Response(JSON.stringify({ error: 'task_not_found' }), { status: 404 });
+    }
+    if (url === 'http://127.0.0.1:18797/api/tasks' && init.method === 'POST') {
+      createCalls++;
+      orchestratorTask = { id: body.taskId, state: 'proposed' };
+      return new Response(JSON.stringify({ task: orchestratorTask }), { status: 201 });
+    }
+    if (url.endsWith('/approve')) {
+      if (failFirstApproval) {
+        failFirstApproval = false;
+        return new Response(JSON.stringify({ error: 'simulated_interruption' }), { status: 503 });
+      }
+      orchestratorTask.state = 'approved';
+      return new Response(JSON.stringify({ task: orchestratorTask }), { status: 200 });
+    }
+    if (url.endsWith('/run')) {
+      runCalls++;
+      orchestratorTask.state = 'completed';
+      return new Response(JSON.stringify({ task: orchestratorTask, completedRoles: 16, failedRoles: 0 }), { status: 200 });
+    }
+    return new Response('{}', { status: 404 });
+  };
+  const { base, auditPath } = await withServer(t, { fetchImpl });
+  const submitted = await fetch(base + '/api/tasks', {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ taskId, goal: 'Recover an interrupted approved task' })
+  });
+  assert.equal(submitted.status, 201);
+  const run = () => fetch(base + '/api/tasks/' + taskId + '/run', {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ approvalEvidence: TEST_APPROVAL_EVIDENCE })
+  });
+  const interrupted = await run();
+  assert.equal(interrupted.status, 503);
+  const eventsAfterInterruption = fs.readFileSync(auditPath, 'utf8').trim().split(/\r?\n/).map(JSON.parse);
+  assert.ok(eventsAfterInterruption.some(event => event.type === 'task_execution_reserved'));
+  assert.equal(eventsAfterInterruption.some(event => event.type === 'task_execution_started'), false);
+  const recovered = await run();
+  assert.equal(recovered.status, 200);
+  assert.equal((await recovered.json()).recovered, true);
+  assert.equal(createCalls, 1, 'recovery must reuse the already-created orchestrator task');
+  assert.equal(runCalls, 1, 'recovery must execute the orchestrator task once');
 });
 
 
