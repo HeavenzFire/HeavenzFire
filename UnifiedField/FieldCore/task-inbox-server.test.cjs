@@ -71,7 +71,66 @@ test('inbox fsyncs the accepted JSONL record before returning success', async t 
     }
     assert.equal(response.status, 201);
     assert.equal(fsyncCalls, 1);
-    assert.equal(fs.readFileSync(inboxPath, 'utf8').trim().split(/\\r?\\n/).length, 1);
+    assert.equal(fs.readFileSync(inboxPath, 'utf8').trim().split(/\r?\n/).length, 1);
+  });
+});
+
+test('inbox completes short writes before acknowledging a JSONL record', async t => {
+  await withInbox(t, async ({ baseUrl, inboxPath }) => {
+    const originalWriteSync = fs.writeSync;
+    let writeCalls = 0;
+    fs.writeSync = function(fd, buffer, offset, length, position) {
+      writeCalls++;
+      const chunkLength = writeCalls === 1 ? Math.max(1, Math.floor(length / 2)) : length;
+      return originalWriteSync.call(fs, fd, buffer, offset, chunkLength, position);
+    };
+    let response;
+    try {
+      response = await post(baseUrl, proposal('short-write-1', 'Complete a partial JSONL write'));
+    } finally {
+      fs.writeSync = originalWriteSync;
+    }
+    assert.equal(response.status, 201);
+    assert.ok(writeCalls >= 2);
+    const lines = fs.readFileSync(inboxPath, 'utf8').trim().split(/\r?\n/);
+    assert.equal(lines.length, 1);
+    assert.equal(JSON.parse(lines[0]).taskRecord.taskId, 'short-write-1');
+  });
+});
+
+test('inbox rolls back a partial append when a later write fails', async t => {
+  await withInbox(t, async ({ baseUrl, inboxPath }) => {
+    const existing = proposal('existing-inbox-1', 'Preserve the prior accepted record');
+    assert.equal((await post(baseUrl, existing)).status, 201);
+    const originalContent = fs.readFileSync(inboxPath, 'utf8');
+    const retryable = proposal('partial-failure-1', 'Do not acknowledge a truncated record');
+    const originalWriteSync = fs.writeSync;
+    let writeCalls = 0;
+    fs.writeSync = function(fd, buffer, offset, length, position) {
+      writeCalls++;
+      if (writeCalls === 1) {
+        const partialLength = Math.max(1, Math.floor(length / 2));
+        return originalWriteSync.call(fs, fd, buffer, offset, partialLength, position);
+      }
+      throw new Error('simulated write failure after a short write');
+    };
+    let failed;
+    try {
+      failed = await post(baseUrl, retryable);
+    } finally {
+      fs.writeSync = originalWriteSync;
+    }
+    assert.equal(failed.status, 500);
+    assert.equal(writeCalls, 2);
+    assert.equal(fs.readFileSync(inboxPath, 'utf8'), originalContent);
+    const listing = await fetch(baseUrl + '/api/tasks', { headers: readHeaders });
+    assert.equal(listing.status, 200);
+    assert.equal((await listing.json()).total, 1);
+    const retried = await post(baseUrl, retryable);
+    assert.equal(retried.status, 201);
+    const lines = fs.readFileSync(inboxPath, 'utf8').trim().split(/\r?\n/);
+    assert.equal(lines.length, 2);
+    assert.equal(JSON.parse(lines[1]).taskRecord.taskId, 'partial-failure-1');
   });
 });
 

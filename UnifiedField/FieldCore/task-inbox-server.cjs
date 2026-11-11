@@ -56,6 +56,18 @@ function sendJson(res, status, body) {
   res.end(JSON.stringify(body));
 }
 
+function writeAllSync(fd, buffer) {
+  let offset = 0;
+  while (offset < buffer.length) {
+    const remaining = buffer.length - offset;
+    const written = fs.writeSync(fd, buffer, offset, remaining);
+    if (!Number.isInteger(written) || written <= 0 || written > remaining) {
+      throw new Error('Task inbox write did not make forward progress');
+    }
+    offset += written;
+  }
+}
+
 function createTaskInboxServer({ inboxPath = DEFAULT_INBOX_PATH, port = DEFAULT_PORT, readToken = process.env.HF_GITHUB_BRIDGE_READ_TOKEN || '' } = {}) {
   if (typeof inboxPath !== 'string' || !inboxPath.trim()) throw new TypeError('inboxPath must be a non-empty path');
   if (!Number.isInteger(port) || port < 0 || port > 65535) throw new RangeError('port must be an integer from 0 to 65535');
@@ -105,11 +117,22 @@ function createTaskInboxServer({ inboxPath = DEFAULT_INBOX_PATH, port = DEFAULT_
           taskRecord: task
         };
         let fd;
+        let originalSize;
         try {
           fd = fs.openSync(inboxPath, 'a', 0o600);
-          fs.writeSync(fd, Buffer.from(JSON.stringify(event) + '\n', 'utf8'));
+          originalSize = fs.fstatSync(fd).size;
+          const serialized = Buffer.from(JSON.stringify(event) + '\n', 'utf8');
+          writeAllSync(fd, serialized);
           fs.fsyncSync(fd);
         } catch (error) {
+          if (fd !== undefined && Number.isSafeInteger(originalSize)) {
+            try {
+              fs.ftruncateSync(fd, originalSize);
+              fs.fsyncSync(fd);
+            } catch (rollbackError) {
+              error = new Error(error.message + '; inbox rollback failed: ' + rollbackError.message);
+            }
+          }
           return sendJson(res, 500, { ok: false, error: 'task_persistence_failed', detail: error.message });
         } finally {
           if (fd !== undefined) fs.closeSync(fd);
