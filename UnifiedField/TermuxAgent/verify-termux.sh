@@ -9,6 +9,9 @@ node --version
 node -e "if (Number(process.versions.node.split('.')[0]) < 18) { console.error('Node.js 18+ required for built-in fetch'); process.exit(1); }"
 printf '%s\n' '== Syntax checks =='
 for file in agent.cjs github.cjs github-write.cjs github-cli.cjs orchestrate.cjs remote-task-cli.cjs fabric.cjs; do node --check "UnifiedField/TermuxAgent/$file"; done
+printf '%s\n' '== Task inbox checks =='
+node --check UnifiedField/FieldCore/task-inbox-server.cjs
+node --test UnifiedField/FieldCore/task-inbox-server.test.cjs
 printf '%s\n' '== Trusted approval broker checks =='
 node --check UnifiedField/FieldCore/ed25519-approval-broker.cjs
 node --check UnifiedField/FieldCore/approval-cli.cjs
