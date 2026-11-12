@@ -822,3 +822,83 @@ test('rejects non-JSON writes and invalid host headers', async t => {
   const badType = await fetch(base + '/api/github/issues', { method: 'POST', headers: { 'content-type': 'text/plain' }, body: JSON.stringify({ title: 'csrf' }) });
   assert.equal(badType.status, 415);
 });
+
+test('completed-result replay reports retryable gateway failure for upstream 5xx', async t => {
+  const taskId = '00000000-0000-4000-8000-000000000901';
+  const resultSha256 = '9'.repeat(64);
+  const resultUrl = 'http://127.0.0.1:18797/api/tasks/' + taskId + '/result';
+  let resultReads = 0;
+  const fetchImpl = async url => {
+    if (url === resultUrl) {
+      resultReads++;
+      return new Response(JSON.stringify({ error: 'temporarily_unavailable' }), { status: 500 });
+    }
+    throw new Error('unexpected_upstream_request');
+  };
+  const { base } = await withServer(t, {
+    fetchImpl,
+    initialAuditEvents: [
+      { type: 'task_submitted', taskId, goalHash: 'a'.repeat(64), inboxAccepted: true },
+      { type: 'task_execution_completed', taskId, orchestratorTaskId: taskId, resultSha256 }
+    ]
+  });
+  const response = await fetch(base + '/api/tasks/' + taskId + '/run', {
+    method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}'
+  });
+  assert.equal(response.status, 502);
+  const body = await response.json();
+  assert.equal(body.error, 'task_completed_result_read_failed');
+  assert.equal(body.retryable, true);
+  assert.equal(body.resultSha256, resultSha256);
+  assert.equal(resultReads, 1);
+});
+
+test('completed-result replay reports retryable gateway failure for network errors', async t => {
+  const taskId = '00000000-0000-4000-8000-000000000902';
+  const resultSha256 = '8'.repeat(64);
+  const resultUrl = 'http://127.0.0.1:18797/api/tasks/' + taskId + '/result';
+  const fetchImpl = async url => {
+    if (url === resultUrl) throw new TypeError('simulated network unavailable');
+    throw new Error('unexpected_upstream_request');
+  };
+  const { base } = await withServer(t, {
+    fetchImpl,
+    initialAuditEvents: [
+      { type: 'task_submitted', taskId, goalHash: 'b'.repeat(64), inboxAccepted: true },
+      { type: 'task_execution_completed', taskId, orchestratorTaskId: taskId, resultSha256 }
+    ]
+  });
+  const response = await fetch(base + '/api/tasks/' + taskId + '/run', {
+    method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}'
+  });
+  assert.equal(response.status, 502);
+  const body = await response.json();
+  assert.equal(body.error, 'task_completed_result_read_failed');
+  assert.equal(body.retryable, true);
+  assert.equal(body.resultSha256, resultSha256);
+});
+
+test('confirmed missing completed result remains a non-retryable conflict', async t => {
+  const taskId = '00000000-0000-4000-8000-000000000903';
+  const resultSha256 = '7'.repeat(64);
+  const resultUrl = 'http://127.0.0.1:18797/api/tasks/' + taskId + '/result';
+  const fetchImpl = async url => {
+    if (url === resultUrl) return new Response('{}', { status: 404 });
+    throw new Error('unexpected_upstream_request');
+  };
+  const { base } = await withServer(t, {
+    fetchImpl,
+    initialAuditEvents: [
+      { type: 'task_submitted', taskId, goalHash: 'c'.repeat(64), inboxAccepted: true },
+      { type: 'task_execution_completed', taskId, orchestratorTaskId: taskId, resultSha256 }
+    ]
+  });
+  const response = await fetch(base + '/api/tasks/' + taskId + '/run', {
+    method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}'
+  });
+  assert.equal(response.status, 409);
+  const body = await response.json();
+  assert.equal(body.error, 'task_completed_result_not_cached');
+  assert.equal(body.retryable, undefined);
+  assert.equal(body.resultSha256, resultSha256);
+});
