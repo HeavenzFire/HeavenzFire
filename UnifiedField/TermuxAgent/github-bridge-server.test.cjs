@@ -840,8 +840,10 @@ test('does not restore any legacy raw result into the replay cache after restart
   const oversized = await fetch(base + '/api/tasks/' + taskId(102) + '/run', {
     method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}'
   });
-  assert.equal(oversized.status, 409);
-  assert.equal((await oversized.json()).error, 'task_completed_result_not_cached');
+  assert.equal(oversized.status, 503);
+  const oversizedBody = await oversized.json();
+  assert.equal(oversizedBody.error, 'task_completed_result_read_unavailable');
+  assert.equal(oversizedBody.retryable, true);
 });
 
 test('bounds in-memory recent audit history without changing the persisted event count', async t => {
