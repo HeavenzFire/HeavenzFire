@@ -448,9 +448,24 @@ function createGitHubBridgeServer(options = {}) {
                 return send(res, 200, { ok: true, idempotentReplay: true, recovered: true, result });
               }
             } catch (error) {
-              if (error.statusCode === 401 || error.statusCode === 503 || error.statusCode === 404) {
-                return send(res, error.statusCode === 401 ? 401 : 503, { ok: false, error: 'task_completed_result_read_unavailable', detail: error.message, resultSha256: event.resultSha256 || null });
+              const statusCode = Number.isInteger(error?.statusCode) ? error.statusCode : null;
+              if (statusCode === 401) {
+                return send(res, 401, { ok: false, error: 'task_completed_result_read_unavailable', resultSha256: event.resultSha256 || null });
               }
+              if (statusCode === 503) {
+                return send(res, 503, { ok: false, error: 'task_completed_result_read_unavailable', resultSha256: event.resultSha256 || null, retryable: true });
+              }
+              if (statusCode === 404) {
+                return send(res, 409, { ok: false, error: 'task_completed_result_not_cached', taskId, orchestratorTaskId: event.orchestratorTaskId || taskId, resultSha256: event.resultSha256 || null });
+              }
+              return send(res, 502, {
+                ok: false,
+                error: 'task_completed_result_read_failed',
+                taskId,
+                orchestratorTaskId: event.orchestratorTaskId || taskId,
+                resultSha256: event.resultSha256 || null,
+                retryable: statusCode === null || statusCode >= 500
+              });
             }
             return send(res, 409, { ok: false, error: 'task_completed_result_not_cached', taskId, orchestratorTaskId: event.orchestratorTaskId || taskId, resultSha256: event.resultSha256 || null });
           };
