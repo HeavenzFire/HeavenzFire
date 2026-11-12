@@ -449,17 +449,15 @@ function createGitHubBridgeServer(options = {}) {
               }
             } catch (error) {
               if (error.statusCode === 401 || error.statusCode === 403) {
-                return send(res, error.statusCode, { ok: false, error: 'task_completed_result_read_unauthorized', resultSha256: event.resultSha256 || null });
+                return send(res, error.statusCode, { ok: false, error: 'task_completed_result_read_unavailable', resultSha256: event.resultSha256 || null });
               }
-              if (error.statusCode !== 404) {
-                return send(res, 503, {
-                  ok: false,
-                  error: 'task_completed_result_read_retryable',
-                  retryable: true,
-                  upstreamStatus: Number.isInteger(error.statusCode) ? error.statusCode : null,
-                  resultSha256: event.resultSha256 || null
-                });
-              }
+              return send(res, 503, {
+                ok: false,
+                error: 'task_completed_result_read_unavailable',
+                retryable: true,
+                upstreamStatus: Number.isInteger(error.statusCode) ? error.statusCode : null,
+                resultSha256: event.resultSha256 || null
+              });
             }
             return send(res, 409, { ok: false, error: 'task_completed_result_not_cached', taskId, orchestratorTaskId: event.orchestratorTaskId || taskId, resultSha256: event.resultSha256 || null });
           };
