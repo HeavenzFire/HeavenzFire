@@ -697,12 +697,13 @@ test('durable failed execution is replayed as a known failure, not an unknown co
   assert.equal(upstreamCalls, 0, 'known terminal failure replay must not call upstream services');
 });
 
-test('completed-result replay classifies upstream failures as retryable and preserves confirmed 404 as not cached', async t => {
+test('completed-result replay classifies upstream failures as retryable and only confirmed mismatches as not cached', async t => {
   const taskIds = {
     http502: '00000000-0000-4000-8000-000000000786',
     invalidJson: '00000000-0000-4000-8000-000000000787',
     network: '00000000-0000-4000-8000-000000000788',
-    missing: '00000000-0000-4000-8000-000000000789'
+    missingRoute: '00000000-0000-4000-8000-000000000789',
+    missingResult: '00000000-0000-4000-8000-000000000790'
   };
   const digest = 'b'.repeat(64);
   const initialAuditEvents = Object.values(taskIds).flatMap(taskId => {
@@ -722,21 +723,22 @@ test('completed-result replay classifies upstream failures as retryable and pres
     if (taskId === taskIds.http502) return new Response(JSON.stringify({ error: 'upstream_unavailable' }), { status: 502 });
     if (taskId === taskIds.invalidJson) return new Response('not-json', { status: 200 });
     if (taskId === taskIds.network) throw new Error('simulated_socket_reset');
-    return new Response('{}', { status: 404 });
+    if (taskId === taskIds.missingRoute) return new Response('{}', { status: 404 });
+    return new Response(JSON.stringify({ task: { id: '00000000-0000-4000-8000-000000000791' } }), { status: 200 });
   };
   const { base } = await withServer(t, { fetchImpl, initialAuditEvents });
-  for (const taskId of [taskIds.http502, taskIds.invalidJson, taskIds.network]) {
+  for (const taskId of [taskIds.http502, taskIds.invalidJson, taskIds.network, taskIds.missingRoute]) {
     const response = await fetch(base + '/api/tasks/' + taskId + '/run', {
       method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}'
     });
     assert.equal(response.status, 503);
     const body = await response.json();
-    assert.equal(body.error, 'task_completed_result_read_retryable');
+    assert.equal(body.error, 'task_completed_result_read_unavailable');
     assert.equal(body.retryable, true);
     assert.equal(body.resultSha256, digest);
-    assert.ok(body.upstreamStatus === null || body.upstreamStatus === 502);
+    assert.ok(body.upstreamStatus === null || body.upstreamStatus === 502 || body.upstreamStatus === 404);
   }
-  const missing = await fetch(base + '/api/tasks/' + taskIds.missing + '/run', {
+  const missing = await fetch(base + '/api/tasks/' + taskIds.missingResult + '/run', {
     method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}'
   });
   assert.equal(missing.status, 409);
@@ -783,9 +785,10 @@ test('sanitizes legacy audit records without restoring raw results to replay cac
   const replay = await fetch(base + '/api/tasks/' + taskId + '/run', {
     method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}'
   });
-  assert.equal(replay.status, 409);
+  assert.equal(replay.status, 503);
   const replayBody = await replay.json();
-  assert.equal(replayBody.error, 'task_completed_result_not_cached');
+  assert.equal(replayBody.error, 'task_completed_result_read_unavailable');
+  assert.equal(replayBody.retryable, true);
   assert.equal(replayBody.resultSha256, crypto.createHash('sha256').update(JSON.stringify(result), 'utf8').digest('hex'));
   assert.ok(!JSON.stringify(replayBody).includes(result.privateResult));
   assert.equal(fs.readFileSync(auditPath, 'utf8'), originalAudit, 'legacy audit bytes must remain unchanged');
@@ -819,15 +822,18 @@ test('does not restore any legacy raw result into the replay cache after restart
   const evicted = await fetch(base + '/api/tasks/' + taskId(1) + '/run', {
     method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}'
   });
-  assert.equal(evicted.status, 409);
-  assert.equal((await evicted.json()).error, 'task_completed_result_not_cached');
+  assert.equal(evicted.status, 503);
+  const evictedBody = await evicted.json();
+  assert.equal(evictedBody.error, 'task_completed_result_read_unavailable');
+  assert.equal(evictedBody.retryable, true);
 
   const retained = await fetch(base + '/api/tasks/' + taskId(101) + '/run', {
     method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}'
   });
-  assert.equal(retained.status, 409);
+  assert.equal(retained.status, 503);
   const retainedBody = await retained.json();
-  assert.equal(retainedBody.error, 'task_completed_result_not_cached');
+  assert.equal(retainedBody.error, 'task_completed_result_read_unavailable');
+  assert.equal(retainedBody.retryable, true);
   assert.equal(retainedBody.resultSha256, crypto.createHash('sha256').update(JSON.stringify({ value: 'cached-result-101' }), 'utf8').digest('hex'));
   assert.ok(!JSON.stringify(retainedBody).includes('cached-result-101'));
 
