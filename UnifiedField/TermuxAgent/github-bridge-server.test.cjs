@@ -715,7 +715,10 @@ test('completed-result replay classifies upstream failures as retryable and pres
   let runCalls = 0;
   const fetchImpl = async url => {
     const taskId = Object.values(taskIds).find(id => url.includes('/api/tasks/' + id + '/result'));
-    if (!taskId) throw new Error('unexpected_upstream_request');
+    if (!taskId) {
+      if (url.includes('/run')) runCalls++;
+      throw new Error('unexpected_upstream_request');
+    }
     if (taskId === taskIds.http502) return new Response(JSON.stringify({ error: 'upstream_unavailable' }), { status: 502 });
     if (taskId === taskIds.invalidJson) return new Response('not-json', { status: 200 });
     if (taskId === taskIds.network) throw new Error('simulated_socket_reset');
