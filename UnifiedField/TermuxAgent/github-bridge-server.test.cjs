@@ -699,6 +699,8 @@ test('durable failed execution is replayed as a known failure, not an unknown co
 
 test('completed-result replay classifies upstream failures as retryable and only confirmed mismatches as not cached', async t => {
   const taskIds = {
+    http401: '00000000-0000-4000-8000-000000000785',
+    http403: '00000000-0000-4000-8000-000000000784',
     http502: '00000000-0000-4000-8000-000000000786',
     invalidJson: '00000000-0000-4000-8000-000000000787',
     network: '00000000-0000-4000-8000-000000000788',
@@ -720,6 +722,8 @@ test('completed-result replay classifies upstream failures as retryable and only
       if (url.includes('/run')) runCalls++;
       throw new Error('unexpected_upstream_request');
     }
+    if (taskId === taskIds.http401) return new Response('{}', { status: 401 });
+    if (taskId === taskIds.http403) return new Response('{}', { status: 403 });
     if (taskId === taskIds.http502) return new Response(JSON.stringify({ error: 'upstream_unavailable' }), { status: 502 });
     if (taskId === taskIds.invalidJson) return new Response('not-json', { status: 200 });
     if (taskId === taskIds.network) throw new Error('simulated_socket_reset');
@@ -727,6 +731,16 @@ test('completed-result replay classifies upstream failures as retryable and only
     return new Response(JSON.stringify({ task: { id: '00000000-0000-4000-8000-000000000791' } }), { status: 200 });
   };
   const { base } = await withServer(t, { fetchImpl, initialAuditEvents });
+  for (const [taskId, expectedStatus] of [[taskIds.http401, 401], [taskIds.http403, 403]]) {
+    const response = await fetch(base + '/api/tasks/' + taskId + '/run', {
+      method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}'
+    });
+    assert.equal(response.status, expectedStatus);
+    const body = await response.json();
+    assert.equal(body.error, 'task_completed_result_read_unavailable');
+    assert.equal(body.resultSha256, digest);
+    assert.equal(body.retryable, undefined);
+  }
   for (const taskId of [taskIds.http502, taskIds.invalidJson, taskIds.network, taskIds.missingRoute]) {
     const response = await fetch(base + '/api/tasks/' + taskId + '/run', {
       method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}'
