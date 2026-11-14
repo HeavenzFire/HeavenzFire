@@ -149,7 +149,7 @@ function assessRoleSpecificity(roleId, response) {
       'UnifiedField/QuantumLab/sixteen-role-orchestrator.test.cjs'
     ]);
     const valid = rows.length === 3 && rows.every(row => {
-      const fileField = row.match(/\\bFILE:\\s*([^|]+)/i);
+      const fileField = row.match(/\bFILE:\s*([^|]+)/i);
       const filePath = fileField ? fileField[1].trim().replace(/\\\\/g, '/') : '';
       return allowedFiles.has(filePath) &&
         required.every(label => row.toUpperCase().includes(label));
