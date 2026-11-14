@@ -53,7 +53,7 @@ class FractalCloneTests(unittest.TestCase):
                 create_node("../outside", "root-node", Path(tmp))
 
     def test_rejects_invalid_parent_identifiers(self):
-        invalid_parent_ids = ("", "line-one\\nline-two", "bad\\x00id", "x" * 129)
+        invalid_parent_ids = ("", "line-one\nline-two", "bad\x00id", "x" * 129)
         with tempfile.TemporaryDirectory() as tmp:
             for parent_id in invalid_parent_ids:
                 with self.subTest(parent_id=repr(parent_id)):
