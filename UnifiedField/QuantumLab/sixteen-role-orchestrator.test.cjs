@@ -209,7 +209,7 @@ test('builder specificity requires exactly three complete change rows', () => {
   assert.equal(assessRoleSpecificity('builder', 'FILE: x | PROPOSED CHANGE: y | DEPENDENCIES: z | VERIFICATION: q').roleSpecificityPassed, false);
   const inventedPath = Array(3).fill(
     'FILE: UnifiedField/QuantumLab/unsafe.cjs | PROPOSED CHANGE: x | DEPENDENCIES: none | VERIFICATION: node test'
-  ).join('\\n');
+  ).join('\n');
   assert.equal(assessRoleSpecificity('builder', inventedPath).roleSpecificityPassed, false);
 });
 
