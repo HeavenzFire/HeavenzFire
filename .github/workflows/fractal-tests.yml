@@ -30,4 +30,4 @@ jobs:
       - name: Compile generator and tests
         run: python -m compileall -q tools/fractal_clone.py tests/test_fractal_clone.py
       - name: Run fractal clone tests
-        run: python -m unittest discover -s tests -p 'test_*.py' -v
+        run: python -m unittest discover -s tests -p 'test_fractal_clone.py' -v
