@@ -354,6 +354,25 @@
         "local-only-preferences"
       ],
       "activation": "manual-unverified"
+    },
+    {
+      "id": "evidence-anchor-manifest",
+      "name": "Unified Field SHA3-256 Evidence Anchor Manifest",
+      "repository": "HeavenzFire/HeavenzFire",
+      "sourcePath": "UnifiedField/FieldCore/anchor-manifest.cjs",
+      "kind": "provenance-control",
+      "integration": "in-repository",
+      "status": "implemented on feature branch; deterministic SHA3-256 Merkle manifest; independent external anchoring and operational adoption pending",
+      "dependencies": [
+        "evidence-ledger"
+      ],
+      "capabilities": [
+        "sha3-256-merkle-root",
+        "artifact-manifest",
+        "tamper-detection",
+        "offline-verification"
+      ],
+      "activation": "operator-local"
     }
   ]
 }
