@@ -2,7 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { ROLES, validateEndpoint, parseRoleModelsJson, assessRoleSpecificity, runSixteenRoleField } = require('./sixteen-role-orchestrator.cjs');
+const { ROLES, validateEndpoint, parseRoleModelsJson, assessRoleSpecificity, makePrompt, runSixteenRoleField } = require('./sixteen-role-orchestrator.cjs');
 
 function validRoleResponse(roleId) {
   const responses = {
@@ -211,6 +211,15 @@ test('role-specific acceptance requires substantive output and at least two lite
     assessRoleSpecificity('requirements', 'Acceptance criteria are required, and this longer sentence still contains only one required signal while omitting any measurable pass or fail threshold.').roleSpecificityPassed,
     false
   );
+});
+
+test('builder prompt contains the exact approved three-row output contract', () => {
+  const builder = ROLES.find(role => role.id === 'builder');
+  const prompt = makePrompt(builder, 'Review the current QuantumLab orchestrator.', []);
+  assert.match(prompt, /Return exactly three non-empty lines/);
+  assert.match(prompt, /UnifiedField\\/QuantumLab\\/sixteen-role-orchestrator\\.cjs/);
+  assert.match(prompt, /UnifiedField\\/QuantumLab\\/sixteen-role-orchestrator\\.test\\.cjs/);
+  assert.match(prompt, /Do not repeat or paraphrase upstream role responses/);
 });
 
 test('builder specificity requires exactly three complete change rows and approved target paths', () => {
