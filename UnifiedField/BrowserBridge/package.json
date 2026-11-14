@@ -5,7 +5,7 @@
   "description": "Local-first, allowlisted browser task runner for HeavenzFire Unified Field",
   "license": "MIT",
   "scripts": {
-    "test": "node --test browser-task-runner.test.cjs",
+    "test": "node --test --test-concurrency=1 browser-task-runner.test.cjs browser-task-api.test.cjs browser-automation-worker.test.cjs",
     "run-task": "node browser-task-runner.cjs"
   },
   "dependencies": {
