@@ -6,26 +6,26 @@ const { ROLES, validateEndpoint, parseRoleModelsJson, assessRoleSpecificity, run
 
 function validRoleResponse(roleId) {
   const responses = {
-    architect: 'Component boundaries, interface ownership, and concrete contracts are defined.',
-    planner: 'Step sequence, dependencies, ordered checkpoints, and implementation order are listed.',
-    researcher: 'Evidence sources, supplied facts, unknowns, and assumptions are separated.',
-    requirements: 'Acceptance criteria define measurable pass/fail outcomes.',
-    designer: 'API schema contracts and failure behavior are specified.',
+    architect: 'Component boundaries define interface ownership and concrete contracts across the repository architecture.',
+    planner: 'Ordered steps identify dependencies, checkpoints, and implementation order for the repository work.',
+    researcher: 'Evidence sources distinguish supplied facts, unknowns, and assumptions for this repository assessment.',
+    requirements: 'Acceptance criteria define measurable pass/fail outcomes and testable outcomes for the requested goal.',
+    designer: 'API schema contracts define component interfaces and failure behavior across the integration.',
     builder: [
       'FILE: UnifiedField/QuantumLab/sixteen-role-orchestrator.cjs | PROPOSED CHANGE: add bounded logic | DEPENDENCIES: none | VERIFICATION: node test',
       'FILE: UnifiedField/QuantumLab/sixteen-role-orchestrator.test.cjs | PROPOSED CHANGE: add regression coverage | DEPENDENCIES: a.cjs | VERIFICATION: node test',
       'FILE: UnifiedField/QuantumLab/sixteen-role-orchestrator.cjs | PROPOSED CHANGE: document operation | DEPENDENCIES: a.cjs | VERIFICATION: review docs'
     ].join('\n'),
-    integrator: 'Integration wiring and contract mismatches are identified.',
-    'test-engineer': 'Test cases include expected assertions and executable inputs.',
-    'security-reviewer': 'Threats, trust boundaries, and mitigation controls are identified.',
-    'adversarial-verifier': 'Negative tests, abuse cases, and falsifiable failure conditions are specified.',
-    'reliability-engineer': 'Timeout, retry, recovery, idempotency, and crash behavior are covered.',
-    'performance-analyst': 'Latency, throughput, token and memory benchmarks are measurable.',
-    documentation: 'Operator runbook, usage instructions, and limitations are documented.',
-    'evidence-auditor': 'Claims are classified verified, unverified, or contradicted with evidence references.',
-    'release-manager': 'Release gates, rollback conditions, and go/no-go decision are defined.',
-    synthesis: 'Cross-role agreement, conflicts, risks, and prioritized next actions are summarized.'
+    integrator: 'Integration wiring identifies contract mismatches and compatibility requirements across components.',
+    'test-engineer': 'Executable tests define test cases, expected assertions, and reproducible inputs for validation.',
+    'security-reviewer': 'Threats at trust boundaries require specific mitigation controls and review evidence.',
+    'adversarial-verifier': 'Negative tests cover abuse cases and falsifiable failure conditions for the implementation.',
+    'reliability-engineer': 'Timeouts, retries, recovery, and idempotency define crash behavior and safe restart handling.',
+    'performance-analyst': 'Latency, throughput, token usage, memory usage, and benchmarks define measurable performance.',
+    documentation: 'Operator runbook gives usage instructions and documents limitations for safe operation.',
+    'evidence-auditor': 'Claims are classified verified, unverified, or contradicted with evidence references and provenance.',
+    'release-manager': 'Release gates and rollback conditions define the go/no-go decision for deployment readiness.',
+    synthesis: 'Cross-role agreement, conflicts, risks, and prioritized actions are summarized for synthesis.'
   };
   return responses[roleId];
 }
