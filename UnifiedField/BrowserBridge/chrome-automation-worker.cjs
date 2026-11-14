@@ -124,18 +124,30 @@ async function closeOldTaskTabs() {
     try { await page.close(); } catch {}
   }
 }
+function recoverInterruptedTask(task) {
+  if (!task || !task.browserAutomation || task.browserAutomation.status !== 'Running') return false;
+  const automation = task.browserAutomation;
+  const now = new Date().toISOString();
+  automation.status = 'ReviewRequired';
+  automation.approved = false;
+  automation.approvalInvalidatedAt = now;
+  automation.recoveryReason = 'Interrupted execution requires fresh operator approval; automatic replay is disabled.';
+  task.status = 'ReviewRequired';
+  appendTaskEvent(task, 'BrowserWorkerInterruptedApprovalInvalidated', {
+    reason: automation.recoveryReason,
+    previousStartedAt: automation.startedAt || null
+  });
+  return true;
+}
 function listQueuedJobs() {
   const files = fs.readdirSync(TASKS).filter(n => n.endsWith('.json')).sort();
   for (const name of files) {
     const file = path.join(TASKS, name);
     const task = readTask(file);
     if (!task || !task.browserAutomation) continue;
-    if (task.browserAutomation.status === 'Running') {
-      task.browserAutomation.status = 'Queued';
-      task.browserAutomation.recoveredAt = new Date().toISOString();
-      task.status = 'BrowserQueued';
-      appendTaskEvent(task, 'BrowserWorkerRecovered', 'Re-queued after worker restart; approval retained.');
+    if (recoverInterruptedTask(task)) {
       try { saveTask(file, task); } catch (e) { log('RecoveryWriteFailed', { taskId: task.id, error: String(e.message || e) }); }
+      continue;
     }
     if (task.browserAutomation.status === 'Queued' && task.browserAutomation.approved === true) return { file, task };
   }
@@ -250,4 +262,4 @@ process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('uncaughtException', e => { lastError = String(e.message || e); log('UncaughtException', lastError); writeState('degraded'); });
 process.on('unhandledRejection', e => { lastError = String(e && e.message || e); log('UnhandledRejection', lastError); writeState('degraded'); });
 if (require.main === module) main().catch(e => { process.stderr.write(String(e.stack || e) + os.EOL); process.exitCode = 1; });
-module.exports = { isReadOnlySpec };
+module.exports = { isReadOnlySpec, recoverInterruptedTask };
