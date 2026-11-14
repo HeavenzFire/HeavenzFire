@@ -66,7 +66,13 @@ async function callLocalModel({ endpoint, model, prompt, maxTokens = 256, temper
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
         model,
-        messages: [{ role: 'user', content: prompt }],
+        messages: [
+          {
+            role: 'system',
+            content: 'You are one specialist in a sixteen-role engineering DAG. Follow the current role task and its exact output format. Do not repeat upstream role responses. Do not invent repository paths, test results, file changes, metrics, or implementation facts. If evidence is absent, mark it UNKNOWN while still producing the requested role-specific structure.'
+          },
+          { role: 'user', content: prompt }
+        ],
         stream: false,
         max_tokens: maxTokens,
         temperature
@@ -127,7 +133,7 @@ const ROLE_FORMAT_INSTRUCTIONS = Object.freeze({
     'FILE: UnifiedField/QuantumLab/sixteen-role-orchestrator.test.cjs | PROPOSED CHANGE: <regression test> | DEPENDENCIES: sixteen-role-orchestrator.cjs | VERIFICATION: node --test UnifiedField/QuantumLab/sixteen-role-orchestrator.test.cjs',
     'FILE: UnifiedField/QuantumLab/sixteen-role-orchestrator.cjs | PROPOSED CHANGE: <small concrete change> | DEPENDENCIES: none | VERIFICATION: node --check UnifiedField/QuantumLab/sixteen-role-orchestrator.cjs',
     'Do not invent or use any other file path. Propose changes only; do not claim edits were made.'
-  ].join('\\n')
+  ].join('\n')
 });
 
 const ROLE_SIGNAL_ANCHORS = Object.freeze({
