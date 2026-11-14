@@ -204,7 +204,16 @@ test('role-specificity failure triggers one targeted repair and opens the qualit
   assert.equal(result.roleRecords[0].roleSpecificity.roleSpecificityPassed, true);
 });
 
-test('builder specificity requires exactly three complete change rows', () => {
+test('role-specific acceptance requires substantive output and at least two literal anchors', () => {
+  assert.equal(assessRoleSpecificity('architect', validRoleResponse('architect')).roleSpecificityPassed, true);
+  assert.equal(assessRoleSpecificity('requirements', 'Acceptance criteria are required.').roleSpecificityPassed, false);
+  assert.equal(
+    assessRoleSpecificity('requirements', 'Acceptance criteria are required, and this longer sentence still contains only one required signal while omitting measurable pass/fail outcomes.').roleSpecificityPassed,
+    false
+  );
+});
+
+test('builder specificity requires exactly three complete change rows and approved target paths', () => {
   assert.equal(assessRoleSpecificity('builder', validRoleResponse('builder')).roleSpecificityPassed, true);
   assert.equal(assessRoleSpecificity('builder', 'FILE: x | PROPOSED CHANGE: y | DEPENDENCIES: z | VERIFICATION: q').roleSpecificityPassed, false);
   const inventedPath = Array(3).fill(
