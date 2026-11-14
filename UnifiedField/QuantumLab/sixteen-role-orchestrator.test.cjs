@@ -208,7 +208,7 @@ test('role-specific acceptance requires substantive output and at least two lite
   assert.equal(assessRoleSpecificity('architect', validRoleResponse('architect')).roleSpecificityPassed, true);
   assert.equal(assessRoleSpecificity('requirements', 'Acceptance criteria are required.').roleSpecificityPassed, false);
   assert.equal(
-    assessRoleSpecificity('requirements', 'Acceptance criteria are required, and this longer sentence still contains only one required signal while omitting measurable pass/fail outcomes.').roleSpecificityPassed,
+    assessRoleSpecificity('requirements', 'Acceptance criteria are required, and this longer sentence still contains only one required signal while omitting any measurable pass or fail threshold.').roleSpecificityPassed,
     false
   );
 });
