@@ -66,3 +66,13 @@ The endpoint guard accepts HTTP(S) loopback destinations only. The runner writes
 ```powershell
 node --test (Join-Path $root 'sixteen-role-orchestrator.test.cjs')
 ```
+
+## Role-specific acceptance and bounded repair
+
+Each role now has a required deliverable and a role-specific signal check. A non-empty, non-refusal response receives at most one targeted repair attempt when it is truncated (`finish_reason=length`) or fails its role-specific signal check. The retry is deterministic (`temperature=0`); truncation raises the token budget within the existing 512-token cap, while a specificity repair keeps the original budget. Empty and refusal responses are not retried. A failed retry remains `review_required` and blocks dependent roles.
+
+The Builder deliverable is exactly three non-empty rows. Every row must contain all four fields: `FILE:`, `PROPOSED CHANGE:`, `DEPENDENCIES:`, and `VERIFICATION:`.
+
+`qualityGate.passed` now requires all sixteen roles to complete and pass their role-specific signal check. This remains a structural/content-shape gate, not factual or semantic verification: `semanticReviewRequired` stays true, report `status` remains `review_required`, and `ok` remains false until independent review occurs.
+
+For a low-memory sequential baseline, use `--max-parallel=1` and the exact locally installed model ID. The runner does not install or download models.
