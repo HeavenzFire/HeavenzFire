@@ -2,7 +2,33 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { ROLES, validateEndpoint, parseRoleModelsJson, runSixteenRoleField } = require('./sixteen-role-orchestrator.cjs');
+const { ROLES, validateEndpoint, parseRoleModelsJson, assessRoleSpecificity, runSixteenRoleField } = require('./sixteen-role-orchestrator.cjs');
+
+function validRoleResponse(roleId) {
+  const responses = {
+    architect: 'Component boundaries, interface ownership, and concrete contracts are defined.',
+    planner: 'Step sequence, dependencies, ordered checkpoints, and implementation order are listed.',
+    researcher: 'Evidence sources, supplied facts, unknowns, and assumptions are separated.',
+    requirements: 'Acceptance criteria define measurable pass/fail outcomes.',
+    designer: 'API schema contracts and failure behavior are specified.',
+    builder: [
+      'FILE: UnifiedField/QuantumLab/a.cjs | PROPOSED CHANGE: add bounded logic | DEPENDENCIES: none | VERIFICATION: node test',
+      'FILE: UnifiedField/QuantumLab/b.cjs | PROPOSED CHANGE: add regression coverage | DEPENDENCIES: a.cjs | VERIFICATION: node test',
+      'FILE: UnifiedField/QuantumLab/c.cjs | PROPOSED CHANGE: document operation | DEPENDENCIES: a.cjs | VERIFICATION: review docs'
+    ].join('\n'),
+    integrator: 'Integration wiring and contract mismatches are identified.',
+    'test-engineer': 'Test cases include expected assertions and executable inputs.',
+    'security-reviewer': 'Threats, trust boundaries, and mitigation controls are identified.',
+    'adversarial-verifier': 'Negative tests, abuse cases, and falsifiable failure conditions are specified.',
+    'reliability-engineer': 'Timeout, retry, recovery, idempotency, and crash behavior are covered.',
+    'performance-analyst': 'Latency, throughput, token and memory benchmarks are measurable.',
+    documentation: 'Operator runbook, usage instructions, and limitations are documented.',
+    'evidence-auditor': 'Claims are classified verified, unverified, or contradicted with evidence references.',
+    'release-manager': 'Release gates, rollback conditions, and go/no-go decision are defined.',
+    synthesis: 'Cross-role agreement, conflicts, risks, and prioritized next actions are summarized.'
+  };
+  return responses[roleId];
+}
 
 test('registry has sixteen unique roles with resolvable dependencies', () => {
   assert.equal(ROLES.length, 16);
@@ -37,7 +63,7 @@ test('runs all roles through the DAG with bounded concurrency and retains semant
       called.push(task.roleId);
       await new Promise(resolve => setTimeout(resolve, 3));
       active -= 1;
-      return { response: task.roleId + ': evidence is not supplied; verify before claiming success.', finishReason: 'stop', durationMs: 3 };
+      return { response: validRoleResponse(task.roleId), finishReason: 'stop', durationMs: 3 };
     }
   });
   assert.equal(result.roleCount, 16);
@@ -48,6 +74,7 @@ test('runs all roles through the DAG with bounded concurrency and retains semant
   assert.equal(called.length, 16);
   assert.equal(result.qualityGate.passed, true);
   assert.equal(result.qualityGate.structuralChecksOnly, true);
+  assert.equal(result.qualityGate.roleSpecificityPassed, true);
   assert.equal(result.qualityGate.semanticReviewRequired, true);
   assert.equal(result.status, 'review_required');
   assert.equal(result.ok, false);
@@ -72,7 +99,7 @@ test('routes roles across configured local models and emits live progress events
     invoke: async task => {
       calls.push({ roleId: task.roleId, model: task.model });
       return {
-        response: task.roleId + ': bounded result; verify independently.',
+        response: validRoleResponse(task.roleId),
         finishReason: 'stop',
         durationMs: 5,
         model: task.roleId === 'researcher' ? 'provider-reported-alias' : task.model
@@ -130,20 +157,56 @@ test('refusal detection handles leading whitespace', async () => {
   assert.equal(result.roleRecords[0].refusal, true);
 });
 
-test('truncated architect output fails closed and blocks dependent roles', async () => {
+test('truncated architect output receives one bounded repair attempt and still fails closed when retry is truncated', async () => {
   const called = [];
   const result = await runSixteenRoleField({
-    goal: 'Check truncation handling.',
+    goal: 'Check truncation repair handling.',
+    maxTokens: 128,
     invoke: async task => {
-      called.push(task.roleId);
-      return { response: 'partial output', finishReason: task.roleId === 'architect' ? 'length' : 'stop' };
+      called.push(task);
+      return { response: 'partial output', finishReason: 'length' };
     }
   });
   assert.equal(result.counts.reviewRequired, 1);
   assert.equal(result.counts.blocked, 15);
   assert.equal(result.counts.completed, 0);
-  assert.deepEqual(called, ['architect']);
+  assert.equal(called.length, 2);
+  assert.equal(called[0].roleId, 'architect');
+  assert.equal(called[1].roleId, 'architect');
+  assert.equal(called[1].repairAttempt, 1);
+  assert.equal(called[1].maxTokens, 192);
+  assert.equal(result.roleRecords[0].repair.attempted, true);
+  assert.equal(result.roleRecords[0].repair.reason, 'truncated_output');
   assert.equal(result.qualityGate.passed, false);
+});
+
+test('role-specificity failure triggers one targeted repair and opens the quality gate only after all roles pass', async () => {
+  const calls = [];
+  const result = await runSixteenRoleField({
+    goal: 'Verify role-specific repair and acceptance.',
+    maxParallel: 1,
+    invoke: async task => {
+      calls.push(task);
+      if (task.roleId === 'architect' && !task.repairAttempt) {
+        return { response: 'A generic summary with no architect-specific deliverable.', finishReason: 'stop' };
+      }
+      return { response: validRoleResponse(task.roleId), finishReason: 'stop', durationMs: 4 };
+    }
+  });
+  assert.equal(calls.filter(task => task.roleId === 'architect').length, 2);
+  assert.equal(calls.find(task => task.roleId === 'architect' && task.repairAttempt).temperature, 0);
+  assert.equal(result.counts.completed, 16);
+  assert.equal(result.counts.failed, 0);
+  assert.equal(result.counts.blocked, 0);
+  assert.equal(result.qualityGate.passed, true);
+  assert.equal(result.qualityGate.roleSpecificityPassed, true);
+  assert.equal(result.roleRecords[0].repair.reason, 'role_specificity');
+  assert.equal(result.roleRecords[0].roleSpecificity.roleSpecificityPassed, true);
+});
+
+test('builder specificity requires exactly three complete change rows', () => {
+  assert.equal(assessRoleSpecificity('builder', validRoleResponse('builder')).roleSpecificityPassed, true);
+  assert.equal(assessRoleSpecificity('builder', 'FILE: x | PROPOSED CHANGE: y | DEPENDENCIES: z | VERIFICATION: q').roleSpecificityPassed, false);
 });
 
 test('refusal output is not counted as a completed role', async () => {
@@ -154,6 +217,42 @@ test('refusal output is not counted as a completed role', async () => {
   assert.equal(result.counts.reviewRequired, 1);
   assert.equal(result.counts.blocked, 15);
   assert.equal(result.roleRecords[0].refusal, true);
+});
+
+test('empty and refusal outputs do not trigger a repair attempt', async () => {
+  for (const response of ['', 'I cannot assist with that request.']) {
+    let calls = 0;
+    const result = await runSixteenRoleField({
+      goal: 'Verify repair does not retry empty or refusal output.',
+      invoke: async () => {
+        calls += 1;
+        return { response, finishReason: 'stop' };
+      }
+    });
+    assert.equal(calls, 1);
+    assert.equal(result.counts.reviewRequired, 1);
+    assert.equal(result.counts.blocked, 15);
+    assert.equal(result.roleRecords[0].repair.attempted, false);
+  }
+});
+
+test('failed targeted repair is recorded and blocks dependent roles without a second retry', async () => {
+  let calls = 0;
+  const result = await runSixteenRoleField({
+    goal: 'Verify repair failure is bounded and auditable.',
+    invoke: async task => {
+      calls += 1;
+      if (task.repairAttempt) throw new Error('synthetic repair failure');
+      return { response: 'Generic response without an architect deliverable.', finishReason: 'stop' };
+    }
+  });
+  assert.equal(calls, 2);
+  assert.equal(result.counts.reviewRequired, 1);
+  assert.equal(result.counts.blocked, 15);
+  assert.equal(result.counts.failed, 0);
+  assert.equal(result.roleRecords[0].repair.attempts, 2);
+  assert.match(result.roleRecords[0].repair.retryError, /synthetic repair failure/);
+  assert.equal(result.qualityGate.passed, false);
 });
 
 test('worker exceptions are recorded as failures and never become success', async () => {
