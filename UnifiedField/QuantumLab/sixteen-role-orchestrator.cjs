@@ -144,9 +144,16 @@ function assessRoleSpecificity(roleId, response) {
   if (roleId === 'builder') {
     const rows = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
     const required = ['FILE:', 'PROPOSED CHANGE:', 'DEPENDENCIES:', 'VERIFICATION:'];
-    const valid = rows.length === 3 && rows.every(row =>
-      required.every(label => row.toUpperCase().includes(label))
-    );
+    const allowedFiles = new Set([
+      'UnifiedField/QuantumLab/sixteen-role-orchestrator.cjs',
+      'UnifiedField/QuantumLab/sixteen-role-orchestrator.test.cjs'
+    ]);
+    const valid = rows.length === 3 && rows.every(row => {
+      const fileField = row.match(/\\bFILE:\\s*([^|]+)/i);
+      const filePath = fileField ? fileField[1].trim().replace(/\\\\/g, '/') : '';
+      return allowedFiles.has(filePath) &&
+        required.every(label => row.toUpperCase().includes(label));
+    });
     return {
       roleSpecificityPassed: valid,
       reason: valid ? null : 'builder_requires_three_complete_change_rows',
