@@ -52,12 +52,15 @@ test('runs all roles through the DAG with bounded concurrency and retains semant
   let active = 0;
   let peak = 0;
   const called = [];
+  const context = 'FILE: UnifiedField/QuantumLab/sixteen-role-orchestrator.cjs\\nTEST: role-specific repair gate';
   const result = await runSixteenRoleField({
     goal: 'Test a bounded local orchestration run.',
+    context,
     endpoint: 'http://127.0.0.1:11800',
     maxParallel: 2,
     maxTokens: 128,
     invoke: async task => {
+      assert.ok(task.prompt.includes(context));
       active += 1;
       peak = Math.max(peak, active);
       called.push(task.roleId);
@@ -66,7 +69,7 @@ test('runs all roles through the DAG with bounded concurrency and retains semant
       return { response: validRoleResponse(task.roleId), finishReason: 'stop', durationMs: 3 };
     }
   });
-  assert.equal(result.roleCount, 16);
+  assert.equal(result.roleCount, 16);\n  assert.equal(result.contextChars, context.length);\n  assert.match(result.contextSha256, /^[a-f0-9]{64}$/);
   assert.equal(result.counts.completed, 16);
   assert.equal(result.counts.failed, 0);
   assert.equal(result.counts.blocked, 0);
