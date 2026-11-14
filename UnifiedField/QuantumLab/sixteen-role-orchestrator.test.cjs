@@ -217,8 +217,8 @@ test('builder prompt contains the exact approved three-row output contract', () 
   const builder = ROLES.find(role => role.id === 'builder');
   const prompt = makePrompt(builder, 'Review the current QuantumLab orchestrator.', []);
   assert.match(prompt, /Return exactly three non-empty lines/);
-  assert.match(prompt, /UnifiedField\\/QuantumLab\\/sixteen-role-orchestrator\\.cjs/);
-  assert.match(prompt, /UnifiedField\\/QuantumLab\\/sixteen-role-orchestrator\\.test\\.cjs/);
+  assert.ok(prompt.includes('UnifiedField/QuantumLab/sixteen-role-orchestrator.cjs'));
+  assert.ok(prompt.includes('UnifiedField/QuantumLab/sixteen-role-orchestrator.test.cjs'));
   assert.match(prompt, /Do not repeat or paraphrase upstream role responses/);
 });
 
