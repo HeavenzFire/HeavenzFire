@@ -12,9 +12,9 @@ function validRoleResponse(roleId) {
     requirements: 'Acceptance criteria define measurable pass/fail outcomes.',
     designer: 'API schema contracts and failure behavior are specified.',
     builder: [
-      'FILE: UnifiedField/QuantumLab/a.cjs | PROPOSED CHANGE: add bounded logic | DEPENDENCIES: none | VERIFICATION: node test',
-      'FILE: UnifiedField/QuantumLab/b.cjs | PROPOSED CHANGE: add regression coverage | DEPENDENCIES: a.cjs | VERIFICATION: node test',
-      'FILE: UnifiedField/QuantumLab/c.cjs | PROPOSED CHANGE: document operation | DEPENDENCIES: a.cjs | VERIFICATION: review docs'
+      'FILE: UnifiedField/QuantumLab/sixteen-role-orchestrator.cjs | PROPOSED CHANGE: add bounded logic | DEPENDENCIES: none | VERIFICATION: node test',
+      'FILE: UnifiedField/QuantumLab/sixteen-role-orchestrator.test.cjs | PROPOSED CHANGE: add regression coverage | DEPENDENCIES: a.cjs | VERIFICATION: node test',
+      'FILE: UnifiedField/QuantumLab/sixteen-role-orchestrator.cjs | PROPOSED CHANGE: document operation | DEPENDENCIES: a.cjs | VERIFICATION: review docs'
     ].join('\n'),
     integrator: 'Integration wiring and contract mismatches are identified.',
     'test-engineer': 'Test cases include expected assertions and executable inputs.',
@@ -207,6 +207,10 @@ test('role-specificity failure triggers one targeted repair and opens the qualit
 test('builder specificity requires exactly three complete change rows', () => {
   assert.equal(assessRoleSpecificity('builder', validRoleResponse('builder')).roleSpecificityPassed, true);
   assert.equal(assessRoleSpecificity('builder', 'FILE: x | PROPOSED CHANGE: y | DEPENDENCIES: z | VERIFICATION: q').roleSpecificityPassed, false);
+  const inventedPath = Array(3).fill(
+    'FILE: UnifiedField/QuantumLab/unsafe.cjs | PROPOSED CHANGE: x | DEPENDENCIES: none | VERIFICATION: node test'
+  ).join('\\n');
+  assert.equal(assessRoleSpecificity('builder', inventedPath).roleSpecificityPassed, false);
 });
 
 test('refusal output is not counted as a completed role', async () => {
