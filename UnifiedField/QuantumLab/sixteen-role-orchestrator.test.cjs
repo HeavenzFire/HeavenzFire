@@ -15,7 +15,7 @@ function validRoleResponse(roleId) {
       'FILE: UnifiedField/QuantumLab/a.cjs | PROPOSED CHANGE: add bounded logic | DEPENDENCIES: none | VERIFICATION: node test',
       'FILE: UnifiedField/QuantumLab/b.cjs | PROPOSED CHANGE: add regression coverage | DEPENDENCIES: a.cjs | VERIFICATION: node test',
       'FILE: UnifiedField/QuantumLab/c.cjs | PROPOSED CHANGE: document operation | DEPENDENCIES: a.cjs | VERIFICATION: review docs'
-    ].join('\\n'),
+    ].join('\n'),
     integrator: 'Integration wiring and contract mismatches are identified.',
     'test-engineer': 'Test cases include expected assertions and executable inputs.',
     'security-reviewer': 'Threats, trust boundaries, and mitigation controls are identified.',
@@ -73,7 +73,8 @@ test('runs all roles through the DAG with bounded concurrency and retains semant
   assert.ok(peak <= 2);
   assert.equal(called.length, 16);
   assert.equal(result.qualityGate.passed, true);
-  assert.equal(result.qualityGate.structuralChecksOnly, true);\n  assert.equal(result.qualityGate.roleSpecificityPassed, true);
+  assert.equal(result.qualityGate.structuralChecksOnly, true);
+  assert.equal(result.qualityGate.roleSpecificityPassed, true);
   assert.equal(result.qualityGate.semanticReviewRequired, true);
   assert.equal(result.status, 'review_required');
   assert.equal(result.ok, false);
