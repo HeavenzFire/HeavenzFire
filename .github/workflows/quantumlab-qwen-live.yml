@@ -1,0 +1,97 @@
+name: QuantumLab Qwen 0.5B live inference
+
+on:
+  pull_request:
+    paths:
+      - 'UnifiedField/QuantumLab/sixteen-role-orchestrator.cjs'
+      - 'UnifiedField/QuantumLab/sixteen-role-orchestrator.test.cjs'
+      - '.github/workflows/quantumlab-qwen-live.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'UnifiedField/QuantumLab/sixteen-role-orchestrator.cjs'
+      - 'UnifiedField/QuantumLab/sixteen-role-orchestrator.test.cjs'
+      - '.github/workflows/quantumlab-qwen-live.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quantumlab-qwen-live-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  qwen-live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Ollama
+        run: |
+          curl -fsSL https://ollama.com/install.sh | sh
+
+      - name: Start local Ollama service
+        shell: bash
+        run: |
+          nohup ollama serve >/tmp/ollama-serve.log 2>&1 &
+          ready=0
+          for attempt in $(seq 1 45); do
+            if curl --silent --fail http://127.0.0.1:11434/api/tags >/dev/null; then
+              ready=1
+              break
+            fi
+            sleep 2
+          done
+          if [ "$ready" -ne 1 ]; then
+            cat /tmp/ollama-serve.log
+            echo "Ollama did not become ready."
+            exit 1
+          fi
+
+      - name: Pull exact Qwen 0.5B baseline
+        run: ollama pull qwen2.5:0.5b
+
+      - name: Build bounded repository evidence context
+        shell: bash
+        run: |
+          mkdir -p UnifiedField/QuantumLab/reports
+          {
+            echo "TRACKED QUANTUMLAB FILES"
+            git ls-files UnifiedField/QuantumLab/sixteen-role-orchestrator.cjs UnifiedField/QuantumLab/sixteen-role-orchestrator.test.cjs UnifiedField/QuantumLab/README-16-ROLE-ORCHESTRATOR.md
+            echo
+            echo "ROLE REGISTRY AND LOCAL HTTP CONTRACT"
+            sed -n '1,94p' UnifiedField/QuantumLab/sixteen-role-orchestrator.cjs
+            echo
+            echo "REGRESSION TEST NAMES"
+            grep -n "^test(" UnifiedField/QuantumLab/sixteen-role-orchestrator.test.cjs
+            echo
+            echo "QUALITY GATE DOCUMENTATION"
+            sed -n '20,62p' UnifiedField/QuantumLab/README-16-ROLE-ORCHESTRATOR.md
+          } > /tmp/quantumlab-context-full.txt
+          head -c 3600 /tmp/quantumlab-context-full.txt > UnifiedField/QuantumLab/reports/qwen-live-context.md
+          wc -c UnifiedField/QuantumLab/reports/qwen-live-context.md
+
+      - name: Run all sixteen roles sequentially against Qwen 0.5B
+        run: |
+          node UnifiedField/QuantumLab/sixteen-role-orchestrator.cjs "Review only the actual QuantumLab source, tests, and documentation supplied in the repository evidence context. Identify concrete implementation contracts, test coverage, security boundaries, failure modes, and release blockers. Cite exact paths or mark UNKNOWN. Do not invent component names, file paths, coverage percentages, or test results." --context-file=UnifiedField/QuantumLab/reports/qwen-live-context.md --endpoint=http://127.0.0.1:11434 --model=qwen2.5:0.5b --max-parallel=1 --max-tokens=256 --timeout-ms=120000
+
+      - name: Upload Qwen run report and server log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quantumlab-qwen-0.5b-live-report
+          path: |
+            UnifiedField/QuantumLab/reports/qwen-live-context.md
+            UnifiedField/QuantumLab/reports/latest-sixteen-role-run.json
+            UnifiedField/QuantumLab/reports/runs/*.json
+            /tmp/ollama-serve.log
+          if-no-files-found: warn
+          retention-days: 14
