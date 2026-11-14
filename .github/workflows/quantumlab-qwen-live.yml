@@ -59,9 +59,32 @@ jobs:
       - name: Pull exact Qwen 0.5B baseline
         run: ollama pull qwen2.5:0.5b
 
+      - name: Build bounded repository evidence context
+        shell: bash
+        run: |
+          mkdir -p UnifiedField/QuantumLab/reports
+          {
+            echo "REPOSITORY FILE INVENTORY"
+            git ls-files UnifiedField/QuantumLab
+            echo
+            echo "ORCHESTRATOR SOURCE EXCERPT"
+            sed -n '1,190p' UnifiedField/QuantumLab/sixteen-role-orchestrator.cjs
+            echo
+            echo "ORCHESTRATOR PROMPT AND EXECUTION CONTRACT"
+            sed -n '194,230p' UnifiedField/QuantumLab/sixteen-role-orchestrator.cjs
+            echo
+            echo "REGRESSION TEST NAMES"
+            grep -n "^test(" UnifiedField/QuantumLab/sixteen-role-orchestrator.test.cjs
+            echo
+            echo "DOCUMENTED CONTRACT"
+            sed -n '1,180p' UnifiedField/QuantumLab/README-16-ROLE-ORCHESTRATOR.md
+          } > /tmp/quantumlab-context-full.txt
+          head -c 7600 /tmp/quantumlab-context-full.txt > UnifiedField/QuantumLab/reports/qwen-live-context.md
+          wc -c UnifiedField/QuantumLab/reports/qwen-live-context.md
+
       - name: Run all sixteen roles sequentially against Qwen 0.5B
         run: |
-          node UnifiedField/QuantumLab/sixteen-role-orchestrator.cjs "Perform an evidence-bounded review of the checked-out HeavenzFire Unified Field QuantumLab repository. Identify concrete source files, contracts, test coverage, security boundaries, failure modes, and release blockers. Do not claim commands were executed or tests passed unless this workflow supplies that evidence." --endpoint=http://127.0.0.1:11434 --model=qwen2.5:0.5b --max-parallel=1 --max-tokens=512 --timeout-ms=120000
+          node UnifiedField/QuantumLab/sixteen-role-orchestrator.cjs "Review only the actual QuantumLab source, tests, and documentation supplied in the repository evidence context. Identify concrete implementation contracts, test coverage, security boundaries, failure modes, and release blockers. Cite exact paths or mark UNKNOWN. Do not invent component names, file paths, coverage percentages, or test results." --context-file=UnifiedField/QuantumLab/reports/qwen-live-context.md --endpoint=http://127.0.0.1:11434 --model=qwen2.5:0.5b --max-parallel=1 --max-tokens=512 --timeout-ms=120000
 
       - name: Upload Qwen run report and server log
         if: always()
@@ -69,6 +92,7 @@ jobs:
         with:
           name: quantumlab-qwen-0.5b-live-report
           path: |
+            UnifiedField/QuantumLab/reports/qwen-live-context.md
             UnifiedField/QuantumLab/reports/latest-sixteen-role-run.json
             UnifiedField/QuantumLab/reports/runs/*.json
             /tmp/ollama-serve.log
