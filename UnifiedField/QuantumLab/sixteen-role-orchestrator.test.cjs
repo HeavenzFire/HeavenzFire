@@ -69,7 +69,9 @@ test('runs all roles through the DAG with bounded concurrency and retains semant
       return { response: validRoleResponse(task.roleId), finishReason: 'stop', durationMs: 3 };
     }
   });
-  assert.equal(result.roleCount, 16);\n  assert.equal(result.contextChars, context.length);\n  assert.match(result.contextSha256, /^[a-f0-9]{64}$/);
+  assert.equal(result.roleCount, 16);
+  assert.equal(result.contextChars, context.length);
+  assert.match(result.contextSha256, /^[a-f0-9]{64}$/);
   assert.equal(result.counts.completed, 16);
   assert.equal(result.counts.failed, 0);
   assert.equal(result.counts.blocked, 0);
