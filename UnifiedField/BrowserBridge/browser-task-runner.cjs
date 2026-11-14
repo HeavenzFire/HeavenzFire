@@ -2,7 +2,6 @@
 
 const fs = require('node:fs');
 const os = require('node:os');
-const net = require('node:net');
 const path = require('node:path');
 const puppeteer = require('puppeteer-core');
 
@@ -12,15 +11,6 @@ const EDGE_CANDIDATES = [
   path.join(process.env['ProgramFiles(x86)'] || 'C:\\Program Files (x86)', 'Microsoft', 'Edge', 'Application', 'msedge.exe'),
   path.join(process.env.ProgramFiles || 'C:\\Program Files', 'Microsoft', 'Edge', 'Application', 'msedge.exe')
 ].filter(Boolean);
-
-function isValidHostname(hostname) {
-  const unwrapped = hostname.startsWith('[') && hostname.endsWith(']') ? hostname.slice(1, -1) : hostname;
-  if (net.isIP(unwrapped)) return true;
-  if (hostname.length > 253) return false;
-  return hostname.split('.').every(function (label) {
-    return /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(label);
-  });
-}
 
 function validateTask(task) {
   if (!task || typeof task !== 'object' || Array.isArray(task)) throw new Error('Task must be a JSON object.');
@@ -35,7 +25,7 @@ function validateTask(task) {
     if (typeof origin !== 'string' || origin !== origin.toLowerCase()) throw new Error('allowedOrigins entries must be lowercase exact HTTP(S) origins.');
     let parsed;
     try { parsed = new URL(origin); } catch { throw new Error('allowedOrigins entries must be valid HTTP(S) origins.'); }
-    if (!['http:', 'https:'].includes(parsed.protocol) || parsed.origin !== origin || parsed.username || parsed.password || !isValidHostname(parsed.hostname)) throw new Error('allowedOrigins entries must be canonical origins with valid hostnames and no path, query, or credentials.');
+    if (!['http:', 'https:'].includes(parsed.protocol) || parsed.origin !== origin || parsed.username || parsed.password) throw new Error('allowedOrigins entries must be canonical origins with no path, query, or credentials.');
     return origin;
   });
   if (new Set(origins).size !== origins.length || !origins.includes(url.origin)) throw new Error('The initial URL origin must appear exactly once in allowedOrigins.');
@@ -44,9 +34,17 @@ function validateTask(task) {
   const timeoutMs = Number(task.timeoutMs || 10000);
   if (!Number.isInteger(timeoutMs) || timeoutMs < 1000 || timeoutMs > 20000) throw new Error('timeoutMs must be an integer from 1000 to 20000.');
   for (const a of task.actions) {
-    if (!a || !['click', 'fill', 'waitForText'].includes(a.type) || typeof a.selector !== 'string' || a.selector.length > 300) throw new Error('Each action must be click, fill, or waitForText with a selector <= 300 characters.');
-    if (a.type === 'fill' && (typeof a.value !== 'string' || a.value.length > 2000)) throw new Error('fill value must be a string <= 2000 characters.');
-    if (a.type === 'waitForText' && (typeof a.text !== 'string' || a.text.length > 1000)) throw new Error('waitForText text must be a string <= 1000 characters.');
+    if (!a || !['click', 'fill', 'waitForText', 'navigate', 'extractText'].includes(a.type)) throw new Error('Unsupported browser action type.');
+    if (a.type === 'navigate') {
+      if (typeof a.url !== 'string' || a.url.length > 2048) throw new Error('navigate requires a URL <= 2048 characters.');
+      const target = new URL(a.url);
+      if (!['http:', 'https:'].includes(target.protocol) || target.username || target.password || target.search || target.hash || !origins.includes(target.origin)) throw new Error('navigate URL must use an exact allowlisted origin without credentials, query, or fragment.');
+    } else {
+      if (typeof a.selector !== 'string' || !a.selector.trim() || a.selector.length > 300) throw new Error('Browser action selector must be 1-300 characters.');
+      if (a.type === 'fill' && (typeof a.value !== 'string' || a.value.length > 2000)) throw new Error('fill value must be a string <= 2000 characters.');
+      if (a.type === 'waitForText' && (typeof a.text !== 'string' || a.text.length > 1000)) throw new Error('waitForText text must be a string <= 1000 characters.');
+      if (a.type === 'extractText' && a.maxChars !== undefined && (!Number.isInteger(a.maxChars) || a.maxChars < 1 || a.maxChars > 12000)) throw new Error('extractText maxChars must be 1-12000.');
+    }
   }
   for (const a of task.assertions) {
     if (!a || !['textEquals', 'titleEquals', 'pathEquals'].includes(a.type)) throw new Error('Assertions must be textEquals, titleEquals, or pathEquals.');
@@ -63,27 +61,53 @@ function findEdge() {
   return edge;
 }
 
-async function runTask(taskInput) {
+function getChromeCdpUrl() {
+  const configured = String(process.env.HF_BROWSER_CDP_URL || '').trim();
+  if (!configured) return null;
+  let endpoint;
+  try { endpoint = new URL(configured); } catch { throw new Error('HF_BROWSER_CDP_URL_invalid'); }
+  if (endpoint.protocol !== 'http:' || !['127.0.0.1', 'localhost', '::1', '[::1]'].includes(endpoint.hostname) || endpoint.username || endpoint.password || endpoint.pathname !== '/' || endpoint.search || endpoint.hash) {
+    throw new Error('HF_BROWSER_CDP_URL_must_be_http_loopback_root');
+  }
+  return endpoint.origin;
+}
+
+async function runTask(taskInput, options) {
   const checked = validateTask(taskInput);
   const task = checked.task;
   const started = Date.now();
-  const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'hf-browser-task-'));
+  const cdpUrl = getChromeCdpUrl();
+  const browserWSEndpoint = options && typeof options.browserWSEndpoint === 'string' ? options.browserWSEndpoint : null;
+  const keepPageOpen = !!(options && options.keepPageOpen);
+  const profile = (cdpUrl || browserWSEndpoint) ? null : fs.mkdtempSync(path.join(os.tmpdir(), 'hf-browser-task-'));
   const evidencePath = process.env.HF_BROWSER_EVIDENCE_PATH || path.join(ROOT, 'browser-runner-evidence.jsonl');
   const blockedOrigins = new Set();
+  const extractedText = [];
   let browser;
+  let page;
+  let connectedToPersistentChrome = false;
   try {
-    browser = await puppeteer.launch({
-      executablePath: findEdge(),
-      headless: true,
-      userDataDir: profile,
-      timeout: 10000,
-      protocolTimeout: checked.timeoutMs + 5000,
-      args: [
-        '--disable-background-networking', '--disable-component-update', '--disable-sync',
-        '--disable-extensions', '--no-first-run', '--no-default-browser-check', '--no-proxy-server'
-      ]
-    });
-    const page = await browser.newPage();
+    if (browserWSEndpoint) {
+      browser = await puppeteer.connect({ browserWSEndpoint, defaultViewport: null });
+      connectedToPersistentChrome = true;
+    } else if (cdpUrl) {
+      browser = await puppeteer.connect({ browserURL: cdpUrl, defaultViewport: null });
+      connectedToPersistentChrome = true;
+    } else {
+      browser = await puppeteer.launch({
+        executablePath: findEdge(),
+        headless: true,
+        userDataDir: profile,
+        timeout: 10000,
+        protocolTimeout: 5000,
+        args: [
+          '--disable-background-networking', '--disable-component-update', '--disable-sync',
+          '--disable-extensions', '--no-first-run', '--no-default-browser-check', '--no-proxy-server'
+        ]
+      });
+    }
+    page = await browser.newPage();
+    await page.bringToFront();
     page.setDefaultTimeout(checked.timeoutMs);
     page.setDefaultNavigationTimeout(checked.timeoutMs);
     await page.setRequestInterception(true);
@@ -96,21 +120,22 @@ async function runTask(taskInput) {
         request.abort('blockedbyclient').catch(function () {});
       }
     });
-    const mainTarget = page.target();
-    browser.on('targetcreated', function (target) {
-      if (target === mainTarget || target.type() !== 'page') return;
-      target.page().then(function (popup) { return popup && popup.close(); }).catch(function () {});
-    });
     page.on('popup', function (popup) { popup.close().catch(function () {}); });
-    await page.evaluateOnNewDocument(function () {
-      // Block script-created windows before page scripts execute; targetcreated is a second guard.
-      window.open = function () { return null; };
-    });
     await page.goto(task.url, { waitUntil: 'domcontentloaded', timeout: checked.timeoutMs });
 
     const actionResults = [];
     for (const action of task.actions) {
-      if (action.type === 'click') await page.click(action.selector);
+      if (action.type === 'navigate') {
+        await page.goto(action.url, { waitUntil: 'domcontentloaded', timeout: checked.timeoutMs });
+        actionResults.push({ type: action.type, ok: true, url: page.url() });
+        continue;
+      } else if (action.type === 'extractText') {
+        const text = await page.$eval(action.selector, function (element) { return (element.innerText || element.textContent || '').trim(); });
+        const value = text.slice(0, action.maxChars || 12000);
+        extractedText.push({ selector: action.selector, text: value, truncated: text.length > value.length });
+        actionResults.push({ type: action.type, ok: true, characters: value.length, truncated: text.length > value.length });
+        continue;
+      } else if (action.type === 'click') await page.click(action.selector);
       else if (action.type === 'fill') {
         await page.$eval(action.selector, function (element, value) {
           element.focus();
@@ -146,7 +171,10 @@ async function runTask(taskInput) {
       schema: 'heavenzfire.browser-task-result.v1',
       taskId: task.id,
       status: 'PASS',
-      browser: 'Microsoft Edge headless, isolated temporary profile',
+      browser: (cdpUrl || browserWSEndpoint) ? 'Google Chrome visible, persistent automation profile' : 'Microsoft Edge headless, isolated temporary profile',
+      finalUrl: page.url(),
+      pageTitle: await page.title(),
+      extractedText,
       durationMs: Date.now() - started,
       actionResults: actionResults,
       assertionResults: assertionResults,
@@ -169,8 +197,11 @@ async function runTask(taskInput) {
     try { fs.appendFileSync(evidencePath, JSON.stringify({ at: new Date().toISOString(), taskId: task.id, status: result.status, durationMs: result.durationMs, error: result.error, blockedOrigins: result.blockedOrigins }) + os.EOL, 'utf8'); } catch {}
     return result;
   } finally {
-    if (browser) { try { await browser.close(); } catch {} }
-    try { fs.rmSync(profile, { recursive: true, force: true }); } catch {}
+    if (page && !keepPageOpen) { try { await page.close(); } catch {} }
+    if (browser) {
+      try { if (connectedToPersistentChrome) browser.disconnect(); else await browser.close(); } catch {}
+    }
+    if (profile) { try { fs.rmSync(profile, { recursive: true, force: true }); } catch {} }
   }
 }
 
