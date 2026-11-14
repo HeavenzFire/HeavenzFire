@@ -1,0 +1,747 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Evidence-backed capability and integration completeness register. This is an inventory of implementation state, not a claim that configured endpoints are live.",
+  "updatedAt": "2026-11-04",
+  "lifecycle": [
+    "planned",
+    "partial",
+    "implemented_unverified",
+    "blocked",
+    "verified"
+  ],
+  "capabilities": [
+    {
+      "id": "host.inventory",
+      "name": "Windows and Android host inventory",
+      "layer": "substrate",
+      "status": "planned",
+      "owner": "UnifiedField",
+      "implementation": "Read-only platform-specific collectors; Windows PowerShell 5.1 and Android Termux adapters",
+      "substrates": [
+        "Windows 11",
+        "PowerShell 5.1",
+        "Android 14",
+        "Termux"
+      ],
+      "triggers": [
+        "manual-audit",
+        "scheduled-audit-after-opt-in"
+      ],
+      "integrations": [
+        "local-worker",
+        "evidence-ledger"
+      ],
+      "permissions": [
+        "read-only-system-metadata",
+        "no-secret-values"
+      ],
+      "evidence": {
+        "testCommand": null,
+        "testResult": null,
+        "revision": null,
+        "verifiedAt": null
+      },
+      "acceptance": [
+        "bounded-inventory",
+        "redacted-output",
+        "platform-tests",
+        "no-system-mutation"
+      ]
+    },
+    {
+      "id": "service.discovery",
+      "name": "Service and endpoint discovery",
+      "layer": "substrate",
+      "status": "partial",
+      "owner": "UnifiedField",
+      "implementation": "Dashboard configured endpoint list; live identity and dependency discovery still required",
+      "substrates": [
+        "Node.js",
+        "HTTP loopback",
+        "Windows process metadata"
+      ],
+      "triggers": [
+        "startup-scan",
+        "manual-refresh",
+        "service-change-event"
+      ],
+      "integrations": [
+        "dashboard",
+        "local-worker",
+        "service-registry"
+      ],
+      "permissions": [
+        "loopback-probes",
+        "process-metadata-read"
+      ],
+      "evidence": {
+        "testCommand": "node --test UnifiedField/QuantumLab/unified-field-dashboard.test.cjs",
+        "testResult": null,
+        "revision": null,
+        "verifiedAt": null
+      },
+      "acceptance": [
+        "configured-vs-live-distinction",
+        "service-identity-check",
+        "timeouts",
+        "dependency-graph"
+      ]
+    },
+    {
+      "id": "task.contract",
+      "name": "Cross-component task contract",
+      "layer": "control-plane",
+      "status": "partial",
+      "owner": "UnifiedField",
+      "implementation": "heavenzfire.shared-task.v1 contract and proposal/inbox paths; canonical durable service adapter pending",
+      "substrates": [
+        "Node.js",
+        "JSON schema",
+        "loopback HTTP"
+      ],
+      "triggers": [
+        "task-proposal",
+        "adapter-submit"
+      ],
+      "integrations": [
+        "task-inbox",
+        "OpenSourceAIHub",
+        "BrowserBridge",
+        "UnifiedCodebase"
+      ],
+      "permissions": [
+        "propose-by-default",
+        "approval-required-for-execution"
+      ],
+      "evidence": {
+        "testCommand": null,
+        "testResult": null,
+        "revision": null,
+        "verifiedAt": null
+      },
+      "acceptance": [
+        "schema-validation-ingress-egress",
+        "stable-task-id",
+        "idempotency",
+        "approval-state-preserved"
+      ]
+    },
+    {
+      "id": "task.persistence",
+      "name": "Durable task and evidence persistence",
+      "layer": "data",
+      "status": "partial",
+      "owner": "UnifiedField",
+      "implementation": "JSONL bridge journal and separate UnifiedCodebase persistence primitives; canonical cross-process single-writer service not yet verified",
+      "substrates": [
+        "JSONL",
+        "filesystem",
+        "hash-chain"
+      ],
+      "triggers": [
+        "task-state-transition",
+        "restart-recovery"
+      ],
+      "integrations": [
+        "task-contract",
+        "capability-registry",
+        "dashboard"
+      ],
+      "permissions": [
+        "append-only-evidence",
+        "no-secret-payloads"
+      ],
+      "evidence": {
+        "testCommand": "node --test UnifiedField/QuantumLab/uf-bridge-journal.test.cjs",
+        "testResult": null,
+        "revision": null,
+        "verifiedAt": null
+      },
+      "acceptance": [
+        "restart-replay",
+        "corruption-detection",
+        "duplicate-idempotency",
+        "concurrent-writer-protection"
+      ]
+    },
+    {
+      "id": "approval.enforcement",
+      "name": "Trusted approval enforcement",
+      "layer": "security",
+      "status": "partial",
+      "owner": "UnifiedField",
+      "implementation": "Local worker approval verifier hook; verifier configuration and trusted approval issuer must be wired and live-tested",
+      "substrates": [
+        "server-side-verifier",
+        "approval-ledger",
+        "bearer-auth"
+      ],
+      "triggers": [
+        "privileged-task-proposal",
+        "approval-transition"
+      ],
+      "integrations": [
+        "local-worker",
+        "task-contract",
+        "capability-store"
+      ],
+      "permissions": [
+        "deny-by-default",
+        "scoped-expiring-grants",
+        "human-approval"
+      ],
+      "evidence": {
+        "testCommand": "node --test UnifiedField/QuantumLab/uf-local-worker.test.cjs",
+        "testResult": null,
+        "revision": null,
+        "verifiedAt": null
+      },
+      "acceptance": [
+        "caller-boolean-rejected",
+        "missing-verifier-denied",
+        "scope-and-expiry-checked",
+        "revocation-effective"
+      ]
+    },
+    {
+      "id": "capability.registry",
+      "name": "Capability discovery and lifecycle registry",
+      "layer": "control-plane",
+      "status": "partial",
+      "owner": "UnifiedField",
+      "implementation": "Worker blueprint registry exists; service capabilities, versions, permissions, health and freshness need common adapter contract",
+      "substrates": [
+        "worker-registry",
+        "JSON"
+      ],
+      "triggers": [
+        "worker-register",
+        "service-start",
+        "capability-change"
+      ],
+      "integrations": [
+        "orchestrator",
+        "dashboard",
+        "approval-policy"
+      ],
+      "permissions": [
+        "registry-write-scoped",
+        "discovery-read"
+      ],
+      "evidence": {
+        "testCommand": "node --test UnifiedField/QuantumLab/worker-registry.test.cjs",
+        "testResult": null,
+        "revision": null,
+        "verifiedAt": null
+      },
+      "acceptance": [
+        "versioned-contract",
+        "health-freshness",
+        "permission-declaration",
+        "deprecation-state"
+      ]
+    },
+    {
+      "id": "event.triggers",
+      "name": "Event trigger and scheduler fabric",
+      "layer": "orchestration",
+      "status": "planned",
+      "owner": "UnifiedField",
+      "implementation": "Typed event bus, local scheduler, webhook ingress and retry-safe trigger adapters",
+      "substrates": [
+        "local-event-bus",
+        "timer-scheduler",
+        "webhook-ingress"
+      ],
+      "triggers": [
+        "task-created",
+        "service-health-transition",
+        "workflow-failure",
+        "repository-event",
+        "user-approved-schedule"
+      ],
+      "integrations": [
+        "task-ledger",
+        "orchestrator",
+        "notification-adapters"
+      ],
+      "permissions": [
+        "trigger-allowlist",
+        "rate-limits",
+        "approval-for-side-effects"
+      ],
+      "evidence": {
+        "testCommand": null,
+        "testResult": null,
+        "revision": null,
+        "verifiedAt": null
+      },
+      "acceptance": [
+        "deduplication",
+        "backpressure",
+        "dead-letter",
+        "trigger-authentication",
+        "disable-switch"
+      ]
+    },
+    {
+      "id": "orchestration.dispatch",
+      "name": "Governed task dispatch and worker lifecycle",
+      "layer": "orchestration",
+      "status": "partial",
+      "owner": "UnifiedField",
+      "implementation": "Task inbox stores metadata; worker dispatch, lease lifecycle, cancellation and reconciliation are not yet one integrated service",
+      "substrates": [
+        "task-ledger",
+        "worker-pool",
+        "lease-manager"
+      ],
+      "triggers": [
+        "approved-task-ready",
+        "worker-heartbeat",
+        "lease-expiry"
+      ],
+      "integrations": [
+        "task-contract",
+        "worker-registry",
+        "local-worker",
+        "model-adapters"
+      ],
+      "permissions": [
+        "approved-capability-only",
+        "worker-bound-lease"
+      ],
+      "evidence": {
+        "testCommand": null,
+        "testResult": null,
+        "revision": null,
+        "verifiedAt": null
+      },
+      "acceptance": [
+        "bounded-concurrency",
+        "lease-recovery",
+        "cancellation",
+        "worker-isolation",
+        "no-implicit-execution"
+      ]
+    },
+    {
+      "id": "integration.adapters",
+      "name": "Versioned integration adapter framework",
+      "layer": "integration",
+      "status": "partial",
+      "owner": "UnifiedField",
+      "implementation": "Orloj and OpenSourceAIHub adapters are separate prototypes; common adapter lifecycle and contract conformance suite pending",
+      "substrates": [
+        "adapter-sdk",
+        "JSON-schema",
+        "HTTP"
+      ],
+      "triggers": [
+        "adapter-register",
+        "task-submit",
+        "health-poll"
+      ],
+      "integrations": [
+        "OrlojAdapter",
+        "OpenSourceAIHub",
+        "BrowserBridge",
+        "local-inference"
+      ],
+      "permissions": [
+        "per-adapter-scopes",
+        "egress-declaration"
+      ],
+      "evidence": {
+        "testCommand": null,
+        "testResult": null,
+        "revision": null,
+        "verifiedAt": null
+      },
+      "acceptance": [
+        "version-negotiation",
+        "ingress-egress-validation",
+        "timeouts",
+        "cancellation",
+        "conformance-suite"
+      ]
+    },
+    {
+      "id": "model.runtime",
+      "name": "Local and remote model runtime adapters",
+      "layer": "runtime",
+      "status": "partial",
+      "owner": "UnifiedField",
+      "implementation": "Local llama.cpp/Ollama endpoints and remote bridge candidates; common provider health, quota, timeout and failover contract pending",
+      "substrates": [
+        "llama.cpp",
+        "Ollama-compatible API",
+        "Gemini API"
+      ],
+      "triggers": [
+        "model-task",
+        "provider-health-change",
+        "quota-throttle"
+      ],
+      "integrations": [
+        "orchestrator",
+        "agent-adapters",
+        "evidence-ledger"
+      ],
+      "permissions": [
+        "provider-specific-secret-store",
+        "explicit-egress-policy"
+      ],
+      "evidence": {
+        "testCommand": null,
+        "testResult": null,
+        "revision": null,
+        "verifiedAt": null
+      },
+      "acceptance": [
+        "model-identity",
+        "timeout-and-cancel",
+        "secret-redaction",
+        "quota-handling",
+        "fallback-policy"
+      ]
+    },
+    {
+      "id": "agent.consensus",
+      "name": "Multi-agent consensus and adversarial review",
+      "layer": "reasoning",
+      "status": "partial",
+      "owner": "UnifiedField",
+      "implementation": "Ternary policy and 144-seat role registry exist; seats are NOT_CONFIGURED and dispatch/cross-examination are not wired into dashboard execution",
+      "substrates": [
+        "uf-tcp-policy",
+        "uf-144-council",
+        "agent-worker-pool"
+      ],
+      "triggers": [
+        "proposal-ready",
+        "counter-review-request",
+        "consensus-deadline"
+      ],
+      "integrations": [
+        "task-dispatch",
+        "evidence-ledger",
+        "approval-policy"
+      ],
+      "permissions": [
+        "independent-review-evidence",
+        "no-self-approval"
+      ],
+      "evidence": {
+        "testCommand": "node --test UnifiedField/QuantumLab/uf-tcp-policy.test.cjs UnifiedField/QuantumLab/uf-144-council.test.cjs",
+        "testResult": null,
+        "revision": null,
+        "verifiedAt": null
+      },
+      "acceptance": [
+        "seat-identity",
+        "independent-evidence",
+        "quorum-policy",
+        "dissent-retained",
+        "human-approval-separate"
+      ]
+    },
+    {
+      "id": "evidence.provenance",
+      "name": "Evidence, provenance and audit trail",
+      "layer": "observability",
+      "status": "partial",
+      "owner": "UnifiedField",
+      "implementation": "Bridge journal and test artifacts exist; unified trace correlation, signed attestations and retention policy pending",
+      "substrates": [
+        "append-only-journal",
+        "sha256",
+        "structured-logs"
+      ],
+      "triggers": [
+        "every-state-transition",
+        "adapter-result",
+        "test-result",
+        "security-event"
+      ],
+      "integrations": [
+        "task-ledger",
+        "dashboard",
+        "CI"
+      ],
+      "permissions": [
+        "secret-redaction",
+        "append-only"
+      ],
+      "evidence": {
+        "testCommand": "node --test UnifiedField/QuantumLab/uf-bridge-journal.test.cjs",
+        "testResult": null,
+        "revision": null,
+        "verifiedAt": null
+      },
+      "acceptance": [
+        "correlation-id",
+        "tamper-evidence",
+        "clock-source",
+        "retention-policy",
+        "redaction-tests"
+      ]
+    },
+    {
+      "id": "observability.health",
+      "name": "Health, metrics, traces and alerting",
+      "layer": "observability",
+      "status": "partial",
+      "owner": "UnifiedField",
+      "implementation": "Dashboard polls configured endpoints; metrics, trace propagation, alert routing and SLOs remain incomplete",
+      "substrates": [
+        "dashboard",
+        "health-endpoints",
+        "structured-logs"
+      ],
+      "triggers": [
+        "periodic-health-poll",
+        "error-threshold",
+        "workflow-failure"
+      ],
+      "integrations": [
+        "service-registry",
+        "task-ledger",
+        "notification-adapters"
+      ],
+      "permissions": [
+        "read-only-observability",
+        "redacted-telemetry"
+      ],
+      "evidence": {
+        "testCommand": "node --test UnifiedField/QuantumLab/unified-field-dashboard.test.cjs",
+        "testResult": null,
+        "revision": null,
+        "verifiedAt": null
+      },
+      "acceptance": [
+        "freshness-indicator",
+        "dependency-aware-health",
+        "alert-deduplication",
+        "trace-correlation",
+        "no-false-green"
+      ]
+    },
+    {
+      "id": "recovery.continuity",
+      "name": "Backup, recovery and continuity",
+      "layer": "resilience",
+      "status": "partial",
+      "owner": "UnifiedField",
+      "implementation": "Continuity/recovery contract is specified; reference adapter, staging restore and post-write verification remain unimplemented",
+      "substrates": [
+        "filesystem-snapshot",
+        "sha256-manifest",
+        "staging-restore"
+      ],
+      "triggers": [
+        "manual-backup",
+        "integrity-failure",
+        "approved-recovery"
+      ],
+      "integrations": [
+        "task-ledger",
+        "evidence-ledger",
+        "capability-registry"
+      ],
+      "permissions": [
+        "plan-read-only",
+        "restore-separately-approved"
+      ],
+      "evidence": {
+        "testCommand": null,
+        "testResult": null,
+        "revision": null,
+        "verifiedAt": null
+      },
+      "acceptance": [
+        "path-traversal-rejection",
+        "hash-verification",
+        "no-overwrite",
+        "interruption-recovery",
+        "rollback-evidence"
+      ]
+    },
+    {
+      "id": "security.posture",
+      "name": "Security posture and policy enforcement",
+      "layer": "security",
+      "status": "partial",
+      "owner": "UnifiedField",
+      "implementation": "Selected security review and loopback/auth boundaries exist; full repository, dependency, host, secret and network exposure scans remain incomplete",
+      "substrates": [
+        "policy-engine",
+        "dependency-audit",
+        "host-audit"
+      ],
+      "triggers": [
+        "startup-policy-check",
+        "dependency-change",
+        "security-event"
+      ],
+      "integrations": [
+        "CI",
+        "local-worker",
+        "capability-registry"
+      ],
+      "permissions": [
+        "read-only-by-default",
+        "explicit-privileged-approval"
+      ],
+      "evidence": {
+        "testCommand": null,
+        "testResult": null,
+        "revision": null,
+        "verifiedAt": null
+      },
+      "acceptance": [
+        "secret-scan",
+        "dependency-scan",
+        "bind-address-check",
+        "authz-matrix",
+        "reproducible-report"
+      ]
+    },
+    {
+      "id": "browser.bridge",
+      "name": "User-mediated browser integration",
+      "layer": "integration",
+      "status": "partial",
+      "owner": "UnifiedField",
+      "implementation": "BrowserBridge prototype and scoped permissions documented; installation and live inbox round-trip remain pending",
+      "substrates": [
+        "Manifest V3",
+        "activeTab",
+        "scripting",
+        "loopback-inbox"
+      ],
+      "triggers": [
+        "user-selection",
+        "explicit-submit"
+      ],
+      "integrations": [
+        "task-contract",
+        "task-inbox",
+        "evidence-ledger"
+      ],
+      "permissions": [
+        "activeTab",
+        "scripting",
+        "loopback-only"
+      ],
+      "evidence": {
+        "testCommand": null,
+        "testResult": null,
+        "revision": null,
+        "verifiedAt": null
+      },
+      "acceptance": [
+        "user-gesture-required",
+        "origin-validation",
+        "payload-sanitization",
+        "live-round-trip"
+      ]
+    },
+    {
+      "id": "ci.quality-gates",
+      "name": "Repository-wide CI and workflow repair",
+      "layer": "delivery",
+      "status": "partial",
+      "owner": "UnifiedField",
+      "implementation": "Component workflows exist; cross-component contract suite, required checks and failure remediation coverage need consolidation",
+      "substrates": [
+        "GitHub Actions",
+        "Node test runner",
+        "PowerShell test runner"
+      ],
+      "triggers": [
+        "pull-request",
+        "push-main",
+        "scheduled-audit"
+      ],
+      "integrations": [
+        "all-component-test-suites",
+        "completeness-registry"
+      ],
+      "permissions": [
+        "least-privilege-workflow-token",
+        "pinned-actions"
+      ],
+      "evidence": {
+        "testCommand": "node --test UnifiedField/QuantumLab/uf-completeness-registry.test.cjs",
+        "testResult": null,
+        "revision": null,
+        "verifiedAt": null
+      },
+      "acceptance": [
+        "required-checks",
+        "workflow-failure-classification",
+        "artifact-retention",
+        "no-secret-leakage",
+        "matrix-coverage"
+      ]
+    },
+    {
+      "id": "ci.attestation-verifier",
+      "name": "GitHub Actions run, job, and artifact attestation verifier",
+      "layer": "evidence",
+      "status": "verified",
+      "owner": "UnifiedField",
+      "implementation": "UnifiedField/QuantumLab/verify-ci-attestation.cjs",
+      "substrates": [
+        "GitHub Actions",
+        "Node.js 22",
+        "GitHub REST API"
+      ],
+      "triggers": [
+        "completeness-workflow"
+      ],
+      "integrations": [
+        "unified-field-completeness.json",
+        "GitHub Actions workflow-run API",
+        "GitHub Actions job API",
+        "GitHub Actions artifact API"
+      ],
+      "permissions": [
+        "contents:read",
+        "actions:read",
+        "no-secret-write"
+      ],
+      "evidence": {
+        "testCommand": "node --test --test-reporter=tap UnifiedField/QuantumLab/uf-completeness-registry.test.cjs UnifiedField/QuantumLab/verify-ci-attestation.test.cjs",
+        "testResult": "pass",
+        "revision": "f17d5699cb02beecaac1e121b4576c7ea359b73d",
+        "verifiedAt": "2026-11-09T19:47:23Z",
+        "repository": "HeavenzFire/HeavenzFire",
+        "workflowRunId": 42686660441,
+        "workflowRunAttempt": 1,
+        "workflowId": 406811791,
+        "workflowName": "Unified Field Completeness Registry",
+        "workflowPath": ".github/workflows/unified-field-completeness.yml",
+        "workflowJob": "completeness",
+        "requiredSteps": [
+          "Validate capability registry",
+          "Test registry enforcement",
+          "Upload registry test evidence",
+          "Verify existing GitHub Actions attestations",
+          "Publish current CI evidence locator"
+        ],
+        "artifactName": "uf-completeness-tests",
+        "artifactDigest": "sha256:e97d8c63a3baacd7718eddd03b6f6e8f6ac59e1a8e9a6a5f2f266b2750189503"
+      },
+      "acceptance": [
+        "exact-run-head-sha",
+        "workflow-identity-and-path",
+        "successful-job-and-required-steps",
+        "retained-artifact-digest-match",
+        "read-only-github-token",
+        "expired-artifact-rejected"
+      ]
+    }
+  ]
+}
