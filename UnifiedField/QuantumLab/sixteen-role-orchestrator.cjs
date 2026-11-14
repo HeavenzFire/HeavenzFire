@@ -126,6 +126,25 @@ const ROLE_DELIVERABLES = Object.freeze({
 });
 
 const ROLE_FORMAT_INSTRUCTIONS = Object.freeze({
+  planner: [
+    'Return exactly three numbered ordered steps.',
+    'Include the exact headings Ordered steps, Dependencies, and Checkpoints.',
+    'Each step must name a dependency or say none, and give one verifiable checkpoint.'
+  ].join('\\n'),
+  researcher: [
+    'Use exactly four headings: Evidence, Sources, Unknowns, Assumptions.',
+    'Cite only exact file paths present in the supplied context.',
+    'If a source does not support a claim, mark that claim UNKNOWN.'
+  ].join('\\n'),
+  requirements: [
+    'Use the exact headings Acceptance criteria and Measurable pass/fail.',
+    'Give exactly three testable acceptance criteria.',
+    'For each criterion, state a measurable pass condition and a measurable fail condition.'
+  ].join('\\n'),
+  designer: [
+    'Use the exact headings API schema, Contracts, and Failure behavior.',
+    'Describe only interfaces evidenced by the supplied context; otherwise mark UNKNOWN.'
+  ].join('\\n'),
   builder: [
     'Return exactly three non-empty lines and nothing else: no heading, bullets, numbering, or code fence.',
     'Use this exact structure on every line:',
@@ -133,7 +152,7 @@ const ROLE_FORMAT_INSTRUCTIONS = Object.freeze({
     'FILE: UnifiedField/QuantumLab/sixteen-role-orchestrator.test.cjs | PROPOSED CHANGE: <regression test> | DEPENDENCIES: sixteen-role-orchestrator.cjs | VERIFICATION: node --test UnifiedField/QuantumLab/sixteen-role-orchestrator.test.cjs',
     'FILE: UnifiedField/QuantumLab/sixteen-role-orchestrator.cjs | PROPOSED CHANGE: <small concrete change> | DEPENDENCIES: none | VERIFICATION: node --check UnifiedField/QuantumLab/sixteen-role-orchestrator.cjs',
     'Do not invent or use any other file path. Propose changes only; do not claim edits were made.'
-  ].join('\n')
+  ].join('\\n')
 });
 
 const ROLE_SIGNAL_ANCHORS = Object.freeze({
