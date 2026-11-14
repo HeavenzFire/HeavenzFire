@@ -219,6 +219,42 @@ test('refusal output is not counted as a completed role', async () => {
   assert.equal(result.roleRecords[0].refusal, true);
 });
 
+test('empty and refusal outputs do not trigger a repair attempt', async () => {
+  for (const response of ['', 'I cannot assist with that request.']) {
+    let calls = 0;
+    const result = await runSixteenRoleField({
+      goal: 'Verify repair does not retry empty or refusal output.',
+      invoke: async () => {
+        calls += 1;
+        return { response, finishReason: 'stop' };
+      }
+    });
+    assert.equal(calls, 1);
+    assert.equal(result.counts.reviewRequired, 1);
+    assert.equal(result.counts.blocked, 15);
+    assert.equal(result.roleRecords[0].repair.attempted, false);
+  }
+});
+
+test('failed targeted repair is recorded and blocks dependent roles without a second retry', async () => {
+  let calls = 0;
+  const result = await runSixteenRoleField({
+    goal: 'Verify repair failure is bounded and auditable.',
+    invoke: async task => {
+      calls += 1;
+      if (task.repairAttempt) throw new Error('synthetic repair failure');
+      return { response: 'Generic response without an architect deliverable.', finishReason: 'stop' };
+    }
+  });
+  assert.equal(calls, 2);
+  assert.equal(result.counts.reviewRequired, 1);
+  assert.equal(result.counts.blocked, 15);
+  assert.equal(result.counts.failed, 0);
+  assert.equal(result.roleRecords[0].repair.attempts, 2);
+  assert.match(result.roleRecords[0].repair.retryError, /synthetic repair failure/);
+  assert.equal(result.qualityGate.passed, false);
+});
+
 test('worker exceptions are recorded as failures and never become success', async () => {
   const result = await runSixteenRoleField({
     goal: 'Check worker crash handling.',
