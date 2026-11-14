@@ -1,0 +1,76 @@
+name: QuantumLab Qwen 0.5B live inference
+
+on:
+  pull_request:
+    paths:
+      - 'UnifiedField/QuantumLab/sixteen-role-orchestrator.cjs'
+      - 'UnifiedField/QuantumLab/sixteen-role-orchestrator.test.cjs'
+      - '.github/workflows/quantumlab-qwen-live.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'UnifiedField/QuantumLab/sixteen-role-orchestrator.cjs'
+      - 'UnifiedField/QuantumLab/sixteen-role-orchestrator.test.cjs'
+      - '.github/workflows/quantumlab-qwen-live.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quantumlab-qwen-live-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  qwen-live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Ollama
+        run: |
+          curl -fsSL https://ollama.com/install.sh | sh
+
+      - name: Start local Ollama service
+        shell: bash
+        run: |
+          nohup ollama serve >/tmp/ollama-serve.log 2>&1 &
+          ready=0
+          for attempt in $(seq 1 45); do
+            if curl --silent --fail http://127.0.0.1:11434/api/tags >/dev/null; then
+              ready=1
+              break
+            fi
+            sleep 2
+          done
+          if [ "$ready" -ne 1 ]; then
+            cat /tmp/ollama-serve.log
+            echo "Ollama did not become ready."
+            exit 1
+          fi
+
+      - name: Pull exact Qwen 0.5B baseline
+        run: ollama pull qwen2.5:0.5b
+
+      - name: Run all sixteen roles sequentially against Qwen 0.5B
+        run: |
+          node UnifiedField/QuantumLab/sixteen-role-orchestrator.cjs "Perform an evidence-bounded review of the checked-out HeavenzFire Unified Field QuantumLab repository. Identify concrete source files, contracts, test coverage, security boundaries, failure modes, and release blockers. Do not claim commands were executed or tests passed unless this workflow supplies that evidence." --endpoint=http://127.0.0.1:11434 --model=qwen2.5:0.5b --max-parallel=1 --max-tokens=512 --timeout-ms=120000
+
+      - name: Upload Qwen run report and server log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quantumlab-qwen-0.5b-live-report
+          path: |
+            UnifiedField/QuantumLab/reports/latest-sixteen-role-run.json
+            UnifiedField/QuantumLab/reports/runs/*.json
+            /tmp/ollama-serve.log
+          if-no-files-found: warn
+          retention-days: 14
