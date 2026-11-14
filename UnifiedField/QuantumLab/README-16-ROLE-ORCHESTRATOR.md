@@ -84,3 +84,15 @@ Builder rows may target only:
 - `UnifiedField/QuantumLab/sixteen-role-orchestrator.test.cjs`
 
 The GitHub Actions workflow `.github/workflows/quantumlab-qwen-live.yml` runs a sequential live inference smoke test with the exact `qwen2.5:0.5b` model on a GitHub-hosted runner and retains the JSON report as a workflow artifact. It validates the runner/model API path, not the user's local Windows or Android runtime.
+
+## Supplying repository evidence context
+
+Pass a bounded, read-only evidence file with `--context-file=PATH`. The orchestrator includes up to 8,000 characters of that file in every role prompt and records `contextChars` plus a SHA-256 digest in the run report. The context file should contain an actual tracked-file inventory, relevant source excerpts, test names, and the applicable documented contracts. Do not ask a model to review a checked-out repository unless the source evidence is actually supplied.
+
+Example:
+
+```powershell
+node $script 'Review the supplied QuantumLab evidence only; cite exact paths and mark unsupported facts UNKNOWN.' --context-file=reports\qwen-live-context.md --endpoint=http://127.0.0.1:11434 --model=qwen2.5:0.5b --max-parallel=1 --max-tokens=256
+```
+
+The 0.5B live smoke workflow uses a compact evidence pack and sequential inference. Its result is diagnostic: a failed role remains `review_required`, and the quality gate must not be weakened to force a pass.
