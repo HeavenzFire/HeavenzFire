@@ -142,7 +142,7 @@ function assessRoleSpecificity(roleId, response) {
   const text = String(response || '').trim();
   if (!text) return { roleSpecificityPassed: false, reason: 'empty_response' };
   if (roleId === 'builder') {
-    const rows = text.split(/\\r?\n/).map(line => line.trim()).filter(Boolean);
+    const rows = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
     const required = ['FILE:', 'PROPOSED CHANGE:', 'DEPENDENCIES:', 'VERIFICATION:'];
     const valid = rows.length === 3 && rows.every(row =>
       required.every(label => row.toUpperCase().includes(label))
