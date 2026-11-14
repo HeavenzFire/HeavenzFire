@@ -225,6 +225,12 @@ test('builder prompt contains the exact approved three-row output contract', () 
   assert.ok(prompt.includes('UnifiedField/QuantumLab/sixteen-role-orchestrator.cjs'));
   assert.ok(prompt.includes('UnifiedField/QuantumLab/sixteen-role-orchestrator.test.cjs'));
   assert.match(prompt, /Do not repeat or paraphrase upstream role responses/);
+  const plannerPrompt = makePrompt(ROLES.find(role => role.id === 'planner'), 'Plan the review.', []);
+  assert.match(plannerPrompt, /exactly three numbered ordered steps/);
+  const researcherPrompt = makePrompt(ROLES.find(role => role.id === 'researcher'), 'Research the review.', []);
+  assert.match(researcherPrompt, /Evidence, Sources, Unknowns, Assumptions/);
+  const requirementsPrompt = makePrompt(ROLES.find(role => role.id === 'requirements'), 'Define acceptance.', []);
+  assert.match(requirementsPrompt, /Acceptance criteria and Measurable pass\/fail/);
 });
 
 test('builder specificity requires exactly three complete change rows and approved target paths', () => {
