@@ -1,6 +1,6 @@
 # HeavenzFire Local 16-Role Orchestrator
 
-A loopback-only, local-model analysis coordinator for sixteen named specialist roles. It uses the existing Ollama runtime and does not depend on browser extensions.
+A loopback-only, local-model analysis coordinator for sixteen named specialist roles. It supports Ollama, llama.cpp's OpenAI-compatible local endpoint, and the authenticated HeavenzFire API gateway; it does not depend on browser extensions.
 
 ## What it is (and is not)
 
@@ -10,13 +10,13 @@ A loopback-only, local-model analysis coordinator for sixteen named specialist r
 - Goals are proposals until a separate explicit approval request is received.
 - Task snapshots are appended to a local JSONL ledger (`UnifiedField/LocalOrchestrator/data/tasks.jsonl` by default); set `HF_TASK_LEDGER_PATH` to choose another path.
 - Ledger writes use an exclusive lock file, append-and-fsync, and torn-final-record recovery. A task found in `running` state at startup is marked failed with `process_interrupted_before_completion`; it is never silently rerun.
-- Running a task sends prompts only to the configured loopback runtime endpoint; the default source configuration is `http://127.0.0.1:11434`.
+- Running a task sends prompts only to the configured loopback runtime endpoint; Ollama defaults to `http://127.0.0.1:11434`, while llama.cpp defaults to `http://127.0.0.1:18080`.
 - The HTTP server refuses non-loopback bind addresses. Do not expose it directly to a LAN or Tailscale interface.
 
 ## Requirements
 
 - Node.js 18 or later
-- Local Ollama running on loopback with a model installed (default: `heavenzfire-runtime:latest`)
+- Either Ollama on loopback (default model: `heavenzfire-runtime:latest`) or llama.cpp `llama-server` on loopback with a GGUF model installed.
 
 ## PowerShell 5.1 launch
 
@@ -37,6 +37,18 @@ Invoke-RestMethod http://127.0.0.1:18797/health
 Invoke-RestMethod http://127.0.0.1:18797/api/agents
 ```
 
+## Android Termux: one-command local runtime
+
+From a complete repository checkout, install Node.js, curl, and the Termux `llama-server` package, and ensure the Qwen GGUF exists at the default model path. Then run:
+
+```sh
+bash UnifiedField/LocalOrchestrator/start-termux.sh
+```
+
+The launcher checks for an existing healthy llama.cpp endpoint before starting one, runs a real local chat-completions smoke test, starts the orchestrator on loopback, and verifies its provider/model health. It never kills an unrelated process or opens a network listener. Configure alternate paths with `HF_MODEL_PATH`, `HF_LLAMA_CPP_BIN`, and `HF_LLAMA_CPP_MODEL`; configure ports with `HF_LLAMA_CPP_PORT` and `HF_ORCHESTRATOR_PORT`.
+
+The launcher backgrounds both services and writes logs/PIDs under `~/.cache/heavenzfire/unified-field`. This is not an Android boot-persistence guarantee: Android may stop Termux processes, and Termux:Boot or a foreground service requires a separate device-side setup and validation.
+
 ## Hosted model adapter through the existing HeavenzFire API
 
 The orchestrator can keep its local scheduler, JSONL ledger, approvals, and UF-TCP gate while dispatching role calls through the existing authenticated HeavenzFire API. This reuses the provider adapters in `services/heavenzfire-api/server.cjs`; it does not create a second provider registry or expose provider credentials to the orchestrator.
@@ -56,12 +68,58 @@ Use `HF_GATEWAY_PROVIDER` values supported by the API: `openai`, `gemini`, `olla
 
 The API key for OpenAI (or another hosted provider) remains only in the API server's environment/secret store. ChatGPT subscription access is not converted into API access or billing. This adapter connects to the configured provider API through the local gateway; it does not attach this ChatGPT web session's private runtime.
 
+### Secure ARM32-to-ARM64 transport with Tailscale Serve
+
+The orchestrator still binds only to `127.0.0.1`. Its gateway transport defaults to `loopback`; remote routing is opt-in and accepts only an HTTPS hostname under the `.ts.net` domain on the standard HTTPS port. TLS certificate validation remains enabled, redirects are rejected, and the existing gateway bearer token is required. This mode is intended for an ARM64 worker whose HeavenzFire API remains bound to its own loopback interface and is published only to the tailnet through Tailscale Serve. Do not set `HF_ALLOW_REMOTE_BIND=true` on the worker.
+
+On the ARM64 worker, configure `services/heavenzfire-api/server.cjs` on `127.0.0.1:18796` with a long random `HF_API_KEYS` token and the chosen inference provider. Publish that loopback service with Tailscale Serve using its HTTPS listener (for example, `tailscale serve --bg --https=443 http://127.0.0.1:18796`). Confirm the Serve status and tailnet ACLs permit only the intended coordinator device. Do not use Funnel or expose the service to the public internet.
+
+On the ARM32 coordinator, configure the Serve transport only when the worker is a supported Linux/Windows Serve host:
+
+```sh
+export HF_ORCHESTRATOR_PROVIDER=heavenzfire-api
+export HF_GATEWAY_TRANSPORT=tailnet-https
+export HF_GATEWAY_URL=https://ARM64-WORKER.TAILNET.ts.net
+export HF_GATEWAY_API_KEY='same-long-random-token-configured-in-worker-HF_API_KEYS'
+export HF_GATEWAY_PROVIDER=custom
+export HF_GATEWAY_MODEL='the-exact-model-enabled-on-the-worker'
+```
+
+### Direct Android-to-Android Tailscale transport
+
+Android's Tailscale app does not provide the `tailscale serve` CLI, but Tailscale devices can connect to services running on another device by its Tailscale IPv4 address and port. The API therefore has a separate `HF_TAILNET_ONLY=true` worker mode. It binds to `0.0.0.0` because Android's VPN interface may not be directly bindable from Termux, then rejects every non-loopback connection unless the source is an exact allowlisted Tailscale IPv4 address in `100.64.0.0/10`. Every non-loopback route, including `/health`, also requires the 32+ character bearer token. The Tailscale overlay provides WireGuard transport encryption; this mode must never be exposed through Funnel or a public port forward.
+
+On the ARM64 Termux worker, set the coordinator phone's Tailscale IPv4 address in the allowlist:
+
+```sh
+export HF_API_KEYS='use-a-random-secret-at-least-32-characters-long'
+export HF_TAILNET_ONLY=true
+export HF_TAILNET_ALLOWED_CLIENTS='100.x.y.z'
+export PORT=18796
+node services/heavenzfire-api/server.cjs
+```
+
+On the ARM32 coordinator, point the existing orchestrator gateway adapter at the ARM64 worker's Tailscale IPv4 address:
+
+```sh
+export HF_ORCHESTRATOR_PROVIDER=heavenzfire-api
+export HF_GATEWAY_TRANSPORT=tailnet-ip
+export HF_GATEWAY_URL=http://100.a.b.c:18796
+export HF_GATEWAY_API_KEY='same-secret-configured-on-the-worker'
+export HF_GATEWAY_PROVIDER=custom
+export HF_GATEWAY_MODEL='exact-model-served-by-the-worker-runtime'
+```
+
+The `100.x.y.z` values are placeholders: use the actual two device addresses shown in the Tailscale app/admin device list. The worker allowlist contains the ARM32 coordinator address; the coordinator URL contains the ARM64 worker address. Tailscale Android permits incoming connections by default, but the end-to-end TCP path must be verified from the coordinator before enabling inference. The worker runtime must separately expose an OpenAI-compatible `/v1/chat/completions` endpoint on its own loopback address; the API's `custom` provider can be configured with `HF_CUSTOM_API_BASE_URL=http://127.0.0.1:18888/v1`, `HF_CUSTOM_API_KEY`, and `HF_CUSTOM_MODEL` if port 18888 is confirmed to be that runtime. Do not assume port 18888 is healthy until `/v1/models` responds. The API gateway never executes shell commands on the worker.
+
+Keep the token in the Termux environment or a protected local secret file; never commit it or paste it into chat. The `.ts.net` hostname is a placeholder until the worker's actual Tailscale DNS name is confirmed. This code path has deterministic policy tests, but a successful handshake and real inference still require both devices to be online and the exact hostname/model to be supplied. Tailscale Serve requires a supported Tailscale CLI host and HTTPS certificates enabled in the tailnet; current Tailscale documentation states there is no CLI support on Android. Therefore this Serve setup is for a Linux/Windows worker or a separate supported tailnet relay, **not a direct Android Termux worker**. For an Android-to-Android worker, use a dedicated authenticated peer listener bound to the device's Tailscale address and verify Android's inbound VPN routing before enabling it; do not substitute a public listener or Funnel. See the [Tailscale CLI support matrix](https://tailscale.com/docs/reference/tailscale-cli) and [Serve documentation](https://tailscale.com/docs/features/tailscale-serve).
+
 ## Task lifecycle
 
 1. Submit a proposal: `POST /api/tasks` with JSON `{"goal":"Review a local change" }`.
-2. Explicitly approve it: `POST /api/tasks/{id}/approve` with JSON `{"approve":true}`.
-3. Run it: `POST /api/tasks/{id}/run`.
-4. Inspect results: `GET /api/tasks`.
+2. Approval is a separate server-side trust boundary. The production entrypoint does not configure a trusted `approvalVerifier`, so approval returns HTTP 503 and task execution remains disabled by default.
+3. After an independently reviewed OS-authenticated or signed approval verifier is configured by the operator, the approved task can be run with `POST /api/tasks/{id}/run`.
+4. Inspect task state and results: `GET /api/tasks`.
 
 PowerShell example:
 

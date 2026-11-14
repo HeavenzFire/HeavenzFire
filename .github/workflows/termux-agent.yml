@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'UnifiedField/TermuxAgent/**'
+      - 'UnifiedField/LocalOrchestrator/**'
       - 'UnifiedField/QuantumLab/uf-remote-task-client.cjs'
       - 'UnifiedField/QuantumLab/uf-handshake-client.cjs'
       - '.github/workflows/termux-agent.yml'
@@ -11,6 +12,8 @@ on:
     branches: [main]
     paths:
       - 'UnifiedField/TermuxAgent/**'
+      - 'UnifiedField/LocalOrchestrator/**'
+      - 'UnifiedField/LocalOrchestrator/**'
       - 'UnifiedField/QuantumLab/uf-remote-task-client.cjs'
       - 'UnifiedField/QuantumLab/uf-handshake-client.cjs'
       - '.github/workflows/termux-agent.yml'
@@ -34,7 +37,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Check bootstrap shell syntax
-        run: bash -n UnifiedField/TermuxAgent/setup-and-run.sh
+      - name: Check bootstrap and orchestrator shell syntax
+        run: |
+          bash -n UnifiedField/TermuxAgent/setup-and-run.sh
+          bash -n UnifiedField/LocalOrchestrator/start-termux.sh
       - name: Run Termux agent syntax and unit tests
         run: bash UnifiedField/TermuxAgent/verify-termux.sh

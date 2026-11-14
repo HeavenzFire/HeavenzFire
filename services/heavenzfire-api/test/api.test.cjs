@@ -46,6 +46,77 @@ test('health is public and does not reveal credentials', async t => {
 });
 
 
+test('tailnet-only mode restricts remote requests to the exact Tailscale peer and authenticates health', async t => {
+  const oldKey = process.env.HF_API_KEYS;
+  const token = 'tailnet-test-token-with-more-than-32-characters';
+  process.env.HF_API_KEYS = token;
+  const server = createServer({
+    tailnetOnly: true,
+    allowedTailnetClients: ['100.64.0.2'],
+    remoteAddressResolver: () => '::ffff:100.64.0.2'
+  });
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  t.after(async () => {
+    if (oldKey === undefined) delete process.env.HF_API_KEYS;
+    else process.env.HF_API_KEYS = oldKey;
+    await new Promise(resolve => server.close(resolve));
+  });
+  const base = 'http://127.0.0.1:' + server.address().port;
+  assert.equal((await fetch(base + '/health')).status, 401);
+  const health = await fetch(base + '/health', { headers: { authorization: 'Bearer ' + token } });
+  assert.equal(health.status, 200);
+  assert.equal((await health.json()).service, 'heavenzfire-api');
+  const models = await fetch(base + '/v1/models', { headers: { authorization: 'Bearer ' + token } });
+  assert.equal(models.status, 200);
+});
+
+test('tailnet-only mode denies a different Tailscale peer before application authentication', async t => {
+  const oldKey = process.env.HF_API_KEYS;
+  process.env.HF_API_KEYS = 'tailnet-test-token-with-more-than-32-characters';
+  const server = createServer({
+    tailnetOnly: true,
+    allowedTailnetClients: ['100.64.0.2'],
+    remoteAddressResolver: () => '100.64.0.3'
+  });
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  t.after(async () => {
+    if (oldKey === undefined) delete process.env.HF_API_KEYS;
+    else process.env.HF_API_KEYS = oldKey;
+    await new Promise(resolve => server.close(resolve));
+  });
+  const response = await fetch('http://127.0.0.1:' + server.address().port + '/health', {
+    headers: { authorization: 'Bearer tailnet-test-token-with-more-than-32-characters' }
+  });
+  assert.equal(response.status, 403);
+  assert.equal((await response.json()).error.code, 'tailnet_peer_not_allowlisted');
+});
+
+test('tailnet-only mode fails closed without an exact Tailscale IPv4 allowlist', () => {
+  assert.throws(() => createServer({ tailnetOnly: true, allowedTailnetClients: [] }), /exact_tailscale_ipv4_client_allowlist/);
+  assert.throws(() => createServer({ tailnetOnly: true, allowedTailnetClients: ['192.168.1.20'] }), /exact_tailscale_ipv4_client_allowlist/);
+});
+
+test('tailnet-only mode enforces strong API keys at server construction', () => {
+  const oldKey = process.env.HF_API_KEYS;
+  try {
+    process.env.HF_API_KEYS = 'short-key';
+    assert.throws(
+      () => createServer({ tailnetOnly: true, allowedTailnetClients: ['100.64.0.2'] }),
+      /tailnet_only_requires_api_keys_minimum_32_characters/
+    );
+    process.env.HF_API_KEYS = 'a-valid-tailnet-key-that-is-at-least-32-characters';
+    assert.doesNotThrow(() => createServer({ tailnetOnly: true, allowedTailnetClients: ['100.64.0.2'] }));
+    process.env.HF_API_KEYS = 'a-valid-tailnet-key-that-is-at-least-32-characters,short-key';
+    assert.throws(
+      () => createServer({ tailnetOnly: true, allowedTailnetClients: ['100.64.0.2'] }),
+      /tailnet_only_requires_api_keys_minimum_32_characters/
+    );
+  } finally {
+    if (oldKey === undefined) delete process.env.HF_API_KEYS;
+    else process.env.HF_API_KEYS = oldKey;
+  }
+});
+
 test('OpenAI provider uses the Responses API and returns a compatible chat envelope', async t => {
   const oldFetch = global.fetch;
   const oldEnv = {
