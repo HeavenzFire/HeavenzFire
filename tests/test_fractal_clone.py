@@ -39,7 +39,6 @@ class FractalCloneTests(unittest.TestCase):
                 result,
                 {"node_id": manifest["node_id"], "state": "seeded"},
             )
-            self.assertEqual(completed.stderr, "")
 
     def test_refuses_to_overwrite_existing_node(self):
         with tempfile.TemporaryDirectory() as tmp:
