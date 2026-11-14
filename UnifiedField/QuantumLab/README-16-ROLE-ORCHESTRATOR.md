@@ -76,3 +76,11 @@ The Builder deliverable is exactly three non-empty rows. Every row must contain 
 `qualityGate.passed` now requires all sixteen roles to complete and pass their role-specific signal check. This remains a structural/content-shape gate, not factual or semantic verification: `semanticReviewRequired` stays true, report `status` remains `review_required`, and `ok` remains false until independent review occurs.
 
 For a low-memory sequential baseline, use `--max-parallel=1` and the exact locally installed model ID. The runner does not install or download models.
+
+The non-Builder role check requires at least two literal role-specific acceptance anchors and at least 80 characters of output. The prompt supplies those anchors to the model and the single repair prompt repeats them. This is a content-shape check only; it does not establish that the statements are true.
+
+Builder rows may target only:
+- `UnifiedField/QuantumLab/sixteen-role-orchestrator.cjs`
+- `UnifiedField/QuantumLab/sixteen-role-orchestrator.test.cjs`
+
+The GitHub Actions workflow `.github/workflows/quantumlab-qwen-live.yml` runs a sequential live inference smoke test with the exact `qwen2.5:0.5b` model on a GitHub-hosted runner and retains the JSON report as a workflow artifact. It validates the runner/model API path, not the user's local Windows or Android runtime.
