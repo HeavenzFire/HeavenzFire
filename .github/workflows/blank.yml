@@ -4,7 +4,7 @@ on:
   push:
     branches: ["main", "feat/unified-field-local-model-workers", "fix/worker-result-aggregation", "feat/worker-forge-child-blueprints", "fix/worker-forge-draft-repair", "fix/worker-forge-template-fallback", "feat/worker-adversarial-smoke-suite", "feat/worker-registry", "feat/worker-smoke-artifact-import", "fix/worker-registry-windows-replace", "feat/worker-forge-remediation"]
   pull_request:
-    branches: ["main"]
+    branches: ["main", "feat/persistent-chrome-worker-20261114", "fix/browser-worker-recovery-approval-20261114"]
   workflow_dispatch:
 
 jobs:
@@ -47,3 +47,9 @@ jobs:
           & "${{ github.workspace }}/UnifiedField/QuantumLab/Test-LocalModelWorkerResponse.Tests.ps1"
       - name: Test dashboard-worker safety contract and deterministic worker forge
         run: node --test UnifiedField/QuantumLab/unified-field-dashboard.test.cjs UnifiedField/QuantumLab/uf-model-worker-journal-publisher.test.cjs UnifiedField/QuantumLab/worker-forge.test.cjs UnifiedField/QuantumLab/worker-result-store.test.cjs UnifiedField/QuantumLab/worker-forge-drafter.test.cjs UnifiedField/QuantumLab/worker-forge-adversarial.test.cjs UnifiedField/QuantumLab/worker-registry.test.cjs UnifiedField/QuantumLab/worker-forge-remediation.test.cjs
+      - name: Test persistent browser worker recovery approval contract
+        working-directory: UnifiedField/BrowserBridge
+        run: |
+          npm ci --ignore-scripts
+          node --check chrome-automation-worker.cjs
+          node --test browser-automation-worker.test.cjs
