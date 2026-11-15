@@ -1,0 +1,119 @@
+name: Unified Field Completeness Registry
+
+on:
+  pull_request:
+    paths:
+      - 'UnifiedField/QuantumLab/unified-field-completeness.json'
+      - 'UnifiedField/QuantumLab/uf-completeness-registry.cjs'
+      - 'UnifiedField/QuantumLab/uf-completeness-registry.test.cjs'
+      - 'UnifiedField/QuantumLab/verify-ci-attestation.cjs'
+      - 'UnifiedField/QuantumLab/verify-ci-attestation.test.cjs'
+      - '.github/workflows/unified-field-completeness.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'UnifiedField/QuantumLab/unified-field-completeness.json'
+      - 'UnifiedField/QuantumLab/uf-completeness-registry.cjs'
+      - 'UnifiedField/QuantumLab/uf-completeness-registry.test.cjs'
+      - 'UnifiedField/QuantumLab/verify-ci-attestation.cjs'
+      - 'UnifiedField/QuantumLab/verify-ci-attestation.test.cjs'
+      - '.github/workflows/unified-field-completeness.yml'
+  workflow_dispatch:
+
+# PR-controlled code receives no Actions API permission.
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Fetch source without checkout credentials or submodule hooks
+        env:
+          REPOSITORY: ${{ github.repository }}
+          REVISION: ${{ github.sha }}
+        run: |
+          git init .
+          git remote add origin "https://github.com/${REPOSITORY}.git"
+          git -c protocol.version=2 fetch --no-recurse-submodules --depth=1 origin "${REVISION}"
+          git checkout --detach FETCH_HEAD
+      - name: Assert no local Git authentication is configured
+        run: |
+          if git config --local --get-regexp '^http\..*\.extraheader$' >/dev/null 2>&1; then
+            echo "::error::Unexpected Git authentication persisted in local config"
+            exit 1
+          fi
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate capability registry
+        run: node UnifiedField/QuantumLab/uf-completeness-registry.cjs
+      - name: Test registry enforcement
+        run: |
+          node --test --test-reporter=tap \
+            UnifiedField/QuantumLab/uf-completeness-registry.test.cjs \
+            UnifiedField/QuantumLab/verify-ci-attestation.test.cjs \
+            > "$RUNNER_TEMP/uf-completeness.tap"
+          cat "$RUNNER_TEMP/uf-completeness.tap"
+      - name: Upload registry test evidence
+        id: upload-tests
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: uf-completeness-tests
+          path: ${{ runner.temp }}/uf-completeness.tap
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Publish current CI evidence locator
+        if: always()
+        env:
+          REPOSITORY: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+          REVISION: ${{ github.sha }}
+          WORKFLOW_REF: ${{ github.workflow_ref }}
+          ARTIFACT_DIGEST: ${{ steps.upload-tests.outputs.artifact-digest }}
+        run: |
+          {
+            echo "## Unified Field CI evidence"
+            echo "- Repository: ${REPOSITORY}"
+            echo "- Run: https://github.com/${REPOSITORY}/actions/runs/${RUN_ID}"
+            echo "- Attempt: ${RUN_ATTEMPT}"
+            echo "- Tested revision: ${REVISION}"
+            echo "- Workflow ref: ${WORKFLOW_REF}"
+            echo "- Job: validate"
+            echo "- Artifact: uf-completeness-tests"
+            echo "- Artifact digest: ${ARTIFACT_DIGEST:-unavailable}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # Only trusted pushes to the protected main branch receive actions:read.
+  # This job never runs for pull_request or workflow_dispatch events.
+  attest:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Fetch trusted main revision without checkout credentials or submodule hooks
+        env:
+          REPOSITORY: ${{ github.repository }}
+          REVISION: ${{ github.sha }}
+        run: |
+          git init .
+          git remote add origin "https://github.com/${REPOSITORY}.git"
+          git -c protocol.version=2 fetch --no-recurse-submodules --depth=1 origin "${REVISION}"
+          git checkout --detach FETCH_HEAD
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify existing GitHub Actions attestations
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: node UnifiedField/QuantumLab/verify-ci-attestation.cjs
