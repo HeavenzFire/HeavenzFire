@@ -1,4 +1,6 @@
 import json
+import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -21,6 +23,23 @@ class FractalCloneTests(unittest.TestCase):
             self.assertTrue((path / "node.py").is_file())
             self.assertTrue((path / "README.md").is_file())
 
+    def test_generated_node_entrypoint_reports_identity_and_state(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = create_node("node-runtime", "root-node", Path(tmp))
+            completed = subprocess.run(
+                [sys.executable, str(path / "node.py")],
+                cwd=path,
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            result = json.loads(completed.stdout)
+            manifest = json.loads((path / "node.json").read_text(encoding="utf-8"))
+            self.assertEqual(
+                result,
+                {"node_id": manifest["node_id"], "state": "seeded"},
+            )
+
     def test_refuses_to_overwrite_existing_node(self):
         with tempfile.TemporaryDirectory() as tmp:
             create_node("node-a", "root-node", Path(tmp))
@@ -31,6 +50,21 @@ class FractalCloneTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             with self.assertRaises(ValueError):
                 create_node("../outside", "root-node", Path(tmp))
+
+    def test_rejects_invalid_parent_identifiers(self):
+        invalid_parent_ids = ("", "line-one\nline-two", "bad\x00id", "x" * 129)
+        with tempfile.TemporaryDirectory() as tmp:
+            for parent_id in invalid_parent_ids:
+                with self.subTest(parent_id=repr(parent_id)):
+                    with self.assertRaises(ValueError):
+                        create_node("node-a", parent_id, Path(tmp))
+
+    def test_creates_missing_output_directory(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            output_dir = Path(tmp) / "nested" / "nodes"
+            path = create_node("node-a", "root-node", output_dir)
+            self.assertTrue(path.is_dir())
+            self.assertEqual(path.parent, output_dir.resolve())
 
     def test_nodes_receive_unique_ids(self):
         with tempfile.TemporaryDirectory() as tmp:
