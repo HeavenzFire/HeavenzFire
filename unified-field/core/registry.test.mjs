@@ -53,6 +53,7 @@ test("integrated local control modules map to real repository paths", async () =
     "consent-policy-gate",
     "shared-task-inbox",
     "evidence-ledger",
+    "evidence-anchor-manifest",
     "browser-bridge",
     "attention-guard"
   ];
