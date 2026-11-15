@@ -9,6 +9,14 @@ node --version
 node -e "if (Number(process.versions.node.split('.')[0]) < 18) { console.error('Node.js 18+ required for built-in fetch'); process.exit(1); }"
 printf '%s\n' '== Syntax checks =='
 for file in agent.cjs github.cjs github-write.cjs github-cli.cjs orchestrate.cjs remote-task-cli.cjs fabric.cjs; do node --check "UnifiedField/TermuxAgent/$file"; done
+printf '%s\n' '== Trusted approval broker checks =='
+node --check UnifiedField/FieldCore/ed25519-approval-broker.cjs
+node --check UnifiedField/FieldCore/approval-cli.cjs
+node --test UnifiedField/FieldCore/ed25519-approval-broker.test.cjs UnifiedField/FieldCore/trusted-approval.test.cjs
+printf '%s\n' '== Unified Field orchestrator checks =='
+bash -n UnifiedField/LocalOrchestrator/start-termux.sh
+node --check UnifiedField/LocalOrchestrator/orchestrator.cjs
+node --test UnifiedField/LocalOrchestrator/orchestrator.test.cjs
 printf '%s\n' '== Automated tests =='
 for file in agent.test.cjs github.test.cjs github-write.test.cjs orchestrate.test.cjs remote-task-cli.test.cjs fabric.test.cjs; do node --test "UnifiedField/TermuxAgent/$file"; done
 if [ "${HF_LOCAL_SMOKE:-0}" = "1" ]; then

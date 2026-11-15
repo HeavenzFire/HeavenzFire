@@ -222,10 +222,39 @@ function configuredProviders() {
   return list;
 }
 
-function createServer() {
+function normalizePeerIPv4(address) {
+  const value = String(address || '').toLowerCase();
+  return value.startsWith('::ffff:') ? value.slice(7) : value;
+}
+
+function isTailscaleIPv4(address) {
+  const parts = normalizePeerIPv4(address).split('.').map(Number);
+  return parts.length === 4 && parts.every((part, index) => Number.isInteger(part) && part >= 0 && part <= 255) && parts[0] === 100 && parts[1] >= 64 && parts[1] <= 127;
+}
+
+function createServer(options = {}) {
+  const tailnetOnly = options.tailnetOnly === true || process.env.HF_TAILNET_ONLY === 'true';
+  const configuredClients = options.allowedTailnetClients || process.env.HF_TAILNET_ALLOWED_CLIENTS || '';
+  const allowedClients = new Set((Array.isArray(configuredClients) ? configuredClients : String(configuredClients).split(',')).map(value => normalizePeerIPv4(value.trim())).filter(Boolean));
+  if (tailnetOnly && (allowedClients.size === 0 || [...allowedClients].some(address => !isTailscaleIPv4(address)))) {
+    throw new Error('tailnet_only_requires_exact_tailscale_ipv4_client_allowlist');
+  }
+  if (tailnetOnly) {
+    const keys = (process.env.HF_API_KEYS || '').split(',').map(value => value.trim()).filter(Boolean);
+    if (!keys.length || keys.some(key => key.length < 32)) {
+      throw new Error('tailnet_only_requires_api_keys_minimum_32_characters');
+    }
+  }
+  const remoteAddress = options.remoteAddressResolver || (req => req.socket.remoteAddress || '');
   return http.createServer(async (req, res) => {
+    const peerAddress = normalizePeerIPv4(remoteAddress(req));
+    const peerIsLoopback = peerAddress === '127.0.0.1' || peerAddress === '::1';
+    if (tailnetOnly && !peerIsLoopback && (!isTailscaleIPv4(peerAddress) || !allowedClients.has(peerAddress))) {
+      return json(res, 403, { error: { code: 'tailnet_peer_not_allowlisted', message: 'Only the configured Tailscale peer may access this worker.' } });
+    }
     const url = new URL(req.url, 'http://127.0.0.1');
     if (req.method === 'GET' && url.pathname === '/health') {
+      if (tailnetOnly && !peerIsLoopback && !authorized(req)) return json(res, 401, { error: { code: 'unauthorized', message: 'A valid Bearer API key is required.' } });
       return json(res, 200, {
         ok: true,
         service: 'heavenzfire-api',
@@ -312,13 +341,22 @@ function createServer() {
 
 if (require.main === module) {
   const port = Number(process.env.PORT || 18796);
-  const host = process.env.HF_HOST || '127.0.0.1';
-  if (host !== '127.0.0.1' && process.env.HF_ALLOW_REMOTE_BIND !== 'true') {
+  const tailnetOnly = process.env.HF_TAILNET_ONLY === 'true';
+  const host = tailnetOnly ? '0.0.0.0' : process.env.HF_HOST || '127.0.0.1';
+  if (tailnetOnly) {
+    const keys = (process.env.HF_API_KEYS || '').split(',').map(value => value.trim()).filter(Boolean);
+    if (!keys.length || keys.some(key => key.length < 32)) {
+      console.error('Tailnet-only mode requires HF_API_KEYS entries of at least 32 characters.');
+      process.exit(1);
+    }
+  } else if (host !== '127.0.0.1' && process.env.HF_ALLOW_REMOTE_BIND !== 'true') {
     console.error('Refusing non-loopback bind. Set HF_ALLOW_REMOTE_BIND=true only behind authenticated TLS/reverse proxy.');
     process.exit(1);
   }
-  const server = createServer();
-  server.listen(port, host, () => console.log(`HeavenzFire API listening on http://${host}:${server.address().port}`));
+  let server;
+  try { server = createServer({ tailnetOnly }); }
+  catch (error) { console.error(error.message); process.exit(1); }
+  server.listen(port, host, () => console.log(`HeavenzFire API listening on http://${host}:${server.address().port}${tailnetOnly ? ' (Tailscale IPv4 allowlist enforced)' : ''}`));
 }
 
 module.exports = { createServer };
