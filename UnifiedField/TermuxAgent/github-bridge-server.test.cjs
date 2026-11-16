@@ -13,6 +13,12 @@ async function testApprovalVerifier({ action, subject, evidence }) {
   if (!evidence || evidence.fixture !== TEST_APPROVAL_EVIDENCE.fixture || !subject || typeof subject !== 'object') throw new Error('test_approval_evidence_invalid');
   return { approved: true, approvalId: 'test-approval-' + String(subject.taskId || subject.fingerprint || action), approvedBy: 'verified-test-operator', reason: 'Deterministic test approval fixture.', method: 'injected-test-verifier', verifiedAt: '2026-11-05T08:00:00.000Z' };
 }
+
+const TEST_READ_AUTH_HEADERS = Object.freeze({ authorization: 'Bearer test-read-token' });
+async function testReadAuthVerifier({ authorization }) {
+  if (authorization !== TEST_READ_AUTH_HEADERS.authorization) return { authorized: false, principal: '' };
+  return { authorized: true, principal: 'verified-test-reader' };
+}
 test('orchestrator task requests allow full 16-role execution window', () => { assert.equal(ORCHESTRATOR_TIMEOUT_MS, 180000); });
 
 async function withServer(t, options = {}) {
@@ -50,6 +56,7 @@ test('health reports verifier-backed write capability state', async t => {
   assert.equal(data.githubAuth, 'github-cli-authenticated');
   assert.equal(data.approvalVerifierConfigured, true);
   assert.equal(data.writesEnabled, true);
+  assert.equal(data.localReadAuthenticatorConfigured, false);
   assert.equal(data.defaultBranchWrites, false);
   assert.ok(data.capabilities.includes('issues-write'));
 });
@@ -141,7 +148,7 @@ test('task intake minimizes durable audit data and keeps replay results bounded 
     if (approvalCalls > 1) throw new Error('approval_replay_rejected');
     return testApprovalVerifier(input);
   };
-  const { base, auditPath } = await withServer(t, { fetchImpl, approvalVerifier });
+  const { base, auditPath } = await withServer(t, { fetchImpl, approvalVerifier, readAuthVerifier: testReadAuthVerifier });
   const submitted = await fetch(base + '/api/tasks', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ goal: goalSentinel }) });
   assert.equal(submitted.status, 201);
   const task = await submitted.json();
@@ -151,7 +158,7 @@ test('task intake minimizes durable audit data and keeps replay results bounded 
   assert.equal(run.status, 200);
   const runResult = await run.json();
   assert.equal(runResult.result.completedRoles, 16);
-  const replay = await fetch(base + '/api/tasks/' + task.taskId + '/run', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ approvalEvidence: TEST_APPROVAL_EVIDENCE }) });
+  const replay = await fetch(base + '/api/tasks/' + task.taskId + '/run', { method: 'POST', headers: { 'content-type': 'application/json', ...TEST_READ_AUTH_HEADERS }, body: JSON.stringify({ approvalEvidence: TEST_APPROVAL_EVIDENCE }) });
   assert.equal(replay.status, 200);
   const replayResult = await replay.json();
   assert.equal(replayResult.idempotentReplay, true);
@@ -184,12 +191,12 @@ test('task intake minimizes durable audit data and keeps replay results bounded 
 
   const restarted = createGitHubBridgeServer({
     port: 0, auditPath, tokenProvider: () => 'test-token-that-is-long-enough',
-    allowedOwners: ['HeavenzFire'], approvalVerifier, fetchImpl
+    allowedOwners: ['HeavenzFire'], approvalVerifier, readAuthVerifier: testReadAuthVerifier, fetchImpl
   });
   await new Promise(resolve => restarted.listen(0, '127.0.0.1', resolve));
   try {
     const replayAfterRestart = await fetch('http://127.0.0.1:' + restarted.address().port + '/api/tasks/' + task.taskId + '/run', {
-      method: 'POST', headers: { 'content-type': 'application/json' },
+      method: 'POST', headers: { 'content-type': 'application/json', ...TEST_READ_AUTH_HEADERS },
       body: JSON.stringify({ approvalEvidence: TEST_APPROVAL_EVIDENCE })
     });
     assert.equal(replayAfterRestart.status, 409);
@@ -226,12 +233,15 @@ test('sanitizes legacy task audit records in memory without rewriting the JSONL 
       result
     }
   ];
-  const { base, auditPath } = await withServer(t, { initialAuditEvents });
+  const { base, auditPath } = await withServer(t, {
+    initialAuditEvents,
+    readAuthVerifier: async () => ({ authorized: true, principal: 'test-reader' })
+  });
   const originalAudit = fs.readFileSync(auditPath, 'utf8');
   assert.ok(originalAudit.includes(goalSentinel));
   assert.ok(originalAudit.includes(result.privateResult));
 
-  const recent = await (await fetch(base + '/api/audit/recent')).json();
+  const recent = await (await fetch(base + '/api/audit/recent', { headers: TEST_READ_AUTH_HEADERS })).json();
   const recentJson = JSON.stringify(recent);
   assert.ok(!recentJson.includes(goalSentinel));
   assert.ok(!recentJson.includes(result.privateResult));
@@ -239,52 +249,119 @@ test('sanitizes legacy task audit records in memory without rewriting the JSONL 
     crypto.createHash('sha256').update(goalSentinel, 'utf8').digest('hex'));
 
   const replay = await fetch(base + '/api/tasks/' + taskId + '/run', {
-    method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}'
+    method: 'POST', headers: { 'content-type': 'application/json', ...TEST_READ_AUTH_HEADERS }, body: '{}'
   });
-  assert.equal(replay.status, 200);
-  assert.deepEqual((await replay.json()).result, result);
+  assert.equal(replay.status, 409);
+  const replayBody = await replay.json();
+  assert.equal(replayBody.error, 'task_completed_result_not_cached');
+  assert.ok(!JSON.stringify(replayBody).includes(result.privateResult));
   assert.equal(fs.readFileSync(auditPath, 'utf8'), originalAudit, 'legacy audit bytes must remain unchanged');
 });
 
-test('bounds task result replay cache by entry count and serialized bytes', async t => {
-  const taskId = index => '00000000-0000-4000-8000-' + String(index).padStart(12, '0');
-  const goalHash = 'a'.repeat(64);
-  const initialAuditEvents = [];
-  for (let index = 1; index <= 102; index++) {
-    initialAuditEvents.push({ timestamp: '2026-11-10T00:00:00.000Z', type: 'task_submitted', taskId: taskId(index), goalHash });
-  }
-  for (let index = 1; index <= 101; index++) {
-    initialAuditEvents.push({
-      timestamp: '2026-11-10T00:01:00.000Z',
-      type: 'task_execution_completed',
-      taskId: taskId(index),
-      orchestratorTaskId: taskId(index),
-      result: { value: 'cached-result-' + index }
-    });
-  }
-  initialAuditEvents.push({
-    timestamp: '2026-11-10T00:02:00.000Z',
-    type: 'task_execution_completed',
-    taskId: taskId(102),
-    orchestratorTaskId: taskId(102),
-    result: { value: 'x'.repeat(1_000_001) }
-  });
+test('completed task result replay fails closed without a trusted local read authenticator', async t => {
+  const taskId = '00000000-0000-4000-8000-000000000204';
+  const initialAuditEvents = [
+    { timestamp: '2026-11-10T00:00:00.000Z', type: 'task_submitted', taskId, goalHash: 'a'.repeat(64) },
+    { timestamp: '2026-11-10T00:01:00.000Z', type: 'task_execution_completed', taskId, orchestratorTaskId: taskId, resultSha256: 'b'.repeat(64) }
+  ];
   const { base } = await withServer(t, { initialAuditEvents });
+  const replay = await fetch(base + '/api/tasks/' + taskId + '/run', {
+    method: 'POST', headers: { 'content-type': 'application/json', ...TEST_READ_AUTH_HEADERS }, body: '{}'
+  });
+  assert.equal(replay.status, 503);
+  assert.equal((await replay.json()).error, 'local_read_authenticator_not_configured');
+});
 
+test('task and audit read endpoints fail closed without a trusted local read authenticator', async t => {
+  const taskId = '00000000-0000-4000-8000-000000000202';
+  const { base } = await withServer(t, {
+    fetchImpl: async () => new Response(JSON.stringify({ ok: true, taskRecord: { taskId, goal: 'private' } }), { status: 200 })
+  });
+  const taskRead = await fetch(base + '/api/tasks/' + taskId);
+  assert.equal(taskRead.status, 503);
+  assert.equal((await taskRead.json()).error, 'local_read_authenticator_not_configured');
+  const auditRead = await fetch(base + '/api/audit/recent');
+  assert.equal(auditRead.status, 503);
+  assert.equal((await auditRead.json()).error, 'local_read_authenticator_not_configured');
+});
+
+test('task and audit reads reject a caller not approved by the trusted authenticator', async t => {
+  const taskId = '00000000-0000-4000-8000-000000000203';
+  const { base } = await withServer(t, {
+    readAuthVerifier: async () => ({ authorized: false, principal: '' })
+  });
+  const taskRead = await fetch(base + '/api/tasks/' + taskId);
+  assert.equal(taskRead.status, 403);
+  const auditRead = await fetch(base + '/api/audit/recent');
+  assert.equal(auditRead.status, 403);
+});
+
+test('bounds same-process result cache by entry count and serialized bytes', async t => {
+  const taskId = index => '00000000-0000-4000-8000-' + String(index).padStart(12, '0');
+  const records = new Map();
+  const fetchImpl = async (url, init = {}) => {
+    const method = init.method || 'GET';
+    if (url === 'http://127.0.0.1:18796/api/tasks' && method === 'POST') {
+      const taskRecord = JSON.parse(init.body).taskRecord;
+      records.set(taskRecord.taskId, taskRecord);
+      return new Response(JSON.stringify({ ok: true, taskId: taskRecord.taskId }), { status: 201 });
+    }
+    const inboxRead = url.match(/^http:\/\/127\.0\.0\.1:18796\/api\/tasks\/([0-9a-f-]{36})$/);
+    if (inboxRead && method === 'GET') {
+      const taskRecord = records.get(inboxRead[1]);
+      return taskRecord
+        ? new Response(JSON.stringify({ ok: true, taskRecord }), { status: 200 })
+        : new Response(JSON.stringify({ ok: false }), { status: 404 });
+    }
+    if (url === 'http://127.0.0.1:18797/api/tasks' && method === 'POST') {
+      const input = JSON.parse(init.body);
+      return new Response(JSON.stringify({ task: { id: input.taskId } }), { status: 201 });
+    }
+    if (url.endsWith('/approve') && method === 'POST') {
+      return new Response(JSON.stringify({ task: { state: 'approved' } }), { status: 200 });
+    }
+    const orchestratorRun = url.match(/^http:\/\/127\.0\.0\.1:18797\/api\/tasks\/([0-9a-f-]{36})\/run$/);
+    if (orchestratorRun && method === 'POST') {
+      const id = orchestratorRun[1];
+      const value = id === taskId(102) ? 'x'.repeat(1_000_001) : 'cached-result-' + id;
+      return new Response(JSON.stringify({ task: { state: 'completed' }, value }), { status: 200 });
+    }
+    return new Response(JSON.stringify({ error: 'unexpected_test_upstream_request' }), { status: 500 });
+  };
+  const { base } = await withServer(t, { fetchImpl, readAuthVerifier: testReadAuthVerifier });
+  for (let index = 1; index <= 102; index++) {
+    const id = taskId(index);
+    const submitted = await fetch(base + '/api/tasks', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ taskId: id, goal: 'cache-bound-goal-' + index })
+    });
+    assert.equal(submitted.status, 201);
+    assert.equal((await submitted.json()).taskId, id);
+
+    const executed = await fetch(base + '/api/tasks/' + id + '/run', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ approvalEvidence: TEST_APPROVAL_EVIDENCE })
+    });
+    assert.equal(executed.status, 200);
+  }
+
+  const replayHeaders = { 'content-type': 'application/json', ...TEST_READ_AUTH_HEADERS };
   const evicted = await fetch(base + '/api/tasks/' + taskId(1) + '/run', {
-    method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}'
+    method: 'POST', headers: replayHeaders, body: '{}'
   });
   assert.equal(evicted.status, 409);
   assert.equal((await evicted.json()).error, 'task_completed_result_not_cached');
 
   const retained = await fetch(base + '/api/tasks/' + taskId(101) + '/run', {
-    method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}'
+    method: 'POST', headers: replayHeaders, body: '{}'
   });
   assert.equal(retained.status, 200);
-  assert.deepEqual((await retained.json()).result, { value: 'cached-result-101' });
+  assert.equal((await retained.json()).result.value, 'cached-result-' + taskId(101));
 
   const oversized = await fetch(base + '/api/tasks/' + taskId(102) + '/run', {
-    method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}'
+    method: 'POST', headers: replayHeaders, body: '{}'
   });
   assert.equal(oversized.status, 409);
   assert.equal((await oversized.json()).error, 'task_completed_result_not_cached');
@@ -296,11 +373,11 @@ test('bounds in-memory recent audit history without changing the persisted event
     type: 'test_event',
     taskId: String(index)
   }));
-  const { base } = await withServer(t, { initialAuditEvents });
+  const { base } = await withServer(t, { initialAuditEvents, readAuthVerifier: testReadAuthVerifier });
   const health = await (await fetch(base + '/health')).json();
   assert.equal(health.auditEvents, 520);
   assert.equal(health.recentAuditEvents, 500);
-  const recent = await (await fetch(base + '/api/audit/recent')).json();
+  const recent = await (await fetch(base + '/api/audit/recent', { headers: TEST_READ_AUTH_HEADERS })).json();
   assert.equal(recent.events.length, 100);
   assert.equal(recent.events[0].taskId, '420');
   assert.equal(recent.events.at(-1).taskId, '519');

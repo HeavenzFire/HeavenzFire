@@ -35,6 +35,12 @@ New bridge audit records do not duplicate full task prompts or inference results
 
 **Legacy and retention boundary:** existing JSONL records are not rewritten or deleted and may still contain full goals, inbox responses, or results from earlier versions. The durable JSONL file remains append-only and has no automatic rotation or retention limit. This patch does not establish Windows ACLs or a retention policy. Do not place child, patient, or identifiable family-case data in the system until those host-level controls are independently validated.
 
+## Local task and audit read authorization
+
+`GET /api/tasks/:id` and `GET /api/audit/recent` require a trusted server-side `readAuthVerifier` supplied at bridge construction. The verifier receives the resource, method, path, and Authorization header and must return `{ authorized: true, principal: '<canonical authenticated principal>' }`. Missing verifier configuration fails closed with HTTP 503; rejected or invalid decisions fail closed with HTTP 403. Request-body claims and loopback/Host checks are not caller identity. The default executable entry point does not configure a read authenticator, so these sensitive read routes remain unavailable until a separately reviewed local authentication mechanism is configured. `/health` reports `localReadAuthenticatorConfigured` without exposing credentials.
+
+Legacy completion results are not loaded from historical JSONL into the process-local replay cache. After restart, a completed task returns HTTP 409 with a result digest rather than returning historical raw output.
+
 ## Routes
 
 `GET /health`; `GET /api/github/repository`; `GET /api/github/issues`; `GET /api/github/pulls`; `GET /api/github/commits`; `GET /api/github/files`; `POST /api/github/branches`; `PUT /api/github/files`; `POST /api/github/pulls`; `POST /api/github/issues`; `POST /api/tasks`; `POST /api/tasks/:id/run`; `GET /api/tasks/:id`; `GET /api/audit/recent`.
