@@ -24,7 +24,7 @@ jobs:
           node-version: 22
       - name: Assert least-privilege workflow settings
         run: |
-          node -e "const fs = require('node:fs'); const s = fs.readFileSync('.github/workflows/blank.yml', 'utf8'); const p = s.match(/^permissions:\\n([\\s\\S]*?)(?=^jobs:)/m); if (!p || p[1] !== '  contents: read\\n\\n') throw new Error('workflow permissions must be exactly contents: read'); if (!s.includes('        uses: actions/checkout@v4\\n        with:\\n          persist-credentials: false')) throw new Error('checkout must not persist credentials');"
+          node -e "const fs = require('node:fs'); const s = fs.readFileSync('.github/workflows/blank.yml', 'utf8'); const p = s.split('\\npermissions:\\n')[1]?.split('\\njobs:\\n')[0]; if (p !== '  contents: read\\n') throw new Error('workflow permissions must be exactly contents: read'); if (!s.includes('        uses: actions/checkout@v4\\n        with:\\n          persist-credentials: false')) throw new Error('checkout must not persist credentials');"
       - name: Check dashboard and publisher syntax
         run: |
           node --check UnifiedField/QuantumLab/UnifiedField-Dashboard-Server.cjs
