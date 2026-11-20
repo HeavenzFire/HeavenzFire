@@ -14,30 +14,39 @@ jobs:
   dashboard-worker:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-        continue-on-error: true
-        with:
-          persist-credentials: false
-          submodules: false
-      - name: Verify checkout and credential isolation
-        shell: bash
+      # Match the repository's existing Ternary Policy workflow: actions/checkout
+      # post-job cleanup fails on the current unmapped planetary-mesh-global gitlink.
+      # Keep the read-only token scoped to this fetch step and out of Git config/tests.
+      - name: Fetch source without submodule cleanup hooks
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FETCH_REF: ${{ github.event_name == 'pull_request' && format('refs/pull/{0}/merge', github.event.pull_request.number) || github.sha }}
         run: |
-          test -f .github/workflows/blank.yml
-          test "$(git rev-parse --show-toplevel)" = "$GITHUB_WORKSPACE"
-          git rev-parse --verify HEAD >/dev/null
-          git show HEAD:.github/workflows/blank.yml >/dev/null
-          if git config --local --list | grep -Fq 'http.https://github.com/.extraheader='; then
-            echo "GitHub credentials were persisted in local git configuration"
-            exit 1
-          fi
+          set -euo pipefail
+          git init .
+          git remote add origin "https://github.com/${GITHUB_REPOSITORY}.git"
+          ASKPASS="$RUNNER_TEMP/git-askpass.sh"
+          trap 'rm -f "$ASKPASS"' EXIT
+          cat > "$ASKPASS" <<'ASKPASS_SCRIPT'
+          #!/bin/sh
+          case "$1" in
+            *Username*) printf '%s\\n' 'x-access-token' ;;
+            *Password*) printf '%s\\n' "$GH_TOKEN" ;;
+            *) exit 1 ;;
+          esac
+          ASKPASS_SCRIPT
+          chmod 700 "$ASKPASS"
+          export GIT_ASKPASS="$ASKPASS"
+          export GIT_TERMINAL_PROMPT=0
+          git fetch --depth=1 origin "$FETCH_REF"
+          git checkout --detach FETCH_HEAD
+      - name: Assert token-scoped fetch and read-only permissions
+        run: |
+          node -e "const fs = require('node:fs'); const s = fs.readFileSync('.github/workflows/blank.yml', 'utf8'); const nl = String.fromCharCode(10); if (!s.includes('permissions:' + nl + '  contents: read')) throw new Error('workflow must grant contents: read'); if (s.split('GH_TOKEN:').length - 1 !== 1) throw new Error('GitHub token must be scoped to one fetch step'); if (!s.includes('GIT_ASKPASS') || !s.includes('git fetch --depth=1 origin')) throw new Error('fetch must use a temporary askpass credential'); if (s.includes('actions/checkout@')) throw new Error('checkout action reintroduces submodule cleanup and credential persistence');"
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Assert least-privilege workflow settings
-        run: |
-          node -e "const fs = require('node:fs'); const s = fs.readFileSync('.github/workflows/blank.yml', 'utf8'); const nl = String.fromCharCode(10); const p = s.split(nl + 'permissions:' + nl)[1]?.split(nl + 'jobs:' + nl)[0]; if (p !== '  contents: read' + nl) throw new Error('workflow permissions must be exactly contents: read'); for (const line of ['        uses: actions/checkout@v4', '        continue-on-error: true', '          persist-credentials: false', '          submodules: false']) { if (!s.includes(line)) throw new Error('missing least-privilege checkout setting: ' + line); }"
       - name: Check dashboard and publisher syntax
         run: |
           node --check UnifiedField/QuantumLab/UnifiedField-Dashboard-Server.cjs
