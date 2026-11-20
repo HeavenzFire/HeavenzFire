@@ -24,8 +24,10 @@ jobs:
         shell: bash
         run: |
           test -f .github/workflows/blank.yml
+          test "$(git rev-parse --show-toplevel)" = "$GITHUB_WORKSPACE"
           git rev-parse --verify HEAD >/dev/null
-          if git config --local --get-regexp 'http\\..*\\.extraheader' >/dev/null; then
+          git show HEAD:.github/workflows/blank.yml >/dev/null
+          if git config --local --list | grep -Fq 'http.https://github.com/.extraheader='; then
             echo "GitHub credentials were persisted in local git configuration"
             exit 1
           fi
