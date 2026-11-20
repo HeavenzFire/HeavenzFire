@@ -30,8 +30,8 @@ jobs:
           cat > "$ASKPASS" <<'ASKPASS_SCRIPT'
           #!/bin/sh
           case "$1" in
-            *Username*) printf '%s\\n' 'x-access-token' ;;
-            *Password*) printf '%s\\n' "$GH_TOKEN" ;;
+            *Username*) echo 'x-access-token' ;;
+            *Password*) echo "$GH_TOKEN" ;;
             *) exit 1 ;;
           esac
           ASKPASS_SCRIPT
