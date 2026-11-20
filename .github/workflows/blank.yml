@@ -4,19 +4,57 @@ on:
   push:
     branches: ["main", "feat/unified-field-local-model-workers", "fix/worker-result-aggregation", "feat/worker-forge-child-blueprints", "fix/worker-forge-draft-repair", "fix/worker-forge-template-fallback", "feat/worker-adversarial-smoke-suite", "feat/worker-registry", "feat/worker-smoke-artifact-import", "fix/worker-registry-windows-replace", "feat/worker-forge-remediation"]
   pull_request:
-    branches: ["main"]
+    branches: ["main", "feat/persistent-chrome-worker-20261114", "fix/browser-worker-recovery-approval-20261114"]
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   dashboard-worker:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
+      # Match the repository's existing Ternary Policy workflow: actions/checkout
+      # post-job cleanup fails on the current unmapped planetary-mesh-global gitlink.
+      # Keep the read-only token scoped to this fetch step and out of Git config/tests.
+      - name: Fetch source without submodule cleanup hooks
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FETCH_REF: ${{ github.event_name == 'pull_request' && format('refs/pull/{0}/merge', github.event.pull_request.number) || github.sha }}
+        run: |
+          set -euo pipefail
+          git init .
+          git remote add origin "https://github.com/${GITHUB_REPOSITORY}.git"
+          ASKPASS="$RUNNER_TEMP/git-askpass.sh"
+          trap 'rm -f "$ASKPASS"' EXIT
+          cat > "$ASKPASS" <<'ASKPASS_SCRIPT'
+          #!/bin/sh
+          case "$1" in
+            *Username*) echo 'x-access-token' ;;
+            *Password*) echo "$GH_TOKEN" ;;
+            *) exit 1 ;;
+          esac
+          ASKPASS_SCRIPT
+          chmod 700 "$ASKPASS"
+          export GIT_ASKPASS="$ASKPASS"
+          export GIT_TERMINAL_PROMPT=0
+          git fetch --depth=1 origin "$FETCH_REF"
+          git checkout --detach FETCH_HEAD
+      - name: Verify fetch credential cleanup
+        shell: bash
+        run: |
+          test ! -e "$RUNNER_TEMP/git-askpass.sh"
+          if git config --local --list | grep -Fq 'http.https://github.com/.extraheader='; then
+            echo "GitHub credentials were persisted in local git configuration"
+            exit 1
+          fi
+      - name: Assert token-scoped fetch and read-only permissions
+        run: |
+          node -e "const fs = require('node:fs'); const s = fs.readFileSync('.github/workflows/blank.yml', 'utf8'); const nl = String.fromCharCode(10); const dollar = String.fromCharCode(36); if (!s.includes('permissions:' + nl + '  contents: read')) throw new Error('workflow must grant contents: read'); const tokenDecl = '          GH_TOKEN: ' + dollar + '{{ github.token }}'; if (s.split(tokenDecl).length - 1 !== 1) throw new Error('GitHub token must be declared once in the fetch step'); if (!s.includes('GIT_ASKPASS') || !s.includes('git fetch --depth=1 origin')) throw new Error('fetch must use a temporary askpass credential'); const checkoutAction = 'actions/' + 'checkout@'; if (s.includes('        uses: ' + checkoutAction)) throw new Error('checkout action reintroduces submodule cleanup and credential persistence');"
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
       - name: Check dashboard and publisher syntax
         run: |
           node --check UnifiedField/QuantumLab/UnifiedField-Dashboard-Server.cjs
@@ -47,3 +85,9 @@ jobs:
           & "${{ github.workspace }}/UnifiedField/QuantumLab/Test-LocalModelWorkerResponse.Tests.ps1"
       - name: Test dashboard-worker safety contract and deterministic worker forge
         run: node --test UnifiedField/QuantumLab/unified-field-dashboard.test.cjs UnifiedField/QuantumLab/uf-model-worker-journal-publisher.test.cjs UnifiedField/QuantumLab/worker-forge.test.cjs UnifiedField/QuantumLab/worker-result-store.test.cjs UnifiedField/QuantumLab/worker-forge-drafter.test.cjs UnifiedField/QuantumLab/worker-forge-adversarial.test.cjs UnifiedField/QuantumLab/worker-registry.test.cjs UnifiedField/QuantumLab/worker-forge-remediation.test.cjs
+      - name: Test persistent browser worker recovery approval contract
+        working-directory: UnifiedField/BrowserBridge
+        run: |
+          npm ci --ignore-scripts
+          node --check chrome-automation-worker.cjs
+          node --test browser-automation-worker.test.cjs
