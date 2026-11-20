@@ -16,15 +16,26 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        continue-on-error: true
         with:
           persist-credentials: false
+          submodules: false
+      - name: Verify checkout and credential isolation
+        shell: bash
+        run: |
+          test -f .github/workflows/blank.yml
+          git rev-parse --verify HEAD >/dev/null
+          if git config --local --get-regexp 'http\\..*\\.extraheader' >/dev/null; then
+            echo "GitHub credentials were persisted in local git configuration"
+            exit 1
+          fi
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
       - name: Assert least-privilege workflow settings
         run: |
-          node -e "const fs = require('node:fs'); const s = fs.readFileSync('.github/workflows/blank.yml', 'utf8'); const p = s.split('\\npermissions:\\n')[1]?.split('\\njobs:\\n')[0]; if (p !== '  contents: read\\n') throw new Error('workflow permissions must be exactly contents: read'); if (!s.includes('        uses: actions/checkout@v4\\n        with:\\n          persist-credentials: false')) throw new Error('checkout must not persist credentials');"
+          node -e "const fs = require('node:fs'); const s = fs.readFileSync('.github/workflows/blank.yml', 'utf8'); const nl = String.fromCharCode(10); const p = s.split(nl + 'permissions:' + nl)[1]?.split(nl + 'jobs:' + nl)[0]; if (p !== '  contents: read' + nl) throw new Error('workflow permissions must be exactly contents: read'); const checkout = ['        uses: actions/checkout@v4', '        with:', '          persist-credentials: false', '          submodules: false'].join(nl); if (!s.includes(checkout)) throw new Error('checkout must disable persisted credentials and submodules');"
       - name: Check dashboard and publisher syntax
         run: |
           node --check UnifiedField/QuantumLab/UnifiedField-Dashboard-Server.cjs
