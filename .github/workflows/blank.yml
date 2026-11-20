@@ -7,12 +7,20 @@ on:
     branches: ["main", "feat/persistent-chrome-worker-20261114", "fix/browser-worker-recovery-approval-20261114"]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   dashboard-worker:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Assert least-privilege workflow settings
+        run: |
+          node -e "const fs = require('node:fs'); const s = fs.readFileSync('.github/workflows/blank.yml', 'utf8'); if (!/^permissions:\\n  contents: read$/m.test(s)) throw new Error('workflow must grant only contents: read'); if (!/uses: actions\\/checkout@v4\\s+with:\\s+persist-credentials: false/.test(s)) throw new Error('checkout must not persist credentials');"
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
