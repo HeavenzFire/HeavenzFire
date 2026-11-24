@@ -741,7 +741,12 @@ test('completed-result replay classifies upstream failures as retryable and only
     assert.equal(body.resultSha256, digest);
     assert.equal(body.retryable, undefined);
   }
-  for (const taskId of [taskIds.http502, taskIds.invalidJson, taskIds.network, taskIds.missingRoute]) {
+  for (const [taskId, expectedUpstreamStatus] of [
+    [taskIds.http502, 502],
+    [taskIds.invalidJson, null],
+    [taskIds.network, null],
+    [taskIds.missingRoute, 404]
+  ]) {
     const response = await fetch(base + '/api/tasks/' + taskId + '/run', {
       method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}'
     });
@@ -750,7 +755,7 @@ test('completed-result replay classifies upstream failures as retryable and only
     assert.equal(body.error, 'task_completed_result_read_unavailable');
     assert.equal(body.retryable, true);
     assert.equal(body.resultSha256, digest);
-    assert.ok(body.upstreamStatus === null || body.upstreamStatus === 502 || body.upstreamStatus === 404);
+    assert.equal(body.upstreamStatus, expectedUpstreamStatus);
   }
   const missing = await fetch(base + '/api/tasks/' + taskIds.missingResult + '/run', {
     method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}'
