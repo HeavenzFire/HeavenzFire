@@ -705,7 +705,10 @@ test('completed-result replay classifies upstream failures as retryable and only
     invalidJson: '00000000-0000-4000-8000-000000000787',
     network: '00000000-0000-4000-8000-000000000788',
     missingRoute: '00000000-0000-4000-8000-000000000789',
-    missingResult: '00000000-0000-4000-8000-000000000790'
+    missingResult: '00000000-0000-4000-8000-000000000790',
+    http401Text: '00000000-0000-4000-8000-000000000794',
+    http403Text: '00000000-0000-4000-8000-000000000795',
+    missingTask: '00000000-0000-4000-8000-000000000796'
   };
   const digest = 'b'.repeat(64);
   const initialAuditEvents = Object.values(taskIds).flatMap(taskId => {
@@ -724,14 +727,22 @@ test('completed-result replay classifies upstream failures as retryable and only
     }
     if (taskId === taskIds.http401) return new Response('{}', { status: 401 });
     if (taskId === taskIds.http403) return new Response('{}', { status: 403 });
+    if (taskId === taskIds.http401Text) return new Response('UPSTREAM_401_BODY_SENTINEL', { status: 401 });
+    if (taskId === taskIds.http403Text) return new Response('<html>UPSTREAM_403_BODY_SENTINEL</html>', { status: 403 });
     if (taskId === taskIds.http502) return new Response(JSON.stringify({ error: 'upstream_unavailable' }), { status: 502 });
     if (taskId === taskIds.invalidJson) return new Response('not-json', { status: 200 });
     if (taskId === taskIds.network) throw new Error('simulated_socket_reset');
     if (taskId === taskIds.missingRoute) return new Response('{}', { status: 404 });
+    if (taskId === taskIds.missingTask) return new Response(JSON.stringify({ error: 'task_not_found' }), { status: 404 });
     return new Response(JSON.stringify({ task: { id: '00000000-0000-4000-8000-000000000791' } }), { status: 200 });
   };
   const { base } = await withServer(t, { fetchImpl, initialAuditEvents });
-  for (const [taskId, expectedStatus] of [[taskIds.http401, 401], [taskIds.http403, 403]]) {
+  for (const [taskId, expectedStatus] of [
+    [taskIds.http401, 401],
+    [taskIds.http403, 403],
+    [taskIds.http401Text, 401],
+    [taskIds.http403Text, 403]
+  ]) {
     const response = await fetch(base + '/api/tasks/' + taskId + '/run', {
       method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}'
     });
@@ -740,6 +751,8 @@ test('completed-result replay classifies upstream failures as retryable and only
     assert.equal(body.error, 'task_completed_result_read_unavailable');
     assert.equal(body.resultSha256, digest);
     assert.equal(body.retryable, undefined);
+    assert.ok(!JSON.stringify(body).includes('UPSTREAM_401_BODY_SENTINEL'));
+    assert.ok(!JSON.stringify(body).includes('UPSTREAM_403_BODY_SENTINEL'));
   }
   for (const [taskId, expectedUpstreamStatus] of [
     [taskIds.http502, 502],
@@ -757,6 +770,15 @@ test('completed-result replay classifies upstream failures as retryable and only
     assert.equal(body.resultSha256, digest);
     assert.equal(body.upstreamStatus, expectedUpstreamStatus);
   }
+  const confirmedMissing = await fetch(base + '/api/tasks/' + taskIds.missingTask + '/run', {
+    method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}'
+  });
+  assert.equal(confirmedMissing.status, 409);
+  const confirmedMissingBody = await confirmedMissing.json();
+  assert.equal(confirmedMissingBody.error, 'task_completed_result_not_cached');
+  assert.equal(confirmedMissingBody.resultSha256, digest);
+  assert.equal(confirmedMissingBody.retryable, undefined);
+
   const missing = await fetch(base + '/api/tasks/' + taskIds.missingResult + '/run', {
     method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}'
   });
@@ -765,6 +787,49 @@ test('completed-result replay classifies upstream failures as retryable and only
   assert.equal(missingBody.error, 'task_completed_result_not_cached');
   assert.equal(missingBody.resultSha256, digest);
   assert.equal(runCalls, 0, 'result retrieval failures must never trigger a second orchestrator execution');
+});
+
+test('interrupted-start recovery uses completed-result retry classification without rerunning execution', async t => {
+  const taskId = '00000000-0000-4000-8000-000000000797';
+  const goal = 'Recover a completed orchestrator task after the bridge process restarts';
+  const goalHash = crypto.createHash('sha256').update(goal, 'utf8').digest('hex');
+  let runCalls = 0;
+  const initialAuditEvents = [
+    { type: 'task_submitted', taskId, goalHash, inboxAccepted: true },
+    { type: 'task_execution_authorized', taskId, orchestratorTaskId: taskId, goalHash, approvalVerified: true, approvalDigest: 'a'.repeat(64) },
+    { type: 'task_execution_started', taskId, orchestratorTaskId: taskId, approvalVerified: true, approvalDigest: 'a'.repeat(64) }
+  ];
+  const fetchImpl = async url => {
+    if (url === 'http://127.0.0.1:18797/health') {
+      return new Response(JSON.stringify({ ok: true, taskStateLookup: true }), { status: 200 });
+    }
+    if (url === 'http://127.0.0.1:18797/api/tasks/' + taskId + '/state') {
+      return new Response(JSON.stringify({
+        task: { id: taskId, state: 'completed', goalHash, completedAt: '2026-11-25T00:00:00.000Z' }
+      }), { status: 200 });
+    }
+    if (url === 'http://127.0.0.1:18797/api/tasks/' + taskId + '/result') {
+      return new Response(JSON.stringify({ error: 'result_store_temporarily_unavailable' }), { status: 502 });
+    }
+    if (url.endsWith('/run')) {
+      runCalls++;
+      return new Response(JSON.stringify({ error: 'unexpected_execution_retry' }), { status: 500 });
+    }
+    return new Response(JSON.stringify({ error: 'not_found' }), { status: 404 });
+  };
+  const { base, auditPath } = await withServer(t, { fetchImpl, initialAuditEvents });
+  const response = await fetch(base + '/api/tasks/' + taskId + '/run', {
+    method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}'
+  });
+  assert.equal(response.status, 503);
+  const body = await response.json();
+  assert.equal(body.error, 'task_completed_result_read_unavailable');
+  assert.equal(body.retryable, true);
+  assert.equal(body.upstreamStatus, 502);
+  assert.equal(body.resultSha256, null);
+  assert.equal(runCalls, 0, 'completed recovery must not execute the orchestrator again');
+  const events = fs.readFileSync(auditPath, 'utf8').split('\n').filter(Boolean).map(JSON.parse);
+  assert.equal(events.some(event => event.type === 'task_execution_completed' && event.taskId === taskId), false);
 });
 
 test('sanitizes legacy audit records without restoring raw results to replay cache', async t => {
@@ -789,7 +854,7 @@ test('sanitizes legacy audit records without restoring raw results to replay cac
       result
     }
   ];
-  const { base, auditPath } = await withServer(t, { initialAuditEvents });
+  const { base, auditPath } = await withServer(t, { initialAuditEvents, fetchImpl: async () => new Response('{}', { status: 503 }) });
   const originalAudit = fs.readFileSync(auditPath, 'utf8');
   assert.ok(originalAudit.includes(goalSentinel));
   assert.ok(originalAudit.includes(result.privateResult));
@@ -836,7 +901,7 @@ test('does not restore any legacy raw result into the replay cache after restart
     orchestratorTaskId: taskId(102),
     result: { value: 'x'.repeat(1_000_001) }
   });
-  const { base } = await withServer(t, { initialAuditEvents });
+  const { base } = await withServer(t, { initialAuditEvents, fetchImpl: async () => new Response('{}', { status: 503 }) });
 
   const evicted = await fetch(base + '/api/tasks/' + taskId(1) + '/run', {
     method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}'
