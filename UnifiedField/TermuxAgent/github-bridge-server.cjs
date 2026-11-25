@@ -281,10 +281,30 @@ function createGitHubBridgeServer(options = {}) {
       body: payload === undefined ? undefined : JSON.stringify(payload),
       signal: AbortSignal.timeout(timeoutMs)
     });
+    if (!response.ok) {
+      const error = Object.assign(new Error('local_service_http_' + response.status + ':request_failed'), {
+        statusCode: response.status,
+        upstreamErrorCode: null
+      });
+      let errorText = '';
+      try { errorText = await response.text(); } catch { throw error; }
+      if (errorText) {
+        try {
+          const data = JSON.parse(errorText);
+          if (data && typeof data.error === 'string' && /^[a-z0-9_]{1,64}$/.test(data.error)) {
+            error.upstreamErrorCode = data.error;
+            error.message = 'local_service_http_' + response.status + ':' + data.error;
+          }
+        } catch { /* Preserve HTTP status when an error body is not JSON. */ }
+      }
+      throw error;
+    }
     const text = await response.text();
     let data = {};
-    if (text) { try { data = JSON.parse(text); } catch { throw new Error('local_service_invalid_json'); } }
-    if (!response.ok) throw Object.assign(new Error('local_service_http_' + response.status + ':' + (data.error || 'request_failed')), { statusCode: response.status });
+    if (text) {
+      try { data = JSON.parse(text); }
+      catch { throw new Error('local_service_invalid_json'); }
+    }
     return data;
   }
 
@@ -443,13 +463,32 @@ function createGitHubBridgeServer(options = {}) {
             try {
               const result = await getOrchestratorResult();
               if (result?.task?.id === taskId) {
-                if (recovered) append({ type: 'task_execution_completed', taskId, orchestratorTaskId: taskId, approvalVerified: true, approvalDigest: event.approvalDigest, verificationStatus: result.task.verificationStatus, result });
-                else rememberTaskResult(taskId, result);
+                if (recovered) {
+                  append({ type: 'task_execution_completed', taskId, orchestratorTaskId: taskId, approvalVerified: true, approvalDigest: event.approvalDigest, verificationStatus: result.task.verificationStatus, result });
+                  return send(res, 200, {
+                    ok: true,
+                    taskId,
+                    orchestratorTaskId: event.orchestratorTaskId || taskId,
+                    recovered: true,
+                    verificationStatus: result.task.verificationStatus,
+                    result
+                  });
+                }
+                rememberTaskResult(taskId, result);
                 return send(res, 200, { ok: true, idempotentReplay: true, recovered: true, result });
               }
             } catch (error) {
               if (error.statusCode === 401 || error.statusCode === 403) {
                 return send(res, error.statusCode, { ok: false, error: 'task_completed_result_read_unavailable', resultSha256: event.resultSha256 || null });
+              }
+              if (error.statusCode === 404 && error.upstreamErrorCode === 'task_not_found') {
+                return send(res, 409, {
+                  ok: false,
+                  error: 'task_completed_result_not_cached',
+                  taskId,
+                  orchestratorTaskId: event.orchestratorTaskId || taskId,
+                  resultSha256: event.resultSha256 || null
+                });
               }
               return send(res, 503, {
                 ok: false,
@@ -488,10 +527,7 @@ function createGitHubBridgeServer(options = {}) {
             }
             if (state === 'completed' || state === 'verified' || (state === 'rejected' && existing.task.completedAt)) {
               if (!approvalReference) throw Object.assign(new Error('completed_task_missing_durable_approval_reference'), { statusCode: 409 });
-              const result = await getOrchestratorResult();
-              if (!result?.task || result.task.id !== taskId) throw Object.assign(new Error('completed_task_result_unavailable_after_restart'), { statusCode: 503 });
-              append({ type: 'task_execution_completed', taskId, orchestratorTaskId: taskId, ...approvalReference, verificationStatus: result.task.verificationStatus, result });
-              return send(res, 200, { ok: true, taskId, orchestratorTaskId: taskId, recovered: true, verificationStatus: result.task.verificationStatus, result });
+              return await replayCompleted(priorRun, true);
             }
             if (state === 'failed') {
               if (!approvalReference) throw Object.assign(new Error('failed_task_missing_durable_approval_reference'), { statusCode: 409 });
