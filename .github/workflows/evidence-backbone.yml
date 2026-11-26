@@ -1,0 +1,43 @@
+name: Evidence Backbone
+
+on:
+  push:
+    paths:
+      - 'UnifiedField/FieldCore/anchor-manifest.cjs'
+      - 'UnifiedField/FieldCore/anchor-manifest.test.cjs'
+      - 'UnifiedField/FieldCore/evidence-ledger.cjs'
+      - 'UnifiedField/FieldCore/evidence-ledger.test.cjs'
+      - 'UnifiedField/FieldCore/public-record-adapter.cjs'
+      - 'UnifiedField/FieldCore/public-record-adapter.test.cjs'
+      - '.github/workflows/evidence-backbone.yml'
+  pull_request:
+    paths:
+      - 'UnifiedField/FieldCore/anchor-manifest.cjs'
+      - 'UnifiedField/FieldCore/anchor-manifest.test.cjs'
+      - 'UnifiedField/FieldCore/evidence-ledger.cjs'
+      - 'UnifiedField/FieldCore/evidence-ledger.test.cjs'
+      - 'UnifiedField/FieldCore/public-record-adapter.cjs'
+      - 'UnifiedField/FieldCore/public-record-adapter.test.cjs'
+      - '.github/workflows/evidence-backbone.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Syntax checks
+        run: |
+          node --check UnifiedField/FieldCore/anchor-manifest.cjs
+          node --check UnifiedField/FieldCore/public-record-adapter.cjs
+          node --check UnifiedField/FieldCore/evidence-ledger.cjs
+      - name: Evidence tests
+        run: |
+          node --test UnifiedField/FieldCore/anchor-manifest.test.cjs
+          node --test UnifiedField/FieldCore/public-record-adapter.test.cjs
+          node --test UnifiedField/FieldCore/evidence-ledger.test.cjs
