@@ -110,7 +110,7 @@ test('task intake persists to inbox and 16-role execution requires approval', as
   const calls = [];
   const fetchImpl = async (url, init = {}) => {
     calls.push({ url, method: init.method, body: init.body && JSON.parse(init.body) });
-    if (url === 'http://127.0.0.1:18796/api/tasks') return new Response(JSON.stringify({ ok: true, taskId: calls.at(-1).body.taskRecord.taskId }), { status: 201 });
+    if (url === 'http://127.0.0.1:18799/api/tasks') return new Response(JSON.stringify({ ok: true, taskId: calls.at(-1).body.taskRecord.taskId }), { status: 201 });
     if (url === 'http://127.0.0.1:18797/api/tasks') return new Response(JSON.stringify({ task: { id: calls.at(-1).body.taskId } }), { status: 201 });
     if (url.endsWith('/approve')) return new Response(JSON.stringify({ task: { state: 'approved' } }), { status: 200 });
     if (url.endsWith('/run')) return new Response(JSON.stringify({ task: { state: 'completed' }, completedRoles: 16, failedRoles: 0 }), { status: 200 });
@@ -139,7 +139,7 @@ test('task intake persists to inbox and 16-role execution requires approval', as
   assert.equal(replayResult.idempotentReplay, true);
   assert.deepEqual(replayResult.result, runResult.result);
   assert.equal(approvalCalls, 1, 'completed replay must not consume the one-time approval twice');
-  assert.ok(calls.some(x => x.url === 'http://127.0.0.1:18796/api/tasks'));
+  assert.ok(calls.some(x => x.url === 'http://127.0.0.1:18799/api/tasks'));
   const orchestratorCreate = calls.find(x => x.url === 'http://127.0.0.1:18797/api/tasks');
   assert.equal(orchestratorCreate.body.taskId, task.taskId);
   const approvalCall = calls.find(x => x.url.endsWith('/approve'));
