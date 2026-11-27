@@ -2,30 +2,43 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { ROLES, validateEndpoint, parseRoleModelsJson, assessRoleSpecificity, runSixteenRoleField } = require('./sixteen-role-orchestrator.cjs');
+const { ROLES, validateEndpoint, parseRoleModelsJson, assessRoleSpecificity, makePrompt, runSixteenRoleField } = require('./sixteen-role-orchestrator.cjs');
 
 function validRoleResponse(roleId) {
   const responses = {
-    architect: 'Component boundaries, interface ownership, and concrete contracts are defined.',
-    planner: 'Step sequence, dependencies, ordered checkpoints, and implementation order are listed.',
-    researcher: 'Evidence sources, supplied facts, unknowns, and assumptions are separated.',
-    requirements: 'Acceptance criteria define measurable pass/fail outcomes.',
-    designer: 'API schema contracts and failure behavior are specified.',
-    builder: [
-      'FILE: UnifiedField/QuantumLab/a.cjs | PROPOSED CHANGE: add bounded logic | DEPENDENCIES: none | VERIFICATION: node test',
-      'FILE: UnifiedField/QuantumLab/b.cjs | PROPOSED CHANGE: add regression coverage | DEPENDENCIES: a.cjs | VERIFICATION: node test',
-      'FILE: UnifiedField/QuantumLab/c.cjs | PROPOSED CHANGE: document operation | DEPENDENCIES: a.cjs | VERIFICATION: review docs'
+    architect: 'Component boundaries define interface ownership and concrete contracts across the repository architecture.',
+    planner: [
+      'STEP 1: Map the existing runtime contract | DEPENDS ON: architect | CHECKPOINT: cite the owning source file.',
+      'STEP 2: Add the smallest compatible change | DEPENDS ON: STEP 1 | CHECKPOINT: run the focused unit test.',
+      'STEP 3: Verify integration and recovery | DEPENDS ON: STEP 2 | CHECKPOINT: confirm the full suite passes.'
     ].join('\n'),
-    integrator: 'Integration wiring and contract mismatches are identified.',
-    'test-engineer': 'Test cases include expected assertions and executable inputs.',
-    'security-reviewer': 'Threats, trust boundaries, and mitigation controls are identified.',
-    'adversarial-verifier': 'Negative tests, abuse cases, and falsifiable failure conditions are specified.',
-    'reliability-engineer': 'Timeout, retry, recovery, idempotency, and crash behavior are covered.',
-    'performance-analyst': 'Latency, throughput, token and memory benchmarks are measurable.',
-    documentation: 'Operator runbook, usage instructions, and limitations are documented.',
-    'evidence-auditor': 'Claims are classified verified, unverified, or contradicted with evidence references.',
-    'release-manager': 'Release gates, rollback conditions, and go/no-go decision are defined.',
-    synthesis: 'Cross-role agreement, conflicts, risks, and prioritized next actions are summarized.'
+    researcher: [
+      'EVIDENCE: The role graph is defined in UnifiedField/QuantumLab/sixteen-role-orchestrator.cjs.',
+      'SOURCES: UnifiedField/QuantumLab/sixteen-role-orchestrator.cjs, UnifiedField/QuantumLab/sixteen-role-orchestrator.test.cjs.',
+      'UNKNOWNS: Hosted CI does not prove Windows or Android live runtime behavior.',
+      'ASSUMPTIONS: The checked-out files are the target revision under review.'
+    ].join('\n'),
+    requirements: [
+      'ACCEPTANCE 1: Each role emits usable output | PASS: all 16 roles have validated outputs | FAIL: any role is blocked or review_required.',
+      'ACCEPTANCE 2: Task approval is bound to its content | PASS: signature matches task ID and goal hash | FAIL: any changed task is accepted.',
+      'ACCEPTANCE 3: Execution is evidence-gated | PASS: candidate, reviewed, and tested commits match | FAIL: revision drift is accepted.'
+    ].join('\n'),
+    designer: 'API schema contracts define component interfaces and failure behavior across the integration.',
+    builder: [
+      'FILE: UnifiedField/QuantumLab/sixteen-role-orchestrator.cjs | PROPOSED CHANGE: add bounded logic | DEPENDENCIES: none | VERIFICATION: node test',
+      'FILE: UnifiedField/QuantumLab/sixteen-role-orchestrator.test.cjs | PROPOSED CHANGE: add regression coverage | DEPENDENCIES: a.cjs | VERIFICATION: node test',
+      'FILE: UnifiedField/QuantumLab/sixteen-role-orchestrator.cjs | PROPOSED CHANGE: document operation | DEPENDENCIES: a.cjs | VERIFICATION: review docs'
+    ].join('\n'),
+    integrator: 'Integration wiring identifies contract mismatches and compatibility requirements across components.',
+    'test-engineer': 'Executable tests define test cases, expected assertions, and reproducible inputs for validation.',
+    'security-reviewer': 'Threats at trust boundaries require specific mitigation controls and review evidence.',
+    'adversarial-verifier': 'Negative tests cover abuse cases and falsifiable failure conditions for the implementation.',
+    'reliability-engineer': 'Timeouts, retries, recovery, and idempotency define crash behavior and safe restart handling.',
+    'performance-analyst': 'Latency, throughput, token usage, memory usage, and benchmarks define measurable performance.',
+    documentation: 'Operator runbook gives usage instructions and documents limitations for safe operation.',
+    'evidence-auditor': 'Claims are classified verified, unverified, or contradicted with evidence references and provenance.',
+    'release-manager': 'Release gates and rollback conditions define the go/no-go decision for deployment readiness.',
+    synthesis: 'Cross-role agreement, conflicts, risks, and prioritized actions are summarized for synthesis.'
   };
   return responses[roleId];
 }
@@ -52,12 +65,15 @@ test('runs all roles through the DAG with bounded concurrency and retains semant
   let active = 0;
   let peak = 0;
   const called = [];
+  const context = 'FILE: UnifiedField/QuantumLab/sixteen-role-orchestrator.cjs\\nTEST: role-specific repair gate';
   const result = await runSixteenRoleField({
     goal: 'Test a bounded local orchestration run.',
+    context,
     endpoint: 'http://127.0.0.1:11800',
     maxParallel: 2,
     maxTokens: 128,
     invoke: async task => {
+      assert.ok(task.prompt.includes(context));
       active += 1;
       peak = Math.max(peak, active);
       called.push(task.roleId);
@@ -67,6 +83,8 @@ test('runs all roles through the DAG with bounded concurrency and retains semant
     }
   });
   assert.equal(result.roleCount, 16);
+  assert.equal(result.contextChars, context.length);
+  assert.match(result.contextSha256, /^[a-f0-9]{64}$/);
   assert.equal(result.counts.completed, 16);
   assert.equal(result.counts.failed, 0);
   assert.equal(result.counts.blocked, 0);
@@ -204,9 +222,67 @@ test('role-specificity failure triggers one targeted repair and opens the qualit
   assert.equal(result.roleRecords[0].roleSpecificity.roleSpecificityPassed, true);
 });
 
-test('builder specificity requires exactly three complete change rows', () => {
+test('role-specific acceptance requires substantive output and at least two literal anchors', () => {
+  assert.equal(assessRoleSpecificity('architect', validRoleResponse('architect')).roleSpecificityPassed, true);
+  assert.equal(assessRoleSpecificity('requirements', 'Acceptance criteria are required.').roleSpecificityPassed, false);
+  assert.equal(
+    assessRoleSpecificity('requirements', 'Acceptance criteria are required, and this longer sentence still contains only one required signal while omitting any measurable pass or fail threshold.').roleSpecificityPassed,
+    false
+  );
+});
+
+test('researcher specificity requires concise evidence, source paths, unknowns, and assumptions', () => {
+  assert.equal(assessRoleSpecificity('researcher', validRoleResponse('researcher')).roleSpecificityPassed, true);
+  assert.equal(
+    assessRoleSpecificity('researcher', 'EVIDENCE: A fact.\nSOURCES: no source path\nUNKNOWNS: unknown\nASSUMPTIONS: none').roleSpecificityPassed,
+    false
+  );
+});
+
+test('requirements specificity requires three testable pass/fail rows', () => {
+  assert.equal(assessRoleSpecificity('requirements', validRoleResponse('requirements')).roleSpecificityPassed, true);
+  assert.equal(
+    assessRoleSpecificity('requirements', 'ACCEPTANCE 1: One testable condition | PASS: yes | FAIL: no').roleSpecificityPassed,
+    false
+  );
+});
+
+test('planner specificity requires three actionable rows with dependencies and checkpoints', () => {
+  assert.equal(assessRoleSpecificity('planner', validRoleResponse('planner')).roleSpecificityPassed, true);
+  assert.equal(
+    assessRoleSpecificity('planner', 'STEP 1: Plan work | DEPENDS ON: none | CHECKPOINT: done').roleSpecificityPassed,
+    false
+  );
+});
+
+test('builder and planner prompts contain non-conflicting exact output contracts', () => {
+  const builder = ROLES.find(role => role.id === 'builder');
+  const builderPrompt = makePrompt(builder, 'Review the current QuantumLab orchestrator.', []);
+  assert.match(builderPrompt, /Return exactly three non-empty lines/);
+  assert.ok(builderPrompt.includes('UnifiedField/QuantumLab/sixteen-role-orchestrator.cjs'));
+  assert.ok(builderPrompt.includes('UnifiedField/QuantumLab/sixteen-role-orchestrator.test.cjs'));
+  assert.match(builderPrompt, /Do not repeat or paraphrase upstream role responses/);
+  assert.match(builderPrompt, /no preamble, bullets, or code fence/);
+  const plannerPrompt = makePrompt(ROLES.find(role => role.id === 'planner'), 'Plan the review.', []);
+  assert.match(plannerPrompt, /exactly three lines/);
+  assert.match(plannerPrompt, /STEP 1:/);
+  assert.match(plannerPrompt, /no preamble, bullets, or code fence/);
+  const researcherPrompt = makePrompt(ROLES.find(role => role.id === 'researcher'), 'Research the review.', []);
+  assert.match(researcherPrompt, /EVIDENCE:/);
+  assert.match(researcherPrompt, /SOURCES:/);
+  const requirementsPrompt = makePrompt(ROLES.find(role => role.id === 'requirements'), 'Define acceptance.', []);
+  assert.match(requirementsPrompt, /ACCEPTANCE 1:/);
+  assert.match(requirementsPrompt, /PASS:/);
+  assert.match(requirementsPrompt, /FAIL:/);
+});
+
+test('builder specificity requires exactly three complete change rows and approved target paths', () => {
   assert.equal(assessRoleSpecificity('builder', validRoleResponse('builder')).roleSpecificityPassed, true);
   assert.equal(assessRoleSpecificity('builder', 'FILE: x | PROPOSED CHANGE: y | DEPENDENCIES: z | VERIFICATION: q').roleSpecificityPassed, false);
+  const inventedPath = Array(3).fill(
+    'FILE: UnifiedField/QuantumLab/unsafe.cjs | PROPOSED CHANGE: x | DEPENDENCIES: none | VERIFICATION: node test'
+  ).join('\n');
+  assert.equal(assessRoleSpecificity('builder', inventedPath).roleSpecificityPassed, false);
 });
 
 test('refusal output is not counted as a completed role', async () => {

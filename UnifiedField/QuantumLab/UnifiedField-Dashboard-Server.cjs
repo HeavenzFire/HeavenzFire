@@ -25,7 +25,7 @@ const BUILD_MODEL=path.join(ROOT,'UnifiedField','QuantumLab','UnifiedField-Build
 const TASKDIR=path.join(ROOT,'144A','tasks');
 const BUILD_JOURNAL=new OfflineTaskJournal(path.join(ROOT,'UnifiedField','QuantumLab','data','bridge-tasks.jsonl'));
 const APPROVAL_LEDGER=path.join(ROOT,'UnifiedField','QuantumLab','data','approved-task-dispatches.jsonl');
-const TASK_INBOX_URL='http://127.0.0.1:18796';
+const TASK_INBOX_URL='http://127.0.0.1:18799';
 const MESH_BRIDGE_URL='http://127.0.0.1:8081';
 const BUILD_TARGETS=Object.freeze(['UnifiedField-Dashboard-Server.cjs','UnifiedField-Dashboard.html','heavenzfire-mesh-bridge.cjs','uf-local-worker.cjs','uf-bridge-journal.cjs','worker-forge.cjs','worker-forge-drafter.cjs','worker-forge-adversarial.cjs','worker-forge-remediation.cjs','worker-registry.cjs','worker-result-store.cjs','uf-model-worker-journal-publisher.cjs','UnifiedField-Dashboard.test.cjs','HeavenzFire-DigitalBrain-Server.cjs','HeavenzFire-DigitalBrain.html','embodied-avatar.integration.test.cjs','../AvatarBody/avatar-body-server.cjs','../AvatarBody/avatar-body.cjs','../AvatarBody/avatar-body.test.cjs','heavenzfire-ai-gateway.test.cjs','uf-local-worker.test.cjs','uf-bridge-journal.test.cjs','worker-forge.test.cjs','worker-forge-drafter.test.cjs','worker-forge-adversarial.test.cjs','worker-forge-remediation.test.cjs','worker-registry.test.cjs','worker-result-store.test.cjs','uf-model-worker-journal-publisher.test.cjs']);
 const GUARDIAN=path.join(ROOT,'144A','guardian-state.json');
@@ -52,7 +52,7 @@ const endpoints=[
  {id:'worker',name:'Unified Field local worker',url:'http://127.0.0.1:8798/health'},
  {id:'avatarvision',name:'Avatar local vision (OpenCV)',url:'http://127.0.0.1:11802/health'},
  {id:'meshbridge',name:'Unified Field mesh bridge',url:'http://127.0.0.1:8081/health'},
- {id:'taskinbox',name:'Unified Field proposal inbox',url:'http://127.0.0.1:18796/health'},
+ {id:'taskinbox',name:'Unified Field proposal inbox',url:'http://127.0.0.1:18799/health'},
  {id:'legacy-mesh',name:'Legacy mesh coordinator',url:'http://127.0.0.1:8080/health'},
  ...Array.from({length:16},(_,i)=>{const port=18111+i;const role=['text','coding','browser'][i%3];return {id:'swarm-'+port,name:'Swarm '+role+' worker '+port,url:'http://127.0.0.1:'+port+'/health'};})
 ];

@@ -76,3 +76,23 @@ The Builder deliverable is exactly three non-empty rows. Every row must contain 
 `qualityGate.passed` now requires all sixteen roles to complete and pass their role-specific signal check. This remains a structural/content-shape gate, not factual or semantic verification: `semanticReviewRequired` stays true, report `status` remains `review_required`, and `ok` remains false until independent review occurs.
 
 For a low-memory sequential baseline, use `--max-parallel=1` and the exact locally installed model ID. The runner does not install or download models.
+
+The non-Builder role check requires at least two literal role-specific acceptance anchors and at least 80 characters of output. The prompt supplies those anchors to the model and the single repair prompt repeats them. This is a content-shape check only; it does not establish that the statements are true.
+
+Builder rows may target only:
+- `UnifiedField/QuantumLab/sixteen-role-orchestrator.cjs`
+- `UnifiedField/QuantumLab/sixteen-role-orchestrator.test.cjs`
+
+The GitHub Actions workflow `.github/workflows/quantumlab-qwen-live.yml` runs a sequential live inference smoke test with the exact `qwen2.5:0.5b` model on a GitHub-hosted runner and retains the JSON report as a workflow artifact. It validates the runner/model API path, not the user's local Windows or Android runtime.
+
+## Supplying repository evidence context
+
+Pass a bounded, read-only evidence file with `--context-file=PATH`. The orchestrator includes up to 8,000 characters of that file in every role prompt and records `contextChars` plus a SHA-256 digest in the run report. The context file should contain an actual tracked-file inventory, relevant source excerpts, test names, and the applicable documented contracts. Do not ask a model to review a checked-out repository unless the source evidence is actually supplied.
+
+Example:
+
+```powershell
+node $script 'Review the supplied QuantumLab evidence only; cite exact paths and mark unsupported facts UNKNOWN.' --context-file=reports\qwen-live-context.md --endpoint=http://127.0.0.1:11434 --model=qwen2.5:0.5b --max-parallel=1 --max-tokens=256
+```
+
+The 0.5B live smoke workflow uses a compact evidence pack and sequential inference. Its result is diagnostic: a failed role remains `review_required`, and the quality gate must not be weakened to force a pass.

@@ -5,12 +5,22 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { createOrchestrator, readManifest, runBounded, invokeGatewayRuntime } = require('./orchestrator.cjs');
+const { createOrchestrator, readManifest, runBounded, invokeGatewayRuntime, invokeLlamaCppRuntime } = require('./orchestrator.cjs');
 const { createTaskLedger } = require('./task-ledger.cjs');
+const crypto = require('node:crypto');
+
+const TEST_APPROVAL_EVIDENCE = Object.freeze({ fixture: 'trusted-human-approval-test' });
+async function testApprovalVerifier({ action, subject, evidence }) {
+  if (!evidence || evidence.fixture !== TEST_APPROVAL_EVIDENCE.fixture || !subject || typeof subject !== 'object') throw new Error('test_approval_evidence_invalid');
+  return { approved: true, approvalId: 'test-approval-' + String(subject.taskId || action), approvedBy: 'verified-test-operator', reason: 'Deterministic test approval fixture.', method: 'injected-test-verifier', verifiedAt: '2026-11-05T08:00:00.000Z' };
+}
+function taskApprovalPayload(taskId, goal) {
+  return { approve: true, approvalContext: { taskId, goalHash: crypto.createHash('sha256').update(goal).digest('hex') }, approvalEvidence: TEST_APPROVAL_EVIDENCE };
+}
 
 async function withServer(options, fn) {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'hf-orchestrator-test-'));
-  const app = createOrchestrator({ port: 0, ledgerPath: path.join(tempDir, 'tasks.jsonl'), invoke: async ({ agent }) => ({ agentId: agent.id, state: 'completed', output: 'verified-test-stub' }), ...options });
+  const app = createOrchestrator({ port: 0, ledgerPath: path.join(tempDir, 'tasks.jsonl'), invoke: async ({ agent }) => ({ agentId: agent.id, state: 'completed', output: 'verified-test-stub' }), approvalVerifier: testApprovalVerifier, ...options });
   await new Promise(resolve => app.server.listen(0, '127.0.0.1', resolve));
   const address = app.server.address();
   try { await fn('http://127.0.0.1:' + address.port); }
@@ -34,7 +44,7 @@ async function createCompletedTask(base, candidateCommit) {
   const approved = await fetch(base + '/api/tasks/' + task.id + '/approve', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ approve: true })
+    body: JSON.stringify(taskApprovalPayload(task.id, body.goal))
   });
   assert.equal(approved.status, 200);
   const ran = await fetch(base + '/api/tasks/' + task.id + '/run', {
@@ -93,7 +103,7 @@ test('proposal cannot run until explicit approval and then fans out to all 16 ro
     const denied = await fetch(base + '/api/tasks/' + task.id + '/run', { method: 'POST', headers: {'content-type':'application/json'}, body: '{}' });
     assert.equal(denied.status, 409);
     assert.equal(calls, 0);
-    const approved = await fetch(base + '/api/tasks/' + task.id + '/approve', { method: 'POST', headers: {'content-type':'application/json'}, body: JSON.stringify({ approve: true }) });
+    const approved = await fetch(base + '/api/tasks/' + task.id + '/approve', { method: 'POST', headers: {'content-type':'application/json'}, body: JSON.stringify(taskApprovalPayload(task.id, 'Review the local orchestrator safely.')) });
     assert.equal(approved.status, 200);
     const ran = await fetch(base + '/api/tasks/' + task.id + '/run', { method: 'POST', headers: {'content-type':'application/json'}, body: '{}' });
     assert.equal(ran.status, 200);
@@ -101,9 +111,74 @@ test('proposal cannot run until explicit approval and then fans out to all 16 ro
     assert.equal(result.completedRoles, 16);
     assert.equal(result.task.results.length, 16);
     assert.equal(result.task.state, 'completed');
+    assert.equal(result.task.approval.approvedBy, 'verified-test-operator');
+    assert.ok(result.task.approval.evidenceSha256);
     assert.equal(result.task.consensus.decision, 0);
     assert.equal(result.task.consensus.code, 'VERIFICATION_NOT_RUN');
     assert.equal(calls, 16);
+  });
+});
+
+test('self-asserted request fields cannot approve a task without a trusted verifier', async () => {
+  await withServer({ approvalVerifier: null }, async base => {
+    const created = await fetch(base + '/api/tasks', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ goal: 'approval must be attributable' }) });
+    const task = (await created.json()).task;
+    const response = await fetch(base + '/api/tasks/' + task.id + '/approve', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ approve: true, approvedBy: 'operator', reason: 'self-asserted', approval: { approved: true } }) });
+    assert.equal(response.status, 503);
+    assert.equal((await response.json()).error, 'trusted_approval_verifier_not_configured');
+    const state = await fetch(base + '/api/tasks');
+    const snapshot = await state.json();
+    assert.equal(snapshot.tasks.find(item => item.id === task.id)?.state, 'proposed');
+  });
+});
+
+test('approval context cannot be transferred to another task with the same goal', async () => {
+  await withServer({}, async base => {
+    const goal = 'approval must bind to one exact orchestrator task';
+    const created = await fetch(base + '/api/tasks', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ goal })
+    });
+    const task = (await created.json()).task;
+    const transferred = await fetch(base + '/api/tasks/' + task.id + '/approve', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(taskApprovalPayload('00000000-0000-4000-8000-000000000099', goal))
+    });
+    assert.equal(transferred.status, 403);
+    assert.equal((await transferred.json()).error, 'approval_context_mismatch');
+    assert.equal((await (await fetch(base + '/api/tasks')).json()).tasks.find(item => item.id === task.id).state, 'proposed');
+
+    const exact = await fetch(base + '/api/tasks/' + task.id + '/approve', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(taskApprovalPayload(task.id, goal))
+    });
+    assert.equal(exact.status, 200);
+  });
+});
+
+test('orchestrator accepts a canonical externally bound task ID once and rejects duplicates', async () => {
+  await withServer({}, async base => {
+    const taskId = '00000000-0000-4000-8000-000000000123';
+    const create = () => fetch(base + '/api/tasks', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ taskId, goal: 'bridge-bound task identity' })
+    });
+    const first = await create();
+    assert.equal(first.status, 201);
+    assert.equal((await first.json()).task.id, taskId);
+    const duplicate = await create();
+    assert.equal(duplicate.status, 409);
+    assert.equal((await duplicate.json()).error, 'task_id_already_exists');
+    const malformed = await fetch(base + '/api/tasks', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ taskId: 'not-a-uuid', goal: 'invalid task identity' })
+    });
+    assert.equal(malformed.status, 400);
   });
 });
 
@@ -275,6 +350,138 @@ test('UF-TCP REJECT records a reproduced counterexample and rejects the task', a
 });
 
 
+
+test('llama.cpp provider is restricted to an unauthenticated HTTP loopback endpoint', () => {
+  assert.throws(() => createOrchestrator({
+    provider: 'llama-cpp',
+    llamaCppUrl: 'http://192.168.1.20:18080'
+  }), /llama_cpp_must_use_http_loopback/);
+  assert.throws(() => createOrchestrator({
+    provider: 'llama-cpp',
+    llamaCppUrl: 'https://127.0.0.1:18080'
+  }), /llama_cpp_must_use_http_loopback/);
+  assert.doesNotThrow(() => createOrchestrator({
+    provider: 'llama-cpp',
+    llamaCppUrl: 'http://127.0.0.1:18080'
+  }));
+  assert.doesNotThrow(() => createOrchestrator({
+    provider: 'llama-cpp',
+    llamaCppUrl: 'http://127.0.0.1:18080',
+    ollamaUrl: 'https://unused-ollama.example'
+  }));
+});
+
+test('llama.cpp adapter sends OpenAI-compatible local chat requests without forwarding credentials', async () => {
+  let captured;
+  const result = await invokeLlamaCppRuntime({
+    agent: { id: 'runtime-integrator', objective: 'Verify local runtime compatibility.' },
+    goal: 'Inspect the bounded local adapter.',
+    model: 'qwen2.5-0.5b-instruct-q4_k_m.gguf',
+    llamaCppUrl: 'http://127.0.0.1:18080',
+    fetchImpl: async (url, options) => {
+      captured = { url: String(url), options, body: JSON.parse(options.body) };
+      return {
+        ok: true,
+        json: async () => ({
+          id: 'chatcmpl-local-123',
+          model: 'qwen2.5-0.5b-instruct-q4_k_m.gguf',
+          choices: [{ message: { content: 'Local llama.cpp response.' } }]
+        })
+      };
+    }
+  });
+  assert.equal(captured.url, 'http://127.0.0.1:18080/v1/chat/completions');
+  assert.equal(captured.options.method, 'POST');
+  assert.equal(captured.options.headers.authorization, undefined);
+  assert.equal(captured.body.model, 'qwen2.5-0.5b-instruct-q4_k_m.gguf');
+  assert.equal(captured.body.stream, false);
+  assert.match(captured.body.messages[1].content, /runtime-integrator/);
+  assert.match(captured.body.messages[1].content, /Inspect the bounded local adapter/);
+  assert.equal(result.state, 'completed');
+  assert.equal(result.provider, 'llama.cpp');
+  assert.equal(result.providerRequestId, 'chatcmpl-local-123');
+  assert.equal(result.output, 'Local llama.cpp response.');
+});
+
+test('llama.cpp health reports local provider and does not expose credentials', async () => {
+  await withServer({
+    provider: 'llama-cpp',
+    llamaCppUrl: 'http://127.0.0.1:18080',
+    model: 'qwen2.5-0.5b-instruct-q4_k_m.gguf'
+  }, async base => {
+    const response = await fetch(base + '/health');
+    const health = await response.json();
+    assert.equal(health.provider, 'llama.cpp');
+    assert.equal(health.model, 'qwen2.5-0.5b-instruct-q4_k_m.gguf');
+    assert.equal(health.execution, 'loopback-openai-compatible-llama.cpp');
+  });
+});
+
+
+test('task scheduler dispatches all 16 roles through the local llama.cpp adapter', async () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'hf-llama-scheduler-test-'));
+  let calls = 0;
+  const app = createOrchestrator({
+    port: 0,
+    ledgerPath: path.join(directory, 'tasks.jsonl'),
+    approvalVerifier: testApprovalVerifier,
+    provider: 'llama-cpp',
+    llamaCppUrl: 'http://127.0.0.1:18080',
+    model: 'qwen2.5-0.5b-instruct-q4_k_m.gguf',
+    fetchImpl: async (url, options) => {
+      calls += 1;
+      assert.equal(String(url), 'http://127.0.0.1:18080/v1/chat/completions');
+      assert.equal(options.headers.authorization, undefined);
+      const request = JSON.parse(options.body);
+      assert.equal(request.model, 'qwen2.5-0.5b-instruct-q4_k_m.gguf');
+      return {
+        ok: true,
+        json: async () => ({
+          id: 'llama-request-' + calls,
+          model: request.model,
+          choices: [{ message: { content: 'local-role-result-' + calls } }]
+        })
+      };
+    }
+  });
+  await new Promise(resolve => app.server.listen(0, '127.0.0.1', resolve));
+  const address = app.server.address();
+  const base = 'http://127.0.0.1:' + address.port;
+  try {
+    const goal = 'Exercise the 16-role local llama.cpp path.';
+    const created = await fetch(base + '/api/tasks', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ goal })
+    });
+    const task = (await created.json()).task;
+    const approved = await fetch(base + '/api/tasks/' + task.id + '/approve', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(taskApprovalPayload(task.id, goal))
+    });
+    assert.equal(approved.status, 200);
+    const response = await fetch(base + '/api/tasks/' + task.id + '/run', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: '{}'
+    });
+    assert.equal(response.status, 200);
+    const result = (await response.json()).task;
+    assert.equal(calls, 16);
+    assert.equal(result.results.length, 16);
+    assert.ok(result.results.every(item => item.provider === 'llama.cpp'));
+    assert.equal(result.execution.provider, 'llama.cpp');
+    assert.equal(result.execution.model, 'qwen2.5-0.5b-instruct-q4_k_m.gguf');
+    assert.equal(result.execution.providerRequestIds.length, 16);
+    assert.equal(result.consensus.decision, 0);
+    assert.equal(result.state, 'completed');
+  } finally {
+    await new Promise(resolve => app.server.close(resolve));
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test('gateway provider is loopback-only and requires a bearer token', () => {
   assert.throws(() => createOrchestrator({
     provider: 'heavenzfire-api',
@@ -288,6 +495,26 @@ test('gateway provider is loopback-only and requires a bearer token', () => {
   }), /gateway_bearer_token_required/);
 });
 
+test('gateway transport accepts only explicit HTTPS Tailscale Serve endpoints', () => {
+  const token = 'local-bearer-token-12345678901234567890';
+  assert.doesNotThrow(() => createOrchestrator({ provider: 'heavenzfire-api', gatewayTransport: 'tailnet-https', gatewayUrl: 'https://arm64-worker.example-tailnet.ts.net', gatewayToken: token }));
+  assert.throws(() => createOrchestrator({ provider: 'heavenzfire-api', gatewayTransport: 'tailnet-https', gatewayUrl: 'http://arm64-worker.example-tailnet.ts.net', gatewayToken: token }), /gateway_tailnet_transport_requires_https/);
+  assert.throws(() => createOrchestrator({ provider: 'heavenzfire-api', gatewayTransport: 'tailnet-https', gatewayUrl: 'https://example.com', gatewayToken: token }), /gateway_tailnet_transport_requires_https/);
+  assert.throws(() => createOrchestrator({ provider: 'heavenzfire-api', gatewayTransport: 'tailnet-https', gatewayUrl: 'https://arm64-worker.example-tailnet.ts.net:8443', gatewayToken: token }), /gateway_tailnet_transport_requires_https/);
+  assert.throws(() => createOrchestrator({ provider: 'heavenzfire-api', gatewayTransport: 'loopback', gatewayUrl: 'https://arm64-worker.example-tailnet.ts.net', gatewayToken: token }), /gateway_must_use_http_loopback/);
+  assert.throws(() => createOrchestrator({ provider: 'heavenzfire-api', gatewayTransport: 'public-https', gatewayUrl: 'https://example.com', gatewayToken: token }), /gateway_transport_unsupported/);
+});
+
+test('gateway transport accepts only an explicit numeric Tailscale IPv4 endpoint for Android peers', () => {
+  const token = 'local-bearer-token-12345678901234567890';
+  assert.doesNotThrow(() => createOrchestrator({ provider: 'heavenzfire-api', gatewayTransport: 'tailnet-ip', gatewayUrl: 'http://100.64.0.10:18796', gatewayToken: token }));
+  assert.doesNotThrow(() => createOrchestrator({ provider: 'heavenzfire-api', gatewayTransport: 'tailnet-ip', gatewayUrl: 'http://100.127.255.254:18796', gatewayToken: token }));
+  assert.throws(() => createOrchestrator({ provider: 'heavenzfire-api', gatewayTransport: 'tailnet-ip', gatewayUrl: 'http://100.64.0.10:18796', gatewayToken: 'short-token' }), /gateway_tailnet_token_minimum_32_characters/);
+  for (const url of ['http://192.168.1.20:18796', 'http://100.128.0.1:18796', 'http://100.63.255.255:18796', 'https://100.64.0.10:18796', 'http://100.64.0.10:18797', 'http://worker.example.ts.net:18796']) {
+    assert.throws(() => createOrchestrator({ provider: 'heavenzfire-api', gatewayTransport: 'tailnet-ip', gatewayUrl: url, gatewayToken: token }), /gateway_tailnet_ip_requires_http_tailscale_ipv4/);
+  }
+});
+
 test('gateway adapter sends authenticated provider/model provenance and captures request ID', async () => {
   let captured;
   const result = await invokeGatewayRuntime({
@@ -295,7 +522,7 @@ test('gateway adapter sends authenticated provider/model provenance and captures
     goal: 'Review commit abcdef.',
     model: 'gpt-test-model',
     gatewayUrl: 'http://127.0.0.1:18796',
-    gatewayToken: 'local-bearer-token-123456789',
+    gatewayToken: 'local-bearer-token-12345678901234567890',
     gatewayProvider: 'openai',
     fetchImpl: async (url, options) => {
       captured = { url: String(url), options, body: JSON.parse(options.body) };
@@ -311,7 +538,8 @@ test('gateway adapter sends authenticated provider/model provenance and captures
   });
 
   assert.equal(captured.url, 'http://127.0.0.1:18796/v1/chat/completions');
-  assert.equal(captured.options.headers.authorization, 'Bearer local-bearer-token-123456789');
+  assert.equal(captured.options.headers.authorization, 'Bearer local-bearer-token-12345678901234567890');
+  assert.equal(captured.options.redirect, 'error');
   assert.equal(captured.body.provider, 'openai');
   assert.equal(captured.body.model, 'gpt-test-model');
   assert.equal(result.state, 'completed');
@@ -326,7 +554,7 @@ test('gateway adapter fails closed on authentication and empty-response errors',
     goal: 'Build.',
     model: 'gpt-test-model',
     gatewayUrl: 'http://127.0.0.1:18796',
-    gatewayToken: 'local-bearer-token-123456789',
+    gatewayToken: 'local-bearer-token-12345678901234567890',
     gatewayProvider: 'openai'
   };
   const unauthorized = await invokeGatewayRuntime({
@@ -344,11 +572,45 @@ test('gateway adapter fails closed on authentication and empty-response errors',
   assert.equal(empty.error, 'gateway_empty_response');
 });
 
+test('tailnet IP gateway health identifies direct transport without exposing the bearer token', async () => {
+  await withServer({
+    provider: 'heavenzfire-api',
+    gatewayTransport: 'tailnet-ip',
+    gatewayUrl: 'http://100.64.0.10:18796',
+    gatewayToken: 'local-bearer-token-12345678901234567890',
+    gatewayProvider: 'openai',
+    model: 'gpt-test-model'
+  }, async base => {
+    const response = await fetch(base + '/health');
+    const health = await response.json();
+    assert.equal(health.gatewayTransport, 'tailnet-ip');
+    assert.equal(health.execution, 'authenticated-tailnet-ip-heavenzfire-api');
+    assert.equal(JSON.stringify(health).includes('local-bearer-token'), false);
+  });
+});
+
+test('tailnet gateway health identifies HTTPS transport without exposing the bearer token', async () => {
+  await withServer({
+    provider: 'heavenzfire-api',
+    gatewayTransport: 'tailnet-https',
+    gatewayUrl: 'https://arm64-worker.example-tailnet.ts.net',
+    gatewayToken: 'local-bearer-token-12345678901234567890',
+    gatewayProvider: 'openai',
+    model: 'gpt-test-model'
+  }, async base => {
+    const response = await fetch(base + '/health');
+    const health = await response.json();
+    assert.equal(health.gatewayTransport, 'tailnet-https');
+    assert.equal(health.execution, 'authenticated-tailnet-https-heavenzfire-api');
+    assert.equal(JSON.stringify(health).includes('local-bearer-token'), false);
+  });
+});
+
 test('health reports the selected authenticated gateway provider without exposing its token', async () => {
   await withServer({
     provider: 'heavenzfire-api',
     gatewayUrl: 'http://127.0.0.1:18796',
-    gatewayToken: 'local-bearer-token-123456789',
+    gatewayToken: 'local-bearer-token-12345678901234567890',
     gatewayProvider: 'openai',
     model: 'gpt-test-model'
   }, async base => {
@@ -368,14 +630,15 @@ test('task scheduler dispatches all role calls through the authenticated Heavenz
   const app = createOrchestrator({
     port: 0,
     ledgerPath: path.join(directory, 'tasks.jsonl'),
+    approvalVerifier: testApprovalVerifier,
     provider: 'heavenzfire-api',
     gatewayUrl: 'http://127.0.0.1:18796',
-    gatewayToken: 'local-bearer-token-123456789',
+    gatewayToken: 'local-bearer-token-12345678901234567890',
     gatewayProvider: 'openai',
     model: 'gpt-test-model',
     fetchImpl: async (_url, options) => {
       calls += 1;
-      assert.equal(options.headers.authorization, 'Bearer local-bearer-token-123456789');
+      assert.equal(options.headers.authorization, 'Bearer local-bearer-token-12345678901234567890');
       const request = JSON.parse(options.body);
       assert.equal(request.provider, 'openai');
       assert.equal(request.model, 'gpt-test-model');
@@ -402,7 +665,7 @@ test('task scheduler dispatches all role calls through the authenticated Heavenz
     await fetch(base + '/api/tasks/' + task.id + '/approve', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ approve: true })
+      body: JSON.stringify(taskApprovalPayload(task.id, 'Exercise the hosted model adapter.'))
     });
     const response = await fetch(base + '/api/tasks/' + task.id + '/run', {
       method: 'POST',
@@ -425,7 +688,6 @@ test('task scheduler dispatches all role calls through the authenticated Heavenz
   }
 });
 
-
 test('PeerLink provider requires authenticated hub configuration and reports remote inference mode', async () => {
   assert.throws(() => createOrchestrator({ provider: 'peerlink', peerLinkUrl: 'http://192.168.1.2:18990', peerLinkToken: 'x'.repeat(40) }), /peerlink_url_must_be_https/);
   assert.throws(() => createOrchestrator({ provider: 'peerlink', peerLinkUrl: 'http://127.0.0.1:18990', peerLinkToken: 'short' }), /peerlink_bearer_token_required/);
@@ -443,3 +705,76 @@ test('PeerLink provider requires authenticated hub configuration and reports rem
     assert.equal(JSON.stringify(health).includes('peerlink-test-token'), false);
   });
 });
+
+test('task scheduler dispatches all 16 roles through the authenticated PeerLink provider', async () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'hf-peerlink-scheduler-test-'));
+  let submissions = 0;
+  const app = createOrchestrator({
+    port: 0,
+    ledgerPath: path.join(directory, 'tasks.jsonl'),
+    approvalVerifier: testApprovalVerifier,
+    provider: 'peerlink',
+    peerLinkUrl: 'http://127.0.0.1:18990',
+    peerLinkToken: 'peerlink-test-token-12345678901234567890',
+    model: 'heavenzfire-qwen',
+    fetchImpl: async (url, options) => {
+      const parsed = new URL(url);
+      assert.equal(options.headers.authorization, 'Bearer peerlink-test-token-12345678901234567890');
+      if (parsed.pathname === '/v1/tasks' && options.method === 'POST') {
+        submissions += 1;
+        const body = JSON.parse(options.body);
+        assert.equal(body.task.type, 'inference.chat');
+        assert.equal(body.task.payload.model, 'heavenzfire-qwen');
+        return Response.json({ ok: true, task: { task_id: body.task.task_id } }, { status: 202 });
+      }
+      if (/^\/v1\/tasks\/uf-[0-9a-f-]{36}$/.test(parsed.pathname) && options.method === 'GET') {
+        return Response.json({
+          ok: true,
+          task: {
+            status: 'COMPLETED',
+            peer_id: 'arm64-test-node',
+            result: { model: 'heavenzfire-qwen', response: 'peerlink-role-result-' + submissions }
+          }
+        });
+      }
+      throw new Error('unexpected_peerlink_test_route:' + parsed.pathname);
+    }
+  });
+  await new Promise(resolve => app.server.listen(0, '127.0.0.1', resolve));
+  const address = app.server.address();
+  const base = 'http://127.0.0.1:' + address.port;
+  try {
+    const goal = 'Exercise all 16 orchestrator roles through authenticated PeerLink.';
+    const created = await fetch(base + '/api/tasks', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ goal })
+    });
+    const task = (await created.json()).task;
+    const approved = await fetch(base + '/api/tasks/' + task.id + '/approve', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(taskApprovalPayload(task.id, goal))
+    });
+    assert.equal(approved.status, 200);
+    const response = await fetch(base + '/api/tasks/' + task.id + '/run', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: '{}'
+    });
+    assert.equal(response.status, 200);
+    const result = (await response.json()).task;
+    assert.equal(submissions, 16);
+    assert.equal(result.results.length, 16);
+    assert.ok(result.results.every(item => item.provider === 'peerlink'));
+    assert.equal(result.execution.provider, 'peerlink');
+    assert.equal(result.execution.model, 'heavenzfire-qwen');
+    assert.equal(result.execution.providerRequestIds.length, 16);
+    assert.equal(result.consensus.decision, 0);
+    assert.equal(result.state, 'completed');
+  } finally {
+    await new Promise(resolve => app.server.close(resolve));
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
