@@ -81,7 +81,7 @@ jobs:
 
       - name: Run all sixteen roles sequentially against Qwen 0.5B
         run: |
-          node UnifiedField/QuantumLab/sixteen-role-orchestrator.cjs "Review only the actual QuantumLab source, tests, and documentation supplied in the repository evidence context. Identify concrete implementation contracts, test coverage, security boundaries, failure modes, and release blockers. Cite exact paths or mark UNKNOWN. Do not invent component names, file paths, coverage percentages, or test results." --context-file=UnifiedField/QuantumLab/reports/qwen-live-context.md --endpoint=http://127.0.0.1:11434 --model=qwen2.5:0.5b --max-parallel=1 --max-tokens=256 --timeout-ms=120000
+          node UnifiedField/QuantumLab/sixteen-role-orchestrator.cjs "Review only the actual QuantumLab source, tests, and documentation supplied in the repository evidence context. Identify concrete implementation contracts, test coverage, security boundaries, failure modes, and release blockers. Cite exact paths or mark UNKNOWN. Do not invent component names, file paths, coverage percentages, or test results." --context-file=UnifiedField/QuantumLab/reports/qwen-live-context.md --endpoint=http://127.0.0.1:11434 --model=qwen2.5:0.5b --max-parallel=1 --max-tokens=512 --timeout-ms=120000
 
       - name: Upload Qwen run report and server log
         if: always()
