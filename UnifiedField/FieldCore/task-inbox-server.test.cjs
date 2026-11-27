@@ -6,7 +6,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { createTaskRecord, transitionTask } = require('./shared-task-contract.cjs');
-const { createTaskInboxServer } = require('./task-inbox-server.cjs');
+const { createTaskInboxServer, DEFAULT_PORT } = require('./task-inbox-server.cjs');
 
 async function withInbox(t, callback) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'heavenzfire-task-inbox-'));
@@ -107,4 +107,8 @@ test('task inbox reports health and returns 404 for unknown task IDs', async t =
     assert.equal(health.storedTaskCount, 0);
     assert.equal((await fetch(baseUrl + '/api/tasks/missing')).status, 404);
   });
+});
+
+test('task inbox default port is isolated from gateway, orchestrator, and bridge ports', () => {
+  assert.equal(DEFAULT_PORT, 18799);
 });
