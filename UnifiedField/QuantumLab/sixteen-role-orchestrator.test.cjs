@@ -7,7 +7,11 @@ const { ROLES, validateEndpoint, parseRoleModelsJson, assessRoleSpecificity, mak
 function validRoleResponse(roleId) {
   const responses = {
     architect: 'Component boundaries define interface ownership and concrete contracts across the repository architecture.',
-    planner: [\n      'STEP 1: Map the existing runtime contract | DEPENDS ON: architect | CHECKPOINT: cite the owning source file.',\n      'STEP 2: Add the smallest compatible change | DEPENDS ON: STEP 1 | CHECKPOINT: run the focused unit test.',\n      'STEP 3: Verify integration and recovery | DEPENDS ON: STEP 2 | CHECKPOINT: confirm the full suite passes.'\n    ].join('\\n'),
+    planner: [
+      'STEP 1: Map the existing runtime contract | DEPENDS ON: architect | CHECKPOINT: cite the owning source file.',
+      'STEP 2: Add the smallest compatible change | DEPENDS ON: STEP 1 | CHECKPOINT: run the focused unit test.',
+      'STEP 3: Verify integration and recovery | DEPENDS ON: STEP 2 | CHECKPOINT: confirm the full suite passes.'
+    ].join('\n'),
     researcher: 'Evidence sources distinguish supplied facts, unknowns, and assumptions for this repository assessment.',
     requirements: 'Acceptance criteria define measurable pass/fail outcomes and testable outcomes for the requested goal.',
     designer: 'API schema contracts define component interfaces and failure behavior across the integration.',
@@ -226,15 +230,18 @@ test('planner specificity requires three actionable rows with dependencies and c
   );
 });
 
-test('builder prompt contains the exact approved three-row output contract', () => {
+test('builder and planner prompts contain non-conflicting exact output contracts', () => {
   const builder = ROLES.find(role => role.id === 'builder');
-  const prompt = makePrompt(builder, 'Review the current QuantumLab orchestrator.', []);
-  assert.match(prompt, /Return exactly three non-empty lines/);
-  assert.ok(prompt.includes('UnifiedField/QuantumLab/sixteen-role-orchestrator.cjs'));
-  assert.ok(prompt.includes('UnifiedField/QuantumLab/sixteen-role-orchestrator.test.cjs'));
-  assert.match(prompt, /Do not repeat or paraphrase upstream role responses/);
+  const builderPrompt = makePrompt(builder, 'Review the current QuantumLab orchestrator.', []);
+  assert.match(builderPrompt, /Return exactly three non-empty lines/);
+  assert.ok(builderPrompt.includes('UnifiedField/QuantumLab/sixteen-role-orchestrator.cjs'));
+  assert.ok(builderPrompt.includes('UnifiedField/QuantumLab/sixteen-role-orchestrator.test.cjs'));
+  assert.match(builderPrompt, /Do not repeat or paraphrase upstream role responses/);
+  assert.match(builderPrompt, /no preamble, bullets, or code fence/);
   const plannerPrompt = makePrompt(ROLES.find(role => role.id === 'planner'), 'Plan the review.', []);
-  assert.match(plannerPrompt, /exactly three lines/);\n  assert.match(plannerPrompt, /STEP 1:/);\n  assert.match(plannerPrompt, /no preamble, bullets, or code fence/);
+  assert.match(plannerPrompt, /exactly three lines/);
+  assert.match(plannerPrompt, /STEP 1:/);
+  assert.match(plannerPrompt, /no preamble, bullets, or code fence/);
   const researcherPrompt = makePrompt(ROLES.find(role => role.id === 'researcher'), 'Research the review.', []);
   assert.match(researcherPrompt, /Evidence, Sources, Unknowns, Assumptions/);
   const requirementsPrompt = makePrompt(ROLES.find(role => role.id === 'requirements'), 'Define acceptance.', []);
