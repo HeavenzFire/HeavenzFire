@@ -28,7 +28,7 @@ test('extension uses only activeTab/scripting and the loopback task inbox', () =
   const manifest = JSON.parse(fs.readFileSync(path.join(__dirname, 'manifest.json'), 'utf8'));
   assert.equal(manifest.manifest_version, 3);
   assert.deepEqual(manifest.permissions.sort(), ['activeTab', 'scripting'].sort());
-  assert.deepEqual(manifest.host_permissions, ['http://127.0.0.1:18796/*']);
+  assert.deepEqual(manifest.host_permissions, ['http://127.0.0.1:18799/*']);
   assert.equal(manifest.permissions.includes('tabs'), false);
   assert.equal(manifest.host_permissions.includes('<all_urls>'), false);
   assert.equal(manifest.content_security_policy.extension_pages.includes("'unsafe-eval'"), false);
@@ -38,7 +38,7 @@ test('submission is a user-click action and no automatic page script is register
   const popup = fs.readFileSync(path.join(__dirname, 'popup.js'), 'utf8');
   const manifest = JSON.parse(fs.readFileSync(path.join(__dirname, 'manifest.json'), 'utf8'));
   assert.match(popup, /submitButton\.addEventListener\('click'/);
-  assert.match(popup, /http:\/\/127\.0\.0\.1:18796\/api\/tasks/);
+  assert.match(popup, /http:\/\/127\.0\.0\.1:18799\/api\/tasks/);
   assert.equal(Object.prototype.hasOwnProperty.call(manifest, 'content_scripts'), false);
   assert.equal(SCHEMA, 'heavenzfire.shared-task.v1');
 });

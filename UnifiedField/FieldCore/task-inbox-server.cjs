@@ -8,7 +8,7 @@ const { URL } = require('node:url');
 const { validateTaskRecord } = require('./shared-task-contract.cjs');
 
 const HOST = '127.0.0.1';
-const DEFAULT_PORT = 18796;
+const DEFAULT_PORT = 18799;
 const MAX_BODY_BYTES = 65536;
 const DEFAULT_INBOX_PATH = path.join(os.homedir(), '.heavenzfire', 'unified-field-inbox.jsonl');
 

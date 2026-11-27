@@ -6,7 +6,7 @@ Windows-local GitHub integration for the Unified Field task inbox and 16-role or
 - Authentication: existing `gh auth` session; token is read at runtime and never logged.
 - Repository owners: `HeavenzFire` by default; optional `HF_GITHUB_OWNERS` comma-separated allowlist.
 - Durable audit: `%LOCALAPPDATA%\HeavenzFire\UnifiedField\github-bridge-audit.jsonl`.
-- Task inbox: `127.0.0.1:18796`; orchestrator: `127.0.0.1:18797`.
+- Task inbox: `127.0.0.1:18799`; orchestrator: `127.0.0.1:18797`.
 - GitHub writes and task execution require a server-side `approvalVerifier` plus an idempotency key for GitHub mutations. HTTP fields such as `approved: true`, `approvedBy`, and `reason` are untrusted and never authorize an action.
 - No trusted human-approval broker is implemented or configured by default in this PR. Without an independently configured verifier, mutation and task-run endpoints fail closed with HTTP 503; the bridge remains read-only apart from task proposals.
 - A future verifier must independently validate attributable, action-bound evidence (for example, an OS-authenticated approval broker or signed one-time approval), and return canonical approval ID, actor, reason, method, and verification time. The same trust policy must be configured in the orchestrator; model output and task payloads must never mint approval evidence.

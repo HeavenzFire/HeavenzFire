@@ -11,7 +11,7 @@ Orchestrator (8788) ─┼─> AI Gateway (11800) ─> llama.cpp runtime (11801)
 Legacy gateway (8787) ┘
 
 Unified Field Dashboard (8800) ─> Mesh Bridge (8081) ─> model/hash task queue
-                                  └─> Task Inbox (18796) [approval-first proposal store]
+                                  └─> Task Inbox (18799) [approval-first proposal store]
 ```
 
 All services bind to loopback. The primary inference endpoint is the llama.cpp server on `127.0.0.1:11801`, serving `heavenzfire-qwen-0.5b`. The AI gateway on port 11800 defaults to the OpenAI-compatible backend at port 11801. The compatibility gateway on port 8787 forwards to the same runtime. Avoid routing these paths back through Ollama by default: the 1.2B compatibility model consumed enough RAM to block model tasks on this 7.42-GiB machine.

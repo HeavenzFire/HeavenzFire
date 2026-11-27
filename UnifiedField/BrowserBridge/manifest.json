@@ -8,7 +8,7 @@
     "scripting"
   ],
   "host_permissions": [
-    "http://127.0.0.1:18796/*"
+    "http://127.0.0.1:18799/*"
   ],
   "action": {
     "default_title": "Send proposal to Unified Field",
