@@ -12,8 +12,17 @@ function validRoleResponse(roleId) {
       'STEP 2: Add the smallest compatible change | DEPENDS ON: STEP 1 | CHECKPOINT: run the focused unit test.',
       'STEP 3: Verify integration and recovery | DEPENDS ON: STEP 2 | CHECKPOINT: confirm the full suite passes.'
     ].join('\n'),
-    researcher: 'Evidence sources distinguish supplied facts, unknowns, and assumptions for this repository assessment.',
-    requirements: 'Acceptance criteria define measurable pass/fail outcomes and testable outcomes for the requested goal.',
+    researcher: [
+      'EVIDENCE: The role graph is defined in UnifiedField/QuantumLab/sixteen-role-orchestrator.cjs.',
+      'SOURCES: UnifiedField/QuantumLab/sixteen-role-orchestrator.cjs, UnifiedField/QuantumLab/sixteen-role-orchestrator.test.cjs.',
+      'UNKNOWNS: Hosted CI does not prove Windows or Android live runtime behavior.',
+      'ASSUMPTIONS: The checked-out files are the target revision under review.'
+    ].join('\n'),
+    requirements: [
+      'ACCEPTANCE 1: Each role emits usable output | PASS: all 16 roles have validated outputs | FAIL: any role is blocked or review_required.',
+      'ACCEPTANCE 2: Task approval is bound to its content | PASS: signature matches task ID and goal hash | FAIL: any changed task is accepted.',
+      'ACCEPTANCE 3: Execution is evidence-gated | PASS: candidate, reviewed, and tested commits match | FAIL: revision drift is accepted.'
+    ].join('\n'),
     designer: 'API schema contracts define component interfaces and failure behavior across the integration.',
     builder: [
       'FILE: UnifiedField/QuantumLab/sixteen-role-orchestrator.cjs | PROPOSED CHANGE: add bounded logic | DEPENDENCIES: none | VERIFICATION: node test',
@@ -222,6 +231,22 @@ test('role-specific acceptance requires substantive output and at least two lite
   );
 });
 
+test('researcher specificity requires concise evidence, source paths, unknowns, and assumptions', () => {
+  assert.equal(assessRoleSpecificity('researcher', validRoleResponse('researcher')).roleSpecificityPassed, true);
+  assert.equal(
+    assessRoleSpecificity('researcher', 'EVIDENCE: A fact.\nSOURCES: no source path\nUNKNOWNS: unknown\nASSUMPTIONS: none').roleSpecificityPassed,
+    false
+  );
+});
+
+test('requirements specificity requires three testable pass/fail rows', () => {
+  assert.equal(assessRoleSpecificity('requirements', validRoleResponse('requirements')).roleSpecificityPassed, true);
+  assert.equal(
+    assessRoleSpecificity('requirements', 'ACCEPTANCE 1: One testable condition | PASS: yes | FAIL: no').roleSpecificityPassed,
+    false
+  );
+});
+
 test('planner specificity requires three actionable rows with dependencies and checkpoints', () => {
   assert.equal(assessRoleSpecificity('planner', validRoleResponse('planner')).roleSpecificityPassed, true);
   assert.equal(
@@ -243,9 +268,12 @@ test('builder and planner prompts contain non-conflicting exact output contracts
   assert.match(plannerPrompt, /STEP 1:/);
   assert.match(plannerPrompt, /no preamble, bullets, or code fence/);
   const researcherPrompt = makePrompt(ROLES.find(role => role.id === 'researcher'), 'Research the review.', []);
-  assert.match(researcherPrompt, /Evidence, Sources, Unknowns, Assumptions/);
+  assert.match(researcherPrompt, /EVIDENCE:/);
+  assert.match(researcherPrompt, /SOURCES:/);
   const requirementsPrompt = makePrompt(ROLES.find(role => role.id === 'requirements'), 'Define acceptance.', []);
-  assert.match(requirementsPrompt, /Acceptance criteria and Measurable pass\/fail/);
+  assert.match(requirementsPrompt, /ACCEPTANCE 1:/);
+  assert.match(requirementsPrompt, /PASS:/);
+  assert.match(requirementsPrompt, /FAIL:/);
 });
 
 test('builder specificity requires exactly three complete change rows and approved target paths', () => {
