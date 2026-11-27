@@ -98,6 +98,9 @@ test('write action uses real branch adapter with durable idempotency and audit',
   assert.ok(events[0].approval.evidenceSha256);
   assert.ok(!fs.readFileSync(auditPath, 'utf8').includes('attacker-claimed-operator'));
   assert.ok(!fs.readFileSync(auditPath, 'utf8').includes('test-token'));
+  if (process.platform !== 'win32') {
+    assert.equal(fs.statSync(auditPath).mode & 0o777, 0o600, 'audit log must be owner-readable/writable only');
+  }
 });
 
 test('repository allowlist blocks other owners', async t => {

@@ -67,7 +67,8 @@ function createGitHubBridgeServer(options = {}) {
   const tokenProvider = options.tokenProvider || (() => execFileSync('gh', ['auth', 'token', '--hostname', 'github.com'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], windowsHide: true }).trim());
   const ownerConfig = options.allowedOwners || process.env.HF_GITHUB_OWNERS || 'HeavenzFire';
   const allowedOwners = new Set((Array.isArray(ownerConfig) ? ownerConfig : String(ownerConfig).split(',')).map(x => String(x).trim().toLowerCase()).filter(Boolean));
-  fs.mkdirSync(path.dirname(auditPath), { recursive: true });
+  fs.mkdirSync(path.dirname(auditPath), { recursive: true, mode: 0o700 });
+  if (process.platform !== 'win32' && fs.existsSync(auditPath)) fs.chmodSync(auditPath, 0o600);
 
   const audit = [];
   const idempotency = new Map();
@@ -85,7 +86,7 @@ function createGitHubBridgeServer(options = {}) {
 
   function append(event) {
     const record = { timestamp: new Date().toISOString(), ...event };
-    const fd = fs.openSync(auditPath, 'a');
+    const fd = fs.openSync(auditPath, 'a', 0o600);
     try { fs.writeSync(fd, JSON.stringify(record) + '\n'); fs.fsyncSync(fd); }
     finally { fs.closeSync(fd); }
     audit.push(record);
